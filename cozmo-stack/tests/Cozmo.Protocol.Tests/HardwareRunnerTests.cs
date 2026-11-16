@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cozmo.Conformance;
+using Cozmo.Robot;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -38,6 +39,36 @@ public class HardwareRunnerTests
         PropertyNameCaseInsensitive = true,
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
     };
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FaceSetupWaitsForTheFirstPublicObservationOrOperatorCancellation(bool cancel)
+    {
+        using var stop = new CancellationTokenSource();
+        Action<RobotObservedFaceReport>? delivery = null;
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var face = new RobotObservedFaceReport(7, 123, default, default, "", [], [], [], []);
+        var result = Task.Run(() => CommandsHw.WaitForReport<RobotObservedFaceReport>(
+            handler => delivery += handler, handler => delivery -= handler, _ => true,
+            waiting.SetResult, Timeout.InfiniteTimeSpan, stop.Token));
+
+        await waiting.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(result.IsCompleted);
+
+        if (cancel)
+        {
+            stop.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await result.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        else
+        {
+            delivery!(face);
+            Assert.Same(face, await result.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        Assert.Null(delivery);
+        Assert.Equal(0x3EB2B8C2u, BitConverter.SingleToUInt32Bits(CommandsHw.FaceSetupHeadAngle));
+    }
 
     // ================================================================ the catalog
 

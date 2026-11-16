@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -14,10 +13,17 @@ internal static class CommandsHw
 {
     internal const string TestId = "AI-COMMANDS-HW-1";
     internal const int TrackSeconds = 10;
+    internal const int FaceActionLimitMs = 20_000;
+    // FindFacesLookUp supplies 20..40 degrees at 0x005C1AA6..0x005C1AC2.
+    // Reuse the lower endpoint for a repeatable operator setup.
+    internal const float FaceSetupHeadAngle = (float)(20 * Math.PI / 180);
+    internal const string FacePosition = "Get down near Cozmo's level in good light, about 30–60 cm in front of him, with your face a little above his camera.";
     internal const string Setup = "Put Cozmo on a clear, well-lit surface, off his charger and well away from edges. "
         + "Leave room to drive and turn. Have one working cube and one operator in view during the applicable prompts.";
 
     internal sealed record Step(string Id, string Plan, string Question, string Record, string Address, uint? Expected = 0);
+    internal static readonly Step FaceSetup = new("face-setup", "Raise the head to 20 degrees.",
+        "", "M15-103", "0x005C1AA6–0x005C1AC2, 0x005E331A–0x005E3350");
     internal static readonly Step[] Steps =
     {
         new("head", "Raise the head to 0.18 rad.", "Did his head tilt up?", "M4-016", "0x005485CC"),
@@ -26,34 +32,36 @@ internal static class CommandsHw
         new("turn-in-place", "Turn left 90 degrees in place.", "Did he turn left about 90 degrees?", "M13-022", "0x0054642C"),
         new("turn-to-face", "Turn toward the operator's observed face.", "Did he turn toward your face?", "M14-002", "0x0054C500"),
         new("turn-to-cube", "Turn toward a located light cube.", "Did he turn toward the cube?", "M13-020", "0x0054ADD4"),
-        new("track-face", "Request face tracking and cancel after 10 seconds.", "Did he follow your face as you moved?", "M8-015", "0x005409DC–0x00540A46", 0x02000000),
+        new("track-face", "Request face tracking and cancel after 10 seconds.", "Did he follow your face as you moved?", "M8-015", "0x005409DCâ€“0x00540A46", 0x02000000),
         new("animation", "Play CozmoSaysSpeakLoop once.", "Did you see a face animation?", "M8-020", "0x005441C0"),
         new("sentence", "Say one English sentence.", "Did you hear Cozmo say the sentence?", "M14-006", "0x00561D4C"),
         new("go-to-pose", "Drive to a point 200 mm ahead and turn left 90 degrees.", "Did he reach the point and turn left?", "M12-023", "0x0055AB4C"),
-        new("teach-face", "Teach the operator's face a temporary name.", "Did you observe him learning the name?", "M14-012", "0x005FE520–0x005FE528"),
-        new("rename-face", "Rename the newly enrolled face.", "Did you observe him acknowledge the new name?", "M14-012", "0x00657B66–0x00657B82", null),
+        new("teach-face", "Teach the operator's face a temporary name.", "Did you observe him learning the name?", "M14-012", "0x005FE520â€“0x005FE528"),
+        new("rename-face", "Rename the newly enrolled face.", "Did you observe him acknowledge the new name?", "M14-012", "0x00657B66â€“0x00657B82", null),
         new("erase-face", "Erase the same enrolled face ID.", "Did you observe the temporary face being erased?", "M14-012", "E2G 0x57", null),
     };
 
     internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
-        { "M14-003", "M14-008", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
+        { FaceSetup.Record, "M14-003", "M14-008", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
 
     internal static T? WaitForReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
         Func<T, bool> matches, Action postRequest, TimeSpan timeout, CancellationToken cancellationToken) where T : class
     {
+        bool hasDeadline = timeout != Timeout.InfiniteTimeSpan;
         var elapsed = Stopwatch.StartNew();
         var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Receive(T report)
         {
-            if (elapsed.Elapsed <= timeout && matches(report)) completion.TrySetResult(report);
+            if ((!hasDeadline || elapsed.Elapsed <= timeout) && matches(report)) completion.TrySetResult(report);
         }
         subscribe(Receive);
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
             postRequest(); // The production game APIs enqueue and return.
-            TimeSpan remaining = timeout - elapsed.Elapsed;
-            return completion.Task.WaitAsync(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero, cancellationToken)
+            TimeSpan remaining = hasDeadline ? timeout - elapsed.Elapsed : Timeout.InfiniteTimeSpan;
+            if (hasDeadline && remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
+            return completion.Task.WaitAsync(remaining, cancellationToken)
                 .GetAwaiter().GetResult();
         }
         catch (TimeoutException) { return null; }
@@ -65,6 +73,11 @@ internal static class CommandsHw
         Console.WriteLine(Setup + "\nFreeplay is off.");
         foreach (var step in Steps)
         {
+            if (step.Id is "turn-to-face" or "track-face")
+            {
+                Console.WriteLine($"[{step.Id}-setup] {FaceSetup.Plan} {FacePosition} ({FaceSetup.Record}, {FaceSetup.Address})");
+                Console.WriteLine($"Wait for a fresh public face observation before starting the {FaceActionLimitMs / 1000} s action window.");
+            }
             string check = step.Expected is { } expected ? $"expect 0x{expected:X8}" : "report only";
             Console.WriteLine($"[{step.Id}] {step.Plan} {check} ({step.Record}, {step.Address})");
         }
@@ -74,7 +87,6 @@ internal static class CommandsHw
 
 internal sealed partial class M15CubeRun
 {
-    readonly ConcurrentQueue<(double At, RobotObservedFaceReport Report)> commandFaces = new();
     static readonly JsonSerializerOptions CommandPayloadOptions = new()
     { IncludeFields = true, NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals };
 
@@ -82,7 +94,6 @@ internal sealed partial class M15CubeRun
     {
         engine.RobotObservedFace += report =>
         {
-            commandFaces.Enqueue((Now, report));
             var data = JsonSerializer.SerializeToNode(report, CommandPayloadOptions)!.AsObject();
             data["recognizedByName"] = report.Name.Length != 0;
             Event("face-seen", data);
@@ -121,11 +132,11 @@ internal sealed partial class M15CubeRun
             TurnInPlaceAction.DefaultMaxSpeed, TurnInPlaceAction.DefaultAccel, cancellationToken: t),
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
 
-        var face = FindCommandFace("Show your face slightly to one side in good light and press Enter.");
+        var face = FindCommandFace(r, "turn-to-face", "Start slightly to one side and keep still until he turns toward you.");
         if (face is not null)
             RunCommand("turn-to-face", t => r.Motion.QueueAiTurnToFaceAsync(face.FaceId, MathF.PI, t),
-                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
-        else SkipCommand("turn-to-face", "No fresh public face observation.");
+                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), CommandsHw.FaceActionLimitMs);
+        else SkipCommand("turn-to-face", "The head setup action did not succeed.");
 
         PromptCommand("Place one upright light cube in view with a marker facing Cozmo. Press Enter when ready.");
         double since = Now;
@@ -138,11 +149,11 @@ internal sealed partial class M15CubeRun
         PromptCommand("Tap the cube, then move it. Keep it in view briefly, then take it out of view. Press Enter when done.");
         RecordOperatorAnswer("cube-events", "Did you observe Cozmo respond to the cube being tapped or moved?");
 
-        var trackFace = FindCommandFace("Show your face again and press Enter. Once tracking starts, slowly move side to side for 10 seconds.");
+        var trackFace = FindCommandFace(r, "track-face", "Once tracking starts, slowly move side to side for 10 seconds.");
         if (trackFace is not null)
             RunCommand("track-face", t => r.Motion.QueueAiTrackFaceAsync(trackFace.FaceId, headOnly: false, cancellationToken: t),
-                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 16000, TimeSpan.FromSeconds(CommandsHw.TrackSeconds));
-        else SkipCommand("track-face", "No fresh public face observation.");
+                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), CommandsHw.FaceActionLimitMs, TimeSpan.FromSeconds(CommandsHw.TrackSeconds));
+        else SkipCommand("track-face", "The head setup action did not succeed.");
         PromptCommand("Move out of the camera's view. Press Enter when ready.");
         RecordOperatorAnswer("face-events", "Did you observe Cozmo notice or recognize you?");
         RunCommand("animation", t => r.Motion.QueueAiAnimationAsync(AnimationTrigger.CozmoSaysSpeakLoop, cancellationToken: t),
@@ -164,20 +175,31 @@ internal sealed partial class M15CubeRun
         RunCommandEnrollment(r);
     }
 
-    RobotObservedFaceReport? FindCommandFace(string prompt)
+    RobotObservedFaceReport? FindCommandFace(CozmoRobot r, string id, string instructions)
     {
-        PromptCommand(prompt);
-        double since = Now;
-        RobotObservedFaceReport? face = null;
-        Poll(() => (face = commandFaces.LastOrDefault(f => f.At >= since).Report) is not null, 20000);
-        return face;
+        var setup = CommandsHw.FaceSetup with { Id = $"{id}-setup" };
+        if (!RunCommand(setup, t => r.Motion.QueueAiHeadAngleAsync(CommandsHw.FaceSetupHeadAngle, t),
+            a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), askOperator: false))
+            return null;
+
+        return CommandsHw.WaitForReport<RobotObservedFaceReport>(
+            receive => r.Engine.RobotObservedFace += receive,
+            receive => r.Engine.RobotObservedFace -= receive,
+            _ => true,
+            () => Console.WriteLine($"{CommandsHw.FacePosition} {instructions} Waiting for Cozmo to see you. Ctrl+C stops the run."),
+            Timeout.InfiniteTimeSpan, cancel.Token);
     }
 
     void RunCommand<T>(string id, Func<CancellationToken, Task<T>> request,
         Func<T, (bool Admitted, uint? Result, string? Detail, bool Retired)> read,
         int limitMs = 45000, TimeSpan? stopAfter = null)
+        => RunCommand(CommandsHw.Steps.Single(s => s.Id == id), request, read, limitMs, stopAfter);
+
+    bool RunCommand<T>(CommandsHw.Step step, Func<CancellationToken, Task<T>> request,
+        Func<T, (bool Admitted, uint? Result, string? Detail, bool Retired)> read,
+        int limitMs = 45000, TimeSpan? stopAfter = null, bool askOperator = true)
     {
-        CommandsHw.Step step = CommandsHw.Steps.Single(s => s.Id == id);
+        string id = step.Id;
         Console.WriteLine($"\n[{id}] {step.Plan}");
         using var actionCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
         Task<T>? task = null;
@@ -221,7 +243,15 @@ internal sealed partial class M15CubeRun
             if (task.IsCompletedSuccessfully)
                 phase["cleanupEngineResult"] = FormatCode(read(task.Result).Result);
         }
-        FinishCommand(step, phase, result, judge: scheduledStopReached || result != step.Expected);
+        bool judge = scheduledStopReached || result != step.Expected;
+        if (askOperator) FinishCommand(step, phase, result, judge);
+        else
+        {
+            SaveCommandResult(step, phase, result, judge);
+            Event("command-result", (JsonObject)phase.DeepClone());
+        }
+        return phase["admitted"]?.GetValue<bool>() == true && result == EngineActionResult.Success &&
+            phase["ownerRetired"]?.GetValue<bool>() != true;
     }
 
     void RunCommandEnrollment(CozmoRobot r)
