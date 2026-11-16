@@ -1675,6 +1675,21 @@ public sealed partial class BlockWorld
         return FindLocatedObjectHelper(f, null, true);
     }
 
+    // fidelity: M11-004 — 0x006263A4..0x00626404 adds a predicate with an initial
+    // timestamp of zero. 0x0062C14A..0x0062C15C advances it on strictly newer observations.
+    internal ObservableObject? FindMostRecentlyObservedObject(BlockWorldFilter filter)
+    {
+        uint newest = 0;
+        var recent = filter.Clone();
+        recent.Predicates.Add(o =>
+        {
+            if (o.LastObservedTimestamp <= newest) return false;
+            newest = o.LastObservedTimestamp;
+            return true;
+        });
+        return FindLocatedObjectHelper(recent, null, false);
+    }
+
     /// <summary>Any object of the world with that ID, located or forgotten (LOCAL: the stack's own forgotten objects stay readable).</summary>
     public ObservableObject? GetObjectById(uint objectId)
     {
