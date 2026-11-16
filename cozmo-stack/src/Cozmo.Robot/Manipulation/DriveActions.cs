@@ -146,6 +146,28 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         foreach(var old in _ownedGoals)old.Dispose();
         _ownedGoals=goals.Select(p=>new Pose3d(p)).ToList();Goals=_ownedGoals;Goal=_ownedGoals.FirstOrDefault();_nativeGoalsSet=true;return true;
     }
+    internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
+    internal string? HostUnavailable { get; private set; }
+    internal bool LowersHead => _nativeHead;
+    internal bool UsesManualSpeed => _nativeManual;
+
+    public override uint Update()
+    {
+        if (AiNativeEnded is null) return base.Update();
+        if (HostUnavailable is not null) return EngineActionResult.Running;
+        int depth = Watcher?.HostUpdateDepth ?? 0;
+        try { return base.Update(); }
+        catch (NativeActionUnavailable error)
+        {
+            Watcher?.UnwindUnavailableHostUpdate(depth);
+            HostUnavailable = error.Message;
+            _m.Robot.Engine.EmitStackLog("MISSING: " + error.Message);
+            var list = _scopedOwner!.ActionList;
+            list.DeferHostCleanup(() => { if (list.ContainsRunner(this)) list.Cancel(Tag); });
+            return EngineActionResult.Running;
+        }
+    }
+
     private readonly PathGoalIndex _goalIndex=new();
     internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _destroyed;
@@ -236,6 +258,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         // Stored Cancel bypasses IAction::UpdateInternal's callbacks. The queue's destruction
         // is the terminal boundary for the host task; no handler end call is added.
         // DeleteActionAndIter snapshots the stored full result, including RUNNING when QueueNow deletes without Cancel.
+        if (AiNativeEnded is { } ended) ended.TrySetResult((State, !OwnerCurrent()));
         if(_done?.TrySetResult((ActionResult)State)==true)_m.DriveResultObservedForTest?.Invoke((ActionResult)State);
     }
 

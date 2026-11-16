@@ -24,6 +24,7 @@ public static class M15CubeHw
 {
     public const string TestId = "M15-CUBE-HW";
     public static readonly string[] RecordIds = { "M15-022", "M12-015", "M12-052", "M12-005", "M12-008", "M12-013", "M12-014", "M11-038", "M4-003", "M8-015" };
+    internal const string GotoSetup = "GO-TO ROUND. Clear the table around Cozmo and leave at least 30 cm ahead. After Enter, he will drive about 20 cm ahead and turn left 90 degrees.";
     internal const string ChargerSetup = "CHARGER ROUND. Clear the cubes away. Put the charger 20–40 cm directly in front of Cozmo,\n"
         + "marker facing him. Leave it powered and give him space to turn and back onto it. Press Enter when ready.";
 
@@ -46,7 +47,7 @@ public static class M15CubeHw
     public static List<JsonObject> LoadRecords(string path, bool skills = false)
     {
         var all = JsonNode.Parse(File.ReadAllText(path))!["records"]!.AsArray().Select(x => x!.AsObject()).ToDictionary(x => x["id"]!.GetValue<string>());
-        var ids = skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041" }) : RecordIds;
+        var ids = skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041", "M12-023", "M12-024", "M12-032" }) : RecordIds;
         var missing = ids.Where(id => !all.ContainsKey(id)).ToArray();
         if (missing.Length > 0) throw new InvalidOperationException("Missing fidelity records: " + string.Join(", ", missing));
         return ids.Select(id => (JsonObject)all[id].DeepClone()).ToList();
@@ -72,7 +73,7 @@ public static class M15CubeHw
             if (validate)
             {
                 Console.WriteLine($"{TestId}: {records.Count} valid records; no network opened.");
-                if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{ChargerSetup}");
+                if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
                 return 0;
             }
             if (Robot.Emulation.ShippedLibraries.FindLibDir() is null)
@@ -202,6 +203,7 @@ internal sealed class M15CubeRun
                 RunSkills(robot);
                 RunTrick("flip", M15CubeHw.FlipSetup, robot.Motion.QueueAiFlipCubeAsync);
                 RunTrick("wheelie", M15CubeHw.WheelieSetup, robot.Motion.QueueAiPopAWheelieAsync);
+                RunGotoPose(robot);
                 RunCharger(robot);
             }
             if (!yes)
@@ -338,6 +340,42 @@ internal sealed class M15CubeRun
                 throw new InvalidOperationException($"{name}: the action did not retire after cancellation");
         }
         return phase;
+    }
+
+    void RunGotoPose(CozmoRobot r)
+    {
+        Console.WriteLine("\n" + M15CubeHw.GotoSetup);
+        ReadLineBounded();
+        cancel.Token.ThrowIfCancellationRequested();
+        if (r.Motion.GetAiBodyObservation().LastState is not { } start)
+        {
+            errors.Enqueue("go-to-pose: no published engine pose");
+            return;
+        }
+
+        // The operator's relative setup is converted to the absolute world-origin API input.
+        float x = start.Pose.X + 200f * MathF.Cos(start.PoseAngleRad);
+        float y = start.Pose.Y + 200f * MathF.Sin(start.PoseAngleRad);
+        float angle = Radians.Rescale(start.PoseAngleRad + MathF.PI / 2);
+        using var actionCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
+        Task<AiDriveActionResult>? queued = null;
+        var phase = Phase("go-to-pose", () =>
+        {
+            var task = queued = r.Motion.QueueAiGotoPoseAsync(x, y, angle, actionCancel.Token);
+            return (task, () => task.IsCompletedSuccessfully ?
+                (task.Result.Admitted, task.Result.EngineResult, task.Result.Detail, task.Result.OwnerRetired) : default);
+        }, 35000);
+        phase["goal"] = new JsonObject { ["xMm"] = x, ["yMm"] = y, ["angleRad"] = angle, ["originId"] = start.Pose.OriginId };
+        var end = r.Motion.GetAiBodyObservation().LastState;
+        phase["finalPose"] = end is null ? null : JsonSerializer.SerializeToNode(end.Pose);
+        phases.Add(phase);
+        Console.WriteLine("    " + phase["detail"]);
+        if (queued is { IsCompleted: false })
+        {
+            actionCancel.Cancel();
+            if (!Poll(() => queued.IsCompleted, 3000))
+                throw new InvalidOperationException("go-to-pose: the action did not retire after cancellation");
+        }
     }
 
     void RunCharger(CozmoRobot r)

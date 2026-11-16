@@ -439,6 +439,54 @@ public sealed class CozmoMotion
         return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
     }
 
+    /// <summary>Queues a drive to an absolute pose in the robot's current world origin.</summary>
+    // fidelity: M12-023, M12-024
+    // GotoPose handler 0x0052A11C..0x0052A20C and single-goal ctor 0x0055A3D4:
+    // DriveToPoseAction(robot, GotoPoseTarget, lowerHead:false, manual:false,
+    //                   (10,10,10), Radians(0x3E32B8C2), 4.0f, 1.0f).
+    // The level byte is unread; the default profile skips the setter at 0x0052A206.
+    public async Task<AiDriveActionResult> QueueAiGotoPoseAsync(float xMm, float yMm, float angleRad,
+        CancellationToken cancellationToken = default)
+    {
+        if (!float.IsFinite(xMm) || !float.IsFinite(yMm) || !float.IsFinite(angleRad))
+            return new(false, null, "Pose coordinates and angle must be finite");
+        if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
+        var engine = _robot.Engine;
+        var owner = engine.Robot;
+        Manipulation.DriveToPoseAction action;
+        Task<AiHeadActionResult> task;
+        using (engine.EnterSynchronousOwner())
+        {
+            if (cancellationToken.IsCancellationRequested) return new(false, null, "Request cancelled before admission");
+            if (owner is null || !AiOwnerReady(engine, owner)) return new(false, null, "Robot is not ready for an action");
+            var runtime = owner.NativeBehaviorRuntime;
+            if (runtime is null || runtime.IsRetired || runtime.Manipulation is not { } manipulation || !owner.HasExternalInterface)
+                return new(false, null, "MISSING: original pose-drive owner unavailable");
+            uint tag = AllocateAiTag();
+            if (tag == 0) return new(false, null, "No external action tag is available");
+            bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner) &&
+                !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime, runtime);
+            using (manipulation.World.EnterPoseMutation())
+            {
+                if (!owner.TryGetNativeOriginOwner(owner.CurrentOriginId, out var origin) || origin?.Node is null)
+                {
+                    engine.EmitStackLog("MISSING: M12-023 GotoPose handler world origin (0x0052A146) unavailable");
+                    return new(false, null, "MISSING: original world origin unavailable");
+                }
+                // 0x0052A128..0x0052A196: Radians about Z, (x,y,0), GetWorldOrigin, then name.
+                var rotation = Vision.Rotation3d.FromAngleAxis(new Radians(angleRad).Value, new Vision.Vec3(0, 0, 1));
+                using var goal = new Vision.Pose3d(rotation, new Vision.Vec3(xMm, yMm, 0), "GotoPoseTarget", origin);
+                action = new Manipulation.DriveToPoseAction(manipulation, false, false, owner, Current);
+                action.SetNativeGoals(new[] { goal });
+            }
+            task = AdmitAiAction(action, owner, tag, cancellationToken, "Native pose drive ended", true,
+                () => Current() && AiOwnerReady(engine, owner));
+        }
+        var result = await task.ConfigureAwait(false);
+        return new(result.Admitted, result.EngineResult,
+            action.HostUnavailable is null ? result.Detail : "MISSING: " + action.HostUnavailable, result.OwnerRetired);
+    }
+
     /// <summary>
     /// Queues a straight drive after existing actions. Cancellation addresses this runner, but its native
     /// destructor aborts the robot's active shared path and driving animation, even if this drive was pending.
@@ -568,6 +616,7 @@ public sealed class CozmoMotion
         else if(action is Manipulation.NativeDriveToMountChargerRunner mount){mount.AiNativeEnded=completion;mount.AiOwner=owner;}
         else if(action is Manipulation.AiCubeTrickCompound trick)trick.AiNativeEnded=completion;
         else if(action is Manipulation.NativeDriveToPlaceOnBeaconRunner placeOn){placeOn.AiNativeEnded=completion;placeOn.AiOwner=owner;}
+        else if (action is Manipulation.DriveToPoseAction pose) pose.AiNativeEnded = completion;
         else ((Manipulation.DriveStraightAction)action).AiNativeEnded=completion;
         bool tagSet = action.SetTag(tag);
         if (!tagSet)
