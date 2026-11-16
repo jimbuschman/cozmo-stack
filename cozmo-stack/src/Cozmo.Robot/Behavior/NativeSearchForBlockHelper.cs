@@ -3,7 +3,7 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M12-010
-//5BAC7C..5BB830: admitted specific-target minSeen0/maxStage0 helper only.
+// 0x005BAC7C..0x005BB830: concrete search, including untargeted stages 0 and 1.
 internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
 {
     private readonly ManipulationSystem _m;
@@ -23,10 +23,12 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     internal NativeNearbySearchRunner? Nearby {get;private set;}
     internal CompoundActionSequential? Sequence {get;private set;}
     internal int MaxStage {get;}
-    internal NativeSearchForBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,int maxStage=0,Func<bool>? hostCurrent=null)
+    internal uint MinSeen {get;}
+    private bool HasTarget => Target != uint.MaxValue;
+    internal NativeSearchForBlockHelper(ManipulationSystem m,SteppedBehavior parent,BehaviorHelperFactory factory,uint target,int maxStage=0,Func<bool>? hostCurrent=null,uint minSeen=0)
         :base(m.Robot,"SearchForBlock",parent,factory)
     {
-        _m=m;_parent=parent;_hostCurrent=hostCurrent;HostCurrent=hostCurrent;Target=target;MaxStage=maxStage;
+        _m=m;_parent=parent;_hostCurrent=hostCurrent;HostCurrent=hostCurrent;Target=target;MaxStage=maxStage;MinSeen=minSeen;
         if(m.Robot.Engine.Robot?.HasExternalInterface==true)
             _observed=m.Robot.Engine.AnimationMessages.SubscribeMessage(0x44,true,OnObserved);
     }
@@ -48,9 +50,9 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     {
         if(!Current())return;
         lock(_stateGate){if(_hostUnavailable||_retired)return;}
-        var target=_m.World.GetLocatedObjectByIdHelper(Target);
+        var target=HasTarget?_m.World.GetLocatedObjectByIdHelper(Target):null; // 0x005BAF3E..0x005BAF56
         if(!Current())return;
-        bool missing=target is null;
+        bool missing=HasTarget&&target is null;
         bool finish;
         lock(_stateGate)
         {
@@ -62,12 +64,16 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
             // Checked SH7/A21 (5BB480..500): default filter intentionally invalidates the in-memory located world.
             if(target?.PoseState==PoseState.Known&&MaxStage>=1)_m.World.DeleteLocatedObjects(new BlockWorldFilter());
             if(!Current())return;
-            // 5BB562 deletion returns before the unconditional native failure store5BB5BA/5BB5D0.
-            lock(_stateGate){if(!_hostUnavailable&&!_retired)StoreStatus(BehaviorStatus.Failure);}
+            // 0x005BB5BA..0x005BB5D0: a specific search fails; an untargeted search checks the count.
+            lock(_stateGate)
+            {
+                if(!_hostUnavailable&&!_retired)
+                    StoreStatus(!HasTarget && (uint)_seen.Count >= MinSeen ? BehaviorStatus.Complete : BehaviorStatus.Failure);
+            }
             return;
         }
         NativeNearbySearchRunner NewNearby()=>new(_m,Target,-20f,100f,BitConverter.UInt32BitsToSingle(0xBDB2B8C2));
-        NativeTurnInPlaceRunner Turn(float angle)=>new(_m,new TurnInPlaceSpec(angle,false,SearchForNearbyObjectAction.TurnToleranceRad,true,false,0,0,false));
+        NativeTurnInPlaceRunner Turn(float angle)=>new(_m,new TurnInPlaceSpec(angle,false,TurnInPlaceAction.MinToleranceRad,true,false,0,0,false));
         var sequence=new SearchSequence(this);
         if(!Current()){sequence.RetireNeverAdmittedTree();return;}
         Sequence=sequence;
@@ -83,7 +89,8 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
             var nearby=NewNearby();
             if(!Current()){nearby.RetireNeverAdmittedTree();sequence.RetireNeverAdmittedTree();return;}
             Nearby=nearby;
-            if(!Add(new NativeTurnTowardsObjectRunner(_m,Target,NativeTurnTowardsObjectRunner.AnyCode,Radians.Pi,false,false),true)){nearby.RetireNeverAdmittedTree();return;}
+            // 0x005BAFD4..0x005BB03E: the initial turn requires a target. Nearby always runs.
+            if(HasTarget&&!Add(new NativeTurnTowardsObjectRunner(_m,Target,NativeTurnTowardsObjectRunner.AnyCode,Radians.Pi,false,false),true)){nearby.RetireNeverAdmittedTree();return;}
             if(!Add(nearby,false))return;
         }
         else
@@ -91,11 +98,11 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
             if(!Add(new DriveStraightAction(_m,-20f,20f,false),true))return;
             if(!Add(Turn(Radians.Pi/4f),true))return;
             if(!Add(Turn(Radians.Pi/4f),true))return;
-            if(!Add(NewNearby(),true))return;
+            if(HasTarget&&!Add(NewNearby(),true))return; // 0x005BB266..0x005BB26C
             if(!Add(new DriveStraightAction(_m,-20f,20f,false),true))return;
             if(!Add(Turn(-3f*Radians.Pi/4f),true))return;
             if(!Add(Turn(-Radians.Pi/4f),true))return;
-            if(!Add(NewNearby(),true))return;
+            if(HasTarget&&!Add(NewNearby(),true))return; // 0x005BB364..0x005BB36A
         }
         BeforeActionPublicationForTest?.Invoke();
         if(!Current()){sequence.RetireNeverAdmittedTree();return;}
@@ -126,6 +133,13 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
         lock(_stateGate)
         {
             if(_retired||_hostUnavailable)return;
+            // 0x005BB81C..0x005BB82C reads the current distinct count. The insert at
+            // 0x005BB816 belongs to the specific-target branch.
+            if(!HasTarget)
+            {
+                if(MinSeen!=0&&(uint)_seen.Count>=MinSeen)StoreStatus(BehaviorStatus.Complete);
+                return;
+            }
             if(value.ObjectId==Target){StoreStatus(BehaviorStatus.Complete);return;}
             if(_seen.Contains(value.ObjectId))return;
         }

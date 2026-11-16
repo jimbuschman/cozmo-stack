@@ -67,7 +67,7 @@ internal sealed partial class M15CubeRun
             foreach (var step in PersonalityHw.Steps)
             {
                 Console.WriteLine($"\nPress Enter to start [{step.Id}].");
-                ReadPersonalityInput();
+                ReadOperatorInput();
                 RunPersonalityStep(step);
             }
         }
@@ -90,7 +90,7 @@ internal sealed partial class M15CubeRun
             if (step.Id == "alone")
             {
                 Console.WriteLine("Press Enter once the area is clear to start the idle timer.");
-                ReadPersonalityInput();
+                ReadOperatorInput();
                 idleStart = Now;
                 Event("idle-window-start", new() { ["minutes"] = PersonalityHw.IdleMinutes });
                 cancel.Token.WaitHandle.WaitOne(TimeSpan.FromMinutes(PersonalityHw.IdleMinutes));
@@ -98,16 +98,7 @@ internal sealed partial class M15CubeRun
                 cancel.Token.ThrowIfCancellationRequested();
                 Event("idle-window-end", new());
             }
-            Console.WriteLine(step.Question + " [yes/no]");
-            while (observed is null)
-            {
-                switch (ReadPersonalityInput().Trim().ToLowerInvariant())
-                {
-                    case "y" or "yes": observed = true; break;
-                    case "n" or "no": observed = false; break;
-                    default: Console.WriteLine("Enter yes or no."); break;
-                }
-            }
+            observed = ReadYesNo(step.Question);
             answers[step.Id] = observed;
             Event("operator-observation", new() { ["phase"] = step.Id, ["question"] = step.Question, ["observed"] = observed });
         }
@@ -123,13 +114,6 @@ internal sealed partial class M15CubeRun
             phases.Add(phase);
             Event("phase-end", (JsonObject)phase.DeepClone());
         }
-    }
-
-    string ReadPersonalityInput()
-    {
-        string? input = ReadLineBounded();
-        cancel.Token.ThrowIfCancellationRequested();
-        return input ?? throw new InvalidOperationException("Operator input closed. The personality observations ended early.");
     }
 
     JsonArray PersonalityReports(double start, double end)

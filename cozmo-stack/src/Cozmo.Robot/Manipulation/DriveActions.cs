@@ -734,7 +734,7 @@ public readonly record struct DriveStraightTick(bool LastPathFailed, bool HasPat
 public class DriveStraightAction : ActionRunner, IDisposable
 {
     private readonly ManipulationSystem _m;
-    private readonly EngineRobot? _nativeOwner;
+    private protected readonly EngineRobot? _nativeOwner;
     internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _started, _destroyed;
     private readonly float _nativeSpeed;

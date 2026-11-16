@@ -89,17 +89,39 @@ internal sealed class NativeDriveInDesperationBehavior : SteppedBehavior
         goal.Node!.Transform = new Transform3d(rotation, goal.Translation).TranslateForward((float)distance);
         var action = new DriveToPoseAction(_m, true, false);
         action.SetNativeGoals(new[] { goal });
-        StartActing(action, _ => {
-                if (!_useCubes) return;
-            SetStateName("SearchForCube");
-            ReportMissing("M12-010/M8-011: SearchForBlockHelper sentinel target -1, minimum seen 1, maximum stage 1 is unavailable; search motions skipped, no result or callback substituted", new HashSet<string>());
-        });
+        StartActing(action, _ => { if (_useCubes) SearchForCube(); }); // 0x005DA2DE..0x005DA2EC
+    }
+
+    private void SearchForCube()
+    {
+        SetStateName("SearchForCube");
+        if (Context.AI is not { } ai)
+        {
+            ReportMissing("M8-011 DriveInDesperation 0x005D96F8: actual AI helper owner unavailable");
+            return;
+        }
+        // 0x005D970E..0x005D9744: ID -1, minSeen 1, maxStage 1, DriveToCube on success.
+        var helper = ai.Helpers.Factory.CreateNativeSearchForBlock(_m, this, uint.MaxValue, maxStage: 1, minSeen: 1);
+        try { SmartDelegateToHelper(helper, _ => DriveToCube(), null); }
+        finally { helper.Release(); }
     }
     private void DriveToCube()
     {
         SetStateName("DriveToCube");
-        if (_target == uint.MaxValue) { ReportMissing("MISSING: M12-010 sentinel search success target join"); return; }
         using var mutation = _m.World.EnterPoseMutation();
+        if (_target == uint.MaxValue)
+        {
+            // 0x005D98BE..0x005D98DA: select a recent cube from the world on success.
+            var recent = _m.World.FindMostRecentlyObservedObject(_filter);
+            if (recent is null)
+            {
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "BehaviorDriveInDesperation.DriveToCube.NoCube",
+                    $"{Id}: Trying to drive to cube, but no target set and no recent cube seen");
+                Idle();
+                return;
+            }
+            _target = recent.ObjectId;
+        }
         var obj = _m.World.GetLocatedObjectByIdHelper(_target);
         if (obj is null || !(CubeGeometry.IsCube(obj.Type) || obj.Type == ObjectType.Charger_Basic)) { _target = uint.MaxValue; Idle(); return; }
         var main = _robot.GetCheckedMainPose();

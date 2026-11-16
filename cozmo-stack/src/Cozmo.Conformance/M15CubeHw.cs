@@ -47,10 +47,10 @@ public static class M15CubeHw
     public const string MoveText = "Now move the cube about 25 cm (10 in) in front of him and a little to one side,\n"
         + "still UPRIGHT (lights on top) with a side marker facing roughly toward him. He will drive to it. Press Enter when it is in place.";
 
-    public static List<JsonObject> LoadRecords(string path, bool skills = false, bool freeplayControl = false, bool personality = false)
+    public static List<JsonObject> LoadRecords(string path, bool skills = false, bool freeplayControl = false, bool personality = false, bool commands = false)
     {
         var all = JsonNode.Parse(File.ReadAllText(path))!["records"]!.AsArray().Select(x => x!.AsObject()).ToDictionary(x => x["id"]!.GetValue<string>());
-        var ids = personality ? PersonalityHw.RecordIds
+        var ids = commands ? CommandsHw.RecordIds : personality ? PersonalityHw.RecordIds
             : freeplayControl ? new[] { "M15-031", "M15-058", "M8-012", "M8-013", "M8-015", "M7-019" }
             : skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041", "M12-023", "M12-024", "M12-032" }) : RecordIds;
         var missing = ids.Where(id => !all.ContainsKey(id)).ToArray();
@@ -63,8 +63,8 @@ public static class M15CubeHw
         try
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
-            bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false, personality = false;
-            string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false, personality = false, commands = false;
+            string? resources = null, output = null, banks = null; IPAddress ip = RobotAddress.DefaultFor(false);
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
@@ -73,22 +73,28 @@ public static class M15CubeHw
                     case "--skills": skills = true; break;
                     case "--freeplay-control": freeplayControl = true; break;
                     case "--personality": personality = true; break;
+                    case "--commands": commands = true; break;
+                    case "--banks": banks = args[++i]; break;
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
-            if ((freeplayControl || personality) && (skills || withDrive || freeplayControl && personality))
-                throw new ArgumentException("Run the Freeplay control, personality, and cube rounds separately.");
-            if (personality && yes && !validate)
-                throw new ArgumentException("The personality round needs the operator's observations. Omit --yes.");
-            string testId = personality ? PersonalityHw.TestId : TestId;
-            var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality);
+            int standaloneCount = new[] { freeplayControl, personality, commands }.Count(enabled => enabled);
+            if (standaloneCount > 1 || (standaloneCount == 1 && (skills || withDrive)))
+                throw new ArgumentException("Run the Freeplay control, personality, commands, and cube rounds separately.");
+            if ((personality || commands) && yes && !validate)
+                throw new ArgumentException("This round needs the operator's observations. Omit --yes.");
+            if (banks is not null && !commands)
+                throw new ArgumentException("--banks applies to the commands round.");
+            string testId = commands ? CommandsHw.TestId : personality ? PersonalityHw.TestId : TestId;
+            var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality, commands);
             if (validate)
             {
                 Console.WriteLine($"{testId}: {records.Count} valid records; no network opened.");
                 if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
                 if (freeplayControl) Console.WriteLine($"{FreeplaySetup}\nFreeplay for {FreeplaySeconds} s, queue CozmoSaysSpeakLoop once, then another {FreeplaySeconds} s of Freeplay.");
                 if (personality) PersonalityHw.PrintPlan();
+                if (commands) CommandsHw.PrintPlan();
                 return 0;
             }
             if (Robot.Emulation.ShippedLibraries.FindLibDir() is null)
@@ -98,9 +104,12 @@ public static class M15CubeHw
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + testId + "-" + Guid.NewGuid().ToString("N")[..6]);
             return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive)
-            { Skills = skills, FreeplayControl = freeplayControl, Personality = personality }.Execute();
+            {
+                Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
+                CommandBanks = commands ? Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta")) : null,
+            }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -121,7 +130,10 @@ internal sealed partial class M15CubeRun
     public bool Skills { get; init; }
     public bool FreeplayControl { get; init; }
     public bool Personality { get; init; }
-    string RunName => Personality ? "Personality observations" : FreeplayControl ? "Freeplay control" : "Cube pickup and put-down";
+    public bool Commands { get; init; }
+    public string? CommandBanks { get; init; }
+    string RunName => Commands ? "Outside-AI commands" : Personality ? "Personality observations"
+        : FreeplayControl ? "Freeplay control" : "Cube pickup and put-down";
     double Now => clock.Elapsed.TotalMilliseconds;
     public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes, bool withDrive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; this.withDrive = withDrive; }
@@ -136,10 +148,33 @@ internal sealed partial class M15CubeRun
         pendingRead = null; return read.GetAwaiter().GetResult();
     }
 
+    string ReadOperatorInput()
+    {
+        string? input = ReadLineBounded();
+        cancel.Token.ThrowIfCancellationRequested();
+        return input ?? throw new InvalidOperationException("Operator input closed. The observations ended early.");
+    }
+
+    bool ReadYesNo(string question)
+    {
+        Console.WriteLine(question + " [yes/no]");
+        while (true)
+        {
+            switch (ReadOperatorInput().Trim().ToLowerInvariant())
+            {
+                case "y" or "yes": return true;
+                case "n" or "no": return false;
+                default: Console.WriteLine("Enter yes or no."); break;
+            }
+        }
+    }
+
     public int Execute()
     {
         Directory.CreateDirectory(bundle);
-        Console.WriteLine((Personality
+        Console.WriteLine((Commands
+            ? "OUTSIDE-AI COMMANDS\n\n" + CommandsHw.Setup
+            : Personality
             ? "PERSONALITY OBSERVATIONS (about 25 minutes)\n\n" + PersonalityHw.Setup
             : FreeplayControl
             ? "FREEPLAY CONTROL (about 3 minutes)\n\n" + M15CubeHw.FreeplaySetup
@@ -149,12 +184,12 @@ internal sealed partial class M15CubeRun
             + "Nothing passes or fails here; the recording and your answers are reviewed afterwards.\n\n"
             + M15CubeHw.SetupText) + "\n\nCtrl+C stops the run at any time; everything recorded so far is still saved.\nResults folder: " + bundle);
         ConsoleCancelEventHandler interrupt = (_, e) => { e.Cancel = true; cancel.Cancel(); }; Console.CancelKeyPress += interrupt;
-        using var timer = new Timer(_ => cancel.Cancel(), null, TimeSpan.FromMinutes(Personality ? 40 : 15), Timeout.InfiniteTimeSpan);
+        using var timer = new Timer(_ => cancel.Cancel(), null, TimeSpan.FromMinutes(Personality ? 40 : Commands ? 30 : 15), Timeout.InfiniteTimeSpan);
         try
         {
             if (!yes) { Console.WriteLine("\nWhen setup is complete, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
             using var resolution = new HighResolutionTimer();
-            var options = HardwareEngineOptions.Create(resources, log: errors.Enqueue, beforeStart: e =>
+            var options = HardwareEngineOptions.Create(resources, log: errors.Enqueue, speechSoundBankDirectory: CommandBanks, beforeStart: e =>
             {
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;
@@ -162,8 +197,10 @@ internal sealed partial class M15CubeRun
                 e.RobotObservedObject += r => observations.Enqueue((Now, r));
                 if (FreeplayControl || Personality) SubscribeBehaviorReports(e);
                 if (Personality) SubscribePersonalityReports(e);
+                if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
+            if (Commands) SubscribeCommandCubeReports(robot);
             if (Skills)
                 robot.Vision.World.ObjectObserved += o =>
                 {
@@ -211,7 +248,8 @@ internal sealed partial class M15CubeRun
             }
             robot.StartCamera();
             Event("camera-started", new());
-            if (Personality) RunPersonality(robot);
+            if (Commands) RunCommands(robot);
+            else if (Personality) RunPersonality(robot);
             else if (FreeplayControl) RunFreeplayControl(robot);
             else RunCubeRounds(robot);
         }
@@ -223,7 +261,9 @@ internal sealed partial class M15CubeRun
             Console.CancelKeyPress -= interrupt;
         }
         WriteBundle();
-        Console.WriteLine("\n=== TEST FINISHED ===\nNothing passes or fails here. Send this folder for review: " + bundle);
+        Console.WriteLine(Commands
+            ? "\n=== TEST FINISHED ===\nSend this folder for review: " + bundle
+            : "\n=== TEST FINISHED ===\nNothing passes or fails here. Send this folder for review: " + bundle);
         return 0;
     }
 
@@ -573,8 +613,11 @@ internal sealed partial class M15CubeRun
                 else o["timeline"] = Timeline(wire, start, end);
             }
             var missing = stackLines.Where(l => l.Contains("MISSING", StringComparison.Ordinal)).Distinct().ToArray();
-            File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), RunName + " test. Nothing here passes or fails.\n\n"
-                + string.Join("\n", phases.Select(p => Personality
+            File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), RunName + (Commands
+                ? " test. Only sourced result codes are graded.\n\n" : " test. Nothing here passes or fails.\n\n")
+                + string.Join("\n", phases.Select(p => Commands
+                    ? $"{p!["phase"]}: {p["verdict"]}, result={p["engineResult"]}, observed={p["observed"]} ({p["detail"]})"
+                    : Personality
                     ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]!.AsArray().Count}"
                     : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
                 + "\n\nCube reports seen: " + observations.Count
@@ -591,7 +634,9 @@ internal sealed partial class M15CubeRun
             var files = new JsonArray();
             string[] sources = { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
                 "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/fidelity_manifest.json" };
-            var runSources = Personality
+            var runSources = Commands
+                ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/CommandsHw.cs", "re-analysis/acceptance/hardware/scripts/ai-commands-hw-1.md" })
+                : Personality
                 ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/PersonalityHw.cs", "re-analysis/acceptance/hardware/scripts/personality-hw-1.md" })
                 : sources.Append("re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md");
             foreach (var relative in runSources)
@@ -601,12 +646,14 @@ internal sealed partial class M15CubeRun
                 files.Add(new JsonObject { ["path"] = relative, ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant() });
             }
             string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
-            var report = new JsonObject { ["testId"] = Personality ? PersonalityHw.TestId : M15CubeHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv),
+            var report = new JsonObject { ["testId"] = Commands ? CommandsHw.TestId : Personality ? PersonalityHw.TestId : M15CubeHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv),
                 ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count, ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(),
                 ["missingReported"] = JsonSerializer.SerializeToNode(missing), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors),
-                ["acceptance"] = Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance" };
+                ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance" };
             File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.WriteAllText(Path.Combine(bundle, "README.txt"), Personality
+            File.WriteAllText(Path.Combine(bundle, "README.txt"), Commands
+                ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, their source references and operator observations. events.jsonl contains the timestamped public face and object reports and engine diagnostics."
+                : Personality
                 ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
                 : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
         }

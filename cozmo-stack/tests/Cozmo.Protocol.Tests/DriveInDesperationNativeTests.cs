@@ -302,37 +302,85 @@ public class DriveInDesperationNativeTests
         }
         finally { SteppedBehavior.MissingReported -= Observe; }
     }
-    // reach: supplied initial round count, two manager activations and terminal Wait/Drive results, through actual ActionList callbacks.
-    // 005D970E..9744 has no failure callback; the unavailable sentinel helper and its motions are not fabricated.
+    // 0x005BB81C checks the existing count for -1. Only the specific-target branch inserts at 0x005BB816.
     [Fact]
-    public void EachSentinelSearchOccurrenceReportsSkippedMotions()
+    public void SentinelSearchRunsBothStagesAndAnObservationDoesNotIncrementItsCount()
     {
         using var f = new Fixture();
-        var messages = new List<string>(); void Observe(string message) => messages.Add(message);
-        SteppedBehavior.MissingReported += Observe;
-        try
-        {
-            var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyState"]);
-            typeof(NativeDriveInDesperationBehavior).GetField("_rounds", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(behavior, 3);
-            for (int i = 0; i < 2; i++)
-            {
-                Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-                Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
-                Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction()).State = 0; f.Robot.ActionList.Update();
-                f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
-            }
-            Assert.Equal(2, messages.Count(m => m.Contains("M12-010/M8-011") && m.Contains("search motions skipped")));
-        }
-        finally { SteppedBehavior.MissingReported -= Observe; }
+        var behavior = StartEnergySearch(f);
+        var helpers = f.Runtime.AI.Helpers;
+        var search = Assert.IsType<NativeSearchForBlockHelper>(Assert.Single(helpers.StackHelpers));
+        Assert.Equal((uint.MaxValue, 1u, 1), (search.Target, search.MinSeen, search.MaxStage));
+        Assert.Equal("SearchForCube", behavior.StateName);
+        Assert.Equal(1, search.Stage);
+        var nearby = Assert.IsAssignableFrom<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
+        Assert.IsType<NativeNearbySearchRunner>(Assert.Single(nearby.Children));
+
+        var cube = f.Add(7, 200);
+        f.Rig.Engine.AnimationMessages.Deliver(0x44, true, new NativeObservedObject(cube.LastObservedTimestamp, 2, (uint)cube.Type, cube.ObjectId));
+        Assert.Equal(BehaviorStatus.Running, search.Status);
+        nearby.State = EngineActionResult.Success;
+        f.Robot.ActionList.Update();
+
+        Assert.Equal(2, search.Stage);
+        var sweep = Assert.IsAssignableFrom<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
+        Assert.Collection(sweep.Children,
+            a => Assert.IsType<DriveStraightAction>(a),
+            a => Assert.IsType<NativeTurnInPlaceRunner>(a),
+            a => Assert.IsType<NativeTurnInPlaceRunner>(a),
+            a => Assert.IsType<DriveStraightAction>(a),
+            a => Assert.IsType<NativeTurnInPlaceRunner>(a),
+            a => Assert.IsType<NativeTurnInPlaceRunner>(a));
+        sweep.State = EngineActionResult.Success;
+        f.Robot.ActionList.Update();
+        Assert.Equal(BehaviorStatus.Failure, search.Status);
+        helpers.Update(f.Rig.Robot);
+        Assert.Empty(helpers.StackHelpers);
+        Assert.Null(f.Robot.ActionList.GetCurrentAction());
+        Assert.Equal("SearchForCube", behavior.StateName); // No failure callback.
     }
+
+    [Fact]
+    public void SuppliedSearchSuccessStartsDriveToTheMostRecentlyObservedCube()
+    {
+        using var f = new Fixture();
+        var behavior = StartEnergySearch(f);
+        var helpers = f.Runtime.AI.Helpers;
+        var search = Assert.IsType<NativeSearchForBlockHelper>(Assert.Single(helpers.StackHelpers));
+        f.Add(7, 300).LastObservedTimestamp = 100;
+        f.Add(8, 460).LastObservedTimestamp = 200;
+        f.Add(9, 600).LastObservedTimestamp = 200;
+
+        // The checked -1 path cannot fill its own count. Inject only the helper status;
+        // its normal success callback must select the cube and start the drive.
+        typeof(IHelper).GetMethod("StoreStatus", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(search, new object[] { BehaviorStatus.Complete });
+        using (f.Rig.Engine.EnterSynchronousOwner())
+            helpers.Update(f.Rig.Robot);
+
+        Assert.Empty(helpers.StackHelpers);
+        Assert.Equal("DriveToCube", behavior.StateName);
+        Assert.Equal(8u, f.M.World.SelectedObjectId); // Strict timestamp comparison keeps the first tie.
+        Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction());
+    }
+
+    private static NativeDriveInDesperationBehavior StartEnergySearch(Fixture f)
+    {
+        var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyState"]);
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(behavior.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        Assert.IsType<NativeTimedWaitRunner>(f.Robot.ActionList.GetCurrentAction()).State = EngineActionResult.Success;
+        f.Robot.ActionList.Update();
+        Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction()).State = EngineActionResult.Success;
+        f.Robot.ActionList.Update();
+        return behavior;
+    }
+
     // reach: supplied manager activation, empty native world, and real Wait/Drive completion.
     // 0x5d9d8a..9db8 stamps cooldown before the empty query; 0x5da2de calls sentinel search only after drive completion.
     [Fact]
-    public void EmptyWorldStampsCooldownThenReportsMissingSentinelSearch()
+    public void EmptyWorldStampsCooldownThenDelegatesToSentinelSearch()
     {
         using var f = new Fixture();
-        var missing = new List<string>(); void Observe(string message) => missing.Add(message);
-        SteppedBehavior.MissingReported += Observe;
         try
         {
             var behavior = Assert.IsType<NativeDriveInDesperationBehavior>(f.Runtime.Bound["Needs_SevereLowEnergyState"]);
@@ -348,10 +396,10 @@ public class DriveInDesperationNativeTests
             Assert.InRange((float)drive.Goal.Translation.X, 38.30f, 38.31f);
             Assert.InRange((float)drive.Goal.Translation.Y, -32.15f, -32.13f);
             drive.State = 0; f.Robot.ActionList.Update();
-            Assert.Contains(missing, message => message.Contains("M12-010/M8-011") && message.Contains("sentinel"));
+            Assert.IsType<NativeSearchForBlockHelper>(Assert.Single(f.Runtime.AI.Helpers.StackHelpers));
             f.Robot.BehaviorManagerOwner.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
         }
-        finally { f.Rig.Engine.ContextRandom.WordSourceForTest = null; SteppedBehavior.MissingReported -= Observe; }
+        finally { f.Rig.Engine.ContextRandom.WordSourceForTest = null; }
     }
     // reach: supplied manager activation, non-planar main pose and RNG words; real wait completion and drive action.
     // 0x5d934c..93fe: current full rotation multiplied by Rz(yaw + signed 40 degrees).

@@ -93,8 +93,8 @@ public sealed class BehaviorHelperFactory
 {
     internal BehaviorHelperFactory(BehaviorHelperComponent component) { Component = component; }
     public BehaviorHelperComponent Component { get; }
-    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,int maxStage=0,Func<bool>? hostCurrent=null)
-    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target,maxStage,hostCurrent);return Component.AddHelperToComponent(ref helper);}
+    internal HelperRef CreateNativeSearchForBlock(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,int maxStage=0,Func<bool>? hostCurrent=null,uint minSeen=0)
+    {IHelper? helper=new NativeSearchForBlockHelper(m,parent,this,target,maxStage,hostCurrent,minSeen);return Component.AddHelperToComponent(ref helper);}
     internal HelperRef CreateNativeDriveTo(Manipulation.ManipulationSystem m,SteppedBehavior parent,uint target,bool force,Manipulation.PreActionType type=Manipulation.PreActionType.Docking,Func<bool>? hostCurrent=null)
     {IHelper? helper=new NativeDriveToHelper(m,parent,this,target,force,type,hostCurrent);return Component.AddHelperToComponent(ref helper);}
 }

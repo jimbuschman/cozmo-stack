@@ -1,0 +1,306 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Cozmo.Protocol;
+using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Vision;
+
+namespace Cozmo.Conformance;
+
+internal static class CommandsHw
+{
+    internal const string TestId = "AI-COMMANDS-HW-1";
+    internal const int TrackSeconds = 10;
+    internal const string Setup = "Put Cozmo on a clear, well-lit surface, off his charger and well away from edges. "
+        + "Leave room to drive and turn. Have one working cube and one operator in view during the applicable prompts.";
+
+    internal sealed record Step(string Id, string Plan, string Question, string Record, string Address, uint? Expected = 0);
+    internal static readonly Step[] Steps =
+    {
+        new("head", "Raise the head to 0.18 rad.", "Did his head tilt up?", "M4-016", "0x005485CC"),
+        new("lift", "Raise the lift to 45 mm.", "Did his lift move to about the requested height?", "M4-016", "0x005493F6"),
+        new("drive-straight", "Drive straight 100 mm.", "Did he drive about 10 cm straight ahead?", "M13-013", "0x005478C0"),
+        new("turn-in-place", "Turn left 90 degrees in place.", "Did he turn left about 90 degrees?", "M13-022", "0x0054642C"),
+        new("turn-to-face", "Turn toward the operator's observed face.", "Did he turn toward your face?", "M14-002", "0x0054C500"),
+        new("turn-to-cube", "Turn toward a located light cube.", "Did he turn toward the cube?", "M13-020", "0x0054ADD4"),
+        new("track-face", "Request face tracking and cancel after 10 seconds.", "Did he follow your face as you moved?", "M8-015", "0x005409DC–0x00540A46", 0x02000000),
+        new("animation", "Play CozmoSaysSpeakLoop once.", "Did you see a face animation?", "M8-020", "0x005441C0"),
+        new("sentence", "Say one English sentence.", "Did you hear Cozmo say the sentence?", "M14-006", "0x00561D4C"),
+        new("go-to-pose", "Drive to a point 200 mm ahead and turn left 90 degrees.", "Did he reach the point and turn left?", "M12-023", "0x0055AB4C"),
+        new("teach-face", "Teach the operator's face a temporary name.", "Did you observe him learning the name?", "M14-012", "0x005FE520–0x005FE528"),
+        new("rename-face", "Rename the newly enrolled face.", "Did you observe him acknowledge the new name?", "M14-012", "0x00657B66–0x00657B82", null),
+        new("erase-face", "Erase the same enrolled face ID.", "Did you observe the temporary face being erased?", "M14-012", "E2G 0x57", null),
+    };
+
+    internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
+        { "M14-003", "M14-008", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
+
+    internal static void PrintPlan()
+    {
+        Console.WriteLine(Setup + "\nFreeplay is off.");
+        foreach (var step in Steps)
+        {
+            string check = step.Expected is { } expected ? $"expect 0x{expected:X8}" : "report only";
+            Console.WriteLine($"[{step.Id}] {step.Plan} {check} ({step.Record}, {step.Address})");
+        }
+        Console.WriteLine("The run also records public face, cube and object-pose reports and yes/no observations.");
+    }
+}
+
+internal sealed partial class M15CubeRun
+{
+    readonly ConcurrentQueue<(double At, RobotObservedFaceReport Report)> commandFaces = new();
+    static readonly JsonSerializerOptions CommandPayloadOptions = new()
+    { IncludeFields = true, NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals };
+
+    void SubscribeCommandReports(CozmoEngine engine)
+    {
+        engine.RobotObservedFace += report =>
+        {
+            commandFaces.Enqueue((Now, report));
+            var data = JsonSerializer.SerializeToNode(report, CommandPayloadOptions)!.AsObject();
+            data["recognizedByName"] = report.Name.Length != 0;
+            Event("face-seen", data);
+        };
+        engine.RobotChangedObservedFaceId += report => CommandReport("face-id-changed", report);
+        engine.RobotDeletedFace += report => CommandReport("face-lost", report);
+        engine.RobotObservedObject += report =>
+        {
+            if (report.Family == (uint)ObjectFamily.LightCube) CommandReport("cube-seen", report);
+        };
+        engine.ObjectPoseUnknown += report => CommandReport("object-pose-lost", report);
+        engine.FaceEnrollmentCompleted += report => CommandReport("face-enrollment-completed", report);
+        engine.FaceRenamed += report => CommandReport("face-renamed", report);
+        engine.FaceErased += report => CommandReport("face-erased", report);
+    }
+
+    void SubscribeCommandCubeReports(CozmoRobot r)
+    {
+        r.Cubes.CubeTapped += report => CommandReport("cube-tapped", report);
+        r.Cubes.CubeMoved += report => CommandReport("cube-moved", report);
+        r.Cubes.TapBroadcast += report => CommandReport("cube-tap-report", report);
+        r.Cubes.MovementBroadcast += report => CommandReport("cube-movement-report", report);
+    }
+
+    void CommandReport<T>(string kind, T report) =>
+        Event(kind, JsonSerializer.SerializeToNode(report, CommandPayloadOptions)!.AsObject());
+
+    void RunCommands(CozmoRobot r)
+    {
+        r.SetEnableFreeplayActivity(false);
+        PromptCommand("Clear space ahead and to Cozmo's left, then press Enter for head, lift, and drive commands.");
+        RunCommand("head", t => r.Motion.QueueAiHeadAngleAsync(0.18f, t), a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+        RunCommand("lift", t => r.Motion.QueueAiLiftHeightAsync(45, t), a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+        RunCommand("drive-straight", t => r.Motion.QueueAiDriveStraightAsync(100, 60, cancellationToken: t), a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+        RunCommand("turn-in-place", t => r.Motion.QueueAiTurnInPlaceAsync(MathF.PI / 2,
+            TurnInPlaceAction.DefaultMaxSpeed, TurnInPlaceAction.DefaultAccel, cancellationToken: t),
+            a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+
+        var face = FindCommandFace("Show your face slightly to one side in good light and press Enter.");
+        if (face is not null)
+            RunCommand("turn-to-face", t => r.Motion.QueueAiTurnToFaceAsync(face.FaceId, MathF.PI, t),
+                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+        else SkipCommand("turn-to-face", "No fresh public face observation.");
+
+        PromptCommand("Place one upright light cube in view with a marker facing Cozmo. Press Enter when ready.");
+        double since = Now;
+        RobotObservedObjectReport? cube = null;
+        Poll(() => (cube = observations.LastOrDefault(o => o.T >= since && o.Report.Family == (uint)ObjectFamily.LightCube).Report) is not null, 20000);
+        if (cube is not null)
+            RunCommand("turn-to-cube", t => r.Motion.QueueAiTurnToObjectAsync(cube.ObjectId, MathF.PI, t),
+                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+        else SkipCommand("turn-to-cube", "No fresh public light-cube observation.");
+        PromptCommand("Tap the cube, then move it. Keep it in view briefly, then take it out of view. Press Enter when done.");
+        RecordOperatorAnswer("cube-events", "Did you observe Cozmo respond to the cube being tapped or moved?");
+
+        var trackFace = FindCommandFace("Show your face again and press Enter. Once tracking starts, slowly move side to side for 10 seconds.");
+        if (trackFace is not null)
+            RunCommand("track-face", t => r.Motion.QueueAiTrackFaceAsync(trackFace.FaceId, headOnly: false, cancellationToken: t),
+                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 16000, TimeSpan.FromSeconds(CommandsHw.TrackSeconds));
+        else SkipCommand("track-face", "No fresh public face observation.");
+        PromptCommand("Move out of the camera's view. Press Enter when ready.");
+        RecordOperatorAnswer("face-events", "Did you observe Cozmo notice or recognize you?");
+        RunCommand("animation", t => r.Motion.QueueAiAnimationAsync(AnimationTrigger.CozmoSaysSpeakLoop, cancellationToken: t),
+            a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 65000);
+        RunCommand("sentence", t => r.SayEnglishSentenceAsync("Hello. It is nice to see you.", t),
+            a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 65000);
+
+        PromptCommand(M15CubeHw.GotoSetup + " Press Enter when the area is clear.");
+        if (r.Motion.GetAiBodyObservation().LastState is { } pose)
+        {
+            float x = pose.Pose.X + 200 * MathF.Cos(pose.PoseAngleRad);
+            float y = pose.Pose.Y + 200 * MathF.Sin(pose.PoseAngleRad);
+            float angle = Radians.Rescale(pose.PoseAngleRad + MathF.PI / 2);
+            RunCommand("go-to-pose", t => r.Motion.QueueAiGotoPoseAsync(x, y, angle, t),
+                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
+        }
+        else SkipCommand("go-to-pose", "No published engine pose.");
+
+        RunCommandEnrollment(r);
+    }
+
+    RobotObservedFaceReport? FindCommandFace(string prompt)
+    {
+        PromptCommand(prompt);
+        double since = Now;
+        RobotObservedFaceReport? face = null;
+        Poll(() => (face = commandFaces.LastOrDefault(f => f.At >= since).Report) is not null, 20000);
+        return face;
+    }
+
+    void RunCommand<T>(string id, Func<CancellationToken, Task<T>> request,
+        Func<T, (bool Admitted, uint? Result, string? Detail, bool Retired)> read,
+        int limitMs = 45000, TimeSpan? stopAfter = null)
+    {
+        CommandsHw.Step step = CommandsHw.Steps.Single(s => s.Id == id);
+        Console.WriteLine($"\n[{id}] {step.Plan}");
+        using var actionCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
+        Task<T>? task = null;
+        uint? result = null;
+        double begin = Now;
+        JsonObject phase;
+        try
+        {
+            phase = Phase(id, () =>
+            {
+                var queued = task = request(actionCancel.Token);
+                if (stopAfter is { } interval) actionCancel.CancelAfter(interval);
+                return (queued, () =>
+                {
+                    var value = read(queued.Result);
+                    result = value.Result;
+                    return value;
+                });
+            }, limitMs);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            phase = CommandPhase(id, begin, e.Message);
+        }
+        // A tracking result is judged only when the script reached its deliberate cancel interval.
+        bool scheduledStopReached = stopAfter is null || (actionCancel.IsCancellationRequested && !cancel.IsCancellationRequested);
+        if (stopAfter is { } duration)
+        {
+            phase["stopAfterMs"] = duration.TotalMilliseconds;
+            phase["plannedStopReached"] = scheduledStopReached;
+        }
+        if (task is { IsCompleted: false })
+        {
+            actionCancel.Cancel();
+            if (!Poll(() => task.IsCompleted, 3000))
+            {
+                phase["detail"] = "The action did not retire after cancellation.";
+                SaveCommandResult(step, phase, null, judge: false);
+                throw new InvalidOperationException($"{id}: the action did not retire after cancellation");
+            }
+            if (task.IsCompletedSuccessfully)
+                phase["cleanupEngineResult"] = FormatCode(read(task.Result).Result);
+        }
+        FinishCommand(step, phase, result, judge: scheduledStopReached || result != step.Expected);
+    }
+
+    void RunCommandEnrollment(CozmoRobot r)
+    {
+        string name = "Test Robin " + Guid.NewGuid().ToString("N")[..6];
+        string newName = name.Replace("Robin", "Wren", StringComparison.Ordinal);
+        PromptCommand($"Show your face for enrollment, preferably a face Cozmo does not already know. The temporary name is {name}. Press Enter when ready.");
+        // Unity's enrollment request stages its inputs. The configured enrollment owner is selected in Meet.
+        try
+        {
+            var enrolled = WaitCommandReport<FaceEnrollmentCompletedReport>("teach-face",
+                h => r.Engine.FaceEnrollmentCompleted += h, h => r.Engine.FaceEnrollmentCompleted -= h, _ => true,
+                () => { r.ActivateHighLevelActivity("MeetCozmoFindFaces"); r.SetFaceToEnroll(name); },
+                120000, report => report.Result);
+            if (enrolled is null) r.CancelFaceEnrollment();
+            if (enrolled is not { Result: 0, Id: > 0 } || enrolled.Name != name)
+            {
+                SkipCommand("rename-face", "No successful enrollment of this run's temporary face.");
+                SkipCommand("erase-face", "No successful enrollment of this run's temporary face.");
+                return;
+            }
+
+            WaitCommandReport<FaceRenamedReport>("rename-face",
+                h => r.Engine.FaceRenamed += h, h => r.Engine.FaceRenamed -= h,
+                e => e.Id == enrolled.Id && e.Name == newName,
+                () => r.UpdateEnrolledFaceById(enrolled.Id, name, newName), 10000);
+            WaitCommandReport<FaceErasedReport>("erase-face",
+                h => r.Engine.FaceErased += h, h => r.Engine.FaceErased -= h, e => e.Id == enrolled.Id,
+                () => r.EraseEnrolledFaceById(enrolled.Id), 10000);
+        }
+        finally { r.SetEnableFreeplayActivity(false); }
+    }
+
+    T? WaitCommandReport<T>(string id, Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
+        Func<T, bool> matches, Action request, int limitMs, Func<T, uint>? read = null) where T : class
+    {
+        var step = CommandsHw.Steps.Single(s => s.Id == id);
+        Console.WriteLine($"\n[{id}] {step.Plan}");
+        var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Receive(T report) { if (matches(report)) completion.TrySetResult(report); }
+        double begin = Now;
+        T? report = null;
+        string detail = "No matching engine report arrived within the observation window.";
+        subscribe(Receive);
+        try
+        {
+            request();
+            if (Poll(() => completion.Task.IsCompleted, limitMs))
+            {
+                report = completion.Task.Result;
+                detail = "Engine report received.";
+            }
+        }
+        catch (Exception e) when (e is not OperationCanceledException) { detail = e.Message; }
+        finally { unsubscribe(Receive); }
+        var phase = CommandPhase(id, begin, detail);
+        if (report is not null) phase["report"] = JsonSerializer.SerializeToNode(report);
+        FinishCommand(step, phase, report is null || read is null ? null : read(report));
+        return report;
+    }
+
+    void SkipCommand(string id, string reason)
+    {
+        Console.WriteLine($"\n[{id}] Skipped. {reason}");
+        var step = CommandsHw.Steps.Single(s => s.Id == id);
+        FinishCommand(step, CommandPhase(id, Now, reason), null);
+    }
+
+    JsonObject CommandPhase(string id, double begin, string detail) => new()
+    { ["phase"] = id, ["startMs"] = begin, ["endMs"] = Now, ["detail"] = detail };
+
+    void FinishCommand(CommandsHw.Step step, JsonObject phase, uint? actual, bool judge = true)
+    {
+        SaveCommandResult(step, phase, actual, judge);
+        phase["observed"] = RecordOperatorAnswer(step.Id, step.Question);
+        Event("command-result", (JsonObject)phase.DeepClone());
+    }
+
+    void SaveCommandResult(CommandsHw.Step step, JsonObject phase, uint? actual, bool judge)
+    {
+        phase["engineResult"] = FormatCode(actual);
+        phase["expected"] = FormatCode(step.Expected);
+        phase["source"] = new JsonObject { ["record"] = step.Record, ["address"] = step.Address };
+        string verdict = !judge || actual is null || step.Expected is null ? "OBSERVATION" : actual == step.Expected ? "PASS" : "FAIL";
+        phase["verdict"] = verdict;
+        phases.Add(phase);
+        Console.WriteLine($"    {verdict} {FormatCode(actual)} {phase["detail"]}");
+    }
+
+    void PromptCommand(string prompt)
+    {
+        Console.WriteLine("\n" + prompt);
+        ReadOperatorInput();
+    }
+
+    bool RecordOperatorAnswer(string phase, string question)
+    {
+        bool answer = ReadYesNo(question);
+        answers[phase] = answer;
+        Event("operator-observation", new() { ["phase"] = phase, ["question"] = question, ["observed"] = answer });
+        return answer;
+    }
+
+    static string? FormatCode(uint? code) => code is { } value ? $"0x{value:X8}" : null;
+}
