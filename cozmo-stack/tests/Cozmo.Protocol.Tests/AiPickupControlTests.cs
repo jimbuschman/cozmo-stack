@@ -9,12 +9,21 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class AiPickupControlTests
 {
-    [Fact]
-    public async Task DirectPickupUsesRealObservationDockAndCarry()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DirectPickupUsesRealObservationDockAndCarry(bool customProfile)
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
         f.Add();
-        var task=f.Rig.Robot.Motion.QueueAiPickupCubeAsync(7,false);
+        var motion = f.Rig.Robot.Motion;
+        var profile = customProfile
+            ? PathMotionProfile.Default with { IsCustom = true, DockSpeedMmps = 47f, DockAccelMmps2 = 125f, DockDecelMmps2 = 260f }
+            : PathMotionProfile.Default;
+        var task = customProfile
+            ? motion.QueueAiPickupCubeAsync(7, false, profile, CancellationToken.None)
+            : motion.QueueAiPickupCubeAsync(7, false);
+        Assert.Equal(customProfile, motion.Path.Field48);
         var action=Assert.IsType<NativePickupObjectRunner>(f.Robot.ActionList.GetCurrentAction());
         Assert.Equal((0x15,7u,false),(action.Type,action.RequiredTrackMask,action.CheckPreActionPose));
         bool dock=false;uint image=0;
@@ -27,6 +36,8 @@ public sealed class AiPickupControlTests
                 {
                     var request=Assert.Single(f.Rig.SentSince(0).OfType<DockWithObject>());
                     Assert.Equal((byte)2,request.DockingMethod);Assert.True(request.Field8);
+                    Assert.Equal((profile.DockSpeedMmps, profile.DockAccelMmps2, profile.DockDecelMmps2),
+                        (request.SpeedMmps, request.AccelMmps2, request.DecelMmps2));
                     f.Motors(RobotStatusFlag.IsPickingOrPlacing);
                     f.Rig.Data(new LiftLoad{Field0=true});
                     f.Rig.Data(new PickAndPlaceResult{Field1=true,Field3=2});
@@ -38,6 +49,7 @@ public sealed class AiPickupControlTests
             var result=await task.WaitAsync(TimeSpan.FromSeconds(2));
             Assert.True(result.Admitted);Assert.Equal(0u,result.EngineResult);
             Assert.Equal(7u,f.Robot.CarryingOwner!.CarriedObjectId);
+            Assert.False(motion.Path.Field48);
         }
         finally { f.Robot.ActionList.Clear(); }
     }

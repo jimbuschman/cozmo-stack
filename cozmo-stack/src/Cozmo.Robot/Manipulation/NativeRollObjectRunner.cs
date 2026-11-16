@@ -22,6 +22,8 @@ internal sealed class NativeRollObjectRunner:NativeVisionRunner
     private bool _sent,_light,_unavailable;
     internal Action<NativeActionUnavailable>? Unavailable;
     protected override string ActionName=>"RollObject";
+    protected override bool HasCustomMotionProfile => HasSelectedDockProfile;
+    public override bool SetMotionProfile() => ApplySelectedDockProfile(Action);
     internal short SavedTopMarker=>_topMarker;
     internal ActionRunner? VerifyChild=>_verify;
     internal CompoundActionSequential? Prepared=>_prepared;

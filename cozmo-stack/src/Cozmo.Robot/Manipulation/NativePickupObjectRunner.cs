@@ -21,6 +21,8 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
     private bool OwnerCurrent => _owner is null || !_owner.Lifetime.Destroying && ReferenceEquals(M.Robot.Engine.Robot,_owner);
     private bool Current => OwnerCurrent && (ScopedParentCurrent?.Invoke()??true) && !_ending && !DestructionObserved;
     protected override string ActionName=>"PickupObject";
+    protected override bool HasCustomMotionProfile => HasSelectedDockProfile;
+    public override bool SetMotionProfile() => ApplySelectedDockProfile(_pickup);
     internal NativePickupObjectRunner(ManipulationSystem m,uint id,bool checkPreActionPose=false):base(m,0x15,7)
     {_target=id;_pickup=new(m,id){CheckPreActionPose=checkPreActionPose};}
     internal NativePickupObjectRunner(ManipulationSystem m,EngineRobot owner,uint id,bool checkPreActionPose,bool directMarkerTurn)

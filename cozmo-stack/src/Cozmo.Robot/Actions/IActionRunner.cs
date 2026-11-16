@@ -303,6 +303,11 @@ public abstract class ActionRunner : IActionRunner
         }
     }
 
+    // IActionRunner+0x58 starts clear. Store the original Path recipient when SetForAction sets it.
+    private Action? _clearOwnedMotionProfile;
+    internal void OwnMotionProfile(Action clear) => _clearOwnedMotionProfile = clear;
+    private void ClearOwnedMotionProfile() => Interlocked.Exchange(ref _clearOwnedMotionProfile, null)?.Invoke();
+
     private int _everQueued;
     internal void MarkQueueAdmission()=>Interlocked.Exchange(ref _everQueued,1);
 
@@ -312,6 +317,7 @@ public abstract class ActionRunner : IActionRunner
         if(!CanRetireNeverAdmitted())
         { Behavior.SteppedBehavior.ReportMissing("M8-015 stale constructor retirement invariants failed; action retained"); return false; }
         DestructionObserved=true;
+        ClearOwnedMotionProfile();
         ActionRunnerTagCounter.Global.Release(Tag);
         if(OriginalTag!=Tag)ActionRunnerTagCounter.Global.Release(OriginalTag);
         return true;
@@ -615,7 +621,7 @@ public abstract class ActionRunner : IActionRunner
             EmitSource(EngineLogLevel.Error,null,"IActionRunner.Destructor.NotPreppedForCompletion",FormattableString.Invariant($"[{TagForLog}]"));
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         }
-        Behavior.SteppedBehavior.ReportMissing("M8-015 destructor owns-profile byte+0x58/ClearCustomMotionProfile0x005410F6 recipient is not bound; Path.HasCustomMotionProfile is a different input; no invented profile reset");
+        ClearOwnedMotionProfile(); // 0x005410EC..0x005410F6, before either tag is released.
         ActionRunnerTagCounter.Global.Release(Tag);ActionRunnerTagCounter.Global.Release(OriginalTag);
         // L15: head/lift/body stop checks are NOT gated by +0x56.
         uint stopped=0;
