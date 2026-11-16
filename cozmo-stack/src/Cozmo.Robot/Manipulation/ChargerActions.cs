@@ -478,10 +478,11 @@ public sealed class MountChargerAction
     /// <summary><c>BackupOntoChargerAction::CheckIfDone</c> 0x0054E7A8 over a <c>DriveStraightAction(-120.0f, 30.0f, false)</c>.</summary>
     private async Task<uint> RunBackupAsync(CancellationToken cancel)
     {
+        var owner = _m.Robot.Engine.Robot;
         var drive = MakeDrive(MountDriveMm, MountSpeedMmps, cancel);
         uint init = drive.Init();
         if (init != 0) return init;
-        try { return await RunToEnd(() => BackupCheckIfDone(drive), cancel, BackupTimeoutSec); }
+        try { return await RunToEnd(() => BackupCheckIfDone(drive.CheckIfDone, owner), cancel, BackupTimeoutSec); }
         finally { drive.Cancel(); }
     }
 
@@ -489,11 +490,16 @@ public sealed class MountChargerAction
     // fidelity: M13-008
     internal uint BackupCheckIfDone(IDriveStraightTick drive) => BackupCheckIfDone(drive.CheckIfDone);
 
-    internal uint BackupCheckIfDone(Func<uint> checkDrive)
+    internal uint BackupCheckIfDone(Func<uint> checkDrive, EngineRobot? owner = null)
     {
+        using var lease = _m.Robot.Engine.EnterSynchronousOwner();
+        owner ??= _m.Robot.Engine.Robot;
+        if (owner is not null && (owner.Lifetime.Destroying || !ReferenceEquals(_m.Robot.Engine.Robot, owner)))
+            return EngineActionResult.Cancelled;
         if (_m.Robot.Sensors.OnCharger)                                               // robot+0x338 (0x0054E7B0)
         {
-            SteppedBehavior.ReportMissing("Robot::SetPoseOnCharger() 0x0054E7B8 (BackupOntoChargerAction::CheckIfDone on the contacts): its body is not in the M13 inventory and has no counterpart in this stack");
+            // 0x0054E7B8..0x0054E7BC: SetPoseOnCharger, then success regardless of its result.
+            owner?.SetPoseOnCharger(_m.World, _m.Robot.Cubes.ChargerObjectId);
             _trace.Add("BackupOntoChargerAction: the contacts reported, so the reverse ends here");
             return 0;
         }

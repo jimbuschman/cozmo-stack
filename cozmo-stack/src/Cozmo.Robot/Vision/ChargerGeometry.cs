@@ -106,9 +106,15 @@ public static class ChargerGeometry
     };
 
     // fidelity: M13-040 -- GetDockPoseRelativeToRobot 0x004EA304..0x004EA35A, A3.
-    internal static Pose3d DockPoseRelativeToRobot(Pose3d robotPose) => new(
-        Rotation3d.FromAngleAxis(new Radians(BitConverter.UInt32BitsToSingle(0x40490FDB)).Value, new Vec3(0, 0, 1)),
-        new Vec3(30, 0, 0), "ChargerDockPose", robotPose);
+    internal static Pose3d DockPoseRelativeToRobot(Pose3d robotPose) => DockPoseRelativeTo(robotPose, "ChargerDockPose");
+
+    // fidelity: M13-009 — 0x004EA1A0..0x004EA264, charger pose as parent, then name by object ID.
+    internal static Pose3d DockedRobotPoseInTree(ObservableObject charger) => DockPoseRelativeTo(
+        charger.NativePose, FormattableString.Invariant($"Charger{unchecked((int)charger.ObjectId)}DockedPose"));
+
+    private static Pose3d DockPoseRelativeTo(Pose3d parent, string name) => new(
+        Rotation3d.FromAngleAxis(new Radians(F(DockedAngleBits)).Value, new Vec3(0, 0, 1)),
+        new Vec3(F(DockedXBits), 0, 0), name, parent);
 
     /// <summary>The pose of a robot sitting on the charger, in the world (<c>Charger::GetRobotDockedPose</c> 0x004EA1A0): <c>Pose3d(Radians(pi), Z_AXIS, (30, 0, 0), parent = the charger's pose)</c>.</summary>
     // fidelity: M13-009

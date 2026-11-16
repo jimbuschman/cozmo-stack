@@ -273,6 +273,38 @@ public sealed partial class EngineRobot
         // The head and lift arguments are read before the call (identical writes and order of the history/frame/flag fields).
         return AddVisionOnlyStateToHistory(StoredState?.Timestamp??0,MainPose,head,StoredState?.LiftAngle??0);
     }
+
+    // fidelity: M13-008 — Robot::SetPoseOnCharger 0x00516870..0x00516A04.
+    internal uint SetPoseOnCharger(BlockWorld world, int chargerId)
+    {
+        using var frame = world.EnterPoseMutation();
+        using var gate = LogCallbackDeferral.EnterGated(PoseTreeGate);
+        // The ObjectID at +0x330 holds its value at +0x334. Lookup is unrestricted by family,
+        // then the result is cast to Charger (0x0051687C..0x005168A2).
+        var charger = world.GetLocatedObjectByIdHelper(unchecked((uint)chargerId));
+        if (charger is not { Type: ObjectType.Charger_Basic })
+        {
+            Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.SetPoseOnCharger.NoChargerWithID",
+                FormattableString.Invariant($"Robot {NativeRobotId} has docked to charger, but Charger object with ID={chargerId} not found in the world."));
+            return 1;
+        }
+
+        using var docked = ChargerGeometry.DockedRobotPoseInTree(charger); // 0x005168AA.
+        using var flat = docked.GetWithRespectToRoot(); // 0x005168B2, 0x004DF628.
+        uint result = SetNewPose(flat); // 0x005168BA; stores pose and flags the existing vision update.
+        if (result != 0)
+        {
+            Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.SetPoseOnCharger.SetNewPose",
+                FormattableString.Invariant($"Robot {NativeRobotId} failed to set new pose"));
+            return result;
+        }
+
+        var t = MainPose.Translation;
+        float degrees = (float)MainPose.AngleAroundZ * (180f / MathF.PI);
+        Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "Robot.SetPoseOnCharger.SetPose",
+            FormattableString.Invariant($"Robot {NativeRobotId} now on charger {chargerId}, at ({t.X:F1},{t.Y:F1},{t.Z:F1}) @ {degrees:F1}deg, timeStamp = {unchecked((int)PoseHistory.NewestTimeStamp)}"));
+        return 0;
+    }
     // fidelity: M11-044, M11-070 — Robot::AddVisionOnlyStateToHistory(t, pose, head, lift) 0x0051513C..0x0051518A:
     // [Robot+0x2C6] := 1; [Robot+0x2B0] += 1; a default HistRobotState given SetPose(new frame, pose, head, lift);
     // RobotStateHistory::AddVisionOnlyState(t, state), whose result is returned (1 for a non-root parent, TooOld or a failed

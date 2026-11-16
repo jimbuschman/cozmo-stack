@@ -170,7 +170,7 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
         : DriveStraightAction(m, owner, MountChargerAction.MountDriveMm, MountChargerAction.MountSpeedMmps, false)
     {
         public override float TimeoutSeconds { get; set; } = MountChargerAction.BackupTimeoutSec;
-        public override uint CheckIfDone() => mount.BackupCheckIfDone(base.CheckIfDone);
+        public override uint CheckIfDone() => mount.BackupCheckIfDone(base.CheckIfDone, _nativeOwner);
     }
 
     // fidelity: M13-016, M12-017, M12-037
