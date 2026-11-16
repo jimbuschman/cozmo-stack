@@ -644,7 +644,11 @@ public sealed partial class VisionSystem : IDisposable
         lock(_groundGate)
         {
             if(_groundOwner is not null || removal!=Volatile.Read(ref _removals))return;
-            lock (_modeGate) _limitedExposureRequests.Clear();
+            lock (_modeGate)
+            {
+                _limitedExposureRequests.Clear();
+                _pendingNativeSchedules.Clear();
+            }
         }
         RemovalInvalidated?.Invoke();
         // The callback may synchronously bind a new owner. The old removal must not reset its facade state.
@@ -832,6 +836,27 @@ public sealed partial class VisionSystem : IDisposable
         set { lock(_modeGate){_schedules.Clear();if(value is not null)_schedules.AddFirst(value);} }
     }
     private void PushNativeSchedule(AllVisionModesSchedule value){lock(_modeGate)_schedules.AddFirst(value);}
+
+    // 0x006B2152 / 0x006B21CE enqueue the override by value and a pop request, respectively.
+    private readonly Queue<AllVisionModesSchedule?> _pendingNativeSchedules = new();
+
+    internal void QueueNativeSchedule(AllVisionModesSchedule? schedule)
+    {
+        lock (_modeGate) _pendingNativeSchedules.Enqueue(schedule?.Copy());
+    }
+
+    private void ApplyPendingNativeSchedules()
+    {
+        // 0x006B5030..0x006B50C2 drains the schedule deque after pending mode flags.
+        lock (_modeGate)
+        {
+            while (_pendingNativeSchedules.TryDequeue(out var schedule))
+            {
+                if (schedule is not null) _schedules.AddFirst(schedule);
+                else if (_schedules.First is not null) _schedules.RemoveFirst();
+            }
+        }
+    }
 
     /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
     private int _modeEnableMask;
@@ -1900,6 +1925,7 @@ public sealed partial class VisionSystem : IDisposable
             Volatile.Write(ref _frameTimestamp, timestamp);
             // fidelity: M11-061 — E6, before ShouldProcessVisionMode dispatch in this image update.
             ApplyQueuedLimitedExposure();
+            ApplyPendingNativeSchedules();
             // fidelity: M11-060
             _robot.CameraSettings.ApplyPendingCameraParams(); // 0x006B50C8..0x006B50D8, before CLAHE/dispatch
             // fidelity: M11-021 — ApplyCLAHE(image, 4, out) 0x006B44EC runs unconditionally before the

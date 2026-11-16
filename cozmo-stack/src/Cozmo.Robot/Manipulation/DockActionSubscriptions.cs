@@ -67,6 +67,7 @@ internal sealed class DockActionSubscriptions : IDisposable
     private void DisposeUnderGate()
     {
         _retired = true;
+        if (ReferenceEquals(_action.Subscriptions, this)) _action.Subscriptions = null;
         _external.Retire();
         _da?.Dispose(); _da = null;
         _c5?.Dispose(); _c5 = null;

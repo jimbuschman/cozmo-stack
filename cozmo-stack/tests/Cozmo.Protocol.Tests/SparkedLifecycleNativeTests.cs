@@ -297,11 +297,18 @@ public sealed class SparkedLifecycleNativeTests
     [Fact]
     public void NonGatherChooserUnavailableDoesNotSwitchPriorOwner()
     {
-        // Actual TrackLaser configuration; its unbuilt physical candidate is unavailable, not native false.
+        // Actual TrackLaser configuration with the native carrying owner unavailable.
         using var f=new Fixture();var manager=f.Robot.BehaviorManagerOwner!;
         var activity=NativeBehaviorRuntime.AllActivities(f.Runtime.Tree).Single(a=>a.Id=="SparksTrackLaser");
         var owner=Assert.IsType<NativeSparkedActivity>(activity.SparkedOwner);var prior=Assert.IsType<NativeWaitBehavior>(f.Runtime.Bound["Wait"]);
         Assert.True(manager.StartAsync("Wait",0).GetAwaiter().GetResult());State(owner,2);
-        Assert.Null(owner.Desired(prior,0,f.Runtime.Context));Assert.True(owner.InputUnavailable);Assert.Same(prior,manager.Current);Assert.True(prior.EngineRunning);
+        var carrying=f.Robot.CarryingOwner;
+        try
+        {
+            f.Robot.CarryingOwner=null;
+            Assert.Null(owner.Desired(prior,0,f.Runtime.Context));Assert.True(owner.InputUnavailable);
+            Assert.Same(prior,manager.Current);Assert.True(prior.EngineRunning);
+        }
+        finally { f.Robot.CarryingOwner=carrying; }
     }
 }
