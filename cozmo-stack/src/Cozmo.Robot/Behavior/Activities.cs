@@ -403,9 +403,8 @@ public sealed class ScoringChooser : IBehaviorChooser
             if(!ReferenceEquals(owner.Engine.Robot,owner) || !ReferenceEquals(owner.NativeBehaviorRuntime,runtime))return UnbuiltScore.Unavailable;
             if(count<3)return GateCurrent()?UnbuiltScore.KnownFalse:UnbuiltScore.Unavailable;
         }
-        if(id is "PounceOnMotion_Socialize" or "FPPeekABoo")
+        if(id=="PounceOnMotion_Socialize")
         {
-            if(id=="FPPeekABoo" && (runtime.Manipulation is not {} faceInput || faceInput.Vision.Faces.Count!=0))return UnbuiltScore.Unavailable;
             if(owner.NativeConfiguredScoreFields?.TryGetValue(id,out var fields)!=true || !fields.ConstructorPristine ||
                !fields.ExplicitFlatReload || fields.Value is not {} score || score.EmotionScorers.Count!=0 ||
                !float.IsFinite((float)score.FlatScore) || (float)score.FlatScore!=0f || !float.IsFinite((float)nowSec))return UnbuiltScore.Unavailable;
@@ -413,13 +412,10 @@ public sealed class ScoringChooser : IBehaviorChooser
             if(!FiniteGraph(score.RepetitionPenalty) || !FiniteGraph(score.RunningPenalty) ||
                (score.BoredomMultiplier is {} multiplier && !float.IsFinite((float)multiplier)))return UnbuiltScore.Unavailable;
             long epoch=fields.Epoch;
-            if(id=="PounceOnMotion_Socialize")
-            {
-                var config=winner;float factor=0.8f;
-                if(config.TryGetProperty("boredomMultiplier",out var value) && value.ValueKind!=JsonValueKind.Null &&
-                   (value.ValueKind!=JsonValueKind.Number || !value.TryGetSingle(out factor)))return UnbuiltScore.Unavailable;
-                if(!float.IsFinite(factor))return UnbuiltScore.Unavailable;
-            }
+            float factor=0.8f;
+            if(winner.TryGetProperty("boredomMultiplier",out var value) && value.ValueKind!=JsonValueKind.Null &&
+               (value.ValueKind!=JsonValueKind.Number || !value.TryGetSingle(out factor)))return UnbuiltScore.Unavailable;
+            if(!float.IsFinite(factor))return UnbuiltScore.Unavailable;
             if(fields.ConstructorPristine && fields.Epoch==epoch && ReferenceEquals(owner.Engine.Robot,owner) &&
                ReferenceEquals(owner.NativeBehaviorRuntime,runtime) && owner.NativeConfiguredScoreFields?.TryGetValue(id,out var current)==true && ReferenceEquals(current,fields))return UnbuiltScore.ScoringZero;
         }
@@ -1639,7 +1635,7 @@ public static class ActivityTreeLoader
         if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked" && !(owner is not null&&bound.TryGetValue("PlayArbitraryAnim",out var nativeArbitrary)&&nativeArbitrary is NativePlayArbitraryAnimBehavior))
             SteppedBehavior.ReportMissing("M15-059 "+id+": actual original Robot or retained configured PlayArbitraryAnim 3D is unavailable; Sparked owner not constructed.");
         if(id=="SparksGatherCubes")
-            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters PeekABoo, TrackLaser and GuardDog remain unbuilt");
+            SteppedBehavior.ReportMissing("M15-008 behavior-owned needs action reporters TrackLaser and GuardDog remain unbuilt");
         var activity=new Activity
         {
             InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,

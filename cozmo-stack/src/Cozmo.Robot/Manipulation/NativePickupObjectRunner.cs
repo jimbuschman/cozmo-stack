@@ -12,9 +12,7 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
     private CompoundActionSequential? _prepared;
     private NativeTurnTowardsPoseRunner? _verifyTurn;
     private short _marker;
-    private bool _sent,_latched,_lightPlayed;
-    private byte _squint;
-    private float _deadline=-1f;
+    private bool _sent,_lightPlayed;
     private readonly EngineRobot? _owner;
     private readonly bool _directMarkerTurn;
     private bool _ending;
@@ -55,7 +53,7 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         using var mutation=M.World.EnterPoseMutation();
         if (!Current) return unchecked((int)EngineActionResult.Cancelled);
         var owner=_owner??M.Robot.Engine.Robot!;
-        _deadline=-1;_sent=false;
+        _pickup.ResetNativeDockVerification();_sent=false;
         owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
         if(!Current)return unchecked((int)EngineActionResult.Cancelled);
         var target=M.World.GetLocatedObjectByIdHelper(_pickup.ObjectId);
@@ -94,7 +92,8 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         if(!Current)return unchecked((int)EngineActionResult.Cancelled);
         if(CozmoCubes.IsLightCube(target.Type)&&!_lightPlayed)
         {if(_owner is null)M.Robot.Lights.Cubes.PlayNativeInteracting(_target);else M.Robot.Lights.Cubes.PlayNativeInteracting(_target,()=>Current);if(!Current)return unchecked((int)EngineActionResult.Cancelled);_lightPlayed=true;}
-        if(_squint!=0){M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint,250);if(!Current)return unchecked((int)EngineActionResult.Cancelled);_squint=0;}
+        _pickup.RemoveNativeDockSquintOnInit();
+        if(!Current)return unchecked((int)EngineActionResult.Cancelled);
         uint initial=_prepared.Update();
         if (!Current) return unchecked((int)EngineActionResult.Cancelled);
         if(initial!=0&&initial!=EngineActionResult.Running)return unchecked((int)initial);
@@ -108,14 +107,6 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         }
         return 0;
     }
-    private void AddSquint()
-    {
-        if((int)M.Robot.Engine.Needs.SevereNeeds.SelectedNeed==1)return;
-        var face=new ProceduralFacePose();foreach(var eye in new[]{face.Left,face.Right})
-        {eye[EyeParam.EyeScaleY]=.35f;eye[EyeParam.EyeScaleX]=1.05f;eye[EyeParam.UpperLidAngle]=-10f;}
-        var track=new StreamTrack<FaceFrame>();track.AddKeyFrameToBack(new FaceFrame(0,face));track.AddKeyFrameToBack(new FaceFrame(250,new ProceduralFacePose()));
-        _squint=M.Robot.Animations.Scheduler.Layers.Face.AddPersistentLayer("DockSquint",track);
-    }
     public override uint CheckIfDone()
     {
         if (!Current) return EngineActionResult.Cancelled;
@@ -125,24 +116,24 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
         {
             uint pre=_prepared!.Update();if(pre!=0)return pre;
             if (!Current) return EngineActionResult.Cancelled;
-            _prepared.Prep();_prepared.WatcherEnding();_prepared=null;
+            var finished = _prepared;
+            _prepared = null;
+            finished.WatcherEnding(); // 0x005521E4..0x005521F4.
             if (!Current) return EngineActionResult.Cancelled;
             bool sent = _owner is null ? M.Docking.StartNativeDock(_target,_marker,_pickup.SelectedDockAction!.Value,_pickup.Profile)
                 : M.Docking.StartNativeDock(owner,_target,_marker,_pickup.SelectedDockAction!.Value,_pickup.Profile,current:()=>Current);
             if (!Current) return EngineActionResult.Cancelled;
             if(!sent)return 0x03000016;
-            _sent=true;_latched=false;
+            _sent=true;
         }
-        var docking=owner.DockingOwner!;
-        if(docking.Active!=0){if(!_latched){_latched=true;AddSquint();if(!Current)return EngineActionResult.Cancelled;}return EngineActionResult.Running;}
-        if(!_latched)return EngineActionResult.Running;
-        if(M.Robot.Motion.BodyMoving)return EngineActionResult.Running;
-        if(M.Robot.Motion.HeadMoving)_deadline=-1f;
-        float now=M.Robot.Engine.Timer.SecondsF;if(_deadline<0)_deadline=now+0f;
-        if(!(now>=_deadline))return EngineActionResult.Running;
+        return _pickup.UpdateNativeDockVerification(owner, () => Verify(owner), () => Current);
+    }
+
+    private uint Verify(EngineRobot owner)
+    {
         using var mutation=M.World.EnterPoseMutation();
         var target=M.World.GetLocatedObjectByIdHelper(_pickup.ObjectId);
-        var result=_pickup.VerifyPrefix(target,new DockResult(owner.StoredState?.Timestamp??0,docking.Success,0,BlockStatus.NoBlock));
+        var result=_pickup.VerifyPrefix(target,new DockResult(owner.StoredState?.Timestamp??0,owner.DockingOwner!.Success,0,BlockStatus.NoBlock));
         if(!Current)return EngineActionResult.Cancelled;
         if(result!=ActionResult.Success)return (uint)result;
         if(_verifyTurn is null)
@@ -172,34 +163,11 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
     {
         if(_ending || DestructionObserved)return;
         _ending=true;
-        long pathGeneration=M.Robot.Motion.Path.ScopeGeneration;
-        long dockGeneration=M.Docking.NativeDockGeneration;
-        bool SharedCurrent()=>OwnerCurrent && (_owner is null ||
-            M.Robot.Motion.Path.ScopeGeneration==pathGeneration && M.Docking.NativeDockGeneration==dockGeneration);
         _verifyTurn?.Prep();_verifyTurn?.WatcherEnding();_verifyTurn=null;_pickup.Dispose();
-        if(SharedCurrent())M.World.SelectedObjectId=null;
-        if(OwnerCurrent && (_owner is null || M.Robot.Motion.Path.ScopeGeneration==pathGeneration) && M.Robot.Motion.Path.IsActive)
-        {
-            if(_owner is null)M.Paths.Abort();
-            else M.Paths.AbortOwned(_owner,()=>OwnerCurrent && M.Robot.Motion.Path.ScopeGeneration==pathGeneration);
-        }
-        var docking=(_owner??M.Robot.Engine.Robot)?.DockingOwner;
-        if(OwnerCurrent && docking is not null && (_owner is null || M.Docking.NativeDockGeneration==dockGeneration))
-        {
-            if(docking.Active!=0){if(_owner is null)M.Docking.Abort();else M.Docking.AbortNativeDock(_owner,()=>OwnerCurrent && M.Docking.NativeDockGeneration==dockGeneration);}
-            if(OwnerCurrent && (_owner is null || M.Docking.NativeDockGeneration==dockGeneration)){docking.MarkerCode=3;docking.TargetId=null;}
-        }
-        if(SharedCurrent() && _lightPlayed)
-        {if(_owner is null)M.Robot.Lights.Cubes.StopNativeInteracting(_target);else M.Robot.Lights.Cubes.StopNativeInteracting(_target,SharedCurrent);}
-        if(SharedCurrent())M.Robot.Animations.Scheduler.Layers.Face.RemovePersistentLayer(_squint,250);
-        _prepared?.Prep();
-        if(_reactionLease is {} lease)
-        {
-            _reactionLease=null;lease.Cancel();
-            if(!SharedCurrent())lease.Completed=false; // retire only this lease after a successor starts.
-            _owner?.BehaviorManagerOwner?.RemoveScopedReactions("dockActions",lease);
-        }
-        else if(SharedCurrent() && State!=EngineActionResult.NotStarted)(_owner??M.Robot.Engine.Robot)?.BehaviorManagerOwner?.RemoveDisableReactionsLock("dockActions");
+        var reactions = _reactionLease;
+        _reactionLease = null;
+        _pickup.CleanUpNativeDock(_owner ?? M.Robot.Engine.Robot, _lightPlayed, _prepared,
+            State != EngineActionResult.NotStarted, reactions);
         _subscriptions?.Dispose();_subscriptions=null;
         _prepared?.WatcherEnding();_prepared=null;
         base.WatcherEnding();

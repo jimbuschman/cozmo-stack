@@ -11,7 +11,9 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     private readonly bool _headOnly, _clamp;
     private readonly float _tolerance;
     private readonly float _clampMin, _clampMax;
-    private readonly uint _stopOnTag;
+    private uint _stopOnTag;
+    // ITrackAction::StopTrackingWhenOtherActionCompleted, the pre-start store at 0x005648CC.
+    internal void StopAfterOtherAction(uint tag) => _stopOnTag = tag;
     private readonly bool _manualScope;
     private bool _installedTracking;
     private bool _ending;

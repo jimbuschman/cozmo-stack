@@ -334,6 +334,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.RespondToRenameFace] = (ctx,json)=>new NativeRespondToRenameFace(ctx,json),
         [BehaviorClass.ExploreLookAroundInPlace] = (ctx,json)=>new NativeSparksLookInPlace(ctx,json),
         [BehaviorClass.LookInPlaceMemoryMap] = (ctx,json)=>new NativeHikingLookInPlace(ctx,json),
+        [BehaviorClass.PeekABoo] = (ctx,json)=>new NativePeekABooBehavior(ctx,json),
         [BehaviorClass.PounceOnMotion] = (ctx,json)=>new NativeHikingPounce(ctx,json),
         [BehaviorClass.EarnedSparks] = (ctx,json)=>new NativeEarnedSparksBehavior(ctx,json),
         [BehaviorClass.FireTruckAlarm] = (ctx,json)=>new NativeFireTruckAlarmBehavior(ctx,json),
@@ -499,6 +500,11 @@ public sealed class BehaviorFactory
         {
             SteppedBehavior.ReportMissing("RespondToRenameFace factory requires its checked configuration and original owners");
             status=BehaviorCreateStatus.NotImplemented;return null;
+        }
+        if (cls == BehaviorClass.PeekABoo && (ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("PeekABoo factory: actual vision, manipulation and native Robot owners unavailable");
+            status = BehaviorCreateStatus.NotImplemented; return null;
         }
         if (cls == BehaviorClass.Bouncer && (ctx.Vision is null || ctx.Manipulation is null || ctx.BouncerOwner is null))
         {

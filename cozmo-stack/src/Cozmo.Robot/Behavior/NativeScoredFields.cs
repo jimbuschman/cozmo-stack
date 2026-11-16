@@ -5,7 +5,7 @@ namespace Cozmo.Robot.Behavior;
 // Configured behavior's mutable scoring fields; this is not an executable behavior.
 internal sealed class NativeScoredFields
 {
-    // Partial state of the same retained configured PeekABoo owner; never an executable proxy.
+    // Shared with the configured PeekABoo instance (+0x168) by its Sparked activity.
     internal float? SparkPeekDeadline;
     internal ScoredBehaviorEntry? Value {get;private set;}
     internal bool ExplicitFlatReload {get;private set;}
