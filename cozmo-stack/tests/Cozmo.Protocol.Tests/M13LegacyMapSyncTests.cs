@@ -84,7 +84,8 @@ public sealed class M13LegacyMapSyncTests
         try
         {
             prox=world.AddMarkerlessObject(pose,ObjectType.ProxObstacle);
-            Assert.Contains(logs,s=>s.Contains("M13-030: MemoryMapData_ProxObstacle 0x00622646"));
+            // MAP-LAST-OBSERVED-TIME-1 built the ProxObstacle payload writer (0x00622646..0x006226C6); its MISSING is gone.
+            Assert.DoesNotContain(logs,s=>s.Contains("M13-030: MemoryMapData_ProxObstacle 0x00622646"));
         }
         finally{world.Log-=Log;prox?.NativePose.Dispose();world.Maps.Dispose();}
         SteppedBehavior.ResetMissingForTests();
