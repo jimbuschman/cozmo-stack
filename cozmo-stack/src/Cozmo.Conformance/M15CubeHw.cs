@@ -107,7 +107,9 @@ public static class M15CubeHw
             return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive)
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
-                CommandBanks = commands ? Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta")) : null,
+                // Every mode: the shared authored-audio device (M14-006) gates reaction animations and InteractWithFaces,
+                // not only speech (operator runs 2026-11-16: pickup reactions and Socialize aborted without it).
+                CommandBanks = Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta")),
             }.Execute();
         }
         catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
