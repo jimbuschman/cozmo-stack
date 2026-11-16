@@ -759,7 +759,8 @@ public static class ShippedBehaviors
         AcknowledgeObjectBehavior? acknowledgeObject = null,
         Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null,
         AcknowledgeFaceBehavior? acknowledgeFace = null, IBehavior? nativePet = null,
-        EngineRobot? nativePetOwner = null, bool nativePetExpected = false)
+        EngineRobot? nativePetOwner = null, bool nativePetExpected = false,
+        Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeFistBump = null)
     {
         if (map.Count == 0) return Array.Empty<BehaviorManager.ReactionRegistration>();
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
@@ -843,10 +844,16 @@ public static class ShippedBehaviors
         var registrations = new List<BehaviorManager.ReactionRegistration>();
         foreach (var e in map)
         {
-            if (e.Trigger == ReactionTrigger.Hiccup && nativeHiccup is not null)
+            var nativeFactory = e.Trigger switch
             {
-                var hiccup = nativeHiccup(e);
-                if (hiccup is not null) registrations.Add(hiccup);
+                ReactionTrigger.Hiccup => nativeHiccup,
+                ReactionTrigger.FistBump => nativeFistBump,
+                _ => null,
+            };
+            if (nativeFactory is not null)
+            {
+                var native = nativeFactory(e);
+                if (native is not null) registrations.Add(native);
                 else unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
                 continue;
             }

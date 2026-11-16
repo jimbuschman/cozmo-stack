@@ -838,7 +838,12 @@ public sealed class CozmoMotion
     }
     // MovementComponent::EnableLiftPower 0x00640634/0x00640654; exact tag 0x50 payload [motor 2, bool].
     internal bool SetNativeLiftPower(EngineRobot owner,bool enable)
-        =>ReferenceEquals(_robot.Engine.Robot,owner) && _robot.SendMessage(new EnableMotorPower{Field0=2,Field1=enable?(byte)1:(byte)0},reliable:true,flush:false);
+        =>SetNativeMotorPower(owner,MotorID.MOTOR_LIFT,enable);
+
+    // MovementComponent lift/head power, 0x00640634 / 0x006406CC.
+    internal bool SetNativeMotorPower(EngineRobot owner,MotorID motor,bool enable)
+        =>ReferenceEquals(_robot.Engine.Robot,owner) && _robot.SendMessage(new EnableMotorPower
+            {Field0=(byte)motor,Field1=enable?(byte)1:(byte)0},reliable:true,flush:false);
     internal uint TurnInPlace(float angle, float speed, float accel, float tolerance, ushort halfRevs, bool absolute, out byte id, EngineRobot? scopedOwner = null, Func<bool>? current = null)
     {
         if(current is not null && !current()){id=0;return 1;}

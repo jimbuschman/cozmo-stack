@@ -114,29 +114,29 @@ public sealed class FistBumpStrategyTests
         }
     }
     [Fact]
-    public void CanonicalRobotLeavesUnsafeTargetUnboundAcrossObjectiveAndRebinding()
+    public void CanonicalRobotRetainsOneConfiguredTargetAndObjectiveSubscriptionAcrossRebinding()
     {
-        // reach: actual CozmoRobot construction and local objective producer; availability gap, not live behavior.
-        var missing = new List<string>(); SteppedBehavior.ResetMissingForTests(); SteppedBehavior.MissingReported += missing.Add;
-        M4ControlTests.Rig rig;
-        try { rig = new M4ControlTests.Rig(Resources()); rig.ToSynced(); }
-        finally { SteppedBehavior.MissingReported -= missing.Add; }
-        using var ownedRig = rig;
-        Assert.Contains(missing, m => m.Contains("M7-018 FistBump configured target"));
-        var native = rig.Engine.Robot!; var manager = native.BehaviorManagerOwner!; var runtime = native.NativeBehaviorRuntime!;
-        Assert.Contains(ReactionTriggerMap.Load(Resources()), r => r.Trigger == ReactionTrigger.FistBump && r.BehaviorId == "FistBump");
-        Assert.IsType<FistBumpBehavior>(runtime.Bound["FistBump"]);
-        Assert.DoesNotContain(manager.Reactions, r => r.Strategy.Trigger == ReactionTrigger.FistBump);
+        using var rig = new M4ControlTests.Rig(Resources());
+        rig.ToSynced();
+        var native = rig.Engine.Robot!;
+        var manager = native.BehaviorManagerOwner!;
+        var runtime = native.NativeBehaviorRuntime!;
+        var registration = Assert.Single(manager.Reactions, r => r.Strategy.Trigger == ReactionTrigger.FistBump);
+        Assert.Same(runtime.Bound["FistBump"], registration.Behavior);
+        var strategy = Assert.IsType<FistBumpReactionStrategy>(registration.Strategy);
         int before = rig.Engine.AnimationMessages.SubscriberCountForTest(0x8B, true);
+        rig.Engine.ContextRandom.WordSourceForTest = () => 0;
         rig.Engine.ReportBehaviorObjective(3, "BuiltPyramid", "fixture");
+        Assert.True(strategy.Pending);
+
         manager.BindReactionDependencies(runtime.Manipulation, runtime.Bound);
-        Assert.DoesNotContain(manager.Reactions, r => r.Strategy.Trigger == ReactionTrigger.FistBump);
+        Assert.Same(registration, Assert.Single(manager.Reactions, r => r.Strategy.Trigger == ReactionTrigger.FistBump));
         Assert.Equal(before, rig.Engine.AnimationMessages.SubscriberCountForTest(0x8B, true));
     }
 
     [Theory]
     [InlineData(false)] [InlineData(true)]
-    public void FutureTargetSubscriptionRespectsExternalInterfaceAndDisposes(bool external)
+    public void TargetSubscriptionRespectsExternalInterfaceAndDisposes(bool external)
     {
         // reach: unit; test target only. Constructor gate 0x60B4B0 and base destructor 0x60B702.
         using var rig = new M4ControlTests.Rig(); rig.ToSynced(); var native = rig.Engine.Robot!;
