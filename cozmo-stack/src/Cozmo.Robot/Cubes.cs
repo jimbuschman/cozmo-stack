@@ -850,7 +850,7 @@ public sealed class CozmoCubes
         _robot.Engine.AnimationMessages.Deliver(ObjectConnectionStateMessage.UnionTag, true, report);
         // Existing checked CubeLight recipient; CubeAccel's recipient is a no-op.
         // Feeding/GuardDog native owners/subscriptions remain M15-056, not fabricated here.
-        _robot.Lights.Cubes.OnObjectConnectionState(report.ObjectType, report.ConnectedByte != 0);
+        _robot.Lights.Cubes.OnObjectConnectionState(report);
 
     }
 

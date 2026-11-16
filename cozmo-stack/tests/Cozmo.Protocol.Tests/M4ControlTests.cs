@@ -383,7 +383,7 @@ public class M4ControlTests
                 deferredUpdate=Task.Run(() => {lights.Update();observedIndex=top.GetType().GetField("Index",flags)!.GetValue(top);});
                 Assert.True(deferredUpdate.Wait(TimeSpan.FromSeconds(2)));
             };
-            lights.OnObjectConnectionState(ObjectType.Block_LIGHTCUBE1, true);
+            lights.OnObjectConnectionState(new ObjectConnectionStateMessage(unchecked((uint)id), 0, ObjectType.Block_LIGHTCUBE1, 1));
             Assert.True(pendingSeen);
             Assert.NotNull(deferredUpdate);Assert.True(deferredUpdate!.Wait(TimeSpan.FromSeconds(2)));Assert.Equal(0, observedIndex);
             var final = Top(); Assert.Equal(0u, final.GetType().GetField("TimerMs", flags)!.GetValue(final));
