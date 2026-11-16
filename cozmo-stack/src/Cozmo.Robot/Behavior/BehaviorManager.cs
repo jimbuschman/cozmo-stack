@@ -136,6 +136,12 @@ public sealed partial class BehaviorManager : IDisposable
             _configuredAcknowledgeObject = configured as AcknowledgeObjectBehavior;
         _nativeReactionMapLoaded = true;
         _nativeReactionRows = rows;
+        // 0x005A17CC..0x005A17D6 emplaces a node only for a constructed strategy/behavior pair, and in the engine every
+        // shipped row constructs one. A row the stack cannot yet construct (reported MISSING below) keeps its trigger
+        // node, so locks taken later (0x005A2818..0x005A2836 walks the existing nodes) land where the engine's would.
+        lock (_gate)
+            foreach (var row in rows)
+                if (!_map.ContainsKey(row.Trigger)) _map.Add(row.Trigger, new TriggerInfo());
         var unbound = new List<string>();
         foreach (var reg in ShippedBehaviors.BuildReactions(_context.Robot, vision?.Locator,
             () => _context.ClockSec?.Invoke() ?? _context.Robot.Engine.Timer.Seconds, vision,
