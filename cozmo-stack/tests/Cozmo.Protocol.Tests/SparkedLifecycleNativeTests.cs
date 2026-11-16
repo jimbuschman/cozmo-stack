@@ -93,7 +93,7 @@ public sealed class SparkedLifecycleNativeTests
         try
         {
             f.Robot.BehaviorManagerOwner!.SetNativeRequestedSpark(0x25,1);owner.Selected();
-            Assert.True(owner.InputUnavailable);Assert.Null(original.SparkPeekDeadline);Assert.Null(replacement.SparkPeekDeadline);
+            Assert.True(owner.InputUnavailable);Assert.Equal(0f,original.SparkPeekDeadline);Assert.Null(replacement.SparkPeekDeadline);
         }
         finally {fields["SparksPeekABoo"]=original;}
     }

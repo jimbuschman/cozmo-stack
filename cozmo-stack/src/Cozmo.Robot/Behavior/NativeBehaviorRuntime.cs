@@ -158,8 +158,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             {
                 var fields=new NativeScoredFields();fields.Read(id,entry.Value);
                 if(!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var objective) || objective.ValueKind==System.Text.Json.JsonValueKind.Null)
-                    if((entry.Key==BehaviorID.PounceOnMotion_Socialize && entry.Value.TryGetProperty("behaviorClass",out var pounceClass) && pounceClass.ValueKind==System.Text.Json.JsonValueKind.String && pounceClass.GetString()=="PounceOnMotion") ||
-                       (entry.Key==BehaviorID.FPPeekABoo && entry.Value.TryGetProperty("behaviorClass",out var peekClass) && peekClass.ValueKind==System.Text.Json.JsonValueKind.String && peekClass.GetString()=="PeekABoo"))fields.MarkPristine();
+                    if(entry.Key==BehaviorID.PounceOnMotion_Socialize && entry.Value.TryGetProperty("behaviorClass",out var pounceClass) && pounceClass.ValueKind==System.Text.Json.JsonValueKind.String && pounceClass.GetString()=="PounceOnMotion")fields.MarkPristine();
                 if((!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var interludeObjective) || interludeObjective.ValueKind==System.Text.Json.JsonValueKind.Null) &&
                    entry.Value.TryGetProperty("behaviorClass",out var interludeClass) && interludeClass.ValueKind==System.Text.Json.JsonValueKind.String &&
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||

@@ -425,6 +425,8 @@ public sealed class FaceEntry
     internal Pose3d LegacyHeadPose => LegacyProjection ?? HeadPose;
     public FaceRect Rect { get; internal set; }
     public float? NativeDirectionDcRadians { get; internal set; }
+    // Whole TrackedFace copy 0x004F5136 includes the contour vectors at +0x44 and following.
+    internal NativeFaceFeatures? NativeFeatures { get; set; }
     // Strong allocation reference, like native PoseTreeNode's parent edge; no PoseBase owner is added.
     internal PoseTreeNode? NativeObservationOrigin { get; set; }
     internal Vec3? NativeTrackingTranslation { get; set; }
@@ -617,6 +619,7 @@ public sealed partial class FaceWorld
                 if (!existing || face.HasEyeParts) entry.NativeTrackingTranslation = face.NativeTrackingTranslation;
                 entry.NativeTrackingRotation = face.NativeTrackingRotation;
             }
+            entry.NativeFeatures = face.Detection.NativeFeatures;
             entry.Rect = face.Rect; entry.NativeDirectionDcRadians = face.NativeDirectionDcRadians; entry.NativeObservationOrigin=origin; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();
             if (requireNativePose && face.Detection.NativeFacingCamera is { } facing)
@@ -755,7 +758,7 @@ public sealed partial class FaceWorld
                 if(newName is not null)old.Name=newName;
                 if(!_faces.ContainsKey(newId))
                     _faces.Add(newId,new FaceEntry{Id=newId,Name=old.Name,HeadPose=new Pose3d(old.HeadPose),LegacyProjection=old.LegacyProjection is null ? null : new Pose3d(old.LegacyProjection),Rect=old.Rect,NativeTrackingRotation=old.NativeTrackingRotation,
-                        LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeObservationOrigin=old.NativeObservationOrigin,NativeTrackingTranslation=old.NativeTrackingTranslation,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
+                        LastObservedTimestamp=old.LastObservedTimestamp,NativeDirectionDcRadians=old.NativeDirectionDcRadians,NativeFeatures=old.NativeFeatures,NativeObservationOrigin=old.NativeObservationOrigin,NativeTrackingTranslation=old.NativeTrackingTranslation,Expression=old.Expression,TimesObserved=0,TurnedTowards=false,
                         FirstObservedTimestamp=old.FirstObservedTimestamp}); //existing host metadata, NOT native aux114.
                 if (oldId != newId && oldId > 0 && newId > 0 && _faces.TryGetValue(newId, out var destination) &&
                     destination.Id > 0 && (destination.HasName || destination.NativeFrontalObservations >= 30)) reportRemap = true;

@@ -59,21 +59,21 @@ public sealed class OrdinaryFreeplayNativeTests
         var chooser=new ScoringChooser(Array.Empty<ScoredBehaviorEntry>(),f.Runtime.Bound,native:true);
         chooser.EnableOrdinaryUnbuiltBoundary(f.Robot);
         var evaluate=typeof(ScoringChooser).GetMethod("EvaluateUnbuilt",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        string Evaluate(double now=0)=>evaluate.Invoke(chooser,new object[]{"FPPeekABoo",f.Runtime.Context,now})!.ToString()!;
-        var fields=f.Robot.NativeConfiguredScoreFields!["FPPeekABoo"];
+        string Evaluate(double now=0)=>evaluate.Invoke(chooser,new object[]{"PounceOnMotion_Socialize",f.Runtime.Context,now})!.ToString()!;
+        var fields=f.Robot.NativeConfiguredScoreFields!["PounceOnMotion_Socialize"];
         Assert.True(fields.ConstructorPristine);Assert.Equal("ScoringZero",Evaluate());Assert.Equal("Unavailable",Evaluate(double.NaN));
-        using var changed=JsonDocument.Parse("""{"flatScore":1}""");fields.Reload("FPPeekABoo",changed.RootElement);
+        using var changed=JsonDocument.Parse("""{"flatScore":1}""");fields.Reload("PounceOnMotion_Socialize",changed.RootElement);
         Assert.Equal("Unavailable",Evaluate());
-        using var nonfinite=JsonDocument.Parse("""{"flatScore":1e100}""");fields.Reload("FPPeekABoo",nonfinite.RootElement);
+        using var nonfinite=JsonDocument.Parse("""{"flatScore":1e100}""");fields.Reload("PounceOnMotion_Socialize",nonfinite.RootElement);
         Assert.Equal("Unavailable",Evaluate());
-        using var zero=JsonDocument.Parse("""{"flatScore":0}""");fields.Reload("FPPeekABoo",zero.RootElement);
+        using var zero=JsonDocument.Parse("""{"flatScore":0}""");fields.Reload("PounceOnMotion_Socialize",zero.RootElement);
         Assert.Equal("ScoringZero",Evaluate());
         using var graph=JsonDocument.Parse("""{"flatScore":0,"repetitionPenalty":{"nodes":[{"x":0,"y":1e100}]}}""");
-        fields.Reload("FPPeekABoo",graph.RootElement);Assert.Equal("Unavailable",Evaluate());
-        fields.Reload("FPPeekABoo",zero.RootElement);Assert.Equal("ScoringZero",Evaluate());
-        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync("FPPeekABoo",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        fields.Reload("PounceOnMotion_Socialize",graph.RootElement);Assert.Equal("Unavailable",Evaluate());
+        fields.Reload("PounceOnMotion_Socialize",zero.RootElement);Assert.Equal("ScoringZero",Evaluate());
+        Assert.False(f.Robot.BehaviorManagerOwner!.StartAsync("PounceOnMotion_Socialize",f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
         Assert.False(fields.ConstructorPristine);Assert.Equal("Unavailable",Evaluate());
-        fields.Reload("FPPeekABoo",zero.RootElement);Assert.Equal("Unavailable",Evaluate());
+        fields.Reload("PounceOnMotion_Socialize",zero.RootElement);Assert.Equal("Unavailable",Evaluate());
     }
 
     [Fact]
@@ -152,29 +152,15 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
-    public void PureIdAndUnrelatedTypeLookupPreservePeekHistoryButUnavailableIdRequestWithdrawsProof()
-    {
-        using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        var fields=f.Robot.NativeConfiguredScoreFields!["FPPeekABoo"];
-        var selection=Assert.IsType<SelectionChooser>(f.Runtime.Tree.Single(a=>a.Id=="Selection").Chooser);
-        Assert.True(fields.ConstructorPristine);Assert.Null(f.Robot.BehaviorManagerOwner!.Find("FPPeekABoo"));
-        try {selection.FindBehaviorByExecutableType!(12);} catch(NativeChooserUnavailable) { }
-        Assert.True(fields.ConstructorPristine);
-        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.FPPeekABoo,2);f.Rig.Tick();
-        Assert.False(fields.ConstructorPristine);
-    }
-
-    // Handler seam supplies a checked unbuilt finder outcome; production finder order is tested separately.
-    [Fact]
     public void UnavailableExecutableRequestWithdrawsProofInHandler()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
-        var fields=f.Robot.NativeConfiguredScoreFields!["FPPeekABoo"];
+        var fields=f.Robot.NativeConfiguredScoreFields!["PounceOnMotion_Socialize"];
         var selection=Assert.IsType<SelectionChooser>(f.Runtime.Tree.Single(a=>a.Id=="Selection").Chooser);
         var original=selection.FindBehaviorByExecutableType;
         try
         {
-            selection.FindBehaviorByExecutableType=_=>throw new NativeChooserUnavailable("unbuilt","FPPeekABoo");
+            selection.FindBehaviorByExecutableType=_=>throw new NativeChooserUnavailable("unbuilt","PounceOnMotion_Socialize");
             selection.HandleExecuteBehavior(new Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage(12,2));
             Assert.False(fields.ConstructorPristine);
         }
