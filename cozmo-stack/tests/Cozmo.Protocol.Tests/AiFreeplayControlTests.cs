@@ -1,3 +1,4 @@
+using System.Text;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
@@ -19,7 +20,14 @@ public sealed class AiFreeplayControlTests
             if (line.Contains("MISSING", StringComparison.Ordinal))
                 lock (messages) messages.Add(line);
         }
-        f.Rig.Engine.StackLogLine += Capture;
+        var engine = f.Rig.Engine;
+        var typed = new List<BehaviorTransitionReport>();
+        var packed = new List<byte[]>();
+        var publicState = new List<RobotPublicStateReport>();
+        engine.BehaviorTransition += typed.Add;
+        engine.EngineToGameMessage += (tag, body) => { if (tag == 0x87) packed.Add(body.ToArray()); };
+        engine.RobotPublicStateChanged += publicState.Add;
+        engine.StackLogLine += Capture;
         SteppedBehavior.MissingReported += Capture;
         try
         {
@@ -59,6 +67,28 @@ public sealed class AiFreeplayControlTests
             float lastMinute = (end - 60_000_000_000L) / 1_000_000_000f;
             Assert.True(transitions.Select(t => t.Id).Distinct().Count() >= 2
                 && transitions.Any(t => t.Seconds >= lastMinute), Diagnostic());
+
+            // BehaviorTransition 0x005A23DA..0x005A2466 reports the new endpoint and its authored key.
+            var transition = Assert.Single(typed.Where(t => t.DisplayKey.Length != 0).Take(1));
+            var config = engine.HostBehaviorMap![(BehaviorID)transition.NewId];
+            Assert.Equal(config.GetProperty("displayNameKey").GetString(), transition.DisplayKey);
+            Assert.Equal(transition.NewClass, (byte)Enum.Parse<BehaviorClass>(config.GetProperty("behaviorClass").GetString()!));
+            byte[] key = Encoding.UTF8.GetBytes(transition.DisplayKey);
+            Assert.Equal(new byte[] { transition.OldId, transition.NewId, transition.OldClass, transition.OldExecutable,
+                transition.NewClass, transition.NewExecutable, (byte)key.Length }.Concat(key),
+                packed[typed.IndexOf(transition)]);
+            Assert.Equal(typed.Count, packed.Count);
+
+            // The native activity selection publishes Hiking (ActivityID 5). The tick copies needs 1,0,2
+            // at 0x0064D7A2..0x0064D7BA, with the no-reaction sentinel from 0x005A19EC.
+            Assert.Contains(publicState, state => state.ActivityId == 5 && state.ReactionTrigger == 0x16);
+            var state = publicState.Last();
+            var needs = engine.Needs.State;
+            Assert.InRange(MathF.Abs(state.Energy - (float)needs.GetNeedLevel(NeedId.Energy)), 0, 1e-5f);
+            Assert.InRange(MathF.Abs(state.Repair - (float)needs.GetNeedLevel(NeedId.Repair)), 0, 1e-5f);
+            Assert.InRange(MathF.Abs(state.Play - (float)needs.GetNeedLevel(NeedId.Play)), 0, 1e-5f);
+            Assert.False(state.IsCarrying);
+            Assert.Equal(0x55, state.UnlockId);
         }
         finally
         {

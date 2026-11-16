@@ -212,7 +212,7 @@ public sealed partial class CozmoRobot : IDisposable
         var animations=Animations;
         var context=new Behavior.BehaviorContext{Robot=this,Triggers=animations.DrivingTriggerMap??new Behavior.AnimationTriggerMap(),NativeTriggersProvider=()=>animations.DrivingTriggerMap,
             ClockSec=()=>Engine.Timer.Seconds,Needs=Engine.Needs};
-        var manager=new Behavior.BehaviorManager(context);
+        var manager=new Behavior.BehaviorManager(context,null,bindSensorOwner:true,nativeOwner:native);
         // fidelity: M8-012, M10-004, M10-008: bind the actual robot and movement owners.
         manager.ActionListIsEmpty=()=>native.ActionList.IsEmpty;
         manager.UpdateRobotPropertiesForReaction=active=>{ Motion.DirectDriveDisabled=active; native.ActionList.ExternalActionsDisabled=active; };
@@ -224,10 +224,17 @@ public sealed partial class CozmoRobot : IDisposable
         try { native.NativeBehaviorRuntime=new(this,native,manager,context,_vision); }
         catch { native.NativeConfiguredScoreFields=null; throw; }
         finally { native.NativeBehaviorRuntimeConstructing=false; }
-        manager.InitializeRobotReactions(Engine.Options.ResourcesPath,_vision,native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound,native);
-        if(native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
-        manager.BindReactionDependencies(native.NativeBehaviorRuntime.Manipulation,native.NativeBehaviorRuntime.Bound,native);
-        Sensors.RequestCurrentBehaviorEndImmediately=manager.RequestCurrentBehaviorEndImmediately;
+        if (native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
+        Sensors.RequestCurrentBehaviorEndImmediately = manager.RequestCurrentBehaviorEndImmediately;
+    }
+
+    private void BindNativeReactionMap(EngineRobot native)
+    {
+        var manager = native.BehaviorManagerOwner!;
+        var runtime = native.NativeBehaviorRuntime!;
+        manager.InitializeRobotReactions(Engine.HostReactionMap, _vision, runtime.Manipulation, runtime.Bound, native);
+        manager.BindReactionDependencies(runtime.Manipulation, runtime.Bound, native);
+        BindNativeSevereNeeds(native);
     }
     private Behavior.SevereNeedsComponent? _boundSevereNeeds;
     private bool _severeNeedsConstructed;
@@ -541,8 +548,14 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.NativeVisionFileTail = (native,path,epoch) => _vision?.StartupFileAlbum(native,path,epoch) == true;
         Engine.NativeVisionNvRestore = (native,epoch,album,enrollment) => _vision?.RestoreStockNv(native,epoch,album,enrollment) == true;
         if (Engine.Robot is { } groundOwner) _vision?.BindNativeGroundOwner(groundOwner);
-        Engine.BindRobotLifetime+=native=>{BindNativeMood(native);BindNativeBehaviorManager(native);BindNativeSevereNeeds(native);};
-        if(Engine.Robot is {} severeOwner){BindNativeMood(severeOwner);BindNativeBehaviorManager(severeOwner);BindNativeSevereNeeds(severeOwner);}
+        Engine.BindRobotLifetime += native => { BindNativeMood(native); BindNativeBehaviorManager(native); };
+        Engine.InitializeRobotReactions = BindNativeReactionMap;
+        if (Engine.Robot is { } existing)
+        {
+            BindNativeMood(existing);
+            BindNativeBehaviorManager(existing);
+            BindNativeReactionMap(existing);
+        }
 
     }
 

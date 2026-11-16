@@ -6,6 +6,7 @@ public sealed record BehaviorTransitionReport(byte OldId,byte NewId,byte OldClas
 public sealed partial class CozmoEngine
 {
     public event Action<BehaviorTransitionReport>? BehaviorTransition;
+    // 0x0071B806..0x0071B884 packs the six endpoint bytes and the length-prefixed display key.
     internal void BroadcastBehaviorTransition(BehaviorTransitionReport report)
     {
         byte[] key=System.Text.Encoding.UTF8.GetBytes(report.DisplayKey);

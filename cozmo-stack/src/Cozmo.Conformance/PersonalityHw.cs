@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Cozmo.Robot;
 
@@ -13,7 +14,7 @@ internal static class PersonalityHw
     internal static readonly string[] RecordIds =
     {
         "M7-001", "M7-019", "M8-012", "M10-001", "M10-003", "M10-004", "M10-008",
-        "M4-009", "M4-023", "M14-008", "M15-031", "M15-058"
+        "M4-009", "M4-023", "M13-038", "M14-008", "M15-031", "M15-058"
     };
 
     internal sealed record Step(string Id, string Instruction, string Question);
@@ -41,7 +42,7 @@ internal static class PersonalityHw
             Console.WriteLine($"[{step.Id}] {step.Instruction}");
             Console.WriteLine($"  {step.Question} [yes/no]");
         }
-        Console.WriteLine("Observations only. Each step records engine behavior, reaction and objective reports.");
+        Console.WriteLine("Observations only. Each step records engine behavior, public state, reaction and objective reports.");
     }
 }
 
@@ -49,6 +50,7 @@ internal sealed partial class M15CubeRun
 {
     void SubscribePersonalityReports(CozmoEngine engine)
     {
+        engine.RobotPublicStateChanged += report => Event("robot-public-state", JsonSerializer.SerializeToNode(report)!.AsObject());
         // M14-008: RobotObservedFace carries the name the engine published in 0x46.
         engine.RobotObservedFace += face => Event("face-observed", new()
         {
@@ -119,7 +121,7 @@ internal sealed partial class M15CubeRun
     JsonArray PersonalityReports(double start, double end)
     {
         return new JsonArray(events.Where(e =>
-                e["kind"]!.GetValue<string>() is "behavior-transition" or "reaction-transition" or "behavior-objective" or "face-observed"
+                e["kind"]!.GetValue<string>() is "behavior-transition" or "reaction-transition" or "behavior-objective" or "robot-public-state" or "face-observed"
                 && e["atMs"]!.GetValue<double>() >= start && e["atMs"]!.GetValue<double>() <= end)
             .OrderBy(e => e["atMs"]!.GetValue<double>()).Select(e => e.DeepClone()).ToArray());
     }

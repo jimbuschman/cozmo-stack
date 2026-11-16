@@ -65,15 +65,8 @@ public sealed partial class EngineRobot
     // Native InitReactionTriggerMap is after construction Delocalize (0x00510324 then 0x00510396).
     internal void InitDelocalizationStrategyRecipients()
     {
-        if (!HasExternalInterface || Engine.Options.ResourcesPath is not {} resources) return;
-        IReadOnlyList<ReactionMapEntry> entries;
-        try { entries = ReactionTriggerMap.Load(resources); }
-        catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or IOException)
-        {
-            SteppedBehavior.ReportMissing("M7-002/M11-072 reaction-map host input could not be loaded; native loader failure details are not built here: " + e.Message);
-            return;
-        }
-        foreach (var entry in entries)
+        if (!HasExternalInterface) return;
+        foreach (var entry in Engine.HostReactionMap)
         {
             // Native 0x005A1872 deletes a strategy whose target behavior was not loaded.
             if (!HasConfiguredBehavior(entry.BehaviorId)) continue;

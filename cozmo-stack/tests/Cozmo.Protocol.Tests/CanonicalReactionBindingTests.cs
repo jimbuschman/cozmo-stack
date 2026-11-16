@@ -41,6 +41,63 @@ public sealed class CanonicalReactionBindingTests
         Assert.NotNull(rig.Robot.Animations.Library);
     }
 
+    [Fact]
+    public void ConstructorPopulatesRetainedRowsAfterDelocalizeWithoutReplayingAnEmptyMapLock()
+    {
+        using var rig = new M4ControlTests.Rig(Resources());
+        int before = -1, retained = 0;
+        rig.Engine.BeforeConstructorDelocalizeForTest = owner =>
+        {
+            var manager = owner.BehaviorManagerOwner!;
+            retained = owner.Engine.HostReactionMap.Count;
+            before = manager.Reactions.Count;
+            manager.DisableReactionsWithLock("before-map", Enumerable.Repeat(true, BehaviorManager.TriggerCount).ToArray(), false);
+        };
+        rig.ToSynced();
+
+        var native = rig.Engine.Robot!;
+        var reactions = native.BehaviorManagerOwner!;
+        Assert.Equal(22, retained); // the shipped reactionTriggerBehaviorMap array
+        Assert.Equal(0, before); // 0x00510324 before 0x00510396
+        Assert.True(reactions.IsReactionTriggerEnabled(ReactionTrigger.CliffDetected)); // 0x005A2824: empty map returns
+        Assert.False(reactions.HasDisableLock(ReactionTrigger.CliffDetected, "before-map"));
+        Assert.Contains(reactions.Reactions, r => r.Strategy.Trigger == ReactionTrigger.CliffDetected);
+        Assert.Contains(reactions.Reactions, r => r.Strategy.Trigger == ReactionTrigger.RobotPickedUp);
+    }
+
+    [Theory]
+    [InlineData(ReactionTrigger.RobotPickedUp, "ReactToPickup")]
+    [InlineData(ReactionTrigger.CliffDetected, "ReactToCliff")]
+    public void FirstPhysicalEventAfterConnectionRunsTheConstructorReaction(ReactionTrigger trigger, string id)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var registration = Assert.Single(manager.Reactions.Where(r => r.Strategy.Trigger == trigger));
+        Assert.Equal(id, registration.Behavior.Id);
+        // The native first-action gate (0x005A3558..0x005A356C) opens when ActionList becomes nonempty.
+        Assert.Equal(0, f.Robot.ActionList.QueueAction(QueueActionPosition.Now, new ImmediateAction(), 0));
+        f.Rig.Tick();
+        var selected = new List<BehaviorManager.ReactionSwitch>();
+        var transitions = new List<BehaviorTransitionReport>();
+        f.Rig.Engine.BehaviorTransition += transitions.Add;
+        manager.ReactionTriggered += selected.Add;
+        if (trigger == ReactionTrigger.CliffDetected)
+        {
+            // Source strategy 0x0060DC7C consumes this C0 event on the next Robot::Update.
+            f.Rig.Data(new CliffEvent { Timestamp = f.Rig.Robot.State.Latest!.Timestamp, DetectedFlags = 1 });
+            f.Rig.Tick();
+        }
+        else
+        {
+            // Source strategy 0x0060DDCE classifies InAir after the off-treads debounce.
+            for (int i = 0; i < 12 && selected.Count == 0; i++) f.Motors(RobotStatusFlag.IsPickedUp);
+        }
+        var first = Assert.Single(selected);
+        Assert.Equal((trigger, id), (first.Trigger, first.Behavior));
+        Assert.Same(registration.Behavior, manager.Current);
+        Assert.Contains(transitions, transition => ((BehaviorID)transition.NewId).ToString() == id);
+    }
+
     // 0x005A1842..1898: the actual map retains per-trigger JSON order and registrations.
     // 0x00610E50..6C: the whiteboard ID is consumed and handed to this very Ram instance.
     [Fact]
@@ -265,7 +322,7 @@ public sealed class CanonicalReactionBindingTests
         var runtime=rig.Engine.Robot!.NativeBehaviorRuntime!;
         var context=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap()};
         using var manager=new BehaviorManager(context,null,false);
-        manager.InitializeRobotReactions(Resources(),rig.Robot.Vision);
+        manager.InitializeRobotReactions(ReactionTriggerMap.Load(Resources()),rig.Robot.Vision);
         int calls=0;
         void OnMissing(string message)
         {
@@ -291,7 +348,7 @@ public sealed class CanonicalReactionBindingTests
         using var other=ManipulationSystem.CreateStandalone(rig.Robot,rig.Robot.Vision,()=>rig.Engine.Timer.Seconds);
         var context=new BehaviorContext{Robot=rig.Robot,Triggers=new AnimationTriggerMap()};
         using var manager=new BehaviorManager(context,null,false);
-        manager.InitializeRobotReactions(Resources(),rig.Robot.Vision);
+        manager.InitializeRobotReactions(ReactionTriggerMap.Load(Resources()),rig.Robot.Vision);
         var before=manager.Reactions.ToArray();int calls=0;
         void OnMissing(string message)
         {
