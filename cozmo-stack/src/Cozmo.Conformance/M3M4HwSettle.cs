@@ -147,13 +147,7 @@ internal sealed partial class M3M4Run
     private async Task<JsonObject> AnimBudgetCheck()
     {
         var robot = _robot!; var res = new JsonObject(); var missing = new JsonArray();
-        string? audio = null;
-        if (robot.Animations.AudioSource is null && _repoRoot is not null && EngineStartupResources.Options(_argv).ResourcesPath is { } rp)
-        {
-            var sound = new[] { Path.Combine(rp, "sound"), Path.Combine(rp, "assets", "sound") }.FirstOrDefault(Directory.Exists);
-            if (sound is not null) { try { robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound }); audio = "Wwise banks from " + sound; } catch (Exception e) { audio = "Wwise load failed: " + e.Message; } }
-        }
-        res["audioSource"] = audio ?? (robot.Animations.AudioSource is null ? "none: audio keyframes stream silence frames, which the budget counts the same way" : "already set");
+        res["audioSource"] = robot.Animations.AudioSource is null ? "engine InitScene" : "explicit override";
         var clip = BudgetClip();
         if (clip is null) { res["verdict"] = "INCONCLUSIVE"; res["verdictRule"] = "no clip"; missing.Add("no loaded clip with audio, no body track, 4-15 s"); res["missing"] = missing; return res; }
         res["clip"] = new JsonObject { ["name"] = clip.Name, ["durationMs"] = clip.DurationMs, ["tracks"] = clip.Tracks.ToString(), ["rule"] = "longest clip with an audio track and no body track, 4..15 s, ties by name" };

@@ -84,12 +84,19 @@ internal sealed class SayTextAction : ActionRunner
                     _robot.Engine.EmitStackLog("MISSING VOICE-CANNED-NAME-DELIVERY-1: local shared audio device, archive or robot output is unavailable");
                     return 0x03000000;
                 }
+                _robot.Animations.ReleaseRuntimeAudioForReplacement();
                 _cannedOpening = owner.Acquire(samples, () => !_retired && !_owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _owner));
                 return 0;
             }
             string? library = Emulation.ShippedLibraries.FindLibDir();
             string? banks = _robot.Engine.Options.SpeechSoundBankDirectory;
             if (_openForTest is { } open) _opening = open(samples);
+            else if (_robot.Engine.RuntimeAudioStarted)
+            {
+                if (_owner.GetCannedSpeechOwner() is not { } runtime) return 0x03000000;
+                _robot.Animations.ReleaseRuntimeAudioForReplacement();
+                _opening = OpenSharedDirectSpeech(runtime, samples);
+            }
             else
             {
                 if (library is null || banks is null) return 0x03000000;
@@ -103,6 +110,10 @@ internal sealed class SayTextAction : ActionRunner
         _robot.Engine.EmitStackLog("MISSING M14-006/M6-018: SayText audio cannot enter the native WavePortal float-frame and robot-output path");
         return 0x03000000;
     }
+
+    private async Task<IDirectSpeechSession> OpenSharedDirectSpeech(CannedSpeechOwner runtime, float[] samples) =>
+        await runtime.Acquire(samples, () => !_retired && !_owner.Lifetime.Destroying &&
+            ReferenceEquals(_robot.Engine.Robot, _owner)).ConfigureAwait(false);
 
     public override uint CheckIfDone()
     {

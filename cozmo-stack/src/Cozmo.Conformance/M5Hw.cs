@@ -746,8 +746,7 @@ internal sealed class M5Run
             case "AUDIO":
                 {
                     var c = Clip(5500, 15000, AnimationTrack.Audio); if (c is null) return Missing("No >=5.5 s audio clip without body track");
-                    var sound = new[] { Path.Combine(resources, "sound"), Path.Combine(resources, "assets", "sound") }.FirstOrDefault(Directory.Exists);
-                    string source = "none (silence only)"; if (sound is not null) { r.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound }); source = sound; }
+                    string source = r.Animations.AudioSource is null ? "engine InitScene" : "explicit override";
                     double playStart = Now; Complete(Play(c), (int)c.DurationMs + 8000); double playEnd = Now; Wait(500);
                     var hooks = Diagnostics();
                     var result = M5HwAnalysis.AudioFromDiagnostics(Wire(), events, playStart, playEnd, hooks); result["playFromMs"] = playStart; result["playToMs"] = playEnd;

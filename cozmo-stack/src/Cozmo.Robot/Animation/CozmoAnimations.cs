@@ -181,6 +181,9 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-038
         robot.Engine.CreateGoToSleepSequence = _ => GoToSleepAnimation.Create(robot, SleepTriggerFactory);
         _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
+        _scheduler.RuntimeAudioSource = () => robot.Engine.Robot is { } owner && robot.Engine.RuntimeWwiseAudio is { } audio
+            ? (audio, () => !owner.Lifetime.Destroying && ReferenceEquals(robot.Engine.Robot, owner))
+            : null;
         _sink.AnimationEvent += e => robot.Engine.QueueAppEvent(Event,e); // Stack string observer, not a second native E2G publication.
         _sink.NotImplemented += w => NotImplemented?.Invoke(w);
         _scheduler.NotImplemented += w => NotImplemented?.Invoke(w);
@@ -585,6 +588,7 @@ public sealed class CozmoAnimations : IDisposable
     }
 
     internal void DrainAuthoredAudioCallbacks() => _scheduler.DrainAuthoredAudioCallbacks();
+    internal void ReleaseRuntimeAudioForReplacement() => _scheduler.ReleaseRuntimeAudioForReplacement();
 
     /// <summary>
     /// Plays a clip and reports which animation it became, so the caller can stop exactly that one.

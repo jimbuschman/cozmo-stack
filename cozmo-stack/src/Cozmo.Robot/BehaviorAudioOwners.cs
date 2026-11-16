@@ -19,7 +19,7 @@ public sealed partial class EngineRobot
         }
 
         if (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this)) return;
-        if (Engine.IsOfflineEngine && CannedSpeechSinkForTest is null) return;
+        if (Engine.IsOfflineEngine && CannedSpeechSinkForTest is null && Engine.RuntimeWwiseAudio is null) return;
         var audio = GetBehaviorAudioOwner();
         if (audio is not null)
             audio.SubmitBehaviorAudio(request, BehaviorAudioAppliedForTest);

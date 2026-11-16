@@ -150,6 +150,7 @@ internal class TriggerAnimationAction : ActionRunner
                 var audio=ordinaryOwner.GetCannedSpeechOwner();
                 if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
                 if (audio is null) { HostUnavailable="M14-006 ordinary authored audio requires the shared device, banks and archive"; Missing(HostUnavailable); return 0x03000000; }
+                _robot.Animations.ReleaseRuntimeAudioForReplacement();
                 _ordinaryOpening=_boundedOrdinary ? audio.AcquireOrdinaryIfAvailable(Current) : audio.AcquireOrdinary(Current);
             }
             if (!_ordinaryOpening.IsCompleted) return unchecked((int)EngineActionResult.Running);

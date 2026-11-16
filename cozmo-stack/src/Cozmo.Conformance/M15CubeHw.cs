@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
@@ -107,9 +108,7 @@ public static class M15CubeHw
             return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive)
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
-                // Every mode: the shared authored-audio device (M14-006) gates reaction animations and InteractWithFaces,
-                // not only speech (operator runs 2026-11-16: pickup reactions and Socialize aborted without it).
-                CommandBanks = Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta")),
+                CommandBanks = banks is null ? null : Path.GetFullPath(banks),
             }.Execute();
         }
         catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
@@ -140,7 +139,16 @@ internal sealed partial class M15CubeRun
     double Now => clock.Elapsed.TotalMilliseconds;
     public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes, bool withDrive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; this.withDrive = withDrive; }
-    void Event(string kind, JsonObject data) { data["atMs"] = Now; data["kind"] = kind; events.Enqueue(data); }
+    internal void Event(string kind, JsonObject data) { data["atMs"] = Now; data["kind"] = kind; events.Enqueue(data); }
+    internal void RecordObjectObservation(RobotObservedObjectReport report)
+    {
+        if (report.Family == (uint)ObjectFamily.LightCube) observations.Enqueue((Now, report));
+        else if (Skills && report.Type == (uint)ObjectType.Charger_Basic) chargerObservations.Enqueue((Now, report));
+    }
+
+    internal void RecordFrame(FrameEvent frame) =>
+        frames.Enqueue((Now, frame.Outbound, (byte[])frame.Raw.Clone(), frame.Frame, frame.Error));
+
     bool Poll(Func<bool> predicate, int ms) { double end = Now + ms; while (Now < end) { if (predicate()) return true; if (cancel.Token.WaitHandle.WaitOne(10)) cancel.Token.ThrowIfCancellationRequested(); } return predicate(); }
     JsonObject[] EngineLogs() => events.Where(e => e["kind"]?.GetValue<string>() == "engine-log").ToArray();
     string? ReadLineBounded()
@@ -196,32 +204,15 @@ internal sealed partial class M15CubeRun
             {
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;
-                e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject());
-                e.RobotObservedObject += report =>
-                {
-                    if (report.Family == (uint)ObjectFamily.LightCube) observations.Enqueue((Now, report));
-                    else if (Skills && report.Type == (uint)ObjectType.Charger_Basic) chargerObservations.Enqueue((Now, report));
-                };
+                e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a, BundleJson)!.AsObject());
+                e.RobotObservedObject += RecordObjectObservation;
                 if (FreeplayControl || Personality) SubscribeBehaviorReports(e);
                 if (Personality) SubscribePersonalityReports(e);
                 if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
-            // Animation sound: the shipped Wwise banks, as FreeplayTool and Reactions load them. Without a source every
-            // animation's audio track is silent (operator run 2026-11-16: no sounds except speech).
-            var sound = Path.Combine(resources, "sound");
-            if (Directory.Exists(sound))
-            {
-                robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound });
-                Event("animation-audio", new() { ["source"] = sound });
-            }
-            else
-            {
-                Console.WriteLine("WARNING: no sound folder under the resources; animations will be silent.");
-                Event("animation-audio", new() { ["source"] = null });
-            }
             if (Commands) SubscribeCommandCubeReports(robot);
-            robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
+            robot.Transport.FrameTrace += RecordFrame;
             robot.State.StateUpdated += s =>
             {
                 uint masked = s.Status & WatchedFlags;
@@ -285,14 +276,14 @@ internal sealed partial class M15CubeRun
         // M8-012: 0x87 and 0x88 carry old/new endpoints. M7-019: 0x8B carries a uint objective.
         engine.BehaviorTransition += report =>
         {
-            var data = JsonSerializer.SerializeToNode(report)!.AsObject();
+            var data = JsonSerializer.SerializeToNode(report, BundleJson)!.AsObject();
             data["oldBehavior"] = ((BehaviorID)report.OldId).ToString();
             data["newBehavior"] = ((BehaviorID)report.NewId).ToString();
             Event("behavior-transition", data);
         };
         engine.ReactionTransition += report =>
         {
-            var data = JsonSerializer.SerializeToNode(report)!.AsObject();
+            var data = JsonSerializer.SerializeToNode(report, BundleJson)!.AsObject();
             data["oldReaction"] = ReactionName(report.OldTrigger);
             data["newReaction"] = ReactionName(report.NewTrigger);
             Event("reaction-transition", data);
@@ -392,7 +383,7 @@ internal sealed partial class M15CubeRun
         Console.WriteLine($"\n[{name}] Looking for the cube (up to 30 s)...");
         bool seen = Poll(() => observations.Any(o => o.T >= since), 30000);
         var report = observations.Where(o => o.T >= since).Select(o => o.Report).FirstOrDefault();
-        Event("observe", new() { ["phase"] = name, ["seen"] = seen, ["report"] = report is null ? null : JsonSerializer.SerializeToNode(report) });
+        Event("observe", new() { ["phase"] = name, ["seen"] = seen, ["report"] = report is null ? null : JsonSerializer.SerializeToNode(report, BundleJson) });
         if (report is null) { errors.Enqueue($"{name}: no RobotObservedObject report within 30 s; pickup not attempted"); Console.WriteLine("    He did not report seeing a cube; skipping this round."); return; }
         Console.WriteLine($"    Seen: object {report.ObjectId} at ({report.Pose.X:F0}, {report.Pose.Y:F0}) mm.");
         Console.WriteLine($">>> WATCH: Cozmo should {(drive ? "drive to and " : "")}pick up the cube <<<");
@@ -516,7 +507,7 @@ internal sealed partial class M15CubeRun
         }, 35000);
         phase["goal"] = new JsonObject { ["xMm"] = x, ["yMm"] = y, ["angleRad"] = angle, ["originId"] = start.Pose.OriginId };
         var end = r.Motion.GetAiBodyObservation().LastState;
-        phase["finalPose"] = end is null ? null : JsonSerializer.SerializeToNode(end.Pose);
+        phase["finalPose"] = end is null ? null : JsonSerializer.SerializeToNode(end.Pose, BundleJson);
         phases.Add(phase);
         Console.WriteLine("    " + phase["detail"]);
         if (queued is { IsCompleted: false })
@@ -555,7 +546,7 @@ internal sealed partial class M15CubeRun
             return;
         }
         var id = reportSeen.ObjectId;
-        Event("charger-observed", JsonSerializer.SerializeToNode(reportSeen)!.AsObject());
+        Event("charger-observed", JsonSerializer.SerializeToNode(reportSeen, BundleJson)!.AsObject());
         Console.WriteLine($"    Charger seen: object {id} at ({reportSeen.Pose.X:F0}, {reportSeen.Pose.Y:F0}) mm.");
         Console.WriteLine($">>> WATCH: Cozmo should approach charger {id}, turn and back onto it <<<");
         var mount = RunSkillAction("mount-charger", id, r.Motion.QueueAiMountChargerAsync);
@@ -572,7 +563,7 @@ internal sealed partial class M15CubeRun
             .GroupBy(o => o.ObjectId).Select(g => g.Last()).OrderBy(o => o.Pose.X * o.Pose.X + o.Pose.Y * o.Pose.Y).ToList();
         Poll(() => Seen().Count >= want, 30000);
         var seen = Seen();
-        Event("observe", new() { ["phase"] = name, ["want"] = want, ["seen"] = JsonSerializer.SerializeToNode(seen) });
+        Event("observe", new() { ["phase"] = name, ["want"] = want, ["seen"] = JsonSerializer.SerializeToNode(seen, BundleJson) });
         foreach (var c in seen) Console.WriteLine($"    Seen: object {c.ObjectId} at ({c.Pose.X:F0}, {c.Pose.Y:F0}) mm.");
         return seen;
     }
@@ -616,63 +607,157 @@ internal sealed partial class M15CubeRun
         return new JsonObject { ["events"] = new JsonArray(items) };
     }
 
-    void WriteBundle()
+    private static readonly JsonSerializerOptions BundleJson = new(JsonSerializerOptions.Default)
     {
-        try
+        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+    };
+    private static readonly JsonSerializerOptions IndentedBundleJson = new(BundleJson) { WriteIndented = true };
+
+    private static JsonObject WireRow(M5Hw.WireMessage message) => new()
+    {
+        ["atMs"] = message.AtMs, ["outbound"] = message.Outbound, ["tag"] = $"0x{message.Payload[0]:X2}",
+        ["payloadHex"] = Convert.ToHexString(message.Payload), ["frameLine"] = message.FrameLine,
+        ["submessageOrdinal"] = message.SubmessageOrdinal, ["reliableSequence"] = message.ReliableSequence,
+        ["connectionEpoch"] = message.ConnectionEpoch
+    };
+
+    private static JsonObject DockingErrorRow(M5Hw.WireMessage message)
+    {
+        // DockingComponent::UpdateDockingErrorSignal 0x0063BE80, packed at 0x007C0B26 (M12-014).
+        var signal = (DockingErrorSignal)RobotMessage.Parse(message.Payload);
+        var row = WireRow(message);
+        row["robotTimestamp"] = signal.Timestamp;
+        row["xMm"] = signal.XDist;
+        row["yMm"] = signal.YDist;
+        row["zMm"] = signal.ZDist;
+        row["angleRad"] = signal.Angle;
+        return row;
+    }
+
+    internal void WriteBundle()
+    {
+        var writeErrors = new List<string>();
+        void TryPart(string name, Action write)
         {
-            var wire = M5HwAnalysis.OrderedUnique(M5HwAnalysis.ReadWire(frames.ToArray().Select((f, index) => new M5HwAnalysis.CapturedFrame(index + 1, f.T, f.Out, f.Frame)))).ToList();
-            foreach (var p in phases)
+            try { write(); }
+            catch (Exception error)
             {
-                var o = p!.AsObject();
+                string message = $"Could not write {name}: {error.Message}";
+                writeErrors.Add(message);
+                errors.Enqueue(message);
+                Console.Error.WriteLine(message);
+            }
+        }
+
+        void WriteText(string name, Func<string> text) =>
+            TryPart(name, () => File.WriteAllText(Path.Combine(bundle, name), text()));
+        void WriteLines(string name, Func<IEnumerable<string>> lines) =>
+            TryPart(name, () => File.WriteAllLines(Path.Combine(bundle, name), lines()));
+
+        var capturedFrames = frames.ToArray();
+        var wire = new Lazy<M5Hw.WireMessage[]>(() => M5HwAnalysis.OrderedUnique(M5HwAnalysis.ReadWire(capturedFrames
+            .Select((frame, index) => new M5HwAnalysis.CapturedFrame(index + 1, frame.T, frame.Out, frame.Frame)))).ToArray());
+        var missing = stackLines.Where(line => line.Contains("MISSING", StringComparison.Ordinal)).Distinct().ToArray();
+        WriteLines("frames.jsonl", () => capturedFrames.Select(frame => new JsonObject
+        {
+            ["atMs"] = frame.T, ["outbound"] = frame.Out, ["rawBase64"] = Convert.ToBase64String(frame.Raw), ["error"] = frame.Error
+        }.ToJsonString(BundleJson)));
+        WriteLines("messages.jsonl", () => wire.Value.Select(message => WireRow(message).ToJsonString(BundleJson)));
+        WriteLines("status.jsonl", () => transitions.Select(t => new JsonObject
+        {
+            ["atMs"] = t.T, ["robotTimestamp"] = t.Timestamp, ["status"] = Flags(t.Status)
+        }.ToJsonString(BundleJson)));
+        WriteLines("observations.jsonl", () => ObservationLines(observations));
+        WriteLines("events.jsonl", () => events.Select(e => e.ToJsonString(BundleJson)));
+        WriteLines("stack-log.txt", () => stackLines);
+
+        if (Skills)
+        {
+            // Confirmed charger reports use the E2G 0x44 body packed at 0x007131E2.
+            WriteLines("charger-observations.jsonl", () => ObservationLines(chargerObservations));
+            WriteLines("docking-error-signals.jsonl", () => wire.Value
+                .Where(message => message.Outbound && message.Payload[0] == (byte)RobotMessageId.DockingErrorSignal)
+                .Select(message => DockingErrorRow(message).ToJsonString(BundleJson)));
+        }
+
+        foreach (var phase in phases)
+            TryPart($"phase evidence for {phase?["phase"]}", () =>
+            {
+                var o = phase!.AsObject();
                 double start = o["startMs"]!.GetValue<double>(), end = o["endMs"]!.GetValue<double>();
                 if (Personality) o["engineReports"] = PersonalityReports(start, end);
-                else o["timeline"] = Timeline(wire, start, end);
-            }
-            var missing = stackLines.Where(l => l.Contains("MISSING", StringComparison.Ordinal)).Distinct().ToArray();
-            File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), RunName + (Commands
-                ? " test. Only sourced result codes are graded.\n\n" : " test. Nothing here passes or fails.\n\n")
-                + string.Join("\n", phases.Select(p => Commands
-                    ? $"{p!["phase"]}: {p["verdict"]}, result={p["engineResult"]}, observed={p["observed"]} ({p["detail"]})"
-                    : Personality
-                    ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]!.AsArray().Count}"
-                    : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
-                + "\n\nCube reports seen: " + observations.Count
-                + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
-                + "\n\nYour notes: " + answers.ToJsonString()
-                + "\n\nKnown gaps reported: " + missing.Length
-                + "\n\nRun errors:\n" + (errors.IsEmpty ? "None." : string.Join("\n", errors)));
-            File.WriteAllLines(Path.Combine(bundle, "frames.jsonl"), frames.Select(f => new JsonObject { ["atMs"] = f.T, ["outbound"] = f.Out, ["rawBase64"] = Convert.ToBase64String(f.Raw), ["error"] = f.Error }.ToJsonString()));
-            File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), wire.Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
-            File.WriteAllLines(Path.Combine(bundle, "status.jsonl"), transitions.Select(t => new JsonObject { ["atMs"] = t.T, ["robotTimestamp"] = t.Timestamp, ["status"] = Flags(t.Status) }.ToJsonString()));
-            File.WriteAllLines(Path.Combine(bundle, "observations.jsonl"), observations.Select(o => new JsonObject { ["atMs"] = o.T, ["report"] = JsonSerializer.SerializeToNode(o.Report) }.ToJsonString()));
-            File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
-            File.WriteAllLines(Path.Combine(bundle, "stack-log.txt"), stackLines);
-            var files = new JsonArray();
-            string[] sources = { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
-                "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/fidelity_manifest.json" };
-            var runSources = Commands
-                ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/CommandsHw.cs", "re-analysis/acceptance/hardware/scripts/ai-commands-hw-1.md" })
-                : Personality
-                ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/PersonalityHw.cs", "re-analysis/acceptance/hardware/scripts/personality-hw-1.md" })
-                : sources.Append("re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md");
-            foreach (var relative in runSources)
+                else o["timeline"] = Timeline(wire.Value, start, end);
+            });
+
+        var files = new JsonArray();
+        string[] sources = { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
+            "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/fidelity_manifest.json" };
+        var runSources = Commands
+            ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/CommandsHw.cs", "re-analysis/acceptance/hardware/scripts/ai-commands-hw-1.md" })
+            : Personality
+            ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/PersonalityHw.cs", "re-analysis/acceptance/hardware/scripts/personality-hw-1.md" })
+            : sources.Append("re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md");
+        foreach (string relative in runSources)
+        {
+            TryPart("provenance/" + relative, () =>
             {
-                string source = Path.Combine(root, relative); if (!File.Exists(source)) { errors.Enqueue("Missing provenance file " + relative); continue; }
-                string dest = Path.Combine(bundle, "provenance", relative); Directory.CreateDirectory(Path.GetDirectoryName(dest)!); File.Copy(source, dest, true);
-                files.Add(new JsonObject { ["path"] = relative, ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant() });
-            }
-            string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
-            var report = new JsonObject { ["testId"] = Commands ? CommandsHw.TestId : Personality ? PersonalityHw.TestId : M15CubeHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv),
-                ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count, ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(),
-                ["missingReported"] = JsonSerializer.SerializeToNode(missing), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors),
-                ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance" };
-            File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.WriteAllText(Path.Combine(bundle, "README.txt"), Commands
-                ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, their source references and operator observations. events.jsonl contains the timestamped public face and object reports and engine diagnostics."
-                : Personality
-                ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, public state, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
-                : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
+                string source = Path.Combine(root, relative);
+                string dest = Path.Combine(bundle, "provenance", relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                File.Copy(source, dest, true);
+                files.Add(new JsonObject { ["path"] = relative, ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dest))).ToLowerInvariant() });
+            });
         }
-        catch (Exception e) { Console.Error.WriteLine("Could not write the results folder: " + e.Message); }
+
+        string? commit = null;
+        TryPart("commit provenance", () =>
+        {
+            using var git = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD")
+            {
+                WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true,
+                UseShellExecute = false, CreateNoWindow = true
+            }) ?? throw new InvalidOperationException("Could not launch git");
+            string revision = git.StandardOutput.ReadToEnd().Trim();
+            string diagnostic = git.StandardError.ReadToEnd().Trim();
+            git.WaitForExit();
+            if (git.ExitCode != 0) throw new InvalidOperationException(diagnostic);
+            commit = revision;
+        });
+
+        WriteText("SUMMARY.txt", () => RunName + (Commands
+            ? " test. Only sourced result codes are graded.\n\n" : " test. Nothing here passes or fails.\n\n")
+            + string.Join("\n", phases.Select(p => Commands
+                ? $"{p!["phase"]}: {p["verdict"]}, result={p["engineResult"]}, observed={p["observed"]} ({p["detail"]})"
+                : Personality
+                ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]?.AsArray().Count}"
+                : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
+            + "\n\nCube reports seen: " + observations.Count
+            + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
+            + "\n\nYour notes: " + answers.ToJsonString(BundleJson)
+            + "\n\nKnown gaps reported: " + missing.Length
+            + "\n\nRun errors:\n" + (errors.IsEmpty ? "None." : string.Join("\n", errors)));
+        WriteText("README.txt", () => Commands
+            ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, their source references and operator observations. events.jsonl contains the timestamped public face and object reports and engine diagnostics."
+            : Personality
+            ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, public state, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
+            : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made."
+                + (Skills ? " charger-observations.jsonl records confirmed E2G 0x44 charger sightings. docking-error-signals.jsonl records outbound 0x48 corrections." : ""));
+        WriteText("result.json", () => new JsonObject
+        {
+            ["testId"] = Commands ? CommandsHw.TestId : Personality ? PersonalityHw.TestId : M15CubeHw.TestId,
+            ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv, BundleJson),
+            ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count,
+            ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(), ["missingReported"] = JsonSerializer.SerializeToNode(missing, BundleJson),
+            ["records"] = JsonSerializer.SerializeToNode(records, BundleJson), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors, BundleJson),
+            ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance"
+        }.ToJsonString(IndentedBundleJson));
+        if (writeErrors.Count > 0)
+            WriteLines("write-errors.txt", () => writeErrors.ToArray());
     }
+
+    private static IEnumerable<string> ObservationLines(IEnumerable<(double T, RobotObservedObjectReport Report)> sightings) =>
+        sightings.Select(observation => new JsonObject
+        {
+            ["atMs"] = observation.T, ["report"] = JsonSerializer.SerializeToNode(observation.Report, BundleJson)
+        }.ToJsonString(BundleJson));
 }

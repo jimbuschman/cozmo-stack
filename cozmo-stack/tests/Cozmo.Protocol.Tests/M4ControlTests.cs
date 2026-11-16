@@ -446,12 +446,13 @@ public class M4ControlTests
         public static readonly IPEndPoint RobotEp = new(RobotIp, 5551);
         private uint _ts = 100;
 
-        public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null)
+        public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null,
+                   Action<CozmoEngine>? engineCreated = null)
         {
             // The test factory owns an isolated default animation cache until Robot.Dispose; explicit fixture paths are retained.
             var settings=engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources };
             settings.OmitVisionForTest=!attachWorld; // Explicit world-less unit composition; production always builds it.
-            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, settings);
+            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, settings, engineCreated);
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
         }
 

@@ -23,6 +23,87 @@ public sealed class AiAuthoredAnimationTests
     }
 
     [Fact]
+    public async Task DefaultRobotAnimationStreamsShippedAudioFromStartupBanks()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        var options = new CozmoEngineOptions
+        {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), LabLocaleLanguage = "en", BlockPoolPath = ""
+        };
+        var sink = new Sink();
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+            sourceNvEmpty: true, engineOptions: options, engineCreated: engine => engine.RuntimeAudioSinkForTest = () => sink);
+        var runtime = Assert.IsType<CannedSpeechOwner>(f.Rig.Engine.RuntimeWwiseAudio);
+        await runtime.Ready.WaitAsync(TimeSpan.FromSeconds(25));
+        Assert.Same(runtime, f.Robot.GetCannedSpeechOwner());
+        Assert.Null(f.Rig.Robot.Animations.AudioSource);
+        var library = f.Rig.Robot.Animations.Library!;
+        var group = library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
+        var clip = library.GetClip(group.Entries[0].Name);
+        int mark = f.Rig.Mark();
+        Assert.NotNull(f.Rig.Robot.Animations.PlayTracked(clip, numLoops: 0));
+        await WaitForAudibleSample(mark, clip.Name);
+        Assert.True(f.Rig.Logged("Audio engine loaded InitScene"));
+
+        // The live speech action replaces the incumbent animation and acquires the same context worker.
+        var speech = new TextToSpeechComponent((_, _, _) => Enumerable.Repeat(.25f, 44100).ToArray());
+        f.Rig.Robot.DirectSpeechComponentForTest = speech;
+        using var cancel = new CancellationTokenSource();
+        mark = f.Rig.Mark();
+        var request = f.Rig.Robot.SayEnglishSentenceAsync("Cozmo", cancel.Token);
+        await WaitForAudibleSample(mark, "SayTextAnimation");
+        cancel.Cancel();
+        f.Rig.Tick();
+        Assert.True((await request.WaitAsync(TimeSpan.FromSeconds(2))).Admitted);
+        Assert.Same(runtime, f.Rig.Engine.RuntimeWwiseAudio);
+
+        async Task WaitForAudibleSample(int from, string expectedClip)
+        {
+            var deadline = System.Diagnostics.Stopwatch.StartNew();
+            int seen = 0;
+            bool started = false;
+            while (deadline.Elapsed < TimeSpan.FromSeconds(15))
+            {
+                sink.CompleteOne();
+                var stream = f.Rig.Robot.Animations.Scheduler.Stream;
+                f.Rig.Data(new AnimationState { NumAudioFramesPlayed = stream.FramesStreamed, NumAnimBytesPlayed = stream.BytesStreamed });
+                f.Motors(RobotStatusFlag.IsBodyAccMode);
+                var sent = f.Rig.SentSince(from);
+                for (; seen < sent.Count; seen++)
+                {
+                    if (sent[seen] is StartOfAnimation start)
+                    {
+                        started = f.Rig.Robot.Animations.Scheduler.Playing == expectedClip;
+                        f.Rig.Data(new AnimationStarted { AnimId = start.AnimId });
+                    }
+                    if (started && sent[seen] is AudioSample sample && sample.Samples.Any(b => b is not (0xFF or 0x7F)))
+                    {
+                        Assert.Equal(744, sample.Samples.Length);
+                        return;
+                    }
+                }
+                await Task.Delay(10);
+            }
+            Assert.Fail($"{expectedClip} did not stream an audible AudioSample from InitScene");
+        }
+    }
+
+    [Fact]
+    public void MissingStartupArchiveLeavesEngineRunningAndReportsMissing()
+    {
+        var log = new List<string>();
+        using var rig = new M4ControlTests.Rig(engineOptions: new CozmoEngineOptions { BlockPoolPath = "" },
+            engineCreated: engine =>
+            {
+                engine.StackLogLine += log.Add;
+                engine.RuntimeAudioSinkForTest = () => throw new InvalidOperationException("Audio opened without banks");
+            });
+        rig.Tick();
+        Assert.Null(rig.Engine.RuntimeWwiseAudio);
+        Assert.Contains(log, line => line.Contains("MISSING M6-024 InitScene"));
+    }
+
+    [Fact]
     public async Task SilentAuthoredClipUsesFirmwareCallbacksAndCompletionName()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true);

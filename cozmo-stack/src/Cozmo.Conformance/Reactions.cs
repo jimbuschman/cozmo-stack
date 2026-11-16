@@ -147,13 +147,6 @@ public static class ReactionsTool
         using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         var lib = robot.Animations.LoadFrom(assets);
         Console.WriteLine($"assets: {lib.ClipNames.Count} clips, {lib.GroupNames.Count} groups");
-        var sound = Path.Combine(obb, "assets", "cozmo_resources", "sound");
-        if (Directory.Exists(sound))
-        {
-            var meta = Path.Combine(obb, "sound_meta");
-            robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(
-                Directory.Exists(meta) ? new[] { sound, meta } : new[] { sound });
-        }
         var map = AnimationTriggerMap.Load(obb);
         var mood = new MoodState(MoodModel.Load(obb));
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };

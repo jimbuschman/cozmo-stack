@@ -589,6 +589,7 @@ public sealed class AnimationScheduler
 
     /// <summary>Where the sound for an audio keyframe comes from (M6); null leaves audio keyframes silent.</summary>
     public IAnimationAudioSource? AudioSource { get; set; }
+    internal Func<(CannedSpeechOwner Audio, Func<bool> Current)?>? RuntimeAudioSource;
 
     // fidelity: M6-028
     /// <summary>
@@ -907,9 +908,24 @@ public sealed class AnimationScheduler
     private Func<bool>? _authoredOwnerCurrent;
     internal void DrainAuthoredAudioCallbacks()
     {
-        WwiseRobotAudioPath? path;
-        lock (_gate) path = _authoredAudioPath;
+        WwiseRobotAudioPath? path, runtime;
+        lock (_gate)
+        {
+            path = _authoredAudioPath;
+            runtime = (_audio as RuntimeAudioAnimation)?.Path;
+        }
         path?.DrainCallbacks();
+        runtime?.DrainCallbacks();
+    }
+    // Explicit composed audio acquires the shared worker before admitting its new stream.
+    internal void ReleaseRuntimeAudioForReplacement()
+    {
+        lock (_gate)
+        {
+            if (_audio is not RuntimeAudioAnimation current) return;
+            current.Abort();
+            _audio = null;
+        }
     }
     private void ForgetAuthoredAudioPath(WwiseRobotAudioPath path)
     {
@@ -1142,7 +1158,7 @@ public sealed class AnimationScheduler
         _endSent = anim.IsEmpty;
         _startSent = false;
         var audio = CreateAudioAnimationLocked(anim,current,speechPath);
-        if(current is not null && !current()) { if (audio is SpeechAudioAnimation abandoned) abandoned.Abort(); return false; }
+        if(current is not null && !current()) { audio?.Abort(); return false; }
         if (speechPath is not null && audio is not SpeechAudioAnimation) return false;
         _audio = audio;
         // M9 owns CreateCustomSong and its "About to play the custom song" info; no M5 custom-song path.
@@ -1175,15 +1191,32 @@ public sealed class AnimationScheduler
     private IAudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim,Func<bool>? current=null,WwiseRobotAudioPath? speechPath=null)
     {
         if (_audio is not null) { _audio.Abort(); if(current is not null && !current())return null; _audio = null; }
-        SteppedBehavior_ReportPostConstruction();
-        if(current is not null && !current())return null;
-        if (OutputSource is not { } provider) return speechPath is not null || anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
-        var source=provider();
-        if(current is not null && !current())return null;
+        if (OutputSource is not { } provider)
+        {
+            SteppedBehavior_ReportPostConstruction();
+            return (current is not null && !current()) || speechPath is not null || anim.RobotAudio.IsEmpty
+                ? null : new AudioAnimation(this, anim.RobotAudio);
+        }
+        var source = provider();
+        var runtime = source == RobotAudioOutputSource.PlayOnRobot && speechPath is null && AudioSource is null
+            ? RuntimeAudioSource?.Invoke() : null;
+        if (speechPath is null && runtime is null) SteppedBehavior_ReportPostConstruction();
+        if (current is not null && !current()) return null;
         switch ((byte)(source ?? RobotAudioOutputSource.None))
         {
             case 2:
-                return anim.RobotAudio.IsEmpty ? null : speechPath is null ? new AudioAnimation(this, anim.RobotAudio) : new SpeechAudioAnimation(this, anim.RobotAudio, speechPath);
+                if (anim.RobotAudio.IsEmpty) return null;
+                if (speechPath is not null) return new SpeechAudioAnimation(this, anim.RobotAudio, speechPath);
+                if (runtime is { } native)
+                {
+                    var events = ReadAuthoredAudio(this, anim.RobotAudio);
+                    if (events.Count != 0) return new RuntimeAudioAnimation(this, native.Audio, native.Current, events);
+                    // 0x0059A0BA..0x0059A118 drops the audio animation when all references were rejected.
+                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Audio",
+                        "RobotAudioClient.CreateAudioAnimation", $"Audio is not needed right now for animation: {anim.Name}");
+                    return null;
+                }
+                return new AudioAnimation(this, anim.RobotAudio);
             case 1:
                 if (speechPath is not null) return null;
                 _ = new AudioAnimation(this, anim.RobotAudio); // D1 draws also run for the device consumer.
@@ -1696,15 +1729,16 @@ public sealed class AnimationScheduler
     private bool ShouldProcessAnimationFrame(StreamAnimation anim)
     {
         if (Stream.RobotMessageCount != 0) return false;
-        if (_audio is null) return anim.HasFramesLeft;
-        _audio.Update(_startMs, _streamMs);
-        if (_audio.IsComplete)
+        if (_audio is not { } audio) return anim.HasFramesLeft;
+        audio.Update(_startMs, _streamMs);
+        if (!ReferenceEquals(_audio, audio)) return false;
+        if (audio.IsComplete)
         {
-            if (_audio is SpeechAudioAnimation speech) speech.Completed();
+            audio.Completed();
             _audio = null;
             return true;
         }
-        return _audio.IsReady;
+        return audio.IsReady;
     }
 
     /// <summary>
@@ -1751,7 +1785,7 @@ public sealed class AnimationScheduler
         {
             if (_startSent)
             {
-                if (_audio is SpeechAudioAnimation speech) speech.Completed();
+                _audio?.Completed();
                 _audio = null;                           // RobotAudioClient::ClearCurrentAnimation
                 return SendEndOfAnimationLocked();
             }
@@ -2134,7 +2168,101 @@ public sealed class AnimationScheduler
         bool Streaming { get; }
         void Update(long start, long streamTime);
         byte[]? PopFrame();
+        void Completed() { }
         void Abort();
+    }
+
+    private static List<(StreamKeyframe Frame, WwiseRobotAudioKeyframe Key)> ReadAuthoredAudio(
+        AnimationScheduler scheduler, StreamTrack<StreamKeyframe> track)
+    {
+        var events = new List<(StreamKeyframe, WwiseRobotAudioKeyframe)>();
+        while (track.Current is { } frame)
+        {
+            var key = (AudioKeyframe)frame.Source;
+            int index = scheduler.GetAudioRefIndex(key, true);
+            if (index >= 0 && index < key.EventIds.Length && key.EventIds[index] != 0)
+                events.Add((frame, new(key.TriggerTimeMs,
+                    new[] { new WwiseRobotAudioRef(unchecked((uint)key.EventIds[index]), key.Volume, false) }, new[] { 1f })));
+            track.MoveToNext();
+        }
+        return events;
+    }
+
+    // RobotAudioClient selects object 7 for ordinary robot output (0x0059A076..0x0059A0B6).
+    private sealed class RuntimeAudioAnimation : IAudioAnimation
+    {
+        private readonly AnimationScheduler _scheduler;
+        private readonly Func<bool> _current;
+        private readonly Task<CannedSpeechLease> _opening;
+        private readonly List<(StreamKeyframe Frame, WwiseRobotAudioKeyframe Key)> _events;
+        private CannedSpeechLease? _lease;
+        private int _eventIndex, _retired;
+        private bool _failed;
+        internal WwiseRobotAudioPath? Path => _lease?.Path;
+        public bool IsReady => Path?.State is WwiseRobotAudioState.LoadingStream or WwiseRobotAudioState.AudioFramesReady;
+        public bool IsComplete => _failed || Path?.State is WwiseRobotAudioState.AnimationCompleted or WwiseRobotAudioState.AnimationError;
+        public bool Streaming => !IsComplete;
+
+        internal RuntimeAudioAnimation(AnimationScheduler scheduler, CannedSpeechOwner owner, Func<bool> current,
+            List<(StreamKeyframe Frame, WwiseRobotAudioKeyframe Key)> events)
+        {
+            _scheduler = scheduler;
+            _current = current;
+            _events = events;
+            _opening = owner.AcquireOrdinary(() => Volatile.Read(ref _retired) == 0 && current());
+        }
+
+        public void Update(long start, long streamTime)
+        {
+            if (!_current()) { _failed = true; return; }
+            if (_lease is null)
+            {
+                if (!_opening.IsCompleted) return;
+                if (!_opening.IsCompletedSuccessfully)
+                {
+                    _failed = true;
+                    _scheduler.Log?.Invoke("MISSING M6-028 authored animation audio: " +
+                        (_opening.Exception?.GetBaseException().Message ?? "shared worker admission retired"));
+                    return;
+                }
+                _lease = _opening.Result;
+                _lease.Path.InitAnimation(_events.Select(entry => entry.Key).ToArray(), 7);
+            }
+            if (_lease.Failure is { } failure)
+            {
+                _failed = true;
+                _scheduler.Log?.Invoke("MISSING M6-028 authored animation audio: " + failure.Message);
+                return;
+            }
+            var path = _lease.Path;
+            path.StartTimeMs = start;
+            path.Update(streamTime);
+            while (_eventIndex < _events.Count && start + _events[_eventIndex].Frame.Trigger <= streamTime)
+            {
+                _scheduler.BufferLocal(null, _events[_eventIndex].Frame);
+                _eventIndex++;
+            }
+        }
+
+        public byte[]? PopFrame() => Path?.PopRobotAudioMessage();
+        public void Completed() => Retire(false);
+        public void Abort() => Retire(true);
+
+        private void Retire(bool abort)
+        {
+            if (Interlocked.Exchange(ref _retired, 1) != 0) return;
+            if (_lease is { } lease)
+            {
+                if (abort) lease.Path.Abort();
+                lease.Retire();
+            }
+            else
+                _ = _opening.ContinueWith(open =>
+                {
+                    if (open.IsCompletedSuccessfully) open.Result.Retire();
+                    else _ = open.Exception;
+                }, TaskScheduler.Default);
+        }
     }
 
     private sealed class SpeechAudioAnimation : IAudioAnimation
@@ -2147,23 +2275,15 @@ public sealed class AnimationScheduler
             _path = path;
             _scheduler = scheduler;
             _authored = ReferenceEquals(scheduler._authoredAudioPath, path);
-            var keyframes = new List<WwiseRobotAudioKeyframe>();
-            while (track.Current is { } frame)
-            {
-                var key = (AudioKeyframe)frame.Source;
-                int index = scheduler.GetAudioRefIndex(key, true);
-                if (index >= 0 && index < key.EventIds.Length && key.EventIds[index] != 0)
-                    keyframes.Add(new(key.TriggerTimeMs, new[] { new WwiseRobotAudioRef(unchecked((uint)key.EventIds[index]), key.Volume, false) }, new[] { 1f }));
-                track.MoveToNext();
-            }
-            _path.InitAnimation(keyframes, 7);
+            var events = ReadAuthoredAudio(scheduler, track);
+            _path.InitAnimation(events.Select(entry => entry.Key).ToArray(), 7);
         }
         public bool IsReady => _path.State is WwiseRobotAudioState.LoadingStream or WwiseRobotAudioState.AudioFramesReady;
         public bool IsComplete => _path.State is WwiseRobotAudioState.AnimationCompleted or WwiseRobotAudioState.AnimationError;
         public bool Streaming => !IsComplete;
         public void Update(long start, long streamTime) { _path.StartTimeMs = start; if (!_authored) _path.DrainCallbacks(); _path.Update(streamTime); }
         public byte[]? PopFrame() => _path.PopRobotAudioMessage();
-        internal void Completed() { if (_authored) { _path.RetireWithoutAbort(); _scheduler.ForgetAuthoredAudioPath(_path); } }
+        public void Completed() { if (_authored) { _path.RetireWithoutAbort(); _scheduler.ForgetAuthoredAudioPath(_path); } }
         public void Abort() { _path.Abort(); Completed(); }
     }
 
@@ -2369,7 +2489,7 @@ public sealed class AnimationScheduler
             var setupRelease = ReleaseSetupHandlers; ReleaseSetupHandlers = null;
             setupRelease?.Invoke(); // +0x1B4 handles, before owned live animation.
             _live.Clear();
-            if (_audio is SpeechAudioAnimation speech) speech.Abort();
+            _audio?.Abort();
             _audio = null;
             _tlc.Destroy();
             _idleStack.Clear();
@@ -2417,7 +2537,7 @@ public sealed class AnimationScheduler
             _liveFlag = false;
             _bodyDurMs = _liftDurMs = _headDurMs = _bodySpacingMs = _liftSpacingMs = _headSpacingMs = 0;
             _liveEyeShiftTag = 0;
-            if (_audio is SpeechAudioAnimation speech) speech.Abort();
+            _audio?.Abort();
             _audio = null;
             _keepAliveTimeoutSec = 0.5f;
             _lastInitName = "";

@@ -7,6 +7,7 @@
     <AssemblyName>cozmo-conformance</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
     <ProjectReference Include="..\Cozmo.Protocol\Cozmo.Protocol.csproj" />
     <ProjectReference Include="..\Cozmo.Transport\Cozmo.Transport.csproj" />
     <ProjectReference Include="..\Cozmo.Robot\Cozmo.Robot.csproj" />

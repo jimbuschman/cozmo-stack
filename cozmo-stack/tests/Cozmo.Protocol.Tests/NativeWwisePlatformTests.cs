@@ -1,3 +1,4 @@
+using Cozmo.Robot;
 using Cozmo.Robot.Animation.Wwise;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Emulation;
@@ -13,14 +14,16 @@ public sealed class NativeWwisePlatformTests
     public async Task FreeplayActivityChangeReachesNativeWwiseInClientOrder()
     {
         string resources = PickupPyramidNativeExecutionTests.Resources();
-        var rig = new M4ControlTests.Rig(resources);
         var sink = new FakeSink();
+        var rig = new M4ControlTests.Rig(engineOptions: new CozmoEngineOptions { ResourcesPath = resources, BlockPoolPath = "" },
+            engineCreated: engine => engine.RuntimeAudioSinkForTest = () => sink);
         int consumed = 0;
         try
         {
             rig.ToSynced();
             var owner = rig.Engine.Robot!;
-            owner.CannedSpeechSinkForTest = () => sink;
+            var runtime = Assert.IsType<CannedSpeechOwner>(rig.Engine.RuntimeWwiseAudio);
+            Assert.Same(runtime, owner.GetCannedSpeechOwner());
             var applied = new System.Collections.Concurrent.ConcurrentQueue<(BehaviorAudioRequest Request, uint Result)>();
             owner.BehaviorAudioAppliedForTest = (request, result) => applied.Enqueue((request, result));
             var logs = new List<Cozmo.Robot.EngineLogEntry>();
@@ -33,7 +36,7 @@ public sealed class NativeWwisePlatformTests
             var until = DateTime.UtcNow + TimeSpan.FromSeconds(20);
             while (applied.Count < 12 && DateTime.UtcNow < until)
             {
-                owner.UpdateMusicAtEngineTail();
+                rig.Tick();
                 CompleteAvailable();
                 await Task.Delay(8);
             }

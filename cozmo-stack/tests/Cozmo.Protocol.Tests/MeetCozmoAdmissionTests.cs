@@ -1,3 +1,4 @@
+using Cozmo.Conformance;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -12,6 +13,56 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class MeetCozmoAdmissionTests
 {
+    [Fact]
+    public void CommandHardwareOptionsAdmitEnrollmentAfterSelectionWait()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        string resources = PickupPyramidNativeExecutionTests.Resources();
+        Assert.True(File.Exists(Path.Combine(resources, "sound", "AudioAssets.zip")));
+        Assert.False(File.Exists(Path.Combine(banks, "AudioAssets.zip")));
+        string directory = Directory.CreateTempSubdirectory("cozmo-teach-command-").FullName;
+        try
+        {
+            var options = HardwareEngineOptions.Create(resources, filesPath: directory,
+                deviceIdPath: Path.Combine(directory, "das-id"), localeName: "en-US",
+                blockPoolPath: "", speechSoundBankDirectory: banks);
+            Assert.Null(options.SpeechAudioArchivePath); // This is the actual --commands option shape.
+            using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true, engineOptions: options);
+            var robot = f.Rig.Robot;
+            robot.SetEnableFreeplayActivity(false);
+            f.Rig.Tick();
+            Assert.Equal("Wait", f.Robot.BehaviorManagerOwner!.Current?.Id);
+            robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
+            robot.SetFaceToEnroll("Test Robin");
+            var enrollment = Assert.IsType<NativeEnrollFaceBehavior>(f.Runtime.Bound["EnrollFace"]);
+            for (int i = 0; i < 20 && !enrollment.EngineRunning; i++) f.Rig.Tick();
+            Assert.True(enrollment.EngineRunning, string.Join(Environment.NewLine,
+                f.Rig.Log.Where(line => line.Contains("enroll", StringComparison.OrdinalIgnoreCase)).TakeLast(8)));
+            Assert.Same(enrollment, f.Robot.BehaviorManagerOwner.Current);
+            Assert.Equal(2, enrollment.Phase);
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CommandReportWaitEndsOnTheMatchingReportOrItsDeadline(bool matching)
+    {
+        Action<FaceEnrollmentCompletedReport>? delivery = null;
+        var expected = new FaceEnrollmentCompletedReport(0, 7, "Test Robin");
+        var report = await Task.Run(() => CommandsHw.WaitForReport<FaceEnrollmentCompletedReport>(
+            handler => delivery += handler, handler => delivery -= handler, candidate => candidate.Id == 7,
+            () =>
+            {
+                delivery!.Invoke(new FaceEnrollmentCompletedReport(0, 8, "Other"));
+                if (matching) delivery.Invoke(expected);
+            }, TimeSpan.FromMilliseconds(100), CancellationToken.None)).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(matching ? expected : null, report);
+        Assert.Null(delivery);
+    }
+
     [Fact]
     public void UnnamedSaveTargetIsRejectedBeforeMissingAudioPreflight()
     {
