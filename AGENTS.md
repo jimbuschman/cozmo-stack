@@ -46,6 +46,10 @@ one hit was closed from the binary); and the manager spot-read its main path aga
 build, the binary addresses, the test), checks the result against the binary and the tests, merges and pushes.
 Only jobs that finish a SCOPE.md item go in the queue.
 
+**Keeping Codex fed (operator, 2026-11-16):** the manager keeps at least five OPEN (Codex) rows in QUEUE.md and pushes
+new rows to main on their own, straight away, never waiting on a merge or the test suite. Before marking a row READY,
+a worker also runs every test class that names a symbol or MISSING text it changed, not only its new tests.
+
 The fidelity manifest, the inventories and the research files stay as reference material. `fidelity.py --check` and
 the push gate still run, so nothing in them may be left inconsistent.
 
