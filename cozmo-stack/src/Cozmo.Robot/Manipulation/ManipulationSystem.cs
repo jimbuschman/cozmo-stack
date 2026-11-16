@@ -38,6 +38,12 @@ public sealed class ManipulationSystem : IDisposable
         Whiteboard = standalone?new AIWhiteboard(vision.World,()=>ClockSec()):shared?.Whiteboard??new AIWhiteboard(vision.World, () => ClockSec());
         if (_ownsWhiteboard)
         {
+            // 0x0056AC8E..0x0056AC92 reads this whiteboard's Robot. GetWorldOrigin
+            // (0x005128FC) returns that Robot's current PoseOriginList entry on each call.
+            if (nativeOwner is not null)
+                Whiteboard.ClearQuadWorldOrigin = () =>
+                    !_disposed && !nativeOwner.Lifetime.Destroying && ReferenceEquals(robot.Engine.Robot, nativeOwner) &&
+                    nativeOwner.TryGetNativeOriginOwner(nativeOwner.CurrentOriginId, out var origin) ? origin : null;
             void onTreads(OffTreadsState from, OffTreadsState to)
             {
                 if (to == OffTreadsState.OnTreads)
@@ -47,8 +53,6 @@ public sealed class ManipulationSystem : IDisposable
             _installedCallbacks.Add(() => robot.Sensors.WhiteboardOffTreadsStateChanged -= onTreads);
         }
         if(_ownsSharedServices)vision.World.MapClearQuad=Whiteboard.ProcessClearQuad;
-        // fidelity: M8-026
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built");
         // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This
         // stack has no external interface registered, so the warning path is the live one.

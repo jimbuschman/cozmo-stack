@@ -474,9 +474,7 @@ public sealed partial class CozmoRobot : IDisposable
             if(stage=="FaceWorld")return;
             if(stage=="AIComponent" && Engine.Robot is {} native && native.NativeBehaviorRuntime?.Manipulation is {} manipulation)
             {
-                var whiteboard=manipulation.Whiteboard;
-                whiteboard.ClearQuadWorldOrigin=()=>native.GetNativeOrigin(native.CurrentOriginId);
-                whiteboard.OnRobotDelocalized();
+                manipulation.Whiteboard.OnRobotDelocalized();
                 // Other AIComponent recipients are still unbuilt.
             }
             Behavior.SteppedBehavior.ReportMissing("M11-069 "+stage+".OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)");

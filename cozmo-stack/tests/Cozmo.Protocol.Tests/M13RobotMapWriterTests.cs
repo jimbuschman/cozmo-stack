@@ -15,7 +15,7 @@ public sealed class M13RobotMapWriterTests
         Assert.True(map.HasCollisionRayWithTypes(new(-40,0),new(-30,0),t=>t==MemoryMapContentType.ClearOfObstacle));
         Assert.Empty(map.Regions);
     }
-    // reach: unit (supplies pose/cliff/time to writer, observer only; whiteboard origin MISSING at 0x0056AC92).
+    // reach: unit (supplies pose/cliff/time to writer, observer only; unit does not exercise the Robot whiteboard binding).
     // Old code: zero native writes, one legacy region; rootless repeat is suppressed.
     [Fact]
     public void ParentGateSkipsUnchangedOwnedPoseButRootlessPoseWritesAgain()
@@ -61,7 +61,7 @@ public sealed class M13RobotMapWriterTests
         }
         finally{maps.Dispose();}
     }
-    // reach: unit (supplies full 3D pose/cliff/time; whiteboard origin MISSING at 0x0056AC92).
+    // reach: unit (supplies full 3D pose/cliff/time; unit does not exercise the Robot whiteboard binding).
     // Old code: patch centre is (0,0); no native cliff data, and z=25 is discarded.
     [Fact]
     public void TiltUsesLocalZ25AndProjectedXAxisWithoutNormalizing()
@@ -76,7 +76,7 @@ public sealed class M13RobotMapWriterTests
         }
         finally{maps.Dispose();}
     }
-    // reach: unit (supplies pose/time to writer -> actual tree/ray; whiteboard origin MISSING at 0x0056AC92).
+    // reach: unit (supplies pose/time to writer -> actual tree/ray; unit does not exercise the Robot whiteboard binding).
     // Old code: native type-1 footprint absent, selected clear-of-obstacle query is false.
     [Fact]
     public void FootprintIsVisibleOnlyToSelectedTypeOneMask()

@@ -83,7 +83,7 @@ public class FaceTests
     /// or turned 20 degrees from where it last did (the <c>IsSameAs</c> at 0x0067E27C), and as Cliff
     /// instead when something is reporting one (the type byte 2 against the cliff data at 0x0067E3C2).
     /// </summary>
-    // reach: unit (supplies owned parented poses/time; actual native insert/ray; whiteboard origin MISSING at 0x0056AC92).
+    // reach: unit (supplies owned parented poses/time; actual native insert/ray; unit does not exercise the Robot whiteboard binding).
     // Old code: largerTurn returns null due to legacy centre suppression; no native type-1 ray hit.
     [Fact]
     public void TheRobotWritesTheGroundItHasBeenOverIntoTheMemoryMap()

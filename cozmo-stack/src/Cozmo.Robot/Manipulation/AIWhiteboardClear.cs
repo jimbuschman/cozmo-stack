@@ -132,7 +132,7 @@ public sealed partial class AIWhiteboard
             _world.SourceLog?.Invoke(level, channel, key, text), _world.NativeForceFlush);
         if (ClearQuadWorldOrigin?.Invoke() is not { } origin)
         {
-            SteppedBehavior.ReportMissing("M8-026 GetWorldOrigin 0x004A4C54 at 0x0056AC92 has no bound Robot/world-origin provider; ProcessClearQuad unit is built");
+            SteppedBehavior.ReportMissing("M8-026 ProcessClearQuad 0x0056AC92: current Robot world origin unavailable");
             return;
         }
         if (origin.Node is null)
@@ -140,7 +140,9 @@ public sealed partial class AIWhiteboard
             StackDiagnostics.Write("M1-034 M8-026 null origin pose at 0x0056ACA2: skip ProcessClearQuad; prior list retained");
             return;
         }
-        using var capture = new Pose3d(origin); // 56ACA2
+        // 0x0056ACA2/0x0056ACC2 copy the pose nodes. If the current origin is a
+        // root, the copy is a distinct root and the predicate retains its entries.
+        using var capture = new Pose3d(origin);
         int size = PossibleObjectStorage.Count;
         using (var predicateCapture = new Pose3d(capture)) // 56ACC2, destroyed before size/render check
         {

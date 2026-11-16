@@ -920,7 +920,7 @@ public class CoreReviewTests
         Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
 
         var map = new MemoryMap();
-        // Map assertion reach: unit (supplied pose/time; whiteboard origin MISSING at 0x0056AC92). Old writer leaves a legacy region and no native type-1 cells.
+        // Map assertion reach: unit (supplied pose/time; unit does not exercise the Robot whiteboard binding). Old writer leaves a legacy region and no native type-1 cells.
         using var mapPose=new Pose3d(Mat3.Identity,Vec3.Zero);
         map.UpdateRobotPose(mapPose,false,1);
         Assert.True(map.HasCollisionRayWithTypes(new(-30,0),new(-20,0),t=>t==MemoryMapContentType.ClearOfObstacle));
