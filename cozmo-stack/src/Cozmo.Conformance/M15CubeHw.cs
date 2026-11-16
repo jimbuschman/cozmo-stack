@@ -47,10 +47,11 @@ public static class M15CubeHw
     public const string MoveText = "Now move the cube about 25 cm (10 in) in front of him and a little to one side,\n"
         + "still UPRIGHT (lights on top) with a side marker facing roughly toward him. He will drive to it. Press Enter when it is in place.";
 
-    public static List<JsonObject> LoadRecords(string path, bool skills = false, bool freeplayControl = false)
+    public static List<JsonObject> LoadRecords(string path, bool skills = false, bool freeplayControl = false, bool personality = false)
     {
         var all = JsonNode.Parse(File.ReadAllText(path))!["records"]!.AsArray().Select(x => x!.AsObject()).ToDictionary(x => x["id"]!.GetValue<string>());
-        var ids = freeplayControl ? new[] { "M15-031", "M15-058", "M8-012", "M8-013", "M8-015", "M7-019" }
+        var ids = personality ? PersonalityHw.RecordIds
+            : freeplayControl ? new[] { "M15-031", "M15-058", "M8-012", "M8-013", "M8-015", "M7-019" }
             : skills ? RecordIds.Concat(new[] { "M13-008", "M13-009", "M13-016", "M12-035", "M13-028", "M13-041", "M12-023", "M12-024", "M12-032" }) : RecordIds;
         var missing = ids.Where(id => !all.ContainsKey(id)).ToArray();
         if (missing.Length > 0) throw new InvalidOperationException("Missing fidelity records: " + string.Join(", ", missing));
@@ -62,7 +63,8 @@ public static class M15CubeHw
         try
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
-            bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false, personality = false;
+            string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false);
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
@@ -70,18 +72,23 @@ public static class M15CubeHw
                     case "--with-drive": withDrive = true; break;
                     case "--skills": skills = true; break;
                     case "--freeplay-control": freeplayControl = true; break;
+                    case "--personality": personality = true; break;
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
-            if (freeplayControl && (skills || withDrive))
-                throw new ArgumentException("--freeplay-control is a separate round. Run --skills and --with-drive separately.");
-            var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl);
+            if ((freeplayControl || personality) && (skills || withDrive || freeplayControl && personality))
+                throw new ArgumentException("Run the Freeplay control, personality, and cube rounds separately.");
+            if (personality && yes && !validate)
+                throw new ArgumentException("The personality round needs the operator's observations. Omit --yes.");
+            string testId = personality ? PersonalityHw.TestId : TestId;
+            var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality);
             if (validate)
             {
-                Console.WriteLine($"{TestId}: {records.Count} valid records; no network opened.");
+                Console.WriteLine($"{testId}: {records.Count} valid records; no network opened.");
                 if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
                 if (freeplayControl) Console.WriteLine($"{FreeplaySetup}\nFreeplay for {FreeplaySeconds} s, queue CozmoSaysSpeakLoop once, then another {FreeplaySeconds} s of Freeplay.");
+                if (personality) PersonalityHw.PrintPlan();
                 return 0;
             }
             if (Robot.Emulation.ShippedLibraries.FindLibDir() is null)
@@ -89,14 +96,15 @@ public static class M15CubeHw
             if (!Robot.Vision.MarkerLibrary.IsAvailable)
                 throw new ArgumentException("The cube marker library is not on this PC, so Cozmo cannot read cube markers. With Python installed and resources/lib/armeabi-v7a/libcozmoEngine.so present, run: python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so, then rebuild.");
             var options = EngineStartupResources.OptionsForRoot(resources);
-            string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
-            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive) { Skills = skills, FreeplayControl = freeplayControl }.Execute();
+            string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + testId + "-" + Guid.NewGuid().ToString("N")[..6]);
+            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive)
+            { Skills = skills, FreeplayControl = freeplayControl, Personality = personality }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
-internal sealed class M15CubeRun
+internal sealed partial class M15CubeRun
 {
     const uint WatchedFlags = (uint)(RobotStatusFlag.IsPickingOrPlacing | RobotStatusFlag.IsCarryingBlock | RobotStatusFlag.IsMoving | RobotStatusFlag.AreWheelsMoving | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsOnCharger);
     static readonly RobotMessageId[] WatchedTags = { RobotMessageId.DockWithObject, RobotMessageId.PlaceObjectOnGround, RobotMessageId.DockingErrorSignal, RobotMessageId.PickAndPlaceResult };
@@ -112,7 +120,8 @@ internal sealed class M15CubeRun
     uint? lastStatus;
     public bool Skills { get; init; }
     public bool FreeplayControl { get; init; }
-    string RunName => FreeplayControl ? "Freeplay control" : "Cube pickup and put-down";
+    public bool Personality { get; init; }
+    string RunName => Personality ? "Personality observations" : FreeplayControl ? "Freeplay control" : "Cube pickup and put-down";
     double Now => clock.Elapsed.TotalMilliseconds;
     public M15CubeRun(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, bool yes, bool withDrive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.yes = yes; this.withDrive = withDrive; }
@@ -130,7 +139,9 @@ internal sealed class M15CubeRun
     public int Execute()
     {
         Directory.CreateDirectory(bundle);
-        Console.WriteLine((FreeplayControl
+        Console.WriteLine((Personality
+            ? "PERSONALITY OBSERVATIONS (about 25 minutes)\n\n" + PersonalityHw.Setup
+            : FreeplayControl
             ? "FREEPLAY CONTROL (about 3 minutes)\n\n" + M15CubeHw.FreeplaySetup
             : "CUBE PICKUP AND PUT-DOWN TEST (about 5 minutes)\n\n"
             + "What this is for: Cozmo picks up a cube and puts it down twice, through the controls an outside AI uses.\n"
@@ -138,7 +149,7 @@ internal sealed class M15CubeRun
             + "Nothing passes or fails here; the recording and your answers are reviewed afterwards.\n\n"
             + M15CubeHw.SetupText) + "\n\nCtrl+C stops the run at any time; everything recorded so far is still saved.\nResults folder: " + bundle);
         ConsoleCancelEventHandler interrupt = (_, e) => { e.Cancel = true; cancel.Cancel(); }; Console.CancelKeyPress += interrupt;
-        using var timer = new Timer(_ => cancel.Cancel(), null, TimeSpan.FromMinutes(15), Timeout.InfiniteTimeSpan);
+        using var timer = new Timer(_ => cancel.Cancel(), null, TimeSpan.FromMinutes(Personality ? 40 : 15), Timeout.InfiniteTimeSpan);
         try
         {
             if (!yes) { Console.WriteLine("\nWhen setup is complete, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
@@ -149,7 +160,8 @@ internal sealed class M15CubeRun
                 e.StackLogLine += stackLines.Enqueue;
                 e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject());
                 e.RobotObservedObject += r => observations.Enqueue((Now, r));
-                if (FreeplayControl) SubscribeBehaviorReports(e);
+                if (FreeplayControl || Personality) SubscribeBehaviorReports(e);
+                if (Personality) SubscribePersonalityReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
             if (Skills)
@@ -199,7 +211,8 @@ internal sealed class M15CubeRun
             }
             robot.StartCamera();
             Event("camera-started", new());
-            if (FreeplayControl) RunFreeplayControl(robot);
+            if (Personality) RunPersonality(robot);
+            else if (FreeplayControl) RunFreeplayControl(robot);
             else RunCubeRounds(robot);
         }
         catch (OperationCanceledException) { errors.Enqueue("Stopped early with Ctrl+C or the time limit."); }
@@ -217,14 +230,28 @@ internal sealed class M15CubeRun
     void SubscribeBehaviorReports(CozmoEngine engine)
     {
         // M8-012: 0x87 and 0x88 carry old/new endpoints. M7-019: 0x8B carries a uint objective.
-        engine.BehaviorTransition += report => Event("behavior-transition", JsonSerializer.SerializeToNode(report)!.AsObject());
-        engine.ReactionTransition += report => Event("reaction-transition", JsonSerializer.SerializeToNode(report)!.AsObject());
+        engine.BehaviorTransition += report =>
+        {
+            var data = JsonSerializer.SerializeToNode(report)!.AsObject();
+            data["oldBehavior"] = ((BehaviorID)report.OldId).ToString();
+            data["newBehavior"] = ((BehaviorID)report.NewId).ToString();
+            Event("behavior-transition", data);
+        };
+        engine.ReactionTransition += report =>
+        {
+            var data = JsonSerializer.SerializeToNode(report)!.AsObject();
+            data["oldReaction"] = ReactionName(report.OldTrigger);
+            data["newReaction"] = ReactionName(report.NewTrigger);
+            Event("reaction-transition", data);
+        };
         engine.EngineToGameMessage += (tag, body) =>
         {
             if (tag == 0x8B && body.Length == 4)
                 Event("behavior-objective", new() { ["objective"] = System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(body.Span) });
         };
     }
+
+    static string ReactionName(byte id) => id == 0x16 ? "NoneTrigger" : ((ReactionTrigger)id).ToString();
 
     void RunFreeplayControl(CozmoRobot r)
     {
@@ -538,10 +565,18 @@ internal sealed class M15CubeRun
         try
         {
             var wire = M5HwAnalysis.OrderedUnique(M5HwAnalysis.ReadWire(frames.ToArray().Select((f, index) => new M5HwAnalysis.CapturedFrame(index + 1, f.T, f.Out, f.Frame)))).ToList();
-            foreach (var p in phases) { var o = p!.AsObject(); o["timeline"] = Timeline(wire, o["startMs"]!.GetValue<double>(), o["endMs"]!.GetValue<double>()); }
+            foreach (var p in phases)
+            {
+                var o = p!.AsObject();
+                double start = o["startMs"]!.GetValue<double>(), end = o["endMs"]!.GetValue<double>();
+                if (Personality) o["engineReports"] = PersonalityReports(start, end);
+                else o["timeline"] = Timeline(wire, start, end);
+            }
             var missing = stackLines.Where(l => l.Contains("MISSING", StringComparison.Ordinal)).Distinct().ToArray();
             File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), RunName + " test. Nothing here passes or fails.\n\n"
-                + string.Join("\n", phases.Select(p => $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
+                + string.Join("\n", phases.Select(p => Personality
+                    ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]!.AsArray().Count}"
+                    : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
                 + "\n\nCube reports seen: " + observations.Count
                 + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
                 + "\n\nYour notes: " + answers.ToJsonString()
@@ -554,19 +589,26 @@ internal sealed class M15CubeRun
             File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
             File.WriteAllLines(Path.Combine(bundle, "stack-log.txt"), stackLines);
             var files = new JsonArray();
-            foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs", "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md", "re-analysis/fidelity_manifest.json" })
+            string[] sources = { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
+                "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/fidelity_manifest.json" };
+            var runSources = Personality
+                ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/PersonalityHw.cs", "re-analysis/acceptance/hardware/scripts/personality-hw-1.md" })
+                : sources.Append("re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md");
+            foreach (var relative in runSources)
             {
                 string source = Path.Combine(root, relative); if (!File.Exists(source)) { errors.Enqueue("Missing provenance file " + relative); continue; }
                 string dest = Path.Combine(bundle, "provenance", relative); Directory.CreateDirectory(Path.GetDirectoryName(dest)!); File.Copy(source, dest, true);
                 files.Add(new JsonObject { ["path"] = relative, ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant() });
             }
             string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
-            var report = new JsonObject { ["testId"] = M15CubeHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv),
+            var report = new JsonObject { ["testId"] = Personality ? PersonalityHw.TestId : M15CubeHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv),
                 ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count, ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(),
                 ["missingReported"] = JsonSerializer.SerializeToNode(missing), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors),
-                ["acceptance"] = "NOT_JUDGED: manager review required; hardware success does not raise provenance" };
+                ["acceptance"] = Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance" };
             File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.WriteAllText(Path.Combine(bundle, "README.txt"), "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
+            File.WriteAllText(Path.Combine(bundle, "README.txt"), Personality
+                ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
+                : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made.");
         }
         catch (Exception e) { Console.Error.WriteLine("Could not write the results folder: " + e.Message); }
     }
