@@ -791,7 +791,7 @@ public class M7BatchThreeBTests
     }
 
     /// <summary>
-    /// M7-018: an unset seam is reported MISSING and nothing is made up: SmartPushIdleAnimation(0x23F) (UNKNOWN in the inventory), EnableLiftPower/EnableHeadPower and the
+    /// M7-018: the explicitly standalone FistBump reports missing providers for SmartPushIdleAnimation(0x23F), EnableLiftPower/EnableHeadPower and the
     /// PanAndTilt of the search. The behaviour still runs.
     /// </summary>
     [Fact]
@@ -809,7 +809,7 @@ public class M7BatchThreeBTests
             f.Start();
             Assert.True(f.StepUntil(() => f.Fist.State == 2 && f.Fist.ScanIndex == 1));
             f.Manager.Stop(BehaviorStopReason.Interrupted, 0);
-            Assert.Contains(reported, r => r.Contains("SmartPushIdleAnimation(0x23F") && r.Contains("UNKNOWN"));
+            Assert.Contains(reported, r => r.Contains("standalone SmartPushIdleAnimation(0x23F) provider unavailable"));
             Assert.Contains(reported, r => r.Contains("PanAndTiltAction"));
             Assert.Contains(reported, r => r.Contains("EnableLiftPower"));
             Assert.Contains(reported, r => r.Contains("EnableHeadPower"));

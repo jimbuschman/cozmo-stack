@@ -528,7 +528,8 @@ public sealed class NativeTrackFaceTests
                 {
                     if (behavior.CurrentPhase == InteractWithFacesBehavior.Phase.DrivingForward)
                     {
-                        sawHeadOnly |= tracker.RequiredTrackMask == 1 && owner.ActionList.ContainsRunner(tracker);
+                        sawHeadOnly |= tracker.RequiredTrackMask == 1 && behavior.OwnedRunner is CompoundActionParallel drive &&
+                            drive.Children.Contains(tracker) && owner.ActionList.ContainsRunner(drive);
                         detector.EyeY = 70;
                         if (pathId is { } id && !started)
                         { f.Rig.Data(new PathFollowingEvent { EventId = id, EventType = 0 }); started = true; }
@@ -537,7 +538,8 @@ public sealed class NativeTrackFaceTests
                     }
                     else if (behavior.CurrentPhase == InteractWithFacesBehavior.Phase.TrackingFace)
                     {
-                        sawBoth |= tracker.RequiredTrackMask == 5 && owner.ActionList.ContainsRunner(tracker);
+                        sawBoth |= tracker.RequiredTrackMask == 5 && behavior.OwnedRunner is CompoundActionParallel timed &&
+                            timed.Children.Contains(tracker) && owner.ActionList.ContainsRunner(timed);
                         detector.EyeX = 75; detector.EyeY = 140;
                     }
                 }
@@ -558,8 +560,35 @@ public sealed class NativeTrackFaceTests
                 Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is SetHeadAngle or SetBodyAngle or MoveHead or DriveWheels);
                 return;
             }
-            behavior.Stop(BehaviorStopReason.Interrupted);
-            Assert.False(owner.ActionList.ContainsRunner(tracked));
+            var group = Assert.IsType<CompoundActionParallel>(behavior.OwnedRunner);
+            Assert.Same(tracked, group.Children[0]);
+            var idle = Assert.IsType<TriggerAnimationAction>(group.Children[1]);
+            Assert.Equal(AnimationTrigger.InteractWithFaceTrackingIdle, idle.Request.Trigger);
+            Assert.Equal(0, idle.Request.Argument2);
+            var effects = new List<string>();
+            using var report = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B, true, payload =>
+            {
+                if (payload is uint objective && objective == 12)
+                    effects.Add(owner.ActionList.ContainsRunner(group) ? "objective while tracking" : "objective after stop");
+            });
+            f.Rig.Engine.Needs.Log += message =>
+            {
+                if (message.StartsWith("needs.action_completed SeeFace:"))
+                    effects.Add(owner.ActionList.ContainsRunner(group) ? "need while tracking" : "need after stop");
+            };
+            float deadline = behavior.TrackDeadline;
+            f.Rig.Engine.Timer.UpdateTime((long)Math.Floor((double)MathF.BitDecrement(deadline) * 1_000_000_000));
+            behavior.Update(context, f.Rig.Engine.Timer.TimeStampMs);
+            Assert.Empty(effects);
+            Assert.True(owner.ActionList.ContainsRunner(group));
+            f.Rig.Engine.Timer.UpdateTime((long)Math.Round((double)deadline * 1_000_000_000));
+            Assert.Equal(deadline, f.Rig.Engine.Timer.SecondsF);
+            behavior.Update(context, f.Rig.Engine.Timer.TimeStampMs);
+            behavior.Update(context, f.Rig.Engine.Timer.TimeStampMs);
+            Assert.True(effects.SequenceEqual(new[] { "objective while tracking", "need after stop" }),
+                $"deadline={deadline} now={f.Rig.Engine.Timer.SecondsF} armed={behavior.TrackDeadline} state={behavior.CurrentPhase} status={behavior.UpdateStatus()} running={behavior.EngineRunning} tag={behavior.CurrentRunnerTag} external={owner.HasExternalInterface} effects={string.Join(", ", effects)} trace={string.Join(" | ", behavior.Trace)}");
+            Assert.False(owner.ActionList.ContainsRunner(group));
+            Assert.True(tracked.DestructionObserved);
             Assert.True(owner.ActionList.ContainsRunner(unrelated));
         }
         finally { behavior.Stop(BehaviorStopReason.Interrupted); if (!replaceOwner) owner.ActionList.Cancel(unrelated.Tag); }

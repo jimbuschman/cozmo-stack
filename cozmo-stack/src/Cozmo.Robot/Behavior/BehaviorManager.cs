@@ -149,7 +149,15 @@ public sealed partial class BehaviorManager : IDisposable
             nativeHiccup: row => CreateNativeHiccup(row, manipulation, bound, nativeOwner ?? _context.Robot.Engine.Robot),
             acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null,
             nativePet: bound is not null && bound.TryGetValue("ReactToPet", out var pet) ? pet as NativeReactToPetBehavior : null,
-            nativePetOwner: nativeOwner, nativePetExpected: nativeOwner is not null))
+            nativeOwner: nativeOwner, nativePetExpected: nativeOwner is not null,
+            nativeFistBump: row =>
+            {
+                if (nativeOwner is null || row.BehaviorId != "FistBump" || bound is null ||
+                    !bound.TryGetValue(row.BehaviorId, out var value) ||
+                    value is not FistBumpBehavior target || !target.IsNativeOwnedBy(nativeOwner)) return null;
+                return new ReactionRegistration(
+                    FistBumpReactionStrategy.CreateForTarget(nativeOwner, row.FistBumpObjectiveParams, target.AddListener), target);
+            }))
         {
             if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
             if (reg.Behavior is SteppedBehavior behavior)
@@ -161,8 +169,6 @@ public sealed partial class BehaviorManager : IDisposable
         if (_hostDisposed) return;
         foreach (var entry in unbound)
             SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A17CC/0x005A1872: " + entry + " has no constructed strategy/behavior pair");
-        if (_nativeReactionRows.Any(row => row.Trigger == ReactionTrigger.FistBump && row.BehaviorId == "FistBump"))
-            SteppedBehavior.ReportMissing("M7-018 FistBump configured target is not a safe native reaction body; M10-003 strategy remains unbound and has no objective subscription");
     }
     internal void BindFreeplayInputs(BehaviorContext context,string resources,Cozmo.Robot.Vision.VisionSystem? vision,
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)

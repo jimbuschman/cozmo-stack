@@ -94,7 +94,9 @@ public sealed class ManipulationSystem : IDisposable
         };
         robot.Sensors.UnattachCarriedObjectIfCarrying = () =>
         {
-            if (Docking.Carrying.IsCarryingObject) Docking.ReleaseCarriedObject(forget: true);
+            if ((Docking.Carrying.CarriedObjectId ?? uint.MaxValue) == uint.MaxValue) return;
+            if (nativeOwner is not null) Docking.ReleaseCarriedObject(nativeOwner, forget: true);
+            else Docking.ReleaseCarriedObject(forget: true);
         };
         // fidelity: M4-009
         // CD10a/CD10b: IsCarryingObject(id) 0x00633F88 (carried +8 OR on-top +0x14), called at 0x0053417C (HandleActiveObjectMoved) and 0x0053498C

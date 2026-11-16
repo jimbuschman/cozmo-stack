@@ -888,6 +888,44 @@ public sealed class CozmoSensors
         return 0;
     }
 
+    // fidelity: M4-012, M12-006
+    private void HandleMotorCalibration(MotorCalibration report, EngineRobot? sourceOwner)
+    {
+        var engine = _robot.Engine;
+        bool Current() => sourceOwner is not null && !sourceOwner.Lifetime.Destroying &&
+            ReferenceEquals(engine.Robot, sourceOwner);
+        if (!Current()) return;
+
+        string started = report.CalibStarted ? "1" : "0";
+        string autoStarted = report.AutoStarted ? "1" : "0";
+        engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "HandleMotorCalibration.Recvd",
+            FormattableString.Invariant($"Motor {(byte)report.MotorID}, started {started}, autoStarted {autoStarted}"));
+        if (!Current()) return;
+
+        // 0x00536B1E / 0x00536B7A: event text is EnumToString(MotorID), $data is decimal autoStarted.
+        // The five names match the native table at 0x01034B30; larger IDs yield a null C string.
+        string motorName = report.MotorID <= MotorID.MOTOR_COUNT ? report.MotorID.ToString() : "(null)";
+        engine.EmitSourceLog(EngineLogLevel.Event, null,
+            report.CalibStarted ? "HandleMotorCalibration.Start" : "HandleMotorCalibration.Complete",
+            motorName, new Dictionary<string, string> { ["$data"] = autoStarted });
+        if (!Current()) return;
+
+        // 0x00536BAE..0x00536BC4: lift, started, primary carrying ID valid. The carrying callback checks the ID.
+        if (report.MotorID == MotorID.MOTOR_LIFT && report.CalibStarted)
+            UnattachCarriedObjectIfCarrying?.Invoke();
+        if (!Current()) return;
+
+        // 0x00536BDA / 0x00536BF0 write the inverse of CalibStarted before Robot::Broadcast (0x00536C0E).
+        _state.Handle(report);
+        if (!sourceOwner!.HasExternalInterface) return;
+        engine.QueueAppBroadcast(MotorCalibrationReported, new MotorCalibration
+            { MotorID = report.MotorID, CalibStarted = report.CalibStarted, AutoStarted = report.AutoStarted });
+        if (report.CalibStarted && report.AutoStarted)
+            engine.QueueAppEvent(AutoCalibrationStarted, new MotorCalibration
+                { MotorID = report.MotorID, CalibStarted = report.CalibStarted, AutoStarted = report.AutoStarted });
+        MotorCalibrationReportedInternal?.Invoke(report);
+    }
+
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
     internal void Handle(RobotMessage m)=>Handle(m,_robot.Engine.Robot);
     internal void Handle(RobotMessage m,EngineRobot? sourceOwner)
@@ -1015,21 +1053,7 @@ public sealed class CozmoSensors
                 break;
 
             case MotorCalibration mc:
-                // fidelity: M4-012
-                // MA20: a lift that starts calibrating while carrying detaches the carried object.
-                if (mc.MotorID == MotorID.MOTOR_LIFT && mc.CalibStarted)
-                {
-                    Behavior.SteppedBehavior.ReportMissing("M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event");
-                    UnattachCarriedObjectIfCarrying?.Invoke();
-                }
-                // Flags already adopted by RobotStateTracker's MotorCalibration handler
-                // (CozmoRobot.cs), before this detach; native sets them after detach (0x00536BC4
-                // before 0x00536BDA/0x00536BF0). Detach does not read those flags. Broadcast follows.
-                _robot.Engine.QueueAppBroadcast(MotorCalibrationReported,new MotorCalibration
-                    {MotorID=mc.MotorID,CalibStarted=mc.CalibStarted,AutoStarted=mc.AutoStarted});
-                if(mc.CalibStarted&&mc.AutoStarted)_robot.Engine.QueueAppEvent(AutoCalibrationStarted,new MotorCalibration
-                    {MotorID=mc.MotorID,CalibStarted=mc.CalibStarted,AutoStarted=mc.AutoStarted});
-                MotorCalibrationReportedInternal?.Invoke(mc);
+                HandleMotorCalibration(mc, sourceOwner);
                 break;
 
             case RobotState s:

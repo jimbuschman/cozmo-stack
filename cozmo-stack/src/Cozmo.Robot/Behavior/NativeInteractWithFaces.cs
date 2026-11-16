@@ -125,31 +125,18 @@ internal sealed class NativeInteractWithFaces : SteppedBehavior, IDisposable
     {
         if(!Current(generation))return;
         Phase=2;
-        bool? blocked=null;
-        MemoryMap? capturedMap=null;
-        uint capturedOrigin=_owner.CurrentOriginId;
-        using(_m.World.EnterPoseMutation())
+        if (!TryReadDriveDistance(_m, _owner, () => Current(generation), out float distance))
         {
-            if(_m.World.Maps.CurrentOrigin==capturedOrigin && _m.World.Maps.Current is { } map)
-            {
-                capturedMap=map;
-                var transform=_owner.GetCheckedMainPose().Transform;
-                var from=transform.Translation;var to=transform.Apply(new Vec3(40,0,0));
-                blocked=map.HasCollisionRayWithTypes(new Vec2(from.X,from.Y),new Vec2(to.X,to.Y));
-            }
+            if (Current(generation)) Finish();
+            return;
         }
-        if(!Current(generation))return;
-        if(_owner.CurrentOriginId!=capturedOrigin || _m.World.Maps.CurrentOrigin!=capturedOrigin || !ReferenceEquals(_m.World.Maps.Current,capturedMap))
-        { ReportMissing("InteractWithFaces map changed during ray query; drive withheld"); Finish(); return; }
-        if(blocked is null) { ReportMissing("M1-034 M11-046 InteractWithFaces map unavailable at 0x005C2482; drive withheld"); Finish(); return; }
         Phase=3;
-        var parallel=new CompoundActionParallel(()=>_owner.Engine.Timer.SecondsF);
-        var drive=new DriveStraightAction(_m,_owner,blocked.Value?-15f:40f,40f,false);
-        if(!parallel.AddActionGuarded(drive,false,()=>Current(generation))) { drive.RetireNeverAdmittedTree(); parallel.RetireNeverAdmittedTree(); return; }
-        var track=new NativeTrackFaceRunner(_m,_owner,_target,true,BitConverter.UInt32BitsToSingle(0x3D8EFA35),_clamp,_minClamp,_maxClamp,drive.Tag);
-        if(!parallel.AddActionGuarded(track,false,()=>Current(generation))) { track.RetireNeverAdmittedTree(); parallel.RetireNeverAdmittedTree(); return; }
-        StartActing(parallel,_=>{if(Current(generation))Track(generation);},()=>Current(generation));
+        var action = CreateTrackingAction(_m, _owner, _target, distance,
+            _clamp, _minClamp, _maxClamp, useAuthoredAudio: true, () => Current(generation));
+        if (action is { } driveTrack)
+            StartActing(driveTrack.Group, _ => { if (Current(generation)) Track(generation); }, () => Current(generation));
     }
+
     private void Track(long generation)
     {
         if(!Current(generation))return;
@@ -157,15 +144,75 @@ internal sealed class NativeInteractWithFaces : SteppedBehavior, IDisposable
         float duration=(float)_owner.Engine.ContextRandom.RandDblInRange(_minTrack,_maxTrack);
         if(!Current(generation))return;
         _deadline=_owner.Engine.Timer.SecondsF+duration;
-        var parallel=new CompoundActionParallel(()=>_owner.Engine.Timer.SecondsF);
-        var track=new NativeTrackFaceRunner(_m,_owner,_target,false,BitConverter.UInt32BitsToSingle(0x3D8EFA35),_clamp,_minClamp,_maxClamp,0);
-        if(!parallel.AddActionGuarded(track,false,()=>Current(generation))) { track.RetireNeverAdmittedTree();parallel.RetireNeverAdmittedTree();return; }
-        var animation=new TriggerAnimationAction(_m.Robot,new(AnimationTrigger.InteractWithFaceTrackingIdle,0,true,0,60,false));
-        if(!Current(generation)){animation.RetireNeverAdmittedTree();parallel.RetireNeverAdmittedTree();return;}
-        animation.UseOrdinaryAuthoredAudio(_owner);
-        if(!parallel.AddActionGuarded(animation,false,()=>Current(generation))) { animation.RetireNeverAdmittedTree();parallel.RetireNeverAdmittedTree();return; }
-        StartActing(parallel,_=>{if(Current(generation))Emotion(generation);},()=>Current(generation));
+        var action = CreateTrackingAction(_m, _owner, _target, null,
+            _clamp, _minClamp, _maxClamp, useAuthoredAudio: true, () => Current(generation));
+        if (action is { } idleTrack)
+            StartActing(idleTrack.Group, _ => { if (Current(generation)) Emotion(generation); }, () => Current(generation));
     }
+
+    // 0x005C2420..24A2 transforms the 40 mm point and checks the same-origin map ray.
+    internal static bool TryReadDriveDistance(ManipulationSystem motion, EngineRobot owner, Func<bool> current, out float distance)
+    {
+        distance = 0;
+        bool? blocked = null;
+        MemoryMap? capturedMap = null;
+        uint origin = owner.CurrentOriginId;
+        using (motion.World.EnterPoseMutation())
+        {
+            if (motion.World.Maps.CurrentOrigin == origin && motion.World.Maps.Current is { } map)
+            {
+                capturedMap = map;
+                var pose = owner.GetCheckedMainPose().Transform;
+                var from = pose.Translation;
+                var to = pose.Apply(new Vec3(40, 0, 0));
+                blocked = map.HasCollisionRayWithTypes(new Vec2(from.X, from.Y), new Vec2(to.X, to.Y));
+            }
+        }
+        if (!current()) return false;
+        if (owner.CurrentOriginId != origin || motion.World.Maps.CurrentOrigin != origin ||
+            !ReferenceEquals(motion.World.Maps.Current, capturedMap))
+        {
+            ReportMissing("InteractWithFaces map changed during ray query; drive withheld");
+            return false;
+        }
+        if (blocked is null)
+        {
+            ReportMissing("M1-034 M11-046 InteractWithFaces map unavailable at 0x005C2482; drive withheld");
+            return false;
+        }
+        distance = blocked.Value ? -15f : 40f;
+        return true;
+    }
+
+    // 0x005C254E..263A and 0x005C27A8..2882 form the drive/track and track/idle compounds.
+    internal static (CompoundActionParallel Group, NativeTrackFaceRunner Tracker)? CreateTrackingAction(
+        ManipulationSystem motion, EngineRobot owner, int target, float? driveDistance, bool clamp,
+        float minClamp, float maxClamp, bool useAuthoredAudio, Func<bool> current)
+    {
+        if (!current()) return null;
+        var group = new CompoundActionParallel(() => owner.Engine.Timer.SecondsF);
+        var drive = driveDistance is float distance ? new DriveStraightAction(motion, owner, distance, 40f, false) : null;
+        if (drive is not null && !Add(drive)) return null;
+        var tracker = new NativeTrackFaceRunner(motion, owner, target, headOnly: drive is not null,
+            BitConverter.UInt32BitsToSingle(0x3D8EFA35), clamp, minClamp, maxClamp, drive?.Tag ?? 0);
+        if (!Add(tracker)) return null;
+        if (drive is null)
+        {
+            var idle = new TriggerAnimationAction(motion.Robot, new(AnimationTrigger.InteractWithFaceTrackingIdle, 0, true, 0, 60f, false));
+            if (useAuthoredAudio) idle.UseOrdinaryAuthoredAudio(owner);
+            if (!Add(idle)) return null;
+        }
+        return (group, tracker);
+
+        bool Add(ActionRunner child)
+        {
+            if (group.AddActionGuarded(child, false, current)) return true;
+            child.RetireNeverAdmittedTree();
+            group.RetireNeverAdmittedTree();
+            return false;
+        }
+    }
+
     private void Emotion(long generation)
     {
         Phase=5;
@@ -176,15 +223,22 @@ internal sealed class NativeInteractWithFaces : SteppedBehavior, IDisposable
     }
     protected override void OnUpdate()
     {
-        if(_deadline<0 || _owner.Engine.Timer.SecondsF<_deadline)return;
-        long generation=CaptureHostExecutionVersion();
-        // 0x005C2382..239C reports objective 0x0C before stopping and recording SeeFace.
-        _owner.Engine.ReportBehaviorObjective((uint)BehaviorObjective.InteractedWithFace, nameof(BehaviorObjective.InteractedWithFace), Id);
-        if(!Current(generation))return;
-        StopActing(true,false);
-        if(!Current(generation))return;
-        _m.Robot.Engine.Needs.RegisterNeedsActionCompleted("SeeFace");
-        if(Current(generation))Finish();
+        if (_deadline < 0 || _owner.Engine.Timer.SecondsF < _deadline) return;
+        long generation = CaptureHostExecutionVersion();
+        _deadline = -1;
+        CompleteTrackingDeadline(_owner, Id, () => Current(generation), () => StopActing(true, false), Finish);
+    }
+
+    // 0x005C2382..239C publishes objective 0x0C, stops the owned action, then records SeeFace.
+    internal static void CompleteTrackingDeadline(EngineRobot owner, string id, Func<bool> current, Action stop, Action finished)
+    {
+        if (!current()) return;
+        owner.Engine.ReportBehaviorObjective((uint)BehaviorObjective.InteractedWithFace, nameof(BehaviorObjective.InteractedWithFace), id);
+        if (!current()) return;
+        stop();
+        if (!current()) return;
+        owner.Engine.Needs.RegisterNeedsActionCompleted("SeeFace");
+        if (current()) finished();
     }
     protected override void OnStop(BehaviorStopReason reason)
     { Interlocked.Increment(ref _generation); _lastImage=_m.Robot.CameraSettings.LastProcessedImageTimestamp; }

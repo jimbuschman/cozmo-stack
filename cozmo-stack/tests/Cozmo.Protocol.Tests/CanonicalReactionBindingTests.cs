@@ -1,8 +1,10 @@
 using System.Reflection;
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -165,6 +167,223 @@ public sealed class CanonicalReactionBindingTests
         rig.Tick(0);
         Assert.True(rig.Robot.State.HeadCalibrating);
         Assert.True(behavior.Completed);Assert.Null(behavior.OwnedRunner);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LiftCalibrationReportsBeforeDeletingCarriedCubeAndStartingReaction(bool carrying)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var native = f.Robot;
+        var manager = native.BehaviorManagerOwner!;
+        var cube = f.Add();
+        var unrelated = f.Add(8, x: 400);
+        var carry = f.M.Docking.Carrying;
+        Assert.Same(native.CarryingOwner, carry);
+        if (carrying)
+        {
+            using var liftPose = new Pose3d(Rotation3d.Identity, new Vec3(2, 3, 4), parent: native.LiftPose);
+            cube.Pose = new Pose3d(liftPose);
+            cube.NativeCarryingTree = true;
+            carry.AttachToLift(cube.ObjectId, cube.Markers[0], new Pose3d(liftPose), null, null);
+        }
+
+        OpenGate(native, manager);
+        Assert.True(f.Rig.Robot.State.LiftCalibrated);
+        var order = new List<string>();
+        var events = new List<EngineLogEntry>();
+        var appReports = new List<MotorCalibration>();
+        (uint? Carried, bool Calibrated)? atStart = null;
+        (uint? Carried, bool Calibrated)? atReport = null;
+        f.Rig.Engine.LogEntry += entry =>
+        {
+            if (entry.Name is not ("HandleMotorCalibration.Start" or "HandleMotorCalibration.Complete")) return;
+            events.Add(entry);
+            if (entry.Name == "HandleMotorCalibration.Start")
+            {
+                atStart = (carry.CarriedObjectId, f.Rig.Robot.State.LiftCalibrated);
+                order.Add("start");
+            }
+        };
+        var deletedIds = new List<uint>();
+        using var delete = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x4C, true, payload =>
+        {
+            if (payload is uint id) deletedIds.Add(id);
+            order.Add("delete");
+        });
+        f.Rig.Robot.Sensors.MotorCalibrationReportedInternal += report =>
+        {
+            if (report.CalibStarted)
+            {
+                atReport = (carry.CarriedObjectId, f.Rig.Robot.State.LiftCalibrated);
+                order.Add("report");
+            }
+        };
+        f.Rig.Robot.Sensors.MotorCalibrationReported += appReports.Add;
+        int mark = f.Rig.Mark();
+
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true, AutoStarted = true });
+        f.Rig.Tick(0);
+        manager.CheckReactions(f.Rig.Engine.Timer.Seconds);
+        f.Rig.Engine.DrainAppDelivery();
+
+        Assert.Equal((carrying ? cube.ObjectId : (uint?)null, true), atStart);
+        Assert.Equal(((uint?)null, false), atReport);
+        Assert.Equal(carrying ? new[] { "start", "delete", "report" } : new[] { "start", "report" }, order);
+        Assert.Equal(carrying ? new[] { cube.ObjectId } : Array.Empty<uint>(), deletedIds);
+        Assert.Null(carry.CarriedObjectId);
+        if (carrying) Assert.Null(f.M.World.GetLocatedObjectByIdHelper(cube.ObjectId));
+        else Assert.Same(cube, f.M.World.GetLocatedObjectByIdHelper(cube.ObjectId));
+        Assert.Same(unrelated, f.M.World.GetLocatedObjectByIdHelper(unrelated.ObjectId));
+        Assert.Equal(carrying ? 1 : 0, f.Rig.SentSince(mark).OfType<CarryStateUpdate>().Count(m => m.State == CarryState.CARRY_NONE));
+        var report = Assert.Single(appReports);
+        Assert.Equal(MotorID.MOTOR_LIFT, report.MotorID);
+        Assert.True(report.CalibStarted && report.AutoStarted);
+        var start = Assert.Single(events);
+        Assert.Equal(EngineLogLevel.Event, start.Level);
+        Assert.Equal("HandleMotorCalibration.Start", start.Name);
+        Assert.Equal("MOTOR_LIFT", start.Text);
+        Assert.Equal("1", start.Data["$data"]);
+
+        var behavior = Assert.IsType<ReactToMotorCalibrationBehavior>(manager.Current);
+        Assert.Equal(5f, Assert.IsType<NativeTimedWaitRunner>(behavior.OwnedRunner).Duration);
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = false });
+        f.Rig.Tick(0);
+        Assert.True(behavior.Completed);
+        Assert.True(f.Rig.Robot.State.LiftCalibrated);
+        Assert.Equal(2, events.Count);
+        Assert.Equal("HandleMotorCalibration.Complete", events[1].Name);
+        Assert.Equal("MOTOR_LIFT", events[1].Text);
+        Assert.Equal("0", events[1].Data["$data"]);
+    }
+
+    [Fact]
+    public void FistBumpObjectiveRunsSearchVerifiedFaceRequestAndSuccess()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var fist = StartFistBumpReaction(f, out var strategy);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        Assert.Equal(FistBumpBehavior.TurnToFace, fist.State);
+        Assert.Contains((FistBumpBehavior.IdleTriggerCount, "Behavior_FistBump"), f.Rig.Robot.Animations.Scheduler.IdleStack);
+        Assert.True(manager.HasDisableLock(ReactionTrigger.CubeMoved, "FistBump_behaviorLock"));
+        var objectives = new List<uint>();
+        using var reports = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x8B, true, payload =>
+        {
+            if (payload is uint objective) objectives.Add(objective);
+        });
+        var needs = new List<NeedsActionId>();
+        f.Rig.Engine.Needs.NeedsStateSent += needs.Add;
+        int powerMark = f.Rig.Mark();
+        void Update() => fist.Update(f.Runtime.Context, f.Rig.Engine.Timer.TimeStampMs);
+        void Complete(uint result = EngineActionResult.Success)
+        {
+            Assert.NotEqual(0u, fist.CurrentRunnerTag);
+            f.Rig.Engine.AnimationMessages.Deliver(0x5A, true,
+                new RobotCompletedAction(fist.CurrentRunnerTag, 0, result, Array.Empty<uint>(), 0));
+        }
+        void Animation(AnimationTrigger trigger) =>
+            Assert.Equal(trigger, Assert.IsType<TriggerAnimationAction>(fist.OwnedRunner).Request.Trigger);
+
+        Update();
+        Assert.True(Assert.IsType<NativeLastFaceRunner>(fist.OwnedRunner).RequireVerifiedFace);
+        Complete(FistBumpBehavior.NoFaceResult);
+        Assert.Equal(FistBumpBehavior.SearchState, fist.State);
+        Update();
+        var scan = Assert.IsType<NativePanTiltRunner>(fist.OwnedRunner);
+        Assert.Equal(FistBumpBehavior.ScanPanRad[0], scan.Parameters.PanAngleRad);
+        Assert.False(scan.Parameters.PanIsAbsolute);
+        Assert.True(scan.Parameters.HeadIsAbsolute);
+        Complete();
+
+        uint when = f.Robot.StoredState!.Timestamp;
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        var position = new Vec3(150, 0, 40);
+        using var head = new Pose3d(Rotation3d.Identity, position);
+        var face = new TrackedFace(new DetectedFace(7, new FaceRect(0,0,10,10), new Vec2(1,1), new Vec2(2,1), Name: "Taylor"), when)
+        {
+            HeadPose = new Pose3d(head), NativeTrackingTranslation = position, NativeTrackingRotation = Rotation3d.Identity
+        };
+        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, f.Robot.GetCheckedMainPose(),
+            false, origin.Node!, true, requireNativePose: true, expectedOwner: f.Robot));
+        Update();
+        Assert.False(Assert.IsType<NativeLastFaceRunner>(fist.OwnedRunner).RequireVerifiedFace);
+        Assert.Equal(FistBumpBehavior.Request, fist.State);
+        Complete();
+
+        Update(); Animation(AnimationTrigger.FistBumpRequestOnce);
+        Complete();
+        Update(); Animation(AnimationTrigger.FistBumpIdle);
+        Update();
+        Assert.Equal(FistBumpBehavior.DetectBump, fist.State);
+        Assert.Equal(new[] { (2, 0), (3, 0) }, MotorPower());
+
+        // A recorded lift delta of 0.06 radians crosses the native half-degree threshold.
+        var bump = f.Rig.MakeState(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos,
+            origin: f.Robot.CurrentOriginId, frame: f.Robot.PoseFrameId, head: f.Head, liftAngle: 0.06f);
+        f.Rig.Data(bump);
+        f.Rig.Tick(0);
+        if (fist.State == FistBumpBehavior.DetectBump) Update();
+        Assert.Equal(FistBumpBehavior.Success, fist.State);
+        Animation(AnimationTrigger.FistBumpSuccess);
+        Assert.Equal(new[] { (2, 0), (3, 0), (2, 1), (3, 1) }, MotorPower());
+        Assert.Empty(objectives);
+        Complete();
+        Update();
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.Equal(new uint[] { 8, 7 }, objectives);
+        Assert.Contains(NeedsActionId.FistBump, needs);
+        Assert.False(strategy.Pending);
+        Assert.Equal(f.Rig.Engine.Timer.SecondsF, strategy.LastCompletion);
+        Assert.True(strategy.LastCompletion > 0);
+        manager.Stop(BehaviorStopReason.Completed, f.Rig.Engine.Timer.Seconds);
+        Assert.DoesNotContain(f.Rig.Robot.Animations.Scheduler.IdleStack, entry => entry.Lock == "Behavior_FistBump");
+        Assert.False(manager.HasDisableLock(ReactionTrigger.CubeMoved, "FistBump_behaviorLock"));
+        f.Rig.Engine.ReportBehaviorObjective(3, "BuiltPyramid", "fixture");
+        Assert.False(strategy.Pending); // Within the shipped 180-second cooldown.
+
+        (int, int)[] MotorPower() => f.Rig.SentSince(powerMark).OfType<EnableMotorPower>()
+            .Select(m => ((int)m.Field0, (int)m.Field1)).ToArray();
+    }
+
+    [Fact]
+    public void FistBumpReactionReadsCarriedIdAndQueuesNativeGroundPlacement()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var cube = f.Add();
+        using var liftPose = new Pose3d(Rotation3d.Identity, new Vec3(2, 3, 4), parent: f.Robot.LiftPose);
+        cube.Pose = new Pose3d(liftPose);
+        cube.NativeCarryingTree = true;
+        f.M.Docking.Carrying.AttachToLift(cube.ObjectId, cube.Markers[0], new Pose3d(liftPose), null, null);
+        var fist = StartFistBumpReaction(f, out _);
+        Assert.Equal(FistBumpBehavior.PutDown, fist.State);
+        int mark = f.Rig.Mark();
+        fist.Update(f.Runtime.Context, f.Rig.Engine.Timer.TimeStampMs);
+        var ground = Assert.IsType<NativePlaceGroundRunner>(fist.OwnedRunner);
+        f.Robot.ActionList.Update();
+        Assert.Equal(cube.ObjectId, ground.SavedObject);
+        Assert.Contains(f.Rig.SentSince(mark), message => message is PlaceObjectOnGround);
+        Assert.Equal(FistBumpBehavior.TurnToFace, fist.State);
+        Assert.Same(ground, fist.OwnedRunner);
+    }
+
+    private static FistBumpBehavior StartFistBumpReaction(PickupPyramidNativeExecutionTests.Fixture f,
+        out FistBumpReactionStrategy strategy)
+    {
+        var manager = f.Robot.BehaviorManagerOwner!;
+        typeof(OffTreadsClassifier).GetProperty("Current")!.SetValue(f.Rig.Robot.Sensors.OffTreads, OffTreadsState.OnTreads);
+        f.Robot.Progression!.SetUnlock(35, true);
+        OpenGate(f.Robot, manager);
+        var registration = Assert.Single(manager.Reactions, r => r.Strategy.Trigger == ReactionTrigger.FistBump);
+        strategy = Assert.IsType<FistBumpReactionStrategy>(registration.Strategy);
+        f.Rig.Engine.ContextRandom.WordSourceForTest = () => 0;
+        f.Rig.Engine.ReportBehaviorObjective(3, "BuiltPyramid", "fixture");
+        Assert.True(strategy.Pending);
+        Assert.Equal(f.Rig.Engine.Timer.SecondsF + 3f, strategy.Expiry);
+        manager.CheckReactions(f.Rig.Engine.Timer.Seconds);
+        Assert.Same(registration.Behavior, manager.Current);
+        Assert.Equal(ReactionTrigger.FistBump, manager.CurrentReactionTrigger);
+        return Assert.IsType<FistBumpBehavior>(manager.Current);
     }
 
     [Fact]

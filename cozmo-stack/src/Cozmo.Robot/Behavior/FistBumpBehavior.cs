@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cozmo.Protocol;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -40,10 +41,8 @@ namespace Cozmo.Robot.Behavior;
 /// </list>
 /// <b>Stop</b>: lift and head power are enabled and <c>ResetTrigger(false)</c> is called (0x005F26F8..0x005F2714).
 ///
-/// <b>Seams the inventory does not settle</b> (each reports MISSING when it is hit unset, and nothing is made up): what <c>SmartPushIdleAnimation(0x23F)</c>
-/// does (<see cref="SmartPushIdleAnimation"/>), the bodies of <c>EnableLiftPower</c> and <c>EnableHeadPower</c> (<see cref="EnableLiftPower"/>,
-/// <see cref="EnableHeadPower"/>), the <c>PanAndTiltAction</c> (<see cref="PanAndTilt"/>), and the body of <c>BehaviorObjectiveAchieved</c>. The strategy
-/// that listens for the end (<c>ReactionTriggerStrategyFistBump</c>, M10) registers through <see cref="AddListener"/>.
+/// <b>Configured owners</b> provide the idle stack, manipulation, face world, motors and objective broadcast.
+/// The standalone constructor also supports explicit inputs for simulation and host tools.
 /// </summary>
 // fidelity: M7-018
 public sealed class FistBumpBehavior : SteppedBehavior
@@ -86,6 +85,8 @@ public sealed class FistBumpBehavior : SteppedBehavior
     private readonly VisionSystem? _vision;
     private readonly ManipulationSystem? _manipulation;
     private EngineRandom? _rng;
+    private EngineRobot? _nativeOwner;
+    private long _generation;
 
     private int _state;                    // +0x11C
     private float _searchStart;            // +0x120
@@ -127,21 +128,25 @@ public sealed class FistBumpBehavior : SteppedBehavior
         return new FistBumpBehavior(id, max, abort, update, vision, manipulation);
     }
 
-    // ---- seams the inventory does not settle
+    internal static FistBumpBehavior FromConfig(JsonElement config, BehaviorFactoryContext context)
+    {
+        var behavior = FromConfig(config, context.Vision, context.Manipulation);
+        if (context.NativeRobot is { } owner && context.Manipulation is not null && context.Vision is not null)
+            behavior._nativeOwner = owner;
+        return behavior;
+    }
 
-    /// <summary>
-    /// <c>SmartPushIdleAnimation(0x23F)</c>, called by Init (0x005F1EEE). What the engine does with the Count trigger is UNKNOWN in the inventory, so
-    /// this is a seam: unset, the push is not made and the gap is reported.
-    /// </summary>
+    internal bool IsNativeOwnedBy(EngineRobot owner) => ReferenceEquals(_nativeOwner, owner);
+
+    // Standalone inputs.
+
+    /// <summary>Standalone provider for the Count idle trigger.</summary>
     public Action<AnimationTrigger>? SmartPushIdleAnimation { get; set; }
-    /// <summary><c>EnableLiftPower(bool)</c> (0x005F2704 for true). Its body is not in the inventory: unset, nothing is sent and the gap is reported.</summary>
+    /// <summary>Standalone provider for lift power.</summary>
     public Action<bool>? EnableLiftPower { get; set; }
-    /// <summary><c>EnableHeadPower(bool)</c> (0x005F270E for true). Its body is not in the inventory: unset, nothing is sent and the gap is reported.</summary>
+    /// <summary>Standalone provider for head power.</summary>
     public Action<bool>? EnableHeadPower { get; set; }
-    /// <summary>
-    /// <c>PanAndTiltAction(robot, pan, tilt, isPanAbsolute = false, isTiltAbsolute = true)</c> started by the search (0x005F23BE..0x005F23CE). This stack's
-    /// <c>PanAndTiltAction</c> is not live (M13-020), so it is a seam taking those arguments. Unset, no action is started (the schedule still advances) and the gap is reported.
-    /// </summary>
+    /// <summary>Standalone provider for the search pan and tilt.</summary>
     public Func<float, float, bool, bool, CancellationToken, Task>? PanAndTilt { get; set; }
     /// <summary><c>PlaceObjectOnGroundAction</c> (state 0). Defaults to the manipulation system's, when there is one.</summary>
     public Func<CancellationToken, Task>? PlaceObjectOnGround { get; set; }
@@ -160,11 +165,38 @@ public sealed class FistBumpBehavior : SteppedBehavior
     /// <summary>+0x128, for tests.</summary>
     public int ScanIndex => _scanIndex;
 
-    private float NowSeconds => (float)(NowMs / 1000.0);
-    private EngineRandom Rng => _rng ??= new EngineRandom(Context.Random);
+    private float NowSeconds => _nativeOwner?.Engine.Timer.SecondsF ?? (float)(NowMs / 1000.0);
+    private EngineRandom Rng => _nativeOwner?.Engine.ContextRandom ?? (_rng ??= new EngineRandom(Context.Random));
 
-    /// <summary><c>IsRunnableInternal</c> 0x005F1ED4: always true.</summary>
-    protected override bool IsRunnableInternal(BehaviorContext context) => true;
+    private bool NativeAvailable => _nativeOwner is { } owner && !owner.Lifetime.Destroying &&
+        ReferenceEquals(owner.Engine.Robot, owner) && owner.NativeBehaviorRuntime is { IsRetired: false } runtime &&
+        ReferenceEquals(runtime.Manipulation, _manipulation) && runtime.Bound.TryGetValue(Id, out var actual) &&
+        ReferenceEquals(actual, this) && NativeScoringAvailable;
+
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) =>
+        _nativeOwner?.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => ++_generation;
+    protected override long CaptureHostExecutionVersion() => _generation;
+    protected override bool HostExecutionVersionCurrent(long version) =>
+        _nativeOwner is null || version == _generation && NativeAvailable;
+    protected override bool HostStopContinuationCurrent(long version) =>
+        _nativeOwner is null || _generation == unchecked(version + 1);
+    protected override bool HostResumeContinuationCurrent(long version) =>
+        _nativeOwner is null || _generation == version || _generation == unchecked(version + 1);
+
+    // Vtable +0x20, +0x24 and +0x28 at 0x0102A738..40. The last slot returns 1 at 0x005F278C.
+    protected override bool RunnableGate20(BehaviorContext context) => _nativeOwner is null && base.RunnableGate20(context);
+    protected override bool RunnableGate24(BehaviorContext context) => _nativeOwner is null && base.RunnableGate24(context);
+    protected override bool RunnableGate28(BehaviorContext context) => true;
+
+    /// <summary><c>IsRunnableInternal</c> 0x005F1ED4: always true after the common gates.</summary>
+    protected override bool IsRunnableInternal(BehaviorContext context)
+    {
+        if (_nativeOwner is null || NativeAvailable) return true;
+        MarkReadinessUnavailable();
+        ReportMissing("M7-018 FistBump configured owner unavailable");
+        return false;
+    }
 
     /// <summary>UpdateInternal polls with no action in flight, so the behaviour outlives its actions and ends itself with the terminal 2.</summary>
     protected override bool KeepsRunningWithoutAction => true;
@@ -172,22 +204,56 @@ public sealed class FistBumpBehavior : SteppedBehavior
     /// <summary><c>InitInternal</c> 0x005F1ED8 (see the class summary).</summary>
     protected override void OnStart()
     {
-        // 0x005F1ED4..: SmartDisableReactionsWithLock(own name, table 0x00C6FDC8)
-        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.FistBump);
-        // 0x005F1EEE: SmartPushIdleAnimation(0x23F)
-        if (SmartPushIdleAnimation is { } push) push(IdleTriggerCount);
-        else ReportMissing("BehaviorFistBump::InitInternal SmartPushIdleAnimation(0x23F = AnimationTrigger::Count) (0x005F1EEE): what the engine does with the Count trigger here is UNKNOWN in the inventory (SmartPushIdleAnimation seam); no idle is pushed");
+        long generation = CaptureHostExecutionVersion();
+        uint? carriedId;
+        if (_nativeOwner is { } owner)
+        {
+            if (!NativeAvailable || owner.CarryingOwner is not { } carrying)
+            {
+                InitFailed = true;
+                ReportMissing("M7-018 FistBump configured carrying owner unavailable at 0x005F1F08");
+                return;
+            }
+            bool Current() => HostExecutionVersionCurrent(generation);
+            if (!Scope.SmartDisableReactionsWithLockGuarded(Id, ReactionLockTables.FistBump, Current)) return;
+            var scheduler = Context.Robot.Animations.Scheduler;
+            var idle = new ScopedAcquisition();
+            // SmartPushIdleAnimation concatenates the prefix initialized at 0x004D75D4..EE with +0x40.
+            string idleName = "Behavior_" + Id;
+            if (!Scope.SmartPushIdleAnimationGuarded(
+                () => scheduler.PushScopedIdle(IdleTriggerCount, idleName, idle),
+                () => { idle.Cancel(); scheduler.RemoveScopedIdle(idleName, idle, owner.Engine.Timer.TimeStampMs); },
+                Current)) return;
+            carriedId = carrying.CarriedObjectId;
+        }
+        else
+        {
+            Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.FistBump);
+            if (SmartPushIdleAnimation is { } push) push(IdleTriggerCount);
+            else ReportMissing("FistBump standalone SmartPushIdleAnimation(0x23F) provider unavailable");
+            var carrying = Context.Robot.Motion.IsCarryingObject;
+            if (carrying is null) ReportMissing("FistBump standalone carried-object provider unavailable");
+            carriedId = carrying?.Invoke() == true ? 0u : null;
+        }
+
         _searchStart = 0f; _nextScan = 0f; _scanIndex = 0; _retries = 0; _offTreadsStamp = 0f;
-        // 0x005F1F08..0x005F1F18: state 1 when [[robot+0x284]+8] == -1 (nothing carried), else 0
-        var carrying = Context.Robot.Motion.IsCarryingObject;
-        if (carrying is null) ReportMissing("BehaviorFistBump::InitInternal [[robot+0x284]+8] (0x005F1F08): the carried-object ID has no source (the M12 carrying seam is not attached); taken as -1, nothing carried");
-        _state = carrying?.Invoke() == true ? PutDown : TurnToFace;
+        _state = (carriedId ?? uint.MaxValue) == uint.MaxValue ? TurnToFace : PutDown;
+    }
+
+    private void StartNativeAction(ActionRunner action, long generation, Action<RobotCompletedAction>? complete = null)
+    {
+        bool Current() => HostExecutionVersionCurrent(generation);
+        if (!Current()) { action.RetireNeverAdmittedTree(); return; }
+        StartActing(action, complete is null ? null : result => { if (Current()) complete(result); }, Current);
     }
 
     /// <summary><c>UpdateInternal</c> 0x005F1F24 (see the class summary).</summary>
     protected override void OnUpdate()
     {
         float now = NowSeconds;
+        long generation = CaptureHostExecutionVersion();
+        bool Current() => HostExecutionVersionCurrent(generation);
+        if (!Current()) return;
 
         // 0x005F1F4A..0x005F1F7A: the persistent off-treads exit
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads)
@@ -204,57 +270,58 @@ public sealed class FistBumpBehavior : SteppedBehavior
         {
             case PutDown:
                 // 0x005F1FB0..0x005F1FCA: PlaceObjectOnGroundAction, then the state store 0x005F2364
-                int epoch = CallbackEpoch;
-                var owner = Context.Robot.Engine.Robot;
-                if (PlaceObjectOnGround is null && _manipulation is { } m && owner is not null &&
-                    owner.NativeBehaviorRuntime is { } runtime && ReferenceEquals(runtime.Manipulation, m) &&
-                    runtime.Bound.TryGetValue(Id, out var configured) && ReferenceEquals(configured, this))
+                if (_nativeOwner is { } owner && _manipulation is { } m)
                 {
-                    bool Current() => CallbackMayRun(epoch) && !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner);
                     try
                     {
-                        var ground = new NativePlaceGroundRunner(m, owner) { HostFailureCleanup = true };
-                        StartActing(ground, null, Current);
+                        StartNativeAction(new NativePlaceGroundRunner(m, owner) { HostFailureCleanup = true }, generation);
                     }
                     catch (NativeActionUnavailable error)
                     {
-                        ReportMissing("M15-022 FistBump ground placement unavailable: " + error.Message);
+                        ReportMissing("M15-022 FistBump native ground-placement input unavailable: " + error.Message);
                         if (Current()) Finish();
                         return;
                     }
                 }
                 else StartAction("PlaceObjectOnGroundAction", PlaceObjectOnGroundRunner(), () => { });
-                if (CallbackMayRun(epoch) && ReferenceEquals(Context.Robot.Engine.Robot, owner)) _state = TurnToFace;
+                if (Current()) _state = TurnToFace;
                 break;
 
             case TurnToFace:
                 // 0x005F2070..0x005F20CA: the face turn; the callback (0x005F27EE..0x005F2814) writes the state
-                StartTurn();
+                StartTurn(generation);
                 break;
 
             case SearchState:
-                UpdateSearch(now);
+                UpdateSearch(now, generation);
                 break;
 
             case Request:
                 // 0x005F20E2..0x005F2112, state store 0x005F235A..0x005F2374
-                PlayAction(AnimationTrigger.FistBumpRequestOnce);
-                _state = Idle;
+                PlayAction(AnimationTrigger.FistBumpRequestOnce, generation);
+                if (Current()) _state = Idle;
                 break;
 
             case Idle:
                 // 0x005F200C..0x005F2054
                 _idleStart = now;
-                SetPower(false);
-                PlayAction(AnimationTrigger.FistBumpIdle);
-                _state = Settle;
+                SetPower(false, generation);
+                if (!Current()) return;
+                PlayAction(AnimationTrigger.FistBumpIdle, generation);
+                if (Current()) _state = Settle;
                 break;
 
             case Settle:
                 // 0x005F212A..0x005F2168: both MovementComponent bytes (+0x0B lift, +0x0A head) must be zero
                 if (Context.Robot.Motion.LiftMoving || Context.Robot.Motion.HeadMoving) break;
-                _liftSnapshot = Context.Robot.Engine.Robot?.StoredState?.LiftAngle ?? 0f;           // robot+0x300
-                _accelXSnapshot = Context.Robot.Sensors.OffTreads.RawAccel.X;                       // robot+0x360
+                var settled = (_nativeOwner ?? Context.Robot.Engine.Robot)?.StoredState;
+                if (_nativeOwner is not null && settled is null)
+                {
+                    ReportMissing("M7-018 FistBump motor-settle telemetry unavailable at 0x005F2146");
+                    return;
+                }
+                _liftSnapshot = settled?.LiftAngle ?? 0f;  // robot+0x300
+                _accelXSnapshot = _nativeOwner is null ? Context.Robot.Sensors.OffTreads.RawAccel.X : settled!.Accel.X; // robot+0x360
                 _state = DetectBump;
                 if (now - _idleStart > SettleWarnSec)                                                // 0x005F2168 -> 0x005F21AC
                 {
@@ -267,31 +334,26 @@ public sealed class FistBumpBehavior : SteppedBehavior
                 break;
 
             case DetectBump:
-                UpdateDetectBump();
+                UpdateDetectBump(generation);
                 break;
 
             case Success:
                 // 0x005F2274..0x005F229A: NeedActionCompleted(NoAction = 0), objective 8, ResetTrigger(+0x148), objective 7, the terminal 2
                 NeedActionCompleted();
-                ObjectiveAchieved(8);
-                ResetTrigger(UpdateLastCompletionTime);
-                ObjectiveAchieved(7);
-                Finish();
+                if (!Current()) return;
+                ObjectiveAchieved(BehaviorObjective.FistBumpSuccess);
+                if (Current()) CompleteAttempt(generation);
                 break;
 
             case LeftHanging:
                 // objective 9, ResetTrigger(+0x148), objective 7
-                ObjectiveAchieved(9);
-                ResetTrigger(UpdateLastCompletionTime);
-                ObjectiveAchieved(7);
-                Finish();
+                ObjectiveAchieved(BehaviorObjective.FistBumpLeftHanging);
+                if (Current()) CompleteAttempt(generation);
                 break;
 
             case Abort:
                 // 0x005F228C: ResetTrigger(+0x148), then objective 7
-                ResetTrigger(UpdateLastCompletionTime);
-                ObjectiveAchieved(7);
-                Finish();
+                CompleteAttempt(generation);
                 break;
         }
     }
@@ -300,7 +362,7 @@ public sealed class FistBumpBehavior : SteppedBehavior
     /// State 2 (the bounded face search). The order is the order the inventory lists the branches in (timeout, face, scan), which is how the state's
     /// case is laid out from 0x005F1FE2; the inventory does not say it in so many words.
     /// </summary>
-    private void UpdateSearch(float now)
+    private void UpdateSearch(float now, long generation)
     {
         // 0x005F1FE2..0x005F2006: now > +0x120 + maxTime ends the search
         if (now > _searchStart + MaxTimeToLookForFaceSec)
@@ -309,31 +371,47 @@ public sealed class FistBumpBehavior : SteppedBehavior
             return;
         }
         // 0x005F22B4..0x005F2340: GetLastObservedFace(..., true) non-zero and (robot+0x2C - result) >> 3 <= 124 (unsigned)
-        if (_vision is null)
-            ReportMissing("BehaviorFistBump state 2 (0x005F22B4..0x005F2340): no vision system is attached to this behaviour, so GetLastObservedFace has no source; the face check is skipped");
-        else if (Context.Robot.Engine.Robot is not { } faceOwner || !faceOwner.TryGetNativeOriginOwner(faceOwner.CurrentOriginId, out var faceOrigin) || faceOrigin is null)
-            ReportMissing("BehaviorFistBump state 2 (0x005F22B4..0x005F2340): the native Robot or its current world origin is unavailable, so the last-observed-face cache cannot be read; the face check is skipped");
-        else if (LastFaceStamp(_vision, faceOrigin) is var faceStamp && faceStamp != 0)
+        var faceOwner = _nativeOwner ?? Context.Robot.Engine.Robot;
+        if (_vision is not null && faceOwner is not null &&
+            faceOwner.TryGetNativeOriginOwner(faceOwner.CurrentOriginId, out var faceOrigin) && faceOrigin is not null &&
+            faceOwner.StoredState is { } state)
         {
-            uint robotClock = faceOwner.StoredState?.Timestamp ?? 0u;     // robot+0x2C
-            if (unchecked(robotClock - faceStamp) >> 3 <= RecentFaceShifted)
+            uint faceStamp = LastFaceStamp(_vision, faceOrigin);
+            if (faceStamp != 0 && unchecked(state.Timestamp - faceStamp) >> 3 <= RecentFaceShifted)
             {
-                // 0x005F22F8..0x005F2340, 0x005F24F4..0x005F24FC: the turn is started WITHOUT the +0x193 byte (that store is state 1's, 0x005F20B8) and with an
-                // EMPTY callback (r7 = 0), then state 3
-                StartTurn(stateOne: false);
-                _state = Request;
+                // 0x005F22F8..0x005F2340: no verification store and no completion callback.
+                StartTurn(generation, stateOne: false);
+                if (HostExecutionVersionCurrent(generation)) _state = Request;
                 return;
             }
         }
+        else if (_nativeOwner is not null)
+        {
+            ReportMissing("M7-018 FistBump current-origin last face or robot timestamp unavailable at 0x005F22B4");
+            return;
+        }
+        else if (_vision is null)
+            ReportMissing("BehaviorFistBump state 2 GetLastObservedFace: standalone vision input unavailable");
         // 0x005F2382..0x005F24EE: the scan
         if (now > _nextScan)
         {
             float pan = ScanPanRad[_scanIndex];
             // 0x005F23BE..0x005F23C6: PanAndTiltAction(robot, pan, tilt, isPanAbsolute = false, isTiltAbsolute = true) ([sp] = 0, [sp+4] = 1)
-            if (PanAndTilt is { } pat)
+            if (_nativeOwner is not null && _manipulation is { } m)
+            {
+                var parameters = new PanAndTiltAction
+                {
+                    PanAngleRad = pan, HeadAngleRad = ScanTiltRad, PanIsAbsolute = false, HeadIsAbsolute = true
+                };
+                StartNativeAction(new NativePanTiltRunner(m, parameters), generation);
+            }
+            else if (PanAndTilt is { } pat)
                 StartAction($"PanAndTiltAction(pan {pan}, tilt {ScanTiltRad})", ct => pat(pan, ScanTiltRad, false, true, ct), () => { });
-            else ReportMissing("BehaviorFistBump search PanAndTiltAction(robot, pan, tilt, false, true) (0x005F23BE..0x005F23CE): this stack's PanAndTiltAction is not live (M13-020); no pan and tilt is started (PanAndTilt seam)");
-            _nextScan = now + (float)Rng.RandDblInRange(ScanDelayMinSec, ScanDelayMaxSec);
+            else ReportMissing("FistBump standalone PanAndTiltAction provider unavailable");
+            if (!HostExecutionVersionCurrent(generation)) return;
+            float delay = (float)Rng.RandDblInRange(ScanDelayMinSec, ScanDelayMaxSec);
+            if (!HostExecutionVersionCurrent(generation)) return;
+            _nextScan = now + delay;
             _scanIndex = _scanIndex + 1 < ScanPanRad.Length ? _scanIndex + 1 : 0;           // 0x005F24D8..0x005F24EE: idx+1 < (end-begin)>>2 else 0; the vector has two entries (0x004D7D10..0x004D7D4E)
         }
     }
@@ -347,47 +425,70 @@ public sealed class FistBumpBehavior : SteppedBehavior
     }
 
     /// <summary>State 6: a bump, or the idle action ending without one.</summary>
-    private void UpdateDetectBump()
+    private void UpdateDetectBump(long generation)
     {
         var robot = Context.Robot;
-        float lift = robot.Engine.Robot?.StoredState?.LiftAngle ?? 0f;
+        var sample = (_nativeOwner ?? robot.Engine.Robot)?.StoredState;
+        if (_nativeOwner is not null && sample is null)
+        {
+            ReportMissing("M7-018 FistBump bump telemetry unavailable at 0x005F21B2");
+            return;
+        }
+        float lift = sample?.LiftAngle ?? 0f;
+        float gyroY = _nativeOwner is null ? robot.Sensors.OffTreads.RawGyro.Y : sample!.Gyro.Y;
+        float accelX = _nativeOwner is null ? robot.Sensors.OffTreads.RawAccel.X : sample!.Accel.X;
         bool bump = MathF.Abs(lift - _liftSnapshot) > LiftBumpRad
-                    || MathF.Abs(robot.Sensors.OffTreads.RawGyro.Y) > GyroBumpRadPerSec
-                    || MathF.Abs(robot.Sensors.OffTreads.RawAccel.X - _accelXSnapshot) > AccelBumpMmps2;
+                    || MathF.Abs(gyroY) > GyroBumpRadPerSec
+                    || MathF.Abs(accelX - _accelXSnapshot) > AccelBumpMmps2;
+        bool Current() => HostExecutionVersionCurrent(generation);
         if (bump)
         {
             // 0x005F2208..0x005F2258
             StopActing(keepAction: true, viaCallback: false);      // StopActing(this, 1, 0) 0x005F2208..0x005F2214
-            SetPower(true);
-            PlayAction(AnimationTrigger.FistBumpSuccess);
-            _state = Success;
+            if (!Current()) return;
+            SetPower(true, generation);
+            if (!Current()) return;
+            PlayAction(AnimationTrigger.FistBumpSuccess, generation);
+            if (Current()) _state = Success;
             return;
         }
         if (!HasCurrentAction)
         {
             // 0x005F23FC..0x005F24A2: the idle action ended without a bump
-            SetPower(true);
+            SetPower(true, generation);
+            if (!Current()) return;
             _retries++;
             if (_retries == 1)
             {
-                PlayAction(AnimationTrigger.FistBumpRequestRetry);
-                _state = Idle;
+                PlayAction(AnimationTrigger.FistBumpRequestRetry, generation);
+                if (Current()) _state = Idle;
             }
             else
             {
-                PlayAction(AnimationTrigger.FistBumpLeftHanging);
-                _state = LeftHanging;
+                PlayAction(AnimationTrigger.FistBumpLeftHanging, generation);
+                if (Current()) _state = LeftHanging;
             }
         }
     }
 
     /// <summary>
     /// <c>TurnTowardsFaceAction(robot, 0, Radians(pi), ...)</c> with the last-face-pose vtable and +0x193 = 1; its completion callback tests the result
-    /// (0x005F27EE..0x005F2814): <c>NO_FACE</c> stamps the search start (+0x120) and enters state 2, every other result enters state 3. The remaining
-    /// constructor arguments (the say-name flag) are not in the inventory: false, as the M13-014 record has it for the other callers that set +0x193.
+    /// (0x005F27EE..0x005F2814): <c>NO_FACE</c> stamps the search start (+0x120) and enters state 2, every other result enters state 3.
+    /// Both call sites pass sayName=false (0x005F2090..9C and 0x005F2310..24).
     /// </summary>
-    private void StartTurn(bool stateOne = true)
+    private void StartTurn(long generation, bool stateOne = true)
     {
+        void TurnEnded(uint result)
+        {
+            if (result == NoFaceResult) { _searchStart = NowSeconds; _state = SearchState; }
+            else _state = Request;
+        }
+        if (_nativeOwner is { } owner && _manipulation is { } m)
+        {
+            var action = new NativeLastFaceRunner(m, owner, 0, sayName: false) { RequireVerifiedFace = stateOne };
+            StartNativeAction(action, generation, stateOne ? result => TurnEnded(result.Result) : null);
+            return;
+        }
         if (_turnRunner(stateOne) is not { } run)
         {
             ReportMissing("BehaviorFistBump TurnTowardsFaceAction (0x005F2070..0x005F20CA): no vision system is attached to this behaviour, so no turn can run; it ends as a result other than NO_FACE (the search is skipped)");
@@ -399,11 +500,7 @@ public sealed class FistBumpBehavior : SteppedBehavior
             StartAction("TurnTowardsFaceAction(last face, pi)", run, _ => { }, uint.MaxValue);       // state 2's: no fail-if-no-face byte, empty callback
             return;
         }
-        StartAction("TurnTowardsFaceAction(last face, pi)", run, result =>
-        {
-            if (result == NoFaceResult) { _searchStart = NowSeconds; _state = SearchState; }
-            else _state = Request;
-        }, uint.MaxValue);
+        StartAction("TurnTowardsFaceAction(last face, pi)", run, TurnEnded, uint.MaxValue);
     }
 
     private Func<CancellationToken, Task<uint>>? _turnRunner(bool stateOne)
@@ -430,7 +527,12 @@ public sealed class FistBumpBehavior : SteppedBehavior
     }
 
     /// <summary>A <c>TriggerAnimationAction(trigger, 1, 1, 0, 60.0, 0)</c> started with <c>StartActing</c> and an empty completion.</summary>
-    private void PlayAction(AnimationTrigger trigger) => PlayTrigger(trigger, () => { }, AnimationTrack.None, AnimationTimeoutSec);
+    private void PlayAction(AnimationTrigger trigger, long generation)
+    {
+        if (_nativeOwner is not null)
+            StartNativeAction(new TriggerAnimationAction(Context.Robot, new(trigger, 1, true, 0, AnimationTimeoutSec, false)), generation);
+        else PlayTrigger(trigger, () => { }, AnimationTrack.None, AnimationTimeoutSec);
+    }
 
     /// <summary>One async action started with <c>StartActing</c>: +0x84 is set until it ends, and the callback runs on the behaviour's tick while it still runs.</summary>
     private void StartAction(string what, Func<CancellationToken, Task>? run, Action onDone)
@@ -464,20 +566,41 @@ public sealed class FistBumpBehavior : SteppedBehavior
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
     }
 
-    /// <summary>Disables (false) or re-enables (true) the lift and head power, lift first (0x005F2704, 0x005F270E).</summary>
-    private void SetPower(bool enable)
+    /// <summary>Requests motor power in lift, head order (0x005F2704 and 0x005F270E).</summary>
+    private void SetPower(bool enable, long generation)
     {
-        if (EnableLiftPower is { } lift) lift(enable);
-        else ReportMissing("BehaviorFistBump EnableLiftPower(bool) (0x005F2704): the MovementComponent function's body is not in the inventory; nothing is sent (EnableLiftPower seam)");
-        if (EnableHeadPower is { } head) head(enable);
-        else ReportMissing("BehaviorFistBump EnableHeadPower(bool) (0x005F270E): the MovementComponent function's body is not in the inventory; nothing is sent (EnableHeadPower seam)");
+        if (_nativeOwner is { } owner)
+        {
+            if (!HostExecutionVersionCurrent(generation)) return;
+            if (!Context.Robot.Motion.SetNativeMotorPower(owner, MotorID.MOTOR_LIFT, enable))
+                ReportMissing("M7-018 FistBump lift power send unavailable at 0x00640634");
+            if (!HostExecutionVersionCurrent(generation)) return;
+            if (!Context.Robot.Motion.SetNativeMotorPower(owner, MotorID.MOTOR_HEAD, enable))
+                ReportMissing("M7-018 FistBump head power send unavailable at 0x006406CC");
+        }
+        else
+        {
+            if (EnableLiftPower is { } lift) lift(enable);
+            else ReportMissing("FistBump standalone EnableLiftPower provider unavailable");
+            if (EnableHeadPower is { } head) head(enable);
+            else ReportMissing("FistBump standalone EnableHeadPower provider unavailable");
+        }
     }
 
-    /// <summary><c>IBehavior::BehaviorObjectiveAchieved(BehaviorObjective)</c>: its body is not in the inventory, so only the call is traced (as ReactToCliff does).</summary>
-    private void ObjectiveAchieved(int objective)
+    private void ObjectiveAchieved(BehaviorObjective objective)
     {
-        Log($"BehaviorObjectiveAchieved({objective})");
-        ReportMissing("IBehavior::BehaviorObjectiveAchieved(BehaviorObjective) body (0x005F2288): not in the inventory; BehaviorFistBump only logs the call");
+        long generation = CaptureHostExecutionVersion();
+        Log($"BehaviorObjectiveAchieved({(uint)objective})");
+        if (_nativeOwner is { } owner && HostExecutionVersionCurrent(generation))
+            owner.Engine.ReportBehaviorObjective((uint)objective, objective.ToString(), Id);
+    }
+
+    private void CompleteAttempt(long generation)
+    {
+        ResetTrigger(UpdateLastCompletionTime);
+        if (!HostExecutionVersionCurrent(generation)) return;
+        ObjectiveAchieved(BehaviorObjective.FistBumpComplete);
+        if (HostExecutionVersionCurrent(generation)) Finish();
     }
 
     /// <summary><c>ResetTrigger(bool)</c> 0x005F26B8..0x005F26F6: every registered fist-bump listener.</summary>
@@ -491,7 +614,14 @@ public sealed class FistBumpBehavior : SteppedBehavior
     {
         _cancel?.Cancel();
         _cancel = null;
-        SetPower(true);
-        ResetTrigger(false);
+        long generation = CaptureHostExecutionVersion();
+        SetPower(true, generation);
+        if (HostExecutionVersionCurrent(generation)) ResetTrigger(false);
+        if (_generation == generation) ++_generation;
+    }
+
+    internal void RetireNativeActionOwner()
+    {
+        if (_nativeOwner is not null) RetireActionCompletionOwner();
     }
 }
