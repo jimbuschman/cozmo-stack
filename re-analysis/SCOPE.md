@@ -15,6 +15,8 @@ partial when it is run.
 
 ## A. Commands and events for the LLM (required)
 
+Robot script: `m15-cube-hw --commands` (built 2026-11-16) runs every command below once and records the events.
+
 | Item | State |
 | --- | --- |
 | Head, lift, drive straight, turn in place | sim (motion itself: robot) |
@@ -25,7 +27,7 @@ partial when it is run.
 | Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
 | Teach, rename and erase a face | sim |
 | Go to a place (QueueAiGotoPoseAsync) | sim (built 2026-11-15; go-to round in `m15-cube-hw --skills`) |
-| Return to and mount the charger (QueueAiMountChargerAsync) | sim (built 2026-11-15; charger round in `m15-cube-hw --skills`) |
+| Return to and mount the charger (QueueAiMountChargerAsync) | sim (built 2026-11-15; SetPoseOnCharger built 2026-11-16; charger round in `m15-cube-hw --skills`) |
 | Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
 | Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
 | Charger seen report (operator 2026-11-15) | none |
@@ -40,7 +42,7 @@ Robot script: `m15-cube-hw --personality` (built 2026-11-15) walks through every
 | --- | --- | --- |
 | Freeplay loop, activities, needs, mood | (system) | robot (2026-11-03, 4 min; 15 min check Z2 not run) |
 | Physical reactions | ReactToCliff, ReactToPickup, ReactToRobotOnBack/OnFace/OnSide, ReactToRobotShaken, ReactToReturnedToTreads, ReactToImpact, ReactToPlacedOnSlope, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToOnCharger, ReactToFrustration | sim (cliff: robot; checks G, C, H, J exist) |
-| Needs | ExpressNeeds, PlayAnimOnNeedsChange, DriveInDesperation, EarnedSparks | sim / partial (DriveInDesperation's energy search missing) |
+| Needs | ExpressNeeds, PlayAnimOnNeedsChange, DriveInDesperation, EarnedSparks | sim (DriveInDesperation's cube search built 2026-11-16; untargeted search never succeeds, as in the engine) |
 | Idle life | PlayAnim, PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, FindFaces, LookForFaceAndCube, VisitInterestingEdge, PounceOnMotion, ThinkAboutBeacons | robot for Pounce, VisitInterestingEdge, FindFaces; sim for the rest |
 | Faces | AcknowledgeFace, InteractWithFaces, SearchForFace, DriveToFace, EnrollFace, RespondToRenameFace, ReactToPet | sim |
 | Cubes | AcknowledgeObject, ReactToCubeMoved, PickUpCube, PutDownBlock, RollBlock, StackBlocks, DriveOffCharger | robot for pickup, put-down, drive-off; sim for the rest |
