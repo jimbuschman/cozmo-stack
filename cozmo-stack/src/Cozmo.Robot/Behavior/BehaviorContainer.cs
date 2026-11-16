@@ -328,7 +328,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.PutDownBlock] = (ctx,json)=>new NativePutDownBlockBehavior(ctx,json),
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
-        [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeMeetInteractWithFaces(ctx,json),
+        [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeInteractWithFaces(ctx,json),
         [BehaviorClass.ReactToPet] = (ctx,json)=>new NativeReactToPetBehavior(ctx,json),
         [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
         [BehaviorClass.RespondToRenameFace] = (ctx,json)=>new NativeRespondToRenameFace(ctx,json),
@@ -487,9 +487,9 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("AcknowledgeFace factory: actual vision, manipulation and Robot owners unavailable");
             status = BehaviorCreateStatus.NotImplemented; return null;
         }
-        if (cls == BehaviorClass.InteractWithFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.MeetCozmo_InteractWithFaces || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        if (cls == BehaviorClass.InteractWithFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.InteractWithFaces or BehaviorID.MeetCozmo_InteractWithFaces) || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
-            SteppedBehavior.ReportMissing("InteractWithFaces factory supports only the checked Meet configuration with original owners");
+            SteppedBehavior.ReportMissing("InteractWithFaces factory requires a checked configuration and original owners");
             status=BehaviorCreateStatus.NotImplemented; return null;
         }
         if (cls == BehaviorClass.ReactToPet && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.ReactToPet || ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))

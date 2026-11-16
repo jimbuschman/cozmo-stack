@@ -1042,7 +1042,7 @@ public class BehaviorFrameworkTests
     }
 
     /// <summary>
-    /// The <c>BehaviorObjectiveFromString</c> 0x005bc5a0 mapping for the two shipped names, and the ordinals
+    /// The native <c>BehaviorObjectiveFromString</c> at 0x00769558 and the ordinals
     /// from the <c>EnumToString(BehaviorObjective)</c> 0x769540 table at 0x1033140: PerformedWorkout 18,
     /// PoppedWheelie 22, the 0x29 sentinel (table[41] "Count").
     /// </summary>
@@ -1051,6 +1051,10 @@ public class BehaviorFrameworkTests
     {
         Assert.Equal(BehaviorObjective.PerformedWorkout, BehaviorObjectives.FromString("PerformedWorkout"));
         Assert.Equal(BehaviorObjective.PoppedWheelie, BehaviorObjectives.FromString("PoppedWheelie"));
+        Assert.Equal(12u, (uint)BehaviorObjectives.FromString("InteractedWithFace"));
+        Assert.Equal(16u, (uint)BehaviorObjectives.FromString("PeekABooComplete"));
+        Assert.Equal(23u, (uint)BehaviorObjectives.FromString("PouncedAndCaught"));
+        Assert.Equal(BehaviorObjective.Invalid, BehaviorObjectives.FromString("12"));
         Assert.Equal(BehaviorObjective.Invalid, BehaviorObjectives.FromString("NotAnObjective"));
         Assert.Equal(18, (int)BehaviorObjective.PerformedWorkout);
         Assert.Equal(22, (int)BehaviorObjective.PoppedWheelie);

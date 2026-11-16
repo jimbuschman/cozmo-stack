@@ -3,8 +3,6 @@ using System.Text.Json;
 
 namespace Cozmo.Robot.Behavior;
 
-internal interface ISocializeFindFaces { uint SearchIterations {get;} }
-
 // One retained activity owner contains the Socialize phase, objective map and single 8B subscription.
 internal sealed class NativeActivityObjectiveOwner : IDisposable
 {
@@ -14,10 +12,12 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
     private readonly IReadOnlyDictionary<string,IBehavior> _bound;
     private readonly RetainedSubscription? _subscription;
     private readonly bool _objective4Absent;
+    private readonly NativeFindFacesSocialize? _search;
+    private readonly NativeInteractWithFaces? _interact;
     private readonly List<Potential> _potential=new();
     private readonly SortedDictionary<uint,uint> _counts=new();
     private readonly uint _maxSearch;
-    private bool _selectedInternalObserved,_retired,_inputAvailable=true,_populationAvailable=true,_configAvailable=true;
+    private bool _selectedInternalObserved,_retired,_inputAvailable=true,_populationAvailable=true;
     private long _epoch;
     private int _phase;
     private uint _searchSnapshot,_runSnapshot;
@@ -33,6 +33,9 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
             _objective4Absent=config.TryGetProperty("behaviorObjective",out var objective) && objective.ValueKind==JsonValueKind.String && objective.GetString()!="DroveAsIntended";
         else
         {
+            // ActivitySocialize constructor retains the two configured instances at +0x68 and +0x70.
+            _search=_bound.GetValueOrDefault("FindFaces_socialize") as NativeFindFacesSocialize;
+            _interact=_bound.GetValueOrDefault("InteractWithFaces") as NativeInteractWithFaces;
             _objective4Absent=config.TryGetProperty("requiredObjectives",out var objectives) && objectives.ValueKind==JsonValueKind.Array &&
                 objectives.EnumerateArray().All(e=>e.TryGetProperty("objective",out var value) && value.ValueKind==JsonValueKind.String && value.GetString()!="DroveAsIntended");
             if(config.TryGetProperty("maxNumFindFacesSearchIterations",out var max))_maxSearch=max.GetUInt32();
@@ -40,14 +43,18 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
                 foreach(var item in objectives.EnumerateArray())
                 {
                     string? name=item.GetProperty("objective").GetString();
-                    uint id=name switch {"PeekABooComplete"=>16,"PouncedAndCaught"=>23,"InteractedWithFace"=>12,_=>uint.MaxValue};
-                    if(id==uint.MaxValue){_configAvailable=false;SteppedBehavior.ReportMissing("Socialize objective mapping unavailable: "+name);continue;}
+                    // PotentialObjectives uses BehaviorObjectiveFromString (0x00769558).
+                    if (!BehaviorObjectives.TryFromString(name, out var id))
+                    {
+                        _robot.Engine.EmitStackLog($"error: string '{name}' is not a valid BehaviorObjective value");
+                        id=BehaviorObjective.Unknown; // Native lookup miss at 0x00769A98.
+                    }
                     string behavior=item.GetProperty("behaviorID").GetString()!;
                     uint unlock=item.TryGetProperty("ignoreIfLocked",out var u)?NativeUnlockNames.FromBytes(Encoding.UTF8.GetBytes(u.GetString()!)):0x55;
                     float probability=item.TryGetProperty("probabilityToRequireObjective",out var p)?p.GetSingle():1f;
                     uint min=item.TryGetProperty("randomCompletionsNeededMin",out var lo)?lo.GetUInt32():1u;
                     uint upper=item.TryGetProperty("randomCompletionsNeededMax",out var hi)?hi.GetUInt32():1u;
-                    _potential.Add(new(id,behavior,unlock,probability,min,upper));
+                    _potential.Add(new((uint)id,behavior,unlock,probability,min,upper));
                 }
         }
         if(robot.HasExternalInterface)_subscription=robot.Engine.AnimationMessages.SubscribeMessage(0x8B,true,Receive);
@@ -55,8 +62,7 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
     internal void OnSelectedInternal()
     {
         if(_activity.Type!="Socialize" || _retired || !ReferenceEquals(_robot.Engine.Robot,_robot))return;
-        long epoch=++_epoch;_selectedInternalObserved=true;_phase=0;_counts.Clear();_populationAvailable=_inputAvailable=_configAvailable;
-        if(!_inputAvailable)return;
+        long epoch=++_epoch;_selectedInternalObserved=true;_phase=0;_counts.Clear();_populationAvailable=_inputAvailable=true;
         foreach(var item in _potential)
         {
             if(_retired||epoch!=_epoch||!ReferenceEquals(_robot.Engine.Robot,_robot))return;
@@ -98,14 +104,6 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
         if(!ready.Available){Unavailable("readiness for "+behavior.Id);return null;}
         return ready.Runnable;
     }
-    private bool? InteractRunnable(BehaviorContext context)
-    {
-        if(_bound.TryGetValue("InteractWithFaces",out var interact))return Runnable(interact,context,false);
-        if(_robot.NativeBehaviorRuntime?.Manipulation is not {} manipulation || !ReferenceEquals(_robot.Engine.Robot,_robot))
-        {Unavailable("original FaceWorld owner");return null;}
-        if(manipulation.Vision.Faces.Count==0)return false; // 004F59EE / 0056C110: known empty live map.
-        Unavailable("InteractWithFaces nonempty-face readiness and body");return null;
-    }
     internal ChooserDecision Desired(IBehavior? current,ChooserDecision normal,BehaviorContext context)
     {
         if(_retired || !ReferenceEquals(_robot.Engine.Robot,_robot))
@@ -118,41 +116,38 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
         bool Valid()=>!_retired && epoch==_epoch && ReferenceEquals(_robot.Engine.Robot,_robot);
         ChooserDecision Missing()=>normal with {InputUnavailable=true};
         ChooserDecision Chosen(IBehavior? target)=>normal with {Behavior=target};
-        IBehavior? Search()=>Resolve("FindFaces_socialize");
+        if (_phase is 0 or 1 or 2 && (_search is null || _interact is null))
+        {
+            Unavailable("retained FindFaces_socialize or InteractWithFaces owner");
+            return Missing();
+        }
         if(_phase==0)
         {
-            var interact=InteractRunnable(context);if(interact is null || !Valid())return Missing();
-            if(interact.Value){var selected=Resolve("InteractWithFaces");if(!_inputAvailable)return Missing();_phase=2;return Chosen(selected);}
-            var search=Search();if(!_inputAvailable)return Missing();
-            var ready=Runnable(search,context,false);if(ready is null || !Valid())return Missing();
+            var interact=Runnable(_interact,context,false);if(interact is null || !Valid())return Missing();
+            if(interact.Value){_phase=2;return Chosen(_interact);}
+            var ready=Runnable(_search,context,false);if(ready is null || !Valid())return Missing();
             if(ready.Value)
             {
-                if(search is not ISocializeFindFaces iterations){Unavailable("FindFaces iteration +1D0 producer");return Missing();}
-                _searchSnapshot=iterations.SearchIterations;_phase=1;return Chosen(search);
+                _searchSnapshot=_search!.SearchIterations;_phase=1;return Chosen(_search); // 0x005B033A..3E
             }
             return normal;
         }
         if(_phase==1)
         {
-            var interact=InteractRunnable(context);if(interact is null || !Valid())return Missing();
-            if(interact.Value){var selected=Resolve("InteractWithFaces");if(!_inputAvailable)return Missing();_phase=2;return Chosen(selected);}
-            var search=Search();if(!_inputAvailable)return Missing();
-            if(_maxSearch!=0)
-            {
-                if(search is not ISocializeFindFaces iterations){Unavailable("FindFaces iteration +1D0 producer");return Missing();}
-                if(unchecked(iterations.SearchIterations-_searchSnapshot)>=_maxSearch){_phase=6;return normal;}
-            }
-            var ready=Runnable(search,context,true);if(ready is null || !Valid())return Missing();
-            return ready.Value?Chosen(search):normal;
+            var interact=Runnable(_interact,context,false);if(interact is null || !Valid())return Missing();
+            if(interact.Value){_phase=2;return Chosen(_interact);}
+            if(_maxSearch!=0 && unchecked(_search!.SearchIterations-_searchSnapshot)>=_maxSearch)
+            {_phase=6;return normal;} // 0x005B0520..38
+            var ready=Runnable(_search,context,true);if(ready is null || !Valid())return Missing();
+            return ready.Value?Chosen(_search):normal;
         }
         if(_phase==2)
         {
-            var interact=Resolve("InteractWithFaces");if(!_inputAvailable)return Missing();
-            var ready=Runnable(interact,context,true);if(ready is null || !Valid())return Missing();
-            if(ready.Value)return Chosen(interact);
-            var search=Search();if(!_inputAvailable)return Missing();ready=Runnable(search,context,true);
+            var ready=Runnable(_interact,context,true);if(ready is null || !Valid())return Missing();
+            if(ready.Value)return Chosen(_interact);
+            ready=Runnable(_search,context,true);
             if(ready is null || !Valid())return Missing();_phase=1;
-            return ready.Value?Chosen(search):normal;
+            return ready.Value?Chosen(_search):normal;
         }
         if(_phase==3)
         {
@@ -195,7 +190,7 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
         }
         if(!_populationAvailable){Unavailable("objective delivery needs unbuilt population state");return;}
         long epoch=++_epoch;
-        if(_phase==2 && objective==12){_phase=3;return;}
+        if(_phase==2 && objective==(uint)BehaviorObjective.InteractedWithFace){_phase=3;return;}
         uint remaining=(uint)_counts.Count;
         if(_counts.TryGetValue(objective,out uint count))
         {

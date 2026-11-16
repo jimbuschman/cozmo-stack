@@ -159,7 +159,7 @@ public sealed class MeetCozmoAdmissionTests
         f.M.Vision.Enabled=true;f.M.Vision.ModeEnableMask=1<<2;f.M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         f.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");f.Rig.Tick();
         f.Image(1100,modes:1<<2);
-        var interact=Assert.IsType<NativeMeetInteractWithFaces>(f.Runtime.Bound["MeetCozmo_InteractWithFaces"]);
+        var interact=Assert.IsType<NativeInteractWithFaces>(f.Runtime.Bound["MeetCozmo_InteractWithFaces"]);
         var objectives=new List<uint>();
         var order=new List<string>();
         var completedActions=new List<string>();
@@ -286,7 +286,7 @@ public sealed class MeetCozmoAdmissionTests
         f.M.Vision.Schedules=AllVisionModesSchedule.InitDefaultSchedules();
         f.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");f.Rig.Tick();
         f.Image(1200,modes:1<<2);
-        var interact=Assert.IsType<NativeMeetInteractWithFaces>(f.Runtime.Bound["MeetCozmo_InteractWithFaces"]);
+        var interact=Assert.IsType<NativeInteractWithFaces>(f.Runtime.Bound["MeetCozmo_InteractWithFaces"]);
         for(int i=0;i<15 && !interact.EngineRunning;i++)f.Motors(RobotStatusFlag.IsBodyAccMode);
         Assert.True(interact.EngineRunning);
         var sequence=Assert.IsType<CompoundActionSequential>(interact.OwnedRunner);
@@ -454,7 +454,7 @@ public sealed class MeetCozmoAdmissionTests
         var scanner = Assert.IsType<NativeFindFacesSocialize>(manager.Current);
         Assert.Equal("MeetCozmo_FindFaces_Socialize", scanner.Id);
         var missing = new List<string>();
-        void Capture(string text) { if (text.Contains("M14-006 Meet Interact")) missing.Add(text); }
+        void Capture(string text) { if (text.Contains("M14-006 InteractWithFaces")) missing.Add(text); }
         SteppedBehavior.MissingReported += Capture;
         try
         {
@@ -468,7 +468,7 @@ public sealed class MeetCozmoAdmissionTests
             Assert.NotEmpty(missing);
             Assert.Contains("shared authored robot audio", missing[0]);
             Assert.False(scanner.EngineRunning);
-            Assert.IsType<NativeMeetInteractWithFaces>(f.Runtime.Bound["MeetCozmo_InteractWithFaces"]);
+            Assert.IsType<NativeInteractWithFaces>(f.Runtime.Bound["MeetCozmo_InteractWithFaces"]);
         }
         finally { SteppedBehavior.MissingReported -= Capture; }
     }
