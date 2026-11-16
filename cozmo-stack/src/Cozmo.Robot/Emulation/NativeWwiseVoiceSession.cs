@@ -20,7 +20,8 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private readonly Thread _thread;
     private readonly string _libraryDirectory;
     private readonly byte[] _initBank, _voiceBank;
-    private readonly byte[]? _musicBank;
+    private readonly byte[]? _musicBank, _debugBank;
+    private readonly IReadOnlyList<byte[]>? _startupBeforeCozmo;
     internal bool HasMusic => _musicBank is not null;
     private readonly string? _archivePath;
     private readonly SpeechRobotAudioBuffer _buffer;
@@ -43,13 +44,16 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private readonly Dictionary<uint, (long Generation, IWwiseRobotAudioCallback Callback)> _sharedCallbacks = new();
 
     private NativeWwiseVoiceSession(string libraryDirectory, byte[] initBank, byte[] voiceBank,
-        SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds, Func<IPlatformPcmSink> openSink, string? archivePath = null, byte[]? musicBank = null)
+        SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds, Func<IPlatformPcmSink> openSink, string? archivePath = null, byte[]? musicBank = null,
+        IReadOnlyList<byte[]>? startupBeforeCozmo = null, byte[]? debugBank = null)
     {
         _libraryDirectory = libraryDirectory;
         _initBank = initBank;
         _voiceBank = voiceBank;
         _archivePath = archivePath;
         _musicBank = musicBank;
+        _startupBeforeCozmo = startupBeforeCozmo;
+        _debugBank = debugBank;
         _buffer = buffer;
         _wallMilliseconds = wallMilliseconds;
         _openSink = openSink;
@@ -59,13 +63,14 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
 
     internal static async Task<NativeWwiseVoiceSession> OpenSharedAsync(string libraryDirectory, byte[] initBank,
         byte[] voiceBank, string archivePath, SpeechRobotAudioBuffer buffer, Func<double> wallMilliseconds,
-        Func<IPlatformPcmSink>? openSink = null, byte[]? musicBank = null)
+        Func<IPlatformPcmSink>? openSink = null, byte[]? musicBank = null,
+        IReadOnlyList<byte[]>? startupBeforeCozmo = null, byte[]? debugBank = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(archivePath);
         ArgumentNullException.ThrowIfNull(buffer);
         ArgumentNullException.ThrowIfNull(wallMilliseconds);
         var session = new NativeWwiseVoiceSession(libraryDirectory, initBank, voiceBank, buffer,
-            wallMilliseconds, openSink ?? (() => new WinMmPcmSink()), archivePath, musicBank);
+            wallMilliseconds, openSink ?? (() => new WinMmPcmSink()), archivePath, musicBank, startupBeforeCozmo, debugBank);
         try { await session._ready.Task.ConfigureAwait(false); }
         catch { try { await session._finished.Task.ConfigureAwait(false); } catch { } throw; }
         return session;
@@ -317,7 +322,8 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         try
         {
             sink = _openSink();
-            host = new NativeWwiseVoiceHost(_libraryDirectory, _initBank, _voiceBank, 1024, _archivePath, musicBank: _musicBank);
+            host = new NativeWwiseVoiceHost(_libraryDirectory, _initBank, _voiceBank, 1024, _archivePath, musicBank: _musicBank,
+                startupBeforeCozmo: _startupBeforeCozmo, debugBank: _debugBank);
             host.HijackOpened += () => _buffer.Open(_wallMilliseconds());
             host.HijackFrame += frame => _buffer.Push(frame);
             host.HijackClosed += _buffer.Close;

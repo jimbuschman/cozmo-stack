@@ -290,7 +290,8 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     }
 
     public NativeWwiseVoiceHost(string libraryDirectory, byte[] initBank, byte[] englishBank, uint platformBlockFrames,
-        string? archivePath = null, uint? fixedSeed = null, byte[]? musicBank = null, bool inspectOutputBuffers = false)
+        string? archivePath = null, uint? fixedSeed = null, byte[]? musicBank = null, bool inspectOutputBuffers = false,
+        IReadOnlyList<byte[]>? startupBeforeCozmo = null, byte[]? debugBank = null)
     {
         if (musicBank is not null && archivePath is null)
             throw new ArgumentException("Music requires the shared archived-stream owner", nameof(musicBank));
@@ -334,13 +335,18 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             Ok(Run(0x99E3EC, new[] { settings, platform }), "engine init");
             Run(0x99F130, new uint[] { 1 });
             if (_musicEnabled) Ok(Run(0x97D72C, new uint[] { 0 }), "music engine init");
-            Load(initBank);
-            if (musicBank is not null) Load(musicBank);
-            Load(englishBank);
+            // SetupPlugins at 0x00593478 precedes the InitScene load.
             _interface = _m.Malloc(0x80);
             Run(0x8DC119, new[] { _interface });
             Run(0x8DC17B, new[] { _interface });
             Run(0x8DC3ED, new uint[] { _interface, 22320, 744 });
+            Load(initBank);
+            if (musicBank is not null) Load(musicBank);
+            // InitScene order at 0x00593484..0x00593500, iterated at 0x008D2F08..0x008D2F18.
+            if (startupBeforeCozmo is not null)
+                foreach (byte[] bank in startupBeforeCozmo) Load(bank);
+            Load(englishBank);
+            if (debugBank is not null) Load(debugBank);
             Ok(Run(0x9A3100, new uint[] { 7, 0, 1 }), "register game object");
             uint sends = _m.Malloc(8);
             _m.W32(sends, 0x9FA5953C); _m.W32(sends + 4, F(1));

@@ -100,6 +100,7 @@ public static class FreeplayTool
         Console.WriteLine($"connecting to {a[1]}...");
         using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         robot.Animations.LoadFrom(assets);
+        // This legacy FreeplayStack hosts SingingBehavior, which needs the switch-capable song renderer.
         var sound = Path.Combine(obb, "assets", "cozmo_resources", "sound");
         if (Directory.Exists(sound)) robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound });
         var vision = robot.Vision;

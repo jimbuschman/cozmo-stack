@@ -5,7 +5,7 @@ using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Animation;
 
-// One owner per original Robot; a clip receives a generation, not the sink.
+// The context owns the shared Wwise runtime. Each robot clip receives a generation.
 internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
 {
     private readonly object _gate = new();
@@ -18,19 +18,23 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     private bool _retired;
     private bool _leaseRetiring;
 
-    internal CannedSpeechOwner(string library, string? banks, string archive, Action<string> report, Func<IPlatformPcmSink>? sink = null)
+    internal CannedSpeechOwner(string library, string? banks, string archive, Action<string> report, Func<IPlatformPcmSink>? sink = null, bool initScene = false)
     {
         _report = report;
-        _opening = Open(library, banks, archive, sink);
+        _opening = Open(library, banks, archive, sink, initScene);
     }
 
-    private async Task<NativeWwiseVoiceSession> Open(string library, string? banks, string archive, Func<IPlatformPcmSink>? sink)
+    private async Task<NativeWwiseVoiceSession> Open(string library, string? banks, string archive, Func<IPlatformPcmSink>? sink, bool initScene)
     {
         byte[] init = await ReadBankAsync("Init.bnk").ConfigureAwait(false);
+        byte[]? music = initScene ? await ReadBankAsync("Music.bnk").ConfigureAwait(false) : ReadMusicBank(archive);
+        byte[][]? beforeCozmo = initScene
+            ? [await ReadBankAsync("UI.bnk").ConfigureAwait(false), await ReadBankAsync("SFX.bnk").ConfigureAwait(false)]
+            : null;
         byte[] english = await ReadBankAsync("English(US)/Cozmo.bnk").ConfigureAwait(false);
-        byte[]? music = ReadMusicBank(archive);
+        byte[]? debug = initScene ? await ReadBankAsync("Dev_Debug.bnk").ConfigureAwait(false) : null;
         return await NativeWwiseVoiceSession.OpenSharedAsync(library, init, english, archive, _buffer,
-            () => Environment.TickCount64, sink, music).ConfigureAwait(false);
+            () => Environment.TickCount64, sink, music, beforeCozmo, debug).ConfigureAwait(false);
 
         Task<byte[]> ReadBankAsync(string entry)
         {
@@ -195,7 +199,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     public IWwiseRobotAudioBuffer? GetRobotAudioBuffer(uint gameObject) => gameObject == 7 ? _buffer : null;
 }
 
-internal sealed class CannedSpeechLease
+internal sealed class CannedSpeechLease : IDirectSpeechSession
 {
     private readonly CannedSpeechOwner _owner;
     private readonly NativeWwiseVoiceSession _native;
@@ -226,6 +230,10 @@ internal sealed class CannedSpeechLease
         }
     }
     internal Task Configure(float pitch) => _generation.ConfigureAsync(0x2F8B3BF4, pitch);
+    WwiseRobotAudioPath IDirectSpeechSession.Path => Path;
+    Exception? IDirectSpeechSession.Failure => Failure;
+    Task IDirectSpeechSession.Configure(uint voiceSwitch, float pitch) => _generation.ConfigureAsync(voiceSwitch, pitch);
+    void IDirectSpeechSession.Retire() { ClearPending(); Retire(); }
     internal void ClearPending() => _owner.Observe(_generation.ClearPendingAsync());
     internal void Retire()
     {

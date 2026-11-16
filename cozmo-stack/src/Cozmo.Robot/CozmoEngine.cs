@@ -2161,6 +2161,7 @@ public sealed partial class CozmoEngine : IDisposable
     internal void StartProduction(uint randomSeed = 0, Func<uint>? entropy = null)
     {
         StartEngineRandom(randomSeed, entropy);
+        StartRuntimeAudio();
         StartHostEngine();
         _t.Start();
         _runner = new EngineTickRunner(_nowNs, EngineTickRunner.HostSleepNs, now=>
@@ -2182,6 +2183,7 @@ public sealed partial class CozmoEngine : IDisposable
         IsOfflineEngine=true;
         StartEngineRandom(randomSeed, entropy);
         _autoTick = autoTick;
+        if (RuntimeAudioSinkForTest is not null) StartRuntimeAudio();
         if(startReady) { _engineState=3;_hostReady=true; } // Explicit pre-initialized offline fixture, not production readiness.
         else StartHostEngine();
         DrainAppDelivery();
@@ -2682,6 +2684,8 @@ public sealed partial class CozmoEngine : IDisposable
         StopStartupLoading();
         DestructionObserved?.Invoke("loader");
         DisposeAppAudioInput();
+        RuntimeWwiseAudio?.Retire();
+        RuntimeWwiseAudio = null;
         ClearAppDelivery();
         Experiments?.RetireLab(); // context-owned Lab subscriber, not Robot lifetime.
         NativeLocalNotifications?.Dispose(); // context-owned D4/D5/D6 subscriptions

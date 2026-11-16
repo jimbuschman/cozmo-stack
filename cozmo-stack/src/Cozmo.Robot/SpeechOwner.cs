@@ -7,7 +7,7 @@ public sealed partial class EngineRobot
 {
     private SpeechProvider? _speechProvider;
     private CannedSpeechOwner? _cannedSpeechOwner;
-    internal void UpdateMusicAtEngineTail() => _cannedSpeechOwner?.UpdateMusicAtEngineTail();
+    internal void UpdateFixtureMusicAtEngineTail() => _cannedSpeechOwner?.UpdateMusicAtEngineTail();
     internal Func<IPlatformPcmSink>? CannedSpeechSinkForTest;
     internal TextToSpeechComponent SpeechComponent { get; private set; } = null!;
 
@@ -31,41 +31,87 @@ public sealed partial class EngineRobot
 
     private CannedSpeechOwner? GetBehaviorAudioOwner()
     {
+        if (Engine.RuntimeWwiseAudio is { } runtime) return runtime;
+        if (Engine.RuntimeAudioStarted) return null;
         if (!OperatingSystem.IsWindows() && CannedSpeechSinkForTest is null) return null;
         if (_cannedSpeechOwner is not null) return _cannedSpeechOwner;
 
         string? library = ShippedLibraries.FindLibDir();
         string? banks = Engine.Options.SpeechSoundBankDirectory;
-        string? archive = ResolveSpeechAudioArchive(banks);
+        string? archive = Engine.ResolveSpeechAudioArchive(banks);
         if (library is null || archive is null || !File.Exists(archive)) return null;
 
         return _cannedSpeechOwner = new CannedSpeechOwner(library, banks, archive,
             message => Engine.PostGameMessage(() => Engine.EmitStackLog(message)), CannedSpeechSinkForTest);
     }
 
-    private string? ResolveSpeechAudioArchive(string? banks)
+    internal CannedSpeechOwner? GetCannedSpeechOwner()
     {
-        if (Engine.Options.SpeechAudioArchivePath is { } explicitPath) return explicitPath;
+        if (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this) ||
+            AudioOutputSource != RobotAudioOutputSource.PlayOnRobot) return null;
+        if (Engine.RuntimeAudioStarted) return Engine.RuntimeWwiseAudio;
+        if (Engine.Options.LabLocaleLanguage != "en") return null;
+        string? library = ShippedLibraries.FindLibDir();
+        string? banks = Engine.Options.SpeechSoundBankDirectory;
+        string? archive = Engine.ResolveSpeechAudioArchive(banks);
+        if (!OperatingSystem.IsWindows() || library is null || banks is null || archive is null ||
+            !File.Exists(Path.Combine(banks, "Init.bnk")) || !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) || !File.Exists(archive))
+            return null;
+        return _cannedSpeechOwner ??= new CannedSpeechOwner(library, banks, archive,
+            message => Engine.PostGameMessage(() => Engine.EmitStackLog(message)), CannedSpeechSinkForTest);
+    }
+}
+
+public sealed partial class CozmoEngine
+{
+    internal CannedSpeechOwner? RuntimeWwiseAudio { get; private set; }
+    internal bool RuntimeAudioStarted { get; private set; }
+    internal Func<IPlatformPcmSink>? RuntimeAudioSinkForTest;
+
+    internal string? ResolveSpeechAudioArchive(string? banks)
+    {
+        if (Options.SpeechAudioArchivePath is { } explicitPath) return explicitPath;
         if (banks is not null)
         {
             string bankArchive = Path.Combine(banks, "AudioAssets.zip");
             if (File.Exists(bankArchive)) return bankArchive;
         }
         // Resource scope uses sound/ at 0x00592C3A..0x00592C52, with the shipped AudioAssets.zip.
-        return Engine.Options.ResourcesPath is { } resources ? Path.Combine(resources, "sound", "AudioAssets.zip") : null;
+        return Options.ResourcesPath is { } resources ? Path.Combine(resources, "sound", "AudioAssets.zip") : null;
     }
 
-    internal CannedSpeechOwner? GetCannedSpeechOwner()
+    // fidelity: M6-024 — context constructs the audio controller at 0x004EA86E before any Robot.
+    private void StartRuntimeAudio()
     {
+        if (RuntimeAudioStarted) return;
+        RuntimeAudioStarted = true;
+        string? archive = ResolveSpeechAudioArchive(Options.SpeechSoundBankDirectory);
         string? library = ShippedLibraries.FindLibDir();
-        string? banks = Engine.Options.SpeechSoundBankDirectory;
-        string? archive = ResolveSpeechAudioArchive(banks);
-        if (!OperatingSystem.IsWindows() || Engine.Options.LabLocaleLanguage != "en" || library is null || banks is null || archive is null ||
-            !File.Exists(Path.Combine(banks, "Init.bnk")) || !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) || !File.Exists(archive) ||
-            Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this) || AudioOutputSource != RobotAudioOutputSource.PlayOnRobot)
-            return null;
-        return _cannedSpeechOwner ??= new CannedSpeechOwner(library, banks, archive,
-            message => Engine.PostGameMessage(() => Engine.EmitStackLog(message)), CannedSpeechSinkForTest);
+        if (archive is null || !File.Exists(archive) || library is null ||
+            (!OperatingSystem.IsWindows() && RuntimeAudioSinkForTest is null))
+        {
+            string problem = archive is null || !File.Exists(archive)
+                ? $"Wwise archive {archive ?? "(no resource path)"} is unavailable"
+                : library is null ? "shipped ARM Wwise libraries are unavailable" : "local PCM output is unavailable";
+            EmitStackLog("MISSING M6-024 InitScene: " + problem);
+            return;
+        }
+        var audio = new CannedSpeechOwner(library, Options.SpeechSoundBankDirectory, archive,
+            message => PostGameMessage(() => EmitStackLog(message)), RuntimeAudioSinkForTest, initScene: true);
+        RuntimeWwiseAudio = audio;
+        // Context InitScene returns before ConnectToRobot can dispatch (0x004ED020..0x004ED07C).
+        // Load on the Wwise worker and join here, before the engine/transport threads start.
+        string message;
+        try
+        {
+            audio.Ready.GetAwaiter().GetResult();
+            message = "Audio engine loaded InitScene (Init, Music, UI, SFX, Cozmo, Dev_Debug)";
+        }
+        catch (Exception error)
+        {
+            message = "MISSING M6-024 InitScene: " + error.Message;
+        }
+        PostGameMessage(() => EmitStackLog(message));
     }
 }
 
@@ -94,9 +140,12 @@ public sealed partial class CozmoRobot
             return Task.FromResult(new AiSpeechActionResult(false, null, "Request cancelled before admission"));
         string? banks = Engine.Options.SpeechSoundBankDirectory;
         if (!OperatingSystem.IsWindows() || string.IsNullOrEmpty(text) || Engine.Options.LabLocaleLanguage != "en" ||
-            Engine.Options.ResourcesPath is null || banks is null ||
-            !File.Exists(Path.Combine(banks, "Init.bnk")) || !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) ||
-            ShippedLibraries.FindLibDir() is null || owner is null || owner.Lifetime.Destroying ||
+            Engine.Options.ResourcesPath is null ||
+            (Engine.RuntimeAudioStarted
+                ? Engine.RuntimeWwiseAudio?.Ready.IsCompletedSuccessfully != true
+                : banks is null || !File.Exists(Path.Combine(banks, "Init.bnk")) ||
+                  !File.Exists(Path.Combine(banks, "English(US)", "Cozmo.bnk")) || ShippedLibraries.FindLibDir() is null) ||
+            owner is null || owner.Lifetime.Destroying ||
             !ReferenceEquals(Engine.Robot, owner) || !Engine.IsReadyDelivered || Engine.ConnectionState != 2 ||
             Engine.RobotValidated != true || !owner.FirstFullStateHandled || !owner.ReadyToStream ||
             owner.AudioOutputSource != RobotAudioOutputSource.PlayOnRobot)

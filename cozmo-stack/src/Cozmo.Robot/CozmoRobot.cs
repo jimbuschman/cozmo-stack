@@ -430,7 +430,8 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
         Engine.AnimationAudioCallbacks = () =>
         {
-            Engine.Robot?.UpdateMusicAtEngineTail();
+            if (Engine.RuntimeWwiseAudio is { } audio) audio.UpdateMusicAtEngineTail();
+            else Engine.Robot?.UpdateFixtureMusicAtEngineTail();
             Animations.DrainAuthoredAudioCallbacks();
         };
         // fidelity: M4-010, M4-017, M4-018, M4-020, M4-023, M1-041

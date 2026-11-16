@@ -33,17 +33,6 @@ public static class BehaviorTool
         var lib = robot.Animations.LoadFrom(assets);
         Console.WriteLine($"assets: {lib.ClipNames.Count} clips, {lib.GroupNames.Count} groups");
 
-        var sound = Path.Combine(obb, "assets", "cozmo_resources", "sound");
-        if (Directory.Exists(sound))
-        {
-            var meta = Path.Combine(obb, "sound_meta");
-            var src = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(
-                Directory.Exists(meta) ? new[] { sound, meta } : new[] { sound });
-            robot.Animations.AudioSource = src;
-            Console.WriteLine($"sound: {src.Library.EventIds.Count} events, " +
-                              $"Vorbis {(src.CanDecodeVorbis ? "available" : "UNAVAILABLE")}");
-        }
-
         var map = AnimationTriggerMap.Load(obb);
         Console.WriteLine($"triggers: {map.Count} mapped");
 
