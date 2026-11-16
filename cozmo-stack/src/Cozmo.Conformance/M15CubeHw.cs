@@ -205,6 +205,19 @@ internal sealed partial class M15CubeRun
                 if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
+            // Animation sound: the shipped Wwise banks, as FreeplayTool and Reactions load them. Without a source every
+            // animation's audio track is silent (operator run 2026-11-16: no sounds except speech).
+            var sound = Path.Combine(resources, "sound");
+            if (Directory.Exists(sound))
+            {
+                robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound });
+                Event("animation-audio", new() { ["source"] = sound });
+            }
+            else
+            {
+                Console.WriteLine("WARNING: no sound folder under the resources; animations will be silent.");
+                Event("animation-audio", new() { ["source"] = null });
+            }
             if (Commands) SubscribeCommandCubeReports(robot);
             robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
             robot.State.StateUpdated += s =>
