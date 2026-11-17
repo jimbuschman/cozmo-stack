@@ -16,12 +16,53 @@ internal static class PersonalityHw
     internal static readonly string[] RecordIds =
     {
         "M7-001", "M7-019", "M8-012", "M10-001", "M10-003", "M10-004", "M10-008",
-        "M4-009", "M4-023", "M11-085", "M13-038", "M14-004", "M14-008", "M15-031", "M15-058", "M15-080"
+        "M4-009", "M4-023", "M11-085", "M13-038", "M14-004", "M14-008", "M15-014", "M15-031", "M15-048",
+        "M15-058", "M15-080", "M15-082", "M15-091", "M15-104", "M15-108"
     };
 
     internal const string BehaviorReportSource = "M8-012, E2G 0x87 at 0x005A22B4..0x005A24AC, payload 0x0071B806..0x0071B884";
-    internal sealed record BehaviorCheck(BehaviorID Id, string Source, bool Optional = false, string? Missing = null);
-    internal sealed record Step(string Id, string Instruction, string Question, BehaviorCheck? Check = null);
+    internal readonly record struct NeedsLevels(float Repair, float Energy, float Play)
+    {
+        internal string Describe() => FormattableString.Invariant(
+            $"Force Repair={Repair}, Energy={Energy}, Play={Play} via G2E 0xC6 (M15-048, 0x00697E78..0x00697EC6), then restore the saved levels.");
+
+        internal void WithOverride(CozmoEngine engine, Action observe, Action<bool, float[]>? record = null)
+        {
+            float[]? saved = null;
+            try
+            {
+                using (engine.EnterSynchronousOwner())
+                {
+                    var needs = engine.Needs;
+                    if (needs.AwaitingRobotData)
+                        throw new InvalidOperationException("Cozmo's stored needs are still loading. No test levels were applied.");
+                    var snapshot = new[] { (float)needs.State.GetNeedLevel(NeedId.Repair),
+                        (float)needs.State.GetNeedLevel(NeedId.Energy), (float)needs.State.GetNeedLevel(NeedId.Play) };
+                    if (snapshot.Any(level => !float.IsFinite(level) || level < (float)needs.Config.MinimumNeedLevel
+                        || level > (float)needs.Config.MaximumNeedLevel))
+                        throw new InvalidOperationException("Cozmo's current needs are outside the range ForceSetNeedsLevels can restore.");
+                    saved = snapshot;
+                    var target = new[] { Repair, Energy, Play };
+                    engine.AnimationMessages.Deliver(0xC6, false, target);
+                    record?.Invoke(false, target);
+                }
+                observe();
+            }
+            finally
+            {
+                if (saved is not null)
+                {
+                    using var owner = engine.EnterSynchronousOwner();
+                    engine.AnimationMessages.Deliver(0xC6, false, saved);
+                    record?.Invoke(true, saved);
+                }
+            }
+        }
+    }
+
+    internal sealed record BehaviorCheck(BehaviorID Id, string Source, bool Optional = false, string? Missing = null,
+        int WindowSeconds = 45);
+    internal sealed record Step(string Id, string Instruction, string Question, BehaviorCheck? Check = null, NeedsLevels? Needs = null);
 
     internal static readonly Step[] Steps =
     {
@@ -57,6 +98,26 @@ internal static class PersonalityHw
         new("face", "Show your face in good light. Use a previously enrolled face if available and listen for recognition by name.", "Did Cozmo acknowledge your face, by name if enrolled?"),
         new("cube-tap", "Put the light cube upright with a marker facing Cozmo. Give him time to see it, then tap the cube.", "Did you see or hear a response to the tap?"),
         new("cube-move", "Move the cube to a different spot within Cozmo's view, keeping it upright.", "Did you see or hear a response to the cube moving?"),
+        new("express-needs",
+            "Keep Cozmo on his treads, off the charger and in Freeplay. Give him room to react.",
+            "Did you see or hear a low-energy request?",
+            new(BehaviorID.Needs_MildLowEnergyRequest, "Energy 0.4 is in Warning (0.21 to below 0.60, needs_config.json). needs_MildLowEnergyRequest.json selects Warning with a level-dependent cooldown. IsRunnableInternal checks both (0x005EE570..0x005EE5DC). The Freeplay activity interlude lists the request in socialize.json and hiking.json.",
+                WindowSeconds: 75),
+            new(1f, .4f, 1f)),
+        new("needs-change-animation",
+            "Keep Cozmo on his treads and off the charger. Allow the severe energy introduction to play.",
+            "Did you see the severe low-energy introduction?",
+            new(BehaviorID.Needs_SevereLowEnergyGetIn, "Energy 0.1 is in Critical (below 0.21, needs_config.json). needsSevereLowEnergy.json admits Critical Energy through InNeedsBracket (0x006141A0) and selects the GetIn before the severe state. GetIn requires Critical and Energy not yet selected as the expressed need (0x005BFECA..0x005BFEF6)."),
+            new(1f, .1f, 1f)),
+        new("drive-in-desperation",
+            "Give Cozmo a clear, open area where he can drive. Keep him off the charger and without a held cube. Allow the severe energy introduction to finish.",
+            "Did you see Cozmo start his low-energy drive?",
+            new(BehaviorID.Needs_SevereLowEnergyState, "Energy 0.1 is in Critical (below 0.21, needs_config.json). The chooser in needsSevereLowEnergy.json tries the GetIn before this DriveInDesperation instance. GetIn Stop marks Energy as expressed (0x005BFEF8), and DriveInDesperation's own gate returns true (0x005D90AC..0x005D90AE)."),
+            new(1f, .1f, 1f)),
+        new("earned-sparks",
+            "Run an activity that ordinarily earns a Freeplay Sparks reward, then watch for the reward behavior.",
+            "Did you see the earned-Sparks animation?",
+            new(BehaviorID.EarnedSparks, "Levels are unchanged. EarnedSparks reads NeedsManager's pending reward byte at +0x3D8 (0x005DAEC2..0x005DAECA). ForceSetNeedsLevels only stores levels and sends NoAction (0x00697E78..0x00697EC6). A genuine reward can make EarnedSparks runnable in the Freeplay interlude (socialize.json, hiking.json).")),
         new("alone", $"Place Cozmo in the clear enclosed area, move yourself and the cube out of view, and leave him alone for {IdleMinutes} minutes.", "Did you observe Cozmo do anything on his own while left alone?")
     };
 
@@ -99,6 +160,7 @@ internal static class PersonalityHw
                     continue;
                 }
             }
+            if (step.Needs is { } needs) Console.WriteLine($"  {needs.Describe()}");
             Console.WriteLine($"  {step.Question} [yes/no]");
         }
         Console.WriteLine("Operator answers are observations. Checks use the named engine report in the step window.");
@@ -171,17 +233,17 @@ internal sealed partial class M15CubeRun
             {
                 if (step.Check?.Missing is not null)
                 {
-                    RunPersonalityStep(step);
+                    RunPersonalityStep(r, step);
                     continue;
                 }
                 if (step.Check?.Optional == true && !ReadYesNo($"Run the optional [{step.Id}] step?"))
                 {
-                    RunPersonalityStep(step, skipped: true);
+                    RunPersonalityStep(r, step, skipped: true);
                     continue;
                 }
                 Console.WriteLine($"\nPress Enter to start [{step.Id}].");
                 ReadOperatorInput();
-                RunPersonalityStep(step);
+                RunPersonalityStep(r, step);
             }
         }
         finally
@@ -191,7 +253,7 @@ internal sealed partial class M15CubeRun
         }
     }
 
-    void RunPersonalityStep(PersonalityHw.Step step, bool skipped = false)
+    void RunPersonalityStep(CozmoRobot robot, PersonalityHw.Step step, bool skipped = false)
     {
         double start = Now;
         Event("phase-start", new() { ["phase"] = step.Id });
@@ -218,12 +280,24 @@ internal sealed partial class M15CubeRun
             Console.WriteLine(step.Instruction);
             if (step.Check is { } check)
             {
-                Console.WriteLine($"Waiting up to 45 seconds for {check.Id} to start and stop.");
+                Console.WriteLine($"Waiting up to {check.WindowSeconds} seconds for {check.Id} to start and stop.");
                 bool Started(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && PersonalityHw.IsBehaviorStart(e, check.Id);
                 bool Stopped(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && PersonalityHw.IsBehaviorStop(e, check.Id);
-                Poll(() => behaviorTransitions.Any(Started) && behaviorTransitions.Any(Stopped), 45_000);
-                checkEnd = Now;
-                checkResult = BehaviorTransitions(check.Id, start, checkEnd.Value).Any(e => PersonalityHw.IsBehaviorStart(e, check.Id))
+                void WaitForReports()
+                {
+                    try { Poll(() => behaviorTransitions.Any(Started) && behaviorTransitions.Any(Stopped), check.WindowSeconds * 1000); }
+                    finally { checkEnd = Now; }
+                }
+                if (step.Needs is { } levels)
+                    levels.WithOverride(robot.Engine, WaitForReports, (restored, values) => Event(
+                        restored ? "needs-levels-restored" : "needs-levels-forced", new()
+                        {
+                            ["phase"] = step.Id,
+                            ["repair"] = values[0], ["energy"] = values[1], ["play"] = values[2],
+                        }));
+                else
+                    WaitForReports();
+                checkResult = BehaviorTransitions(check.Id, start, checkEnd ?? Now).Any(e => PersonalityHw.IsBehaviorStart(e, check.Id))
                     ? "passed" : "failed";
                 Console.WriteLine(checkResult == "passed" ? "Engine start report observed." : "No matching engine start report in the window.");
             }
