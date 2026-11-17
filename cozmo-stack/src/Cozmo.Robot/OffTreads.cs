@@ -292,7 +292,9 @@ public sealed class OffTreadsClassifier
         else StateChanged?.Invoke(old,cand); // Standalone classifier unit.
         StateChangedInternal?.Invoke(old,cand);
         Log?.Invoke($"Robot.OfftreadsState.TreadStateChanged: {old} -> {cand}");
-        Log?.Invoke("MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred");
+        // 0x005120BA..0x005120D0; EnumToString's seven names at 0x01033F80 (0x0078DF40).
+        HostEngine?.EmitSourceLog(EngineLogLevel.Info,"RobotState","Robot.OfftreadsState.TreadStateChanged",
+            "TreadState changed to:"+cand);
         // A12
         if (cand is >= OffTreadsState.OnBack and <= OffTreadsState.Falling) UnattachCarriedObjectIfCarrying?.Invoke();
         // A11
@@ -306,7 +308,9 @@ public sealed class OffTreadsClassifier
                 if (any is not null)
                 {
                     Log?.Invoke("Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects");
-                    Log?.Invoke("MISSING: Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects info at 0x00512138; M10/M11 log port deferred");
+                    // 0x0051211C..0x00512138: this info log precedes the odometry-localized stores.
+                    HostEngine?.EmitSourceLog(EngineLogLevel.Info,"Unnamed","Robot.UpdateOfftreadsState.NoMoreRemainingLocalizableObjects",
+                        FormattableString.Invariant($"Marking previously-unlocalized robot {HostEngine.Robot?.NativeRobotId??CozmoEngine.RobotId} as localized to odometry because there are no more objects to localize to in the world."));
                 }
                 Robot2C4 = 1;
                 Robot2B8 = -1;

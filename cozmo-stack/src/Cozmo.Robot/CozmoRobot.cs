@@ -477,8 +477,16 @@ public sealed partial class CozmoRobot : IDisposable
             if(stage=="FaceWorld")return;
             if(stage=="AIComponent" && Engine.Robot is {} native && native.NativeBehaviorRuntime?.Manipulation is {} manipulation)
             {
+                // 0x00569F4E -> veneer 0x008CB6CC -> AIWhiteboard::OnRobotDelocalized (0x0056A686):
+                // the existing zombie-object cleanup, render and beacon clear are the entire AI callback.
                 manipulation.Whiteboard.OnRobotDelocalized();
-                // Other AIComponent recipients are still unbuilt.
+                return;
+            }
+            if(stage=="BehaviorManager")return; // 0x005A470C is bx lr.
+            if(stage=="MovementComponent")
+            {
+                Sensors.UnexpectedMovement.Reset(); // 0x0063E2E4..0x0063E2F2: +A0, +94, +98, +9C = 0.
+                return;
             }
             Behavior.SteppedBehavior.ReportMissing("M11-069 "+stage+".OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)");
         };

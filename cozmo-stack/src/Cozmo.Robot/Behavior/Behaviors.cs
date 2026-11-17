@@ -760,7 +760,8 @@ public static class ShippedBehaviors
         Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null,
         AcknowledgeFaceBehavior? acknowledgeFace = null, IBehavior? nativePet = null,
         EngineRobot? nativeOwner = null, bool nativePetExpected = false,
-        Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeFistBump = null)
+        Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeFistBump = null,
+        ReactToReturnedToTreadsBehavior? nativeReturnedToTreads = null)
     {
         if (map.Count == 0) return Array.Empty<BehaviorManager.ReactionRegistration>();
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
@@ -788,7 +789,7 @@ public static class ShippedBehaviors
             ("ReactToRobotOnFace", ReactionTrigger.RobotOnFace, new ReactToRobotOnFaceBehavior(), strategies[ReactionTrigger.RobotOnFace]),
             ("ReactToRobotOnSide", ReactionTrigger.RobotOnSide, new ReactToRobotOnSideBehavior(), strategies[ReactionTrigger.RobotOnSide]),
             ("ReactToPlacedOnSlope", ReactionTrigger.RobotPlacedOnSlope, new ReactToPlacedOnSlopeBehavior(), strategies[ReactionTrigger.RobotPlacedOnSlope]),
-            ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, new ReactToReturnedToTreadsBehavior(m), strategies[ReactionTrigger.ReturnedToTreads]),
+            ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, nativeReturnedToTreads??new ReactToReturnedToTreadsBehavior(m), strategies[ReactionTrigger.ReturnedToTreads]),
             ("ReactToRobotShaken", ReactionTrigger.RobotShaken, new ReactToRobotShakenBehavior(), strategies[ReactionTrigger.RobotShaken]),
             ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, new ReactToUnexpectedMovementBehavior(robot), strategies[ReactionTrigger.UnexpectedMovement]),
             ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(m), strategies[ReactionTrigger.MotorCalibration]),

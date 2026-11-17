@@ -150,6 +150,8 @@ public sealed partial class BehaviorManager : IDisposable
             acknowledgeFace: bound is not null && bound.TryGetValue("AcknowledgeFace", out var face) ? face as AcknowledgeFaceBehavior : null,
             nativePet: bound is not null && bound.TryGetValue("ReactToPet", out var pet) ? pet as NativeReactToPetBehavior : null,
             nativeOwner: nativeOwner, nativePetExpected: nativeOwner is not null,
+            nativeReturnedToTreads: bound is not null && bound.TryGetValue("ReactToReturnedToTreads",out var returned)
+                ? returned as ReactToReturnedToTreadsBehavior : null,
             nativeFistBump: row =>
             {
                 if (nativeOwner is null || row.BehaviorId != "FistBump" || bound is null ||
@@ -161,7 +163,24 @@ public sealed partial class BehaviorManager : IDisposable
         {
             if (_hostDisposed) { (reg.Strategy as IDisposable)?.Dispose(); continue; }
             if (reg.Behavior is SteppedBehavior behavior)
+            {
                 behavior.Clock = () => 1000 * (_context.ClockSec?.Invoke() ?? _context.Robot.Engine.Timer.Seconds);
+                // Hand-built reaction bodies still receive IBehavior's configured base constructor fields.
+                // 0x005BBC38 / ReadFromJson 0x005BBFB4; Init spark reads 0x005BCCAC..0x005BCCC2 and lock 0x005BCD16.
+                if(nativeOwner is not null && Enum.TryParse<BehaviorID>(behavior.Id,out var configuredId) &&
+                    _context.Robot.Engine.HostBehaviorMap?.TryGetValue(configuredId,out var config)==true)
+                {
+                    if(behavior.NativeBaseInputs is null)
+                    {
+                        behavior.ReadNativeScoring(config);
+                        behavior.NativeBaseInputs=new NativeBehaviorBaseInputs(nativeOwner,config);
+                    }
+                    behavior.UnlockIdentifier??=()=>unchecked((int)behavior.NativeBaseInputs.RequiredUnlock);
+                    behavior.ActiveSparkIdentifier??=()=>nativeOwner.BehaviorManagerOwner!.ActiveSparkId;
+                    behavior.SparkGate??=()=>nativeOwner.BehaviorManagerOwner is {} active &&
+                        active.ActiveSparkId!=0x55 && (active.ActiveSparkSoft^1)!=0;
+                }
+            }
             if (reg.Behavior is ReactToPickupBehavior pickup && nativeOwner is not null)
                 pickup.MarkNative(_context.Robot, nativeOwner, this);
             AddReaction(reg.Strategy, reg.Behavior);

@@ -15,6 +15,8 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 {
+    // Vtable 0x0102C5E0 +8+0x20 -> 0x00608A0C: true, consulted during set-down reaction scanning.
+    protected override bool RunnableGate20(BehaviorContext context)=>true;
     internal Func<bool?>? ReadHiccups { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
@@ -90,6 +92,8 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 {
+    // Vtable 0x0102C6DC +8+0x20 -> 0x00608CA8: true.
+    protected override bool RunnableGate20(BehaviorContext context)=>true;
     internal Func<bool?>? ReadHiccups { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
@@ -150,6 +154,8 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 {
+    // Vtable 0x0102C7D8 +8+0x20 -> 0x00609074: true.
+    protected override bool RunnableGate20(BehaviorContext context)=>true;
     public const double HoldBeforeBoredSec = 15.0;
     private double _deadlineMs = -1;
 
@@ -376,12 +382,36 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
     public const float HighPitchDeg = 10f;
     private static readonly float DegreesPerRadian = BitConverter.UInt32BitsToSingle(0x42652EE1);
     private readonly ManipulationSystem? _manipulation;
+    private readonly EngineRobot? _returnedOwner;
+    private long _returnedGeneration;
     private Action? _completionLease;
     protected override bool KeepsRunningWithoutAction => HasCurrentAction;
 
     public ReactToReturnedToTreadsBehavior() : this(null) { }
-    internal ReactToReturnedToTreadsBehavior(ManipulationSystem? manipulation)
-        : base("ReactToReturnedToTreads", "ReactToReturnedToTreads") => _manipulation = manipulation;
+    internal ReactToReturnedToTreadsBehavior(ManipulationSystem? manipulation,EngineRobot? owner=null,string id="ReactToReturnedToTreads")
+        : base(id, "ReactToReturnedToTreads") { _manipulation=manipulation;_returnedOwner=owner; }
+
+    // Factory 0x0059D252 / ctor 0x006084E4: only IBehavior(robot,config), no derived config.
+    // Vtable 0x0102C4E4: +20/+28 return true at 0x00608728/2C; +24 false at 0x0059EC12.
+    protected override bool RunnableGate20(BehaviorContext context)=>true;
+    protected override bool RunnableGate24(BehaviorContext context)=>false;
+    protected override bool RunnableGate28(BehaviorContext context)=>true;
+    private bool ReturnedOwnerCurrent=>_returnedOwner is null || !_returnedOwner.Lifetime.Destroying &&
+        ReferenceEquals(_returnedOwner.Engine.Robot,_returnedOwner);
+    private bool ReturnedCurrent(long version)=>ReturnedOwnerCurrent && Interlocked.Read(ref _returnedGeneration)==version;
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting()=>Interlocked.Increment(ref _returnedGeneration);
+    protected override long CaptureHostExecutionVersion()=>Interlocked.Read(ref _returnedGeneration);
+    protected override bool HostExecutionVersionCurrent(long version)=>ReturnedCurrent(version);
+    protected override bool HostStopContinuationCurrent(long version)=>Interlocked.Read(ref _returnedGeneration)==unchecked(version+1);
+    protected override bool HostResumeContinuationCurrent(long version)=>ReturnedOwnerCurrent &&
+        (Interlocked.Read(ref _returnedGeneration)==version || Interlocked.Read(ref _returnedGeneration)==unchecked(version+1));
+    public override bool IsRunnable(BehaviorContext context)
+    {
+        using var execution=EnterHostExecutionOwner(context);
+        long version=CaptureHostExecutionVersion();
+        return ReturnedCurrent(version) && IsRunnableBase(context) && ReturnedCurrent(version); // 0x006084FC returns true.
+    }
 
     /// <summary>Whether the last run decided to recalibrate.</summary>
     public bool Recalibrated { get; private set; }
@@ -389,12 +419,13 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
     protected override void OnStart()
     {
         Recalibrated = false;
+        long version=CaptureHostExecutionVersion();
         if (_manipulation is null)
         {
-            Wait(0.5, () => CheckForHighPitch(null));
+            Wait(0.5, () => CheckForHighPitch(null,version));
             return;
         }
-        if (Context.Robot.Engine.Robot is not { } owner)
+        if ((_returnedOwner??Context.Robot.Engine.Robot) is not { } owner || !ReturnedCurrent(version))
         {
             ReportMissing("M7-019 ReturnedToTreads WaitAction 0x00608514: original robot owner unavailable");
             InitFailed = true;
@@ -403,11 +434,13 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
 
         _completionLease ??= AcquireActionCompletionOwner(Context.Robot);
         // 0x00608510..0x00608524: StartActing owns the WaitAction and its completion callback.
-        StartActing(new NativeTimedWaitRunner(_manipulation, 0.5f) { ScopedOwner = owner }, _ => CheckForHighPitch(owner));
+        StartActing(new NativeTimedWaitRunner(_manipulation, 0.5f) { ScopedOwner = owner },
+            _ => CheckForHighPitch(owner,version),()=>ReturnedCurrent(version));
     }
 
-    private void CheckForHighPitch(EngineRobot? owner)
+    private void CheckForHighPitch(EngineRobot? owner,long version)
     {
+        if(!ReturnedCurrent(version))return;
         // Radians::getDegrees at 0x0084CD40..0x0084CD54, strict comparison at 0x006085E4..0x006085F8.
         float deg = (Context.Robot.Sensors.PitchRad ?? 0f) * DegreesPerRadian;
         bool highPitch = MathF.Abs(deg) > HighPitchDeg;
@@ -427,7 +460,7 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
         }
 
         var scope = Scope;
-        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) &&
+        bool Current() => ReturnedCurrent(version) && !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner) &&
             EngineRunning && ReferenceEquals(scope, Scope);
         owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToReturnedToTreads.CalibratingHead",
             FormattableString.Invariant($"{deg:F6}")); // 0x00608618..0x00608622, "%f"
@@ -438,8 +471,8 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
 
     protected override void OnStop(BehaviorStopReason reason)
     {
-        _completionLease?.Invoke();
-        _completionLease = null;
+        Interlocked.Increment(ref _returnedGeneration);
+        Interlocked.Exchange(ref _completionLease,null)?.Invoke();
     }
 }
 
@@ -465,6 +498,8 @@ public sealed class ReactToReturnedToTreadsBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 {
+    // Vtable 0x0102C8E0 +8+0x20 -> 0x006097D2: true.
+    protected override bool RunnableGate20(BehaviorContext context)=>true;
     private Action? _completionLease;
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();

@@ -101,7 +101,9 @@ internal static class PersonalityHw
     internal static readonly Step[] Steps =
     {
         new("pickup", "Gently pick Cozmo up, keep him upright and hold him still.", "Did you see or hear a pickup reaction?"),
-        new("putdown", "If Cozmo is already on his treads, gently pick him up and hold him upright briefly. Set him back down on his treads.", "Did you see or hear a reaction to being put down?"),
+        new("putdown", "If Cozmo is already on his treads, gently pick him up and hold him upright briefly. Set him back down on a level surface. The engine normally waits quietly; it calibrates the head only when the pitch reads above 10 degrees.",
+            "Did you observe any movement or sound when he was set down?",
+            new(BehaviorID.ReactToReturnedToTreads,"ReturnedToTreads admits RobotOffTreadsStateChanged=OnTreads when trigger 14 is enabled (0x0060DE36..0x0060DE58). Init queues WaitAction(robot,0.5f) (0x00608500..0x00608528), then only |pitch degrees| > 10 queues CalibrateMotorAction(robot,true,false) (0x006085C4..0x0060868E). No animation or sound is queued.")),
         new("on-back", "Gently place Cozmo on his back. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his back?"),
         new("on-side", "Gently place Cozmo on one side. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his side?"),
         new("on-face", "Support Cozmo facing down. Watch his response, then return him to his treads.", "Did you see or hear a response to being face down?"),

@@ -14,6 +14,11 @@ Follow the prompts for picking him up, setting him down, each of the three off-t
 table edge, showing a face, tapping and moving a cube, and the 15-minute idle window. A previously enrolled face
 lets you observe whether he responds by name. Each question takes a yes/no observation. Ctrl+C saves a partial run.
 
+The `putdown` step checks the engine's ReactToReturnedToTreads start and stop reports. Put him down on a level
+surface: the native behavior waits 0.5 seconds and normally finishes quietly. Only an absolute pitch above
+10 degrees queues head calibration (0x00608500..0x0060868E). It queues no animation or sound. The operator's
+answer records any visible or audible observation and does not determine this engine check's verdict.
+
 The face checks `acknowledge-face`, `interact-with-faces` and optional `react-to-pet` use a 45-second window
 for the named engine behavior. The harness records the matching start and stop transitions. A start earns the
 step's pass, and the operator's answer remains an observation. The `search-for-face` step waits for the

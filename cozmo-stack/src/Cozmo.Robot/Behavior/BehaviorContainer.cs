@@ -330,6 +330,8 @@ public sealed class BehaviorFactory
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.SearchForFace] = (ctx,json)=>new NativeSearchForFaceBehavior(ctx,json),
         [BehaviorClass.DriveToFace] = (ctx,json)=>new NativeDriveToFaceBehavior(ctx,json),
+        [BehaviorClass.ReactToReturnedToTreads] = (ctx,json)=>new ReactToReturnedToTreadsBehavior(ctx.Manipulation,ctx.NativeRobot,
+            BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeInteractWithFaces(ctx,json),
         [BehaviorClass.ReactToPet] = (ctx,json)=>new NativeReactToPetBehavior(ctx,json),
         [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
@@ -449,6 +451,12 @@ public sealed class BehaviorFactory
             status=BehaviorCreateStatus.NotImplemented;
             return null;
         }
+        if(cls==BehaviorClass.ReactToReturnedToTreads && (ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("ReturnedToTreads factory 0x0059D252 requires the original Robot and manipulation owners");
+            status=BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -549,6 +557,14 @@ public sealed class BehaviorFactory
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
+            }
+            if(stepped is ReactToReturnedToTreadsBehavior)
+            {
+                // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
+                stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
+                stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner!.ActiveSparkId;
+                stepped.SparkGate=()=>native.BehaviorManagerOwner is {} manager &&
+                    manager.ActiveSparkId!=0x55 && (manager.ActiveSparkSoft^1)!=0;
             }
         }
         container.AddToFactory(behavior);
