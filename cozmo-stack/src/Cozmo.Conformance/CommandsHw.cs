@@ -23,7 +23,7 @@ internal static class CommandsHw
     internal const float FaceSetupHeadAngle = (float)(20 * Math.PI / 180);
     internal const string FacePosition = "Get down near Cozmo's level in good light, about 30–60 cm in front of him, with your face a little above his camera.";
     internal const string Setup = "Put Cozmo on a clear, well-lit surface, off his charger and well away from edges. "
-        + "Leave room to drive and turn. Have one working cube and one operator in view during the applicable prompts.";
+        + "Leave room to drive and turn. Have one working cube, an unenrolled guest, and someone Cozmo already knows for the event checks.";
 
     internal sealed record Step(string Id, string Plan, string Question, string Record, string Address, uint? Expected = 0);
     internal static readonly Step FaceSetup = new("face-setup", "Raise the head to 20 degrees.",
@@ -46,7 +46,8 @@ internal static class CommandsHw
     };
 
     internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
-        { FaceSetup.Record, "M14-003", "M14-008", "M11-035", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
+        { FaceSetup.Record, "M14-003", "M11-035", "M15-031", "M2-021" })
+        .Concat(CommandEventsHw.Steps.Select(s => s.Record)).Distinct().ToArray();
 
     // Diagnostic relative bearing from the two public poses, using the signed
     // yaw and a shared origin. The action still computes its own native turn.
@@ -102,7 +103,8 @@ internal static class CommandsHw
             string check = step.Expected is { } expected ? $"expect 0x{expected:X8}" : "report only";
             Console.WriteLine($"[{step.Id}] {step.Plan} {check} ({step.Record}, {step.Address})");
         }
-        Console.WriteLine("The run also records public face, cube and object-pose reports and yes/no observations.");
+        foreach (var step in CommandEventsHw.Steps)
+            Console.WriteLine($"[{step.Id}] {step.Plan} Match {step.Report} (E2G 0x{step.Tag:X2}, {step.Record}, {step.Address}) to its C# event within {step.Seconds} s.");
     }
 }
 
@@ -111,33 +113,55 @@ internal sealed partial class M15CubeRun
     static readonly JsonSerializerOptions CommandPayloadOptions = new()
     { IncludeFields = true, NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals };
 
-    void SubscribeCommandReports(CozmoEngine engine)
+    internal void SubscribeCommandReports(CozmoEngine engine)
     {
+        engine.EngineToGameMessage += (tag, payload) => Volatile.Read(ref activeCommandEvent)?.AddRaw(tag, payload, Now);
         engine.RobotObservedFace += report =>
         {
             var data = JsonSerializer.SerializeToNode(report, CommandPayloadOptions)!.AsObject();
             data["recognizedByName"] = report.Name.Length != 0;
             Event("face-seen", data);
+            RecordCommandApi(0x46, new(report.FaceId, report.Timestamp, report.Name), report);
         };
         engine.RobotChangedObservedFaceId += report => CommandReport("face-id-changed", report);
-        engine.RobotDeletedFace += report => CommandReport("face-lost", report);
+        engine.RobotDeletedFace += report =>
+        {
+            CommandReport("face-lost", report);
+            RecordCommandApi(0x4B, new(report.FaceId), report);
+        };
         engine.RobotObservedObject += report =>
         {
-            if (report.Family == (uint)ObjectFamily.LightCube) CommandReport("cube-seen", report);
+            if (report.Family == (uint)ObjectFamily.LightCube)
+            {
+                CommandReport("cube-seen", report);
+                RecordCommandApi(0x44, new(report.ObjectId, report.Timestamp, Family: report.Family), report);
+            }
         };
-        engine.ObjectPoseUnknown += report => CommandReport("object-pose-lost", report);
+        engine.ObjectPoseUnknown += report =>
+        {
+            CommandReport("object-pose-lost", report);
+            RecordCommandApi(0x52, new(report.ObjectId), report);
+        };
         engine.FaceEnrollmentCompleted += report => CommandReport("face-enrollment-completed", report);
         engine.FaceRenamed += report => CommandReport("face-renamed", report);
         engine.FaceErased += report => CommandReport("face-erased", report);
     }
 
-    void SubscribeCommandRobotReports(CozmoRobot r)
+    internal void SubscribeCommandRobotReports(CozmoRobot r)
     {
         // RobotProcessedImage (E2G 0x43, M11-035, 0x00654A14..0x00654A1C)
         // identifies which captured timestamps actually reached each vision mode.
         r.Vision.ProcessedImage += report => CommandReport("image-processed", report);
-        r.Cubes.CubeTapped += report => CommandReport("cube-tapped", report);
-        r.Cubes.CubeMoved += report => CommandReport("cube-moved", report);
+        r.Cubes.CubeTapped += report =>
+        {
+            CommandReport("cube-tapped", report);
+            RecordCommandApi(0x13, new(report.WorldObjectId is { } id ? id : -1L, report.LastTap?.Timestamp), report);
+        };
+        r.Cubes.CubeMoved += report =>
+        {
+            CommandReport("cube-moved", report);
+            RecordCommandApi(0x0F, new(report.WorldObjectId is { } id ? id : -1L, report.LastBroadcastTimestamp), report);
+        };
         r.Cubes.TapBroadcast += report => CommandReport("cube-tap-report", report);
         r.Cubes.MovementBroadcast += report => CommandReport("cube-movement-report", report);
     }
@@ -173,16 +197,14 @@ internal sealed partial class M15CubeRun
             RunCommand("turn-to-cube", t => r.Motion.QueueAiTurnToObjectAsync(cube.ObjectId, MathF.PI, t),
                 a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
         else SkipCommand("turn-to-cube", "No fresh public light-cube observation.");
-        PromptCommand("Tap the cube, then move it. Keep it in view briefly, then take it out of view. Press Enter when done.");
-        RecordOperatorAnswer("cube-events", "Did you observe Cozmo respond to the cube being tapped or moved?");
+        RunCommandCubeEvents();
 
         var trackFace = FindCommandFace(r, "track-face", "Start centered. Once tracking starts, move slowly in a small arc for 10 seconds, keeping your face fully in view.");
         if (trackFace is not null)
             RunCommand("track-face", t => r.Motion.QueueAiTrackFaceAsync(trackFace.FaceId, headOnly: false, cancellationToken: t),
                 a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), CommandsHw.FaceActionLimitMs, TimeSpan.FromSeconds(CommandsHw.TrackSeconds));
         else SkipCommand("track-face", "The head setup action did not succeed.");
-        PromptCommand("Move out of the camera's view. Press Enter when ready.");
-        RecordOperatorAnswer("face-events", "Did you observe Cozmo notice or recognize you?");
+        RunCommandFaceEvents();
         RunCommand("animation", t => r.Motion.QueueAiAnimationAsync(CommandsHw.DemoAnimation, cancellationToken: t),
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 65000);
         RunCommand("sentence", t => r.SayEnglishSentenceAsync("Hello. It is nice to see you.", t),

@@ -802,7 +802,7 @@ internal sealed partial class M15CubeRun
             + "\n\nKnown gaps reported: " + missing.Length
             + "\n\nRun errors:\n" + (errors.IsEmpty ? "None." : string.Join("\n", errors)));
         WriteText("README.txt", () => Commands
-            ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, their source references and operator observations. events.jsonl contains the timestamped public face and object reports and engine diagnostics."
+            ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, event checks with raw and public payloads and capture times, source references, and operator observations. events.jsonl retains the public reports and diagnostics."
             : Personality
             ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, public state, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
             : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made."
@@ -814,7 +814,7 @@ internal sealed partial class M15CubeRun
             ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count,
             ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(), ["missingReported"] = JsonSerializer.SerializeToNode(missing, BundleJson),
             ["records"] = JsonSerializer.SerializeToNode(records, BundleJson), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors, BundleJson),
-            ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : hasPersonalityChecks ? "ENGINE_REPORTS_ONLY"
+            ["acceptance"] = Commands ? "ENGINE_RESULTS_AND_REPORTS" : hasPersonalityChecks ? "ENGINE_REPORTS_ONLY"
                 : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance"
         }.ToJsonString(IndentedBundleJson));
         if (writeErrors.Count > 0)

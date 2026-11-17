@@ -1,0 +1,7 @@
+# COMMANDS-EVENTS-CHECK-1
+
+- `m15-cube-hw --commands --validate` lists seven event checks with their emit sites. The live command round records the raw E2G body and public C# payload with separate host timestamps. It correlates world or face IDs and the robot timestamp/name when present. Dependent steps are skipped with a reason if the initial sighting supplies no target ID.
+- Face seen and recognised use `RobotObservedFace` 0x46 (0x004F4B7A–0x004F4B82). Face loss times out the same unnamed guest after more than 15 seconds of camera time (0x004F5380–0x004F53AC, `RobotDeletedFace` 0x4B at 0x004F3C2C–0x004F3C34). The operator needs an unenrolled guest and an enrolled face.
+- Light-cube sighting is 0x44 (0x0061FFD6–0x0061FFDE), movement is 0x0F (0x00534190–0x005341B0), and a stationary camera watching the cube's empty former position can report 0x52 after two eligible misses (0x00506FBC, 0x005073AA–0x005073B8).
+- The tap path now publishes the missing raw `ObjectTapped` 0x13. Immediate and filtered paths write the game world ID captured at ingress, the timestamp and all four tap bytes (0x00630BF6–0x00630C72, 0x00631178–0x00631192). Move and tap snapshots carry `WorldObjectId` for C# consumers and retain the radio slot in `ObjectId`.
+- Verification passed 128 focused tests and the fidelity check. Replays used stock face-report payloads and native guest expiry, rendered cube frames, movement and immediate/filtered tap packets, and two eligible pose misses. The offline plan validated 20 references and all seven event checks. Hardware acceptance is pending.
