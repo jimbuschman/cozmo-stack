@@ -60,6 +60,8 @@ public static class M15CubeHw
         return ids.Select(id => (JsonObject)all[id].DeepClone()).ToList();
     }
 
+    internal static readonly string[] SkillRounds = { "pickup", "stack-roll", "flip", "wheelie", "goto", "charger" };
+
     public static int Run(string[] args)
     {
         try
@@ -67,6 +69,7 @@ public static class M15CubeHw
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
             bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false, personality = false, commands = false;
             string? resources = null, output = null, banks = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            HashSet<string>? rounds = null;
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
@@ -79,6 +82,7 @@ public static class M15CubeHw
                     case "--banks": banks = args[++i]; break;
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
+                    case "--rounds": rounds = args[++i].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase); break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
             int standaloneCount = new[] { freeplayControl, personality, commands }.Count(enabled => enabled);
@@ -88,6 +92,13 @@ public static class M15CubeHw
                 throw new ArgumentException("This round needs the operator's observations. Omit --yes.");
             if (banks is not null && !commands)
                 throw new ArgumentException("--banks applies to the commands round.");
+            if (rounds is not null)
+            {
+                if (!skills) throw new ArgumentException("--rounds applies to --skills.");
+                var unknown = rounds.Except(SkillRounds, StringComparer.OrdinalIgnoreCase).ToList();
+                if (unknown.Count > 0 || rounds.Count == 0)
+                    throw new ArgumentException($"--rounds takes a comma list of: {string.Join(",", SkillRounds)}" + (unknown.Count > 0 ? $" (unknown: {string.Join(",", unknown)})" : ""));
+            }
             string testId = commands ? CommandsHw.TestId : personality ? PersonalityHw.TestId : TestId;
             var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality, commands);
             if (validate)
@@ -109,9 +120,10 @@ public static class M15CubeHw
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
                 CommandBanks = banks is null ? null : Path.GetFullPath(banks),
+                Rounds = rounds,
             }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills [--rounds pickup,stack-roll,flip,wheelie,goto,charger]] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -134,6 +146,9 @@ internal sealed partial class M15CubeRun
     public bool Personality { get; init; }
     public bool Commands { get; init; }
     public string? CommandBanks { get; init; }
+    /// <summary>The --skills rounds to run; null runs all of them.</summary>
+    public HashSet<string>? Rounds { get; init; }
+    bool Runs(string round) => Rounds is null || Rounds.Contains(round);
     string RunName => Commands ? "Outside-AI commands" : Personality ? "Personality observations"
         : FreeplayControl ? "Freeplay control" : "Cube pickup and put-down";
     double Now => clock.Elapsed.TotalMilliseconds;
@@ -341,7 +356,7 @@ internal sealed partial class M15CubeRun
         bool looked = Poll(() => look.IsCompleted, 10000);
         Event("look-head", new() { ["targetRad"] = M15CubeHw.LookHeadRad, ["finished"] = looked, ["result"] = looked && look.IsCompletedSuccessfully ? look.Result.ToString() : null });
 
-        RunPair(robot, "direct", drive: false);
+        if (Runs("pickup")) RunPair(robot, "direct", drive: false);
         // The drive round is opt-in (2026-11-09: the drive pickup approached the far side of the cube and took Cozmo off
         // the table, PICKUP-PREDOCK-SIDE-1). Run it with --with-drive once that is fixed.
         if (withDrive && !yes)
@@ -351,23 +366,26 @@ internal sealed partial class M15CubeRun
         }
         if (Skills && !yes)
         {
-            RunSkills(robot);
-            RunTrick("flip", M15CubeHw.FlipSetup, robot.Motion.QueueAiFlipCubeAsync);
-            RunTrick("wheelie", M15CubeHw.WheelieSetup, robot.Motion.QueueAiPopAWheelieAsync);
-            RunGotoPose(robot);
-            RunCharger(robot);
+            if (Runs("stack-roll")) RunSkills(robot);
+            if (Runs("flip")) RunTrick("flip", M15CubeHw.FlipSetup, robot.Motion.QueueAiFlipCubeAsync);
+            if (Runs("wheelie")) RunTrick("wheelie", M15CubeHw.WheelieSetup, robot.Motion.QueueAiPopAWheelieAsync);
+            if (Runs("goto")) RunGotoPose(robot);
+            if (Runs("charger")) RunCharger(robot);
         }
         if (!yes)
         {
             Console.WriteLine("\nA few questions, one per round, in the order the rounds ran.");
-            Ask("pickedFirst", "FIRST ROUND (cube right in front): did he pick the cube up? [yes/no/tried and missed]");
-            Ask("placedFirst", "FIRST ROUND: did he put it down on the table? [yes/no/dropped it]");
+            if (Runs("pickup"))
+            {
+                Ask("pickedFirst", "FIRST ROUND (cube right in front): did he pick the cube up? [yes/no/tried and missed]");
+                Ask("placedFirst", "FIRST ROUND: did he put it down on the table? [yes/no/dropped it]");
+            }
             if (withDrive)
             {
                 Ask("pickedSecond", "Second time (he drove): did he reach the cube and pick it up? [yes/no/tried and missed]");
                 Ask("placedSecond", "Second time: did he put it down? [yes/no/dropped it]");
             }
-            if (Skills)
+            if (Skills && Runs("stack-roll"))
             {
                 Ask("stacked", "Stack round: did he pick up the first cube, drive to the second and set it on top? [yes/no/partly]");
                 Ask("rolled", "Roll round: did he drive to the cube and roll it onto its side? [yes/no/partly]");
