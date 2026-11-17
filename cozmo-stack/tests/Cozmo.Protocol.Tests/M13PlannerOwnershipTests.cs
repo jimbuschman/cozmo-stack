@@ -185,9 +185,29 @@ public sealed class M13PlannerOwnershipTests
             FocalLengthX = 294.7164306640625, FocalLengthY = 294.89935302734375,
             CenterX = 143.1629180908203, CenterY = 117.45443725585938, Rows = 240, Columns = 320,
         };
-        using var robotAtImage = At(0, 0, -.026104948f);
-        using var cameraInRobot = HeadGeometry.CameraPoseInRobot(-.1834026575f);
-        using var cameraInWorld = robotAtImage.Compose(cameraInRobot);
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        rig.State();
+        var robot = rig.Engine.Robot!;
+        var origin = robot.GetNativeOrigin(robot.CurrentOriginId);
+        robot.PoseHistory.Clear();
+        using var initialPose = At(0, 0, parent: origin);
+        robot.SetPose(initialPose);
+        Assert.Equal(0u, robot.AddIncomingStateToHistory(Sample(134770, -.0261034966f, .0311201494f)));
+        Assert.Equal(0u, robot.AddIncomingStateToHistory(Sample(134800, -.0261121988f, .0311829373f)));
+        using var atImage = new HistRobotState();
+        Assert.Equal(0u, robot.PoseHistory.ComputeAndInsertKeyedState(134775, atImage, out uint resolved));
+        Assert.Equal(134775u, resolved);
+        Assert.Equal(-.1834026575f, atImage.State.HeadAngle);
+        Assert.Equal(-.026104948f, atImage.Pose.AngleAroundZ, precision: 7);
+
+        // Native interpolation and camera pose, including the parent chain flattened by 0x004DF628.
+        using var cameraInBody = robot.CopyHistoricalCameraPose(atImage);
+        using var cameraInWorld = cameraInBody.GetWithRespectToRoot();
+        Assert.InRange((cameraInBody.Translation - new Vec3(2.7671585, 0, 37.9389381)).Length, 0, .0001);
+        Assert.InRange((cameraInWorld.Translation - new Vec3(2.7662158, -.0722283, 37.9389381)).Length, 0, .0001);
+        Assert.True(cameraInWorld.Quaternion.IsNearlyEqual(
+            new Rotation3d(.4271650673, -.5517961913, .5663921495, -.4384642535), .000001f));
         var camera = new CameraModel(calibration, cameraInWorld);
         var marker = Assert.Single(ChargerGeometry.Markers);
         var estimate = Assert.IsType<PoseEstimation.Result>(PoseEstimation.Solve(camera, marker.CornersOnObject(), corners));
@@ -204,11 +224,6 @@ public sealed class M13PlannerOwnershipTests
         // Creation's 5 degree gate (0x00625548..0x00625578) retains this rotation.
         using var placed = BlockWorld.ClampPoseToFlat(objectInWorld, BlockWorld.CreationFlatClampAngleRad);
         Assert.Equal(objectInWorld.Quaternion, placed.Quaternion);
-        using var rig = new M4ControlTests.Rig();
-        rig.ToSynced();
-        rig.State();
-        var robot = rig.Engine.Robot!;
-        var origin = robot.GetNativeOrigin(robot.CurrentOriginId);
         using var chargerPose = new Pose3d(placed.Quaternion, placed.Translation, parent: origin);
         using var goal = ChargerGeometry.PreDockPose(chargerPose);
         using var rootedGoal = new Pose3d(goal.Quaternion, goal.Translation, parent: origin);
@@ -226,6 +241,16 @@ public sealed class M13PlannerOwnershipTests
             Rotation3d.FromAngleAxis((float)rootedGoal.AngleAroundZ, new Vec3(0, 0, 1)),
             rootedGoal.Translation, parent: origin);
         Assert.Equal(ActionResult.Success, drive.ReadyState(uprightGoal, arrival, height, 3, 3));
+
+        RobotState Sample(uint timestamp, float yaw, float pitch) => new()
+        {
+            Timestamp = timestamp,
+            PoseOriginId = robot.CurrentOriginId,
+            PoseFrameId = robot.PoseFrameId,
+            Pose = new RobotPose { Angle = yaw, Pitch = pitch },
+            HeadAngle = -.1834026575f,
+            LiftAngle = -.1800776124f,
+        };
     }
 
     [Fact]
