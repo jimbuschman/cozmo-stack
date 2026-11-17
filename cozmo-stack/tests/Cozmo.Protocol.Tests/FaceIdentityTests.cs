@@ -434,7 +434,7 @@ public sealed class FaceIdentityTests
         var root=doc.RootElement;
         var images=root.GetProperty("images").EnumerateObject().ToDictionary(p=>p.Name,p=>Convert.FromBase64String(p.Value.GetString()!));
         var frames=root.GetProperty("frames").EnumerateArray().ToDictionary(f=>f.GetProperty("name").GetString()!,f=>images[f.GetProperty("image").GetString()!]);
-        var detector=Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
+        Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
         uint imageId=800;
         void Frame(string name)
         {
@@ -443,18 +443,27 @@ public sealed class FaceIdentityTests
             fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
             fixture.Rig.Tick();
         }
+        void AdvanceCameraUntil(Func<bool> observed)
+        {
+            // A frame can finish and consume its own recognition task. Wait for
+            // the state delivered by vision instead of requiring the intermediate slot to be visible.
+            Assert.True(SpinWait.SpinUntil(() =>
+            {
+                if (observed()) return true;
+                Frame("face_s10_3");
+                return observed();
+            }, TimeSpan.FromSeconds(10)), $"No expected face state at {now} us (remaining samples: {vision.Recognizer.EnrollmentCount}).");
+        }
+
         Frame("face_s10_1");
         Frame("face_s10_2");
-        Assert.True(SpinWait.SpinUntil(()=>detector.RecognitionWorkCompleted,TimeSpan.FromSeconds(10)));
-        Frame("face_s10_3");
+        AdvanceCameraUntil(() => vision.LastFaces.Any(face => face.Id == 7));
         Assert.Equal(7,Assert.Single(vision.LastFaces).Id);
         for(int step=1;step<=3;step++)
         {
             now=10_000_000+step*1_000_000;
-            for(int attempt=0;attempt<12&&!detector.RecognitionWorkCompleted;attempt++)Frame("face_s10_3");
-            Assert.True(SpinWait.SpinUntil(()=>detector.RecognitionWorkCompleted,TimeSpan.FromSeconds(10)));
-            Frame("face_s10_3");
-            Assert.Equal(4-step,vision.Recognizer.EnrollmentCount);
+            int remaining=4-step;
+            AdvanceCameraUntil(() => vision.Recognizer.EnrollmentCount == remaining);
         }
         Assert.True(vision.AssignStockFaceName(7, "New", 8));
         Assert.Equal("New", vision.Recognizer.EnrolledFaces.Single(f => f.FaceID == 8).Name);
@@ -465,15 +474,7 @@ public sealed class FaceIdentityTests
         vision.Faces.FaceObserved+=observation=>
         {if(observation.Face.Id==8)order.Add(vision.Faces.EnrollmentCompleted?"pulse-observe":"observe");};
         now=14_000_000;
-        for(int attempt=0;attempt<20 && !vision.Faces.EnrollmentCompleted;attempt++)
-        {
-            if(detector.RecognitionWorkCompleted)Frame("face_s10_3");
-            else
-            {
-                Frame("face_s10_3");
-                SpinWait.SpinUntil(()=>detector.RecognitionWorkCompleted,TimeSpan.FromSeconds(10));
-            }
-        }
+        AdvanceCameraUntil(() => vision.Faces.EnrollmentCompleted);
         Assert.True(vision.Faces.EnrollmentCompleted);
         Assert.Equal("New", vision.Faces.GetFace(8)?.Name);
         Assert.Equal(8,vision.Recognizer.EnrollmentTargetId);
