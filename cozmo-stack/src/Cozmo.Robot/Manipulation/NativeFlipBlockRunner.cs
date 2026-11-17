@@ -36,8 +36,16 @@ internal sealed class NativeFlipBlockRunner:NativeVisionRunner
         var obj=M.World.GetLocatedObjectByIdHelper(Target);
         if(obj is null||!CubeGeometry.IsCube(obj.Type))return 0x03000004;
         var owner=ScopedOwner??M.Robot.Engine.Robot!;var main=owner.GetCheckedMainPose();
-        var pre=DockPreActionPoses.Get(new(obj,PreActionType.Flipping,CheckPreActionPose,FlipBlockAction.InitAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main,ScopedOwner));
+        // 0x0055EE5E reaches SelectObject at 0x00550988 before building the pose candidates.
+        var pre=DockPreActionPoses.GetNative(new(obj,PreActionType.Flipping,CheckPreActionPose,FlipBlockAction.InitAngleToleranceRad,0,false,0),
+            main,owner.CarryingOwner!.CarriedObjectId,()=>M.NativeObstacles(main,ScopedOwner),M.World);
         if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
+        if (pre.Result == ActionResult.DidNotReachPreActionPose)
+        {
+            // 0x0055114A..0x0055116A prints the two measured offsets before returning 0x04000001.
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", "IsCloseEnoughToPreActionPose.TooFarFromGoal",
+                FormattableString.Invariant($"Robot is too far from pre-action pose ({pre.OffsetX:F1}mm, {pre.OffsetY:F1}mm)."));
+        }
         if(pre.Result!=ActionResult.Success)return unchecked((int)pre.Result);
         using var relative=new Pose3d("");obj.NativePose.TryWithRespectTo(main,relative); // native return ignored.
         Sequence.SuppressTrackLocking=true;
