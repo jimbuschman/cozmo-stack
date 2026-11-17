@@ -25,7 +25,8 @@ public abstract partial class DockActionBase
             if (!_nativeDockWasActive)
             {
                 _nativeDockWasActive = true;
-                if ((int)owner.Engine.Needs.SevereNeeds.SelectedNeed != 1)
+                // 0x00552358..0x0055235E compares the raw selection (3 = none) with 1, so no selection adds the squint.
+                if (owner.Engine.Needs.SevereNeeds.Selected != 1)
                     _nativeDockSquint = AddDockSquintLayer();
             }
             return current?.Invoke() == false ? EngineActionResult.Cancelled : EngineActionResult.Running;
