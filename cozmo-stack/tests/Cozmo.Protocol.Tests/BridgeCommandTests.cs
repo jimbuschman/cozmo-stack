@@ -221,7 +221,7 @@ public sealed class BridgeCommandTests
         {
             "head", "lift", "drive-straight", "turn-in-place", "turn-to-face", "turn-to-cube", "track-face",
             "animation", "say-text", "pickup", "put-down", "roll", "stack", "flip", "wheelie", "go-to-pose",
-            "mount-charger", "teach-face", "rename-face", "erase-face", "freeplay",
+            "mount-charger", "teach-face", "rename-face", "erase-face", "freeplay", "set_needs_mode", "set_needs",
         }, entries.Select(entry => entry.GetProperty("name").GetString()));
         Assert.All(entries, entry =>
         {

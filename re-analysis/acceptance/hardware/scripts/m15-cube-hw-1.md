@@ -14,6 +14,12 @@ afterwards.
 
 ## Before the first run on this PC
 
+Needs start full and stay full by default (operator decision 2026-11-17). The stack uses the engine's refill and
+global needs-pause messages after stored needs load; decay, action deltas/rewards and local notifications pause
+together. Add `--needs real` to any hardware command for the original needs behavior. Personality needs steps
+temporarily select real mode for their observation window and restore the prior mode afterward. This host input
+is M15-112; C6/C9 add no robot NV write (0x00697DA4..0x00698002, 0x00695E04..0x00695F7E).
+
 The shipped engine library must be in `resources/lib/armeabi-v7a`, as for the earlier tests. It is never committed.
 
 The cube marker library must also be built on this PC. It is extracted from that engine library by

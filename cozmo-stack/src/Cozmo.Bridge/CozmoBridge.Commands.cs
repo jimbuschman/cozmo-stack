@@ -98,6 +98,14 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => b.EraseFace(a.Int("faceId"), ct)),
         new("freeplay", "Enable or disable Freeplay.", [Boolean("enabled", "True enables Freeplay.")],
             (b, a, ct) => b.SetFreeplay(a.Flag("enabled"), ct)),
+        new("set_needs_mode", "Choose full needs (refill and pause) or real native decay and action changes.",
+            [Text("mode", "Needs mode.", choices: ["full", "real"])],
+            (b, a, ct) => b.SetNeedsMode(a.Text("mode"), ct)),
+        new("set_needs", "Set repair, energy and play through the engine's force-levels message. Select real mode first.",
+            [new("repair", "number", "Repair level, natively clamped.", 0, 1),
+             new("energy", "number", "Energy level, natively clamped.", 0, 1),
+             new("play", "number", "Play level, natively clamped.", 0, 1)],
+            (b, a, ct) => b.SetNeeds(a.Number("repair"), a.Number("energy"), a.Number("play"), ct)),
     ];
 
     private static readonly FrozenDictionary<string, BridgeCommand> ByName =
@@ -134,6 +142,20 @@ public sealed partial class CozmoBridge : IDisposable
 
     private static JsonElement Error(string code, string message) =>
         JsonSerializer.SerializeToElement(new { error = new { code, message } }, Json);
+
+    private Task<CommandResult> SetNeedsMode(string mode, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        return Task.FromResult(CommandResult.Confirmed(Robot.Engine.SetNeedsMode(mode == "full")));
+    }
+
+    private Task<CommandResult> SetNeeds(float repair, float energy, float play, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        try { return Task.FromResult(CommandResult.Confirmed(Robot.Engine.SetNeedsLevels(repair, energy, play))); }
+        catch (InvalidOperationException error)
+        { return Task.FromResult(new CommandResult("not-admitted", false, null, null, error.Message)); }
+    }
 
     private static async Task<CommandResult> FromAction<T>(Task<T> task)
     {

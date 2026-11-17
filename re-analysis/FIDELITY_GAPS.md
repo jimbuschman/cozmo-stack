@@ -3,7 +3,7 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **762 records** over 16 subsystems.
+Manifest of **763 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
@@ -11,7 +11,7 @@ Manifest of **762 records** over 16 subsystems.
 | EQUIVALENT_IMPLEMENTATION | 17 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 21 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 345 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 74 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 75 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 52 | 1 | 32 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 41 | 0 | 28 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 0 | 4 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 111 | 3 | 80 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 112 | 3 | 80 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -3264,6 +3264,7 @@ Protection rule corrected in re-analysis/research/20261102-visit-edge-claude-che
 * outstanding: The SetPaused callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete 200, EnterSdkMode/ExitSdkMode 241/242) are unbuilt - this stack has no game-message channel for them. The unpause shift now covers +0x1E4/+0x1F0/+0x208/+0x1FC/+0x214; the +0x1F0 consumer (HandleMessage<SetNeedsPauseStates>) and the +0x214 DAS-elapsed consumer (the app-facing DAS wire) are unbuilt. The ConnectToRobot seam that calls NeedsManager::InitAfterConnection (0x004ED10E) is wired from CozmoEngine::ConnectToRobot; the same handler's DASPauseUploadingToServer(1) (0x004ED114) is not built, and J13 states no behaviour for it (MISSING). The SetPaused/OnRobotDisconnected bodies and the always-fired removal wiring are built. HandleMessage<SetGameBeingPaused> 0x00698F44 also calls ApplyDecayForTimeSinceLastDeviceWrite(robot != 0) (0x006990DE..0x006990E8); that caller is unbuilt. The +0x1D4 field that InitAfterConnection also sets (0x00694398) is not modelled: its only consumer is LocalNotifications::ShouldBeRegistered 0x0068D00C, an unbuilt notification path. OV59 check (re-analysis/research/overnight/20261015-ov59-61-check.md): SetGameBeingPaused is an app input (Unity RobotEngineManager.cs:565): the stack supplies it from a host pause/resume event (COMPATIBILITY_POLICY under the app-boundary rule). Resume (false) runs PossiblyWriteLabAssignmentsToRobot (0x006990DA), ApplyDecay and the Needs resume work; pause stores now to +0x20. B-M15-5: Lab Init visibly reports missing host SetGameBeingPaused(false) app-resume delivery and Lab writeback0x006990DA. Needs post-read Lab hook is built independently; SetPaused alone is not relabeled full resume handler, and no host event/ApplyDecay ordering is invented. Existing approved app-input policy unchanged.
 Manager (2026-10-18; research/overnight/20261018-ov127-check.md): SetGameBeingPaused (G2E 85) also stores engine+0x60 (0x004EDF88), which gates LatencyMessage (M1-061), and calls CozmoAudioController::AppIsInFocus(!paused) (veneer 0x008CAA5C, M6). The stack supplies the input through a public API (M1-062).
 B-M1-9 (2026-10-18), built, awaiting strong verification: B-M1-9 supplies the M1-062 public pause app input and engine+0x60 store only. The separate NeedsManager.HandleMessage<SetGameBeingPaused> 0x00698F44, resume Lab write/ApplyDecay and Needs pause effects remain unbuilt with an explicit diagnostic; SetPaused is not substituted for that full handler.
+NEEDS-KEEP-FULL-1 (operator 2026-11-17): live G2E C9 generated invoker 0x0069B0E2..0x0069B0F6 is bound to the existing SetPaused recipient. Its E2G pause report 0x00696040..0x0069606C (tag63, one bool) is now delivered through the existing app queue. Other callers and SetNeedsPauseStates remain outside this build; no whole-record status or evidence change.
 
 **M15-019 — FindFreePoseInBeacon: the candidate frame, grid, order and the three tests** (live path)
 
@@ -4035,4 +4036,5 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M15-111 | M15-freeplay | COMPATIBILITY_POLICY | Host source of SetDeterminantData (0xD6): the app's install date and unlock history, supplied by the stack | Unity app code 3.4.0-1204 |
 | M11-099 | M11-vision | EQUIVALENT_IMPLEMENTATION | The marker pose solve: cv::solvePnP (iterative, no guess) as Camera::ComputeObjectPoseHelper calls it, with the binary32 narrowing of its result | libcozmoEngine.so 3.4.0-1204; libopencv_calib3d.so, libopencv_core.so, libopencv_imgproc.so shipped with it |
 | M11-103 | M11-vision | EQUIVALENT_IMPLEMENTATION | The marker homography gate: ComputeHomographyFromQuad (s16 to f32, unit square, IsConvex), EstimateHomography<float> (binary32 normal equations, Cholesky, h22 = 1, 0.1 px reprojection check) and validity 6 when it fails or H[2][0] / H[2][1] > 8.0 | libcozmoEngine.so 3.4.0-1204 |
+| M15-112 | M15-freeplay | COMPATIBILITY_POLICY | Host refill input: keep needs full by default, with native decay available | COMPATIBILITY_POLICY, operator 2026-11-17; libcozmoEngine.so 3.4.0-1204 for the native message recipients. |
 

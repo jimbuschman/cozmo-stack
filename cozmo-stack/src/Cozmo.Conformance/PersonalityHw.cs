@@ -41,6 +41,7 @@ internal static class PersonalityHw
         internal void WithOverride(CozmoEngine engine, Action observe, Action<bool, float[]>? record = null)
         {
             float[]? saved = null;
+            bool? savedFullMode = null;
             try
             {
                 using (engine.EnterSynchronousOwner())
@@ -54,6 +55,8 @@ internal static class PersonalityHw
                         || level > (float)needs.Config.MaximumNeedLevel))
                         throw new InvalidOperationException("Cozmo's current needs are outside the range ForceSetNeedsLevels can restore.");
                     saved = snapshot;
+                    savedFullMode = engine.GetNeedsStatus().KeepFull;
+                    engine.SetNeedsMode(false);
                     var target = new[] { Repair, Energy, Play };
                     engine.AnimationMessages.Deliver(0xC6, false, target);
                     record?.Invoke(false, target);
@@ -66,6 +69,7 @@ internal static class PersonalityHw
                 {
                     using var owner = engine.EnterSynchronousOwner();
                     engine.AnimationMessages.Deliver(0xC6, false, saved);
+                    if (savedFullMode == true) engine.SetNeedsMode(true);
                     record?.Invoke(true, saved);
                 }
             }

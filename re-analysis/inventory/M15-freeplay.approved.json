@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-11-09",
+  "approved": "2026-11-17",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "c8cd19cd319cc4d54a9cf58b6bf7bbe116dc301ecc2d34a254fc1c57cfa12f74",
+  "inventory_sha256": "2085b0469a82512e4e6c172da313c56a6f02c83cf6ff985ac80a16668ed5e6d6",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -1382,6 +1382,21 @@
         "unity/scripts/csharp/Cozmo.Util.Segmentation/SegmentationService.cs:479-499 SendDataToEngine: install seconds, 85 timestamps, 85 played flags.",
         "SegmentationService.cs:268-272, 334-344: InstallDate set once; DateTime.Today with no platform timestamp. 547-552: ids 36, 14, 84 are InstallDate. 380-390: first unlock time only.",
         "unity/scripts/csharp/StartupManager.cs:419 and Cozmo.Notifications/NotificationsManager.cs:113 send it."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-112": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host refill input: keep needs full by default, with native decay available",
+      "authority": "COMPATIBILITY_POLICY, operator 2026-11-17; libcozmoEngine.so 3.4.0-1204 for the native message recipients.",
+      "evidence": [
+        "re-analysis/jobs/trial-m13/QUEUE.md NEEDS-KEEP-FULL-1: operator decision 2026-11-17, KeepNeedsFull default true, --needs real, bridge mode and levels commands.",
+        "ForceSetNeedsLevels G2E C6: 0x00697DA4..0x00698002 (clamp/store 0x00697E78..0x00697EBE; report 0x00697EC6; no robot NV write).",
+        "SetNeedsPauseState G2E C9: live invoker 0x0069B0E2..0x0069B0F6 -> SetPaused 0x00695E04..0x00695F7E; pause writes PC at 0x00695ECA, native resume clock shifts 0x00695F02..0x00695F6A.",
+        "Global pause skips decay, notification update and periodic PC persistence at 0x00695CA4..0x00695CFA and action deltas/rewards at 0x006960E0..0x006960EE; no periodic refill is required.",
+        "SendNeedsPauseStateToGame 0x00696040..0x0069606C: E2G NeedsPauseState. unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MessageEngineToGame.cs tag99 and NeedsPauseState.cs one-bool pack.",
+        "Stored copy resolution 0x00694608..0x00694F55 remains before the host input; M15-014 protected or unresolved copies are not overridden."
       ],
       "live_path": true,
       "hardware_required": false

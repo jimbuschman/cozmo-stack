@@ -25,10 +25,10 @@ public sealed class PickupPyramidNativeExecutionTests
         internal ManipulationSystem M=>Runtime.Manipulation!;
         internal float Head=-.15f,Lift,Yaw,X,Y;
         private int _motorMark;
-        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null,Func<uint,byte[]?>? sourceNvRaw=null,Action<CozmoEngine>? engineCreated=null)
+        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null,Func<uint,byte[]?>? sourceNvRaw=null,Action<CozmoEngine>? engineCreated=null,bool keepNeedsFull=false)
         {
             _sourceNvStored=sourceNvStored;_sourceNvRaw=sourceNvRaw;
-            Rig=new M4ControlTests.Rig(Resources(),engineOptions:engineOptions,engineCreated:engineCreated);
+            Rig=new M4ControlTests.Rig(Resources(),engineOptions:engineOptions,engineCreated:engineCreated,keepNeedsFull:keepNeedsFull);
             if(pumpAnimations)
             {
                 Rig.Robot.Animations.ManualTicking=true;

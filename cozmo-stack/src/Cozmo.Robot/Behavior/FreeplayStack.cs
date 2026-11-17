@@ -321,7 +321,7 @@ public sealed class FreeplayStack : IDisposable
         // when RIC::HandleDisconnect already answered. Recipient effects stay M15.
         // M15-016: engine initialization owns the connection/serial/disconnect hooks.
         // Freeplay reuses that lifetime; disposing this handle does not detach Needs. What remains unbuilt, so the record stays IMPLEMENTATION_GAP: the SetPaused
-        // game-message callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete
+        // game-message callers other than the bound SetNeedsPauseState tag 201 (SetGameBeingPaused tag 85, RegisterOnboardingComplete
         // tag 200, EnterSdkMode/ExitSdkMode tags 241/242) - this stack has no game-message channel for them;
         // the +0x1F0 per-need pause-start consumer (HandleMessage<SetNeedsPauseStates> 0x00698918) and the
         // +0x214 DAS-elapsed consumer (the app-facing DAS wire, which the host sees through BracketChanged).

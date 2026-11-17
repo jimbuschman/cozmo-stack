@@ -20,14 +20,14 @@ public static class Program
         Console.SetOut(Console.Error);
         try
         {
-            var flags = new HashSet<string>(["--resources", "--banks", "--robot-ip", "--out"], StringComparer.Ordinal);
+            var flags = new HashSet<string>(["--resources", "--banks", "--robot-ip", "--out", "--needs"], StringComparer.Ordinal);
             var values = new Dictionary<string, string>(StringComparer.Ordinal);
             bool validate = false;
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] is "--help" or "-h")
                 {
-                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--validate]");
+                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--validate]");
                     return 0;
                 }
                 if (args[i] == "--validate") { validate = true; continue; }
@@ -40,11 +40,13 @@ public static class Program
             string? banks = values.GetValueOrDefault("--banks");
             if (banks is not null && !Directory.Exists(banks)) throw new ArgumentException("The --banks directory does not exist.");
             var ip = IPAddress.Parse(values.GetValueOrDefault("--robot-ip") ?? "172.31.1.1");
+            string needsMode=values.GetValueOrDefault("--needs")??"full";
+            if(needsMode is not ("full" or "real"))throw new ArgumentException("--needs requires full or real.");
             string directory = values.GetValueOrDefault("--out") ?? Path.Combine(FindRepository(), "re-analysis", "acceptance", "hardware",
                 DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-LLM-SESSION");
             if (validate)
             {
-                Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Evidence: {Path.GetFullPath(directory)}. No connection requested.");
+                Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Needs: {needsMode}. Evidence: {Path.GetFullPath(directory)}. No connection requested.");
                 return 0;
             }
 
@@ -58,7 +60,7 @@ public static class Program
                 void Log(string text) { Console.Error.WriteLine(text); evidence.Log(text); }
                 Log($"cozmo-mcp session evidence: {evidence.DirectoryPath}");
                 // Same app inputs and native readiness/connect gate as m15-cube-hw.
-                var options = HardwareEngineOptions.Create(resources, log: Log, speechSoundBankDirectory: banks, beforeStart: evidence.Attach);
+                var options = HardwareEngineOptions.Create(resources, log: Log, speechSoundBankDirectory: banks, beforeStart: evidence.Attach, keepNeedsFull: needsMode=="full");
                 using var robot = CozmoRobot.Create(engineOptions: options);
                 robot.Transport.FrameTrace += evidence.Frame;
                 robot.HandlerFaulted += error => { Log(error.ToString()); evidence.Record("handler-fault", JsonSerializer.SerializeToElement(new { exception = error.ToString() })); };

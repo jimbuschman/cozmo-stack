@@ -447,12 +447,14 @@ public class M4ControlTests
         private uint _ts = 100;
 
         public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null,
-                   Action<CozmoEngine>? engineCreated = null)
+                   Action<CozmoEngine>? engineCreated = null, bool keepNeedsFull = false)
         {
             // The test factory owns an isolated default animation cache until Robot.Dispose; explicit fixture paths are retained.
             var settings=engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources };
             settings.OmitVisionForTest=!attachWorld; // Explicit world-less unit composition; production always builds it.
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, settings, engineCreated);
+            // Source-behavior fixtures use native needs; host-policy replays explicitly opt into full mode.
+            Engine.SetNeedsMode(keepNeedsFull);
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
         }
 

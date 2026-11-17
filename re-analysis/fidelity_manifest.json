@@ -263,7 +263,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-11-09",
+        "approved": "2026-11-17",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -6175,7 +6175,7 @@
         "NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite caller HandleMessage<SetGameBeingPaused> 0x006990E8; +0x30 increment 0x006990EC; +0x20 write 0x00698FA6 (unbuilt game message)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "The SetPaused callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete 200, EnterSdkMode/ExitSdkMode 241/242) are unbuilt - this stack has no game-message channel for them. The unpause shift now covers +0x1E4/+0x1F0/+0x208/+0x1FC/+0x214; the +0x1F0 consumer (HandleMessage<SetNeedsPauseStates>) and the +0x214 DAS-elapsed consumer (the app-facing DAS wire) are unbuilt. The ConnectToRobot seam that calls NeedsManager::InitAfterConnection (0x004ED10E) is wired from CozmoEngine::ConnectToRobot; the same handler's DASPauseUploadingToServer(1) (0x004ED114) is not built, and J13 states no behaviour for it (MISSING). The SetPaused/OnRobotDisconnected bodies and the always-fired removal wiring are built. HandleMessage<SetGameBeingPaused> 0x00698F44 also calls ApplyDecayForTimeSinceLastDeviceWrite(robot != 0) (0x006990DE..0x006990E8); that caller is unbuilt. The +0x1D4 field that InitAfterConnection also sets (0x00694398) is not modelled: its only consumer is LocalNotifications::ShouldBeRegistered 0x0068D00C, an unbuilt notification path. OV59 check (re-analysis/research/overnight/20261015-ov59-61-check.md): SetGameBeingPaused is an app input (Unity RobotEngineManager.cs:565): the stack supplies it from a host pause/resume event (COMPATIBILITY_POLICY under the app-boundary rule). Resume (false) runs PossiblyWriteLabAssignmentsToRobot (0x006990DA), ApplyDecay and the Needs resume work; pause stores now to +0x20. B-M15-5: Lab Init visibly reports missing host SetGameBeingPaused(false) app-resume delivery and Lab writeback0x006990DA. Needs post-read Lab hook is built independently; SetPaused alone is not relabeled full resume handler, and no host event/ApplyDecay ordering is invented. Existing approved app-input policy unchanged.\nManager (2026-10-18; research/overnight/20261018-ov127-check.md): SetGameBeingPaused (G2E 85) also stores engine+0x60 (0x004EDF88), which gates LatencyMessage (M1-061), and calls CozmoAudioController::AppIsInFocus(!paused) (veneer 0x008CAA5C, M6). The stack supplies the input through a public API (M1-062).\nB-M1-9 (2026-10-18), built, awaiting strong verification: B-M1-9 supplies the M1-062 public pause app input and engine+0x60 store only. The separate NeedsManager.HandleMessage<SetGameBeingPaused> 0x00698F44, resume Lab write/ApplyDecay and Needs pause effects remain unbuilt with an explicit diagnostic; SetPaused is not substituted for that full handler.",
+      "unresolved": "The SetPaused callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete 200, EnterSdkMode/ExitSdkMode 241/242) are unbuilt - this stack has no game-message channel for them. The unpause shift now covers +0x1E4/+0x1F0/+0x208/+0x1FC/+0x214; the +0x1F0 consumer (HandleMessage<SetNeedsPauseStates>) and the +0x214 DAS-elapsed consumer (the app-facing DAS wire) are unbuilt. The ConnectToRobot seam that calls NeedsManager::InitAfterConnection (0x004ED10E) is wired from CozmoEngine::ConnectToRobot; the same handler's DASPauseUploadingToServer(1) (0x004ED114) is not built, and J13 states no behaviour for it (MISSING). The SetPaused/OnRobotDisconnected bodies and the always-fired removal wiring are built. HandleMessage<SetGameBeingPaused> 0x00698F44 also calls ApplyDecayForTimeSinceLastDeviceWrite(robot != 0) (0x006990DE..0x006990E8); that caller is unbuilt. The +0x1D4 field that InitAfterConnection also sets (0x00694398) is not modelled: its only consumer is LocalNotifications::ShouldBeRegistered 0x0068D00C, an unbuilt notification path. OV59 check (re-analysis/research/overnight/20261015-ov59-61-check.md): SetGameBeingPaused is an app input (Unity RobotEngineManager.cs:565): the stack supplies it from a host pause/resume event (COMPATIBILITY_POLICY under the app-boundary rule). Resume (false) runs PossiblyWriteLabAssignmentsToRobot (0x006990DA), ApplyDecay and the Needs resume work; pause stores now to +0x20. B-M15-5: Lab Init visibly reports missing host SetGameBeingPaused(false) app-resume delivery and Lab writeback0x006990DA. Needs post-read Lab hook is built independently; SetPaused alone is not relabeled full resume handler, and no host event/ApplyDecay ordering is invented. Existing approved app-input policy unchanged.\nManager (2026-10-18; research/overnight/20261018-ov127-check.md): SetGameBeingPaused (G2E 85) also stores engine+0x60 (0x004EDF88), which gates LatencyMessage (M1-061), and calls CozmoAudioController::AppIsInFocus(!paused) (veneer 0x008CAA5C, M6). The stack supplies the input through a public API (M1-062).\nB-M1-9 (2026-10-18), built, awaiting strong verification: B-M1-9 supplies the M1-062 public pause app input and engine+0x60 store only. The separate NeedsManager.HandleMessage<SetGameBeingPaused> 0x00698F44, resume Lab write/ApplyDecay and Needs pause effects remain unbuilt with an explicit diagnostic; SetPaused is not substituted for that full handler.\nNEEDS-KEEP-FULL-1 (operator 2026-11-17): live G2E C9 generated invoker 0x0069B0E2..0x0069B0F6 is bound to the existing SetPaused recipient. Its E2G pause report 0x00696040..0x0069606C (tag63, one bool) is now delivered through the existing app queue. Other callers and SetNeedsPauseStates remain outside this build; no whole-record status or evidence change.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -15120,6 +15120,28 @@
       "hardware_required": false,
       "live_path": true,
       "test": "ChargerBoundingQuadNeighborTests; ChargerObstacleListTests; ReferenceSizeSlotNeighborTests (reach: unit); MinAreaRectFootprintTests (reach: unit)"
+    },
+    {
+      "id": "M15-112",
+      "subsystem": "M15-freeplay",
+      "title": "Host refill input: keep needs full by default, with native decay available",
+      "location": "cozmo-stack/src/Cozmo.Robot/EngineHostNeeds.cs",
+      "effect": "The host supplies full repair/energy/play after stored needs load and pauses native changes; real mode resumes the engine's needs, and explicit levels use its force message.",
+      "provenance": "Operator decision, 2026-11-17, NEEDS-KEEP-FULL-1: the stack supplies the app refill input; default full, real decay is optional.",
+      "authority": "COMPATIBILITY_POLICY, operator 2026-11-17; libcozmoEngine.so 3.4.0-1204 for the native message recipients.",
+      "evidence": [
+        "re-analysis/jobs/trial-m13/QUEUE.md NEEDS-KEEP-FULL-1: operator decision 2026-11-17, KeepNeedsFull default true, --needs real, bridge mode and levels commands.",
+        "ForceSetNeedsLevels G2E C6: 0x00697DA4..0x00698002 (clamp/store 0x00697E78..0x00697EBE; report 0x00697EC6; no robot NV write).",
+        "SetNeedsPauseState G2E C9: live invoker 0x0069B0E2..0x0069B0F6 -> SetPaused 0x00695E04..0x00695F7E; pause writes PC at 0x00695ECA, native resume clock shifts 0x00695F02..0x00695F6A.",
+        "Global pause skips decay, notification update and periodic PC persistence at 0x00695CA4..0x00695CFA and action deltas/rewards at 0x006960E0..0x006960EE; no periodic refill is required.",
+        "SendNeedsPauseStateToGame 0x00696040..0x0069606C: E2G NeedsPauseState. unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MessageEngineToGame.cs tag99 and NeedsPauseState.cs one-bool pack.",
+        "Stored copy resolution 0x00694608..0x00694F55 remains before the host input; M15-014 protected or unresolved copies are not overridden."
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "Decided by the operator 2026-11-17: the stack supplies the app refill input. This record owns that host setting/input, not the underlying native needs system. M15-001/014/016/048 retain their current statuses and visible gaps; no native fidelity status is upgraded. Pausing also pauses native action deltas/rewards and local notifications, as its source recipient does. C6 does not write robot NV and C9 writes the PC copy only; no extra NV persistence is added. Real mode and personality needs windows restore native changes. Robot confirmation remains with the operator.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "KeepNeedsFullTests; PersonalityNeedsRoundTests; BridgeCommandTests; McpServerTests"
     }
   ]
 }

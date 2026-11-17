@@ -8,6 +8,10 @@ using Cozmo.Transport;
 // cozmo-conformance: encode/decode/compare/replay Cozmo transport frames and run the hardware smoke test.
 // Nothing here depends on the Android app, libcozmoEngine or Python.
 
+IDisposable needsInput;
+try { needsInput=HardwareEngineOptions.UseNeedsArguments(ref args); }
+catch(ArgumentException error){Console.Error.WriteLine(error.Message);return 2;}
+using var needsScope=needsInput;
 return args.Length == 0 ? Usage() : args[0] switch
 {
     "decode" => Decode(args.Skip(1)),
@@ -141,6 +145,7 @@ static int Usage()
         cozmo-conformance <command> [args]
 
         Live engine tools require --resources <cozmo_resources>, or their existing --obb/--assets input.
+        Needs start full and paused by default. Add --needs real for native needs decay.
 
           decode <hex|python-bytes>...      parse one or more raw UDP frames (14-byte header + body) and print header, sub-messages, CLAD messages
           diff <hexA> <hexB>                 byte-by-byte comparison of two frames with field hints
