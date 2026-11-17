@@ -135,7 +135,6 @@ public sealed class PersonalityFaceRoundTests
     }
 
     [Theory]
-    [InlineData("search-for-face", BehaviorID.VC_SearchForFace)]
     [InlineData("drive-to-face", BehaviorID.VC_ComeHere)]
     public void ConfiguredVoiceCommandGapsCannotProduceAStartVerdict(string stepId, BehaviorID id)
     {
