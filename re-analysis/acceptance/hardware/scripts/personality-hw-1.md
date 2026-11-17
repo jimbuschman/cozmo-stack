@@ -15,8 +15,8 @@ table edge, showing a face, tapping and moving a cube, and the 15-minute idle wi
 lets you observe whether he responds by name. Each question takes a yes/no observation. Ctrl+C saves a partial run.
 
 `result.json` groups the engine's behavior transition (0x87), reaction transition (0x88), objective (0x8B) and
-observed face (0x46) reports by step, with the operator's answer. The old/new fields show which behavior or
-reaction ended and which began. `events.jsonl` retains startup, between-step reports, and engine diagnostics.
+observed face (0x46) reports by step, with the operator's answer. It also includes cube connection changes (0x0D)
+and movement and stop reports (0x0F, 0x10). The old/new fields show which behavior or reaction ended and which began. `events.jsonl` retains startup, between-step reports, and engine diagnostics.
 The idle step also records the timed window within its phase. Missing paths reported by the stack appear in the
 bundle. An empty report list is also an observation.
 

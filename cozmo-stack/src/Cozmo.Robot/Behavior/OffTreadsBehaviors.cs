@@ -226,8 +226,8 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 /// <c>BehaviorReactToImpact</c>, the behaviour the shipped map runs for <c>ReactionTrigger.RobotFalling</c>
 /// (constructor 0x0060617C; subscribes the tags {0x3a, 0x3b, 0x1e} from the table at 0x00C73D30).
 ///
-/// It is <b>always runnable</b> (<c>IsRunnableInternal</c> 0x00606486 is <c>movs r0,#1; bx lr</c>): nothing gates it on the
-/// impact. <c>AlwaysHandle</c> (0x00606408) keeps three bytes, in every state: FallingStarted (0x3a) zeroes +0x11e
+/// The off-treads and carrying gates both return false. <c>IsRunnableInternal</c> 0x00606486 returns true
+/// once the base gates pass. The impact magnitude is read later for animation selection. <c>AlwaysHandle</c> (0x00606408) keeps three bytes, in every state: FallingStarted (0x3a) zeroes +0x11e
 /// (0x00606422) and the halfword at +0x11c, i.e. +0x11c and +0x11d (0x00606426); FallingStopped (0x3b) stores +0x11d = 1
 /// and then +0x11e = (impactIntensity &gt; 1000.0f) <b>unconditionally</b>, 0 or 1 (0x0060642c..0x0060644e; the literal is
 /// at 0x00606470); MotorCalibration (0x1e) stores +0x11c = 1 when <c>Robot::IsHeadCalibrated()</c> and
@@ -292,6 +292,12 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     {
         if (headCalibrated && liftCalibrated) _calibrated = true;
     }
+
+    // BehaviorReactToImpact vptr+0x20 at 0x0102BEB0 resolves to 0x005BF04C.
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+
+    // vptr+0x28 at 0x0102BEB8 resolves to 0x00606482.
+    protected override bool RunnableGate28(BehaviorContext context) => false;
 
     /// <summary><c>IsRunnableInternal</c> 0x00606486: <c>movs r0,#1</c>.</summary>
     protected override bool IsRunnableInternal(BehaviorContext context) => true;
@@ -677,6 +683,9 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 {
+    // vptr+0x20 at 0x0102BFEC resolves to the base false body 0x005BF04C.
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+
     private long _generation;
     protected override bool KeepsRunningWithoutAction => HasCurrentAction;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();

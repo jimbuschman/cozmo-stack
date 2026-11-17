@@ -2094,6 +2094,40 @@ public class M4ControlTests
         Assert.True(rig.Logged("Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID: Could not find match for active object ID 3"));
     }
 
+    [Fact]
+    public void CapturedCubeActivityBroadcastsMotionOnlyWhenMotionPacketsArrive()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.State();
+
+        void Deliver(string hex) => rig.Data(RobotMessage.Parse(Convert.FromHexString(hex)));
+        var reports = new List<(ushort Tag, uint Timestamp, uint ObjectId)>();
+        rig.Engine.EngineToGameMessage += (tag, body) =>
+        {
+            if (tag is not (0x0F or 0x10)) return;
+            var reader = new CladReader(body);
+            reports.Add((tag, reader.U32(), reader.U32()));
+        };
+
+        // 20261116-193450-PERSONALITY-HW-1-59ef28. Connect, then a move/stop pair
+        // from the preceding tap round (frames 18776, 19716, and 19901).
+        Deliver("D000000000EC8E1A240200000001");
+        rig.Tick();
+        uint worldId = rig.Robot.Vision.World.GetConnectedActiveObjectByActiveIdHelper(0)!.ObjectId;
+        Deliver("B4949B020000000000000070C10000C8410000B04105");
+        Deliver("B5E8A1020000000000");
+        rig.Tick();
+        Assert.Equal(new (ushort, uint, uint)[] { (0x0F, 170900, worldId), (0x10, 172520, worldId) }, reports);
+
+        // The entire cube message slice during the move round was power plus disconnect.
+        reports.Clear();
+        Deliver("CE00000000650D000094"); // frame 21908
+        Deliver("D000000000EC8E1A240200000000"); // frame 22513
+        rig.Tick();
+        Assert.Empty(reports);
+    }
+
     /// <summary>
     /// M4-023 CD10e/CD10f: intensity = tapPos − tapNeg; ≤ 60 is dropped; on a physical robot (HandleFirmwareVersion with
     /// no "sim", SetPhysicalRobot) with the filter on, taps queue for 75 ms from the first and only the strongest is

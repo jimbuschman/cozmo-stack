@@ -173,7 +173,7 @@ public sealed record ReactionEntry(
 /// * <b>(d)</b> is Anki's own <c>AnimationTriggerMap.json</c>, read by <see cref="AnimationTriggerMap"/>.
 ///
 /// <b>The falling reaction is not "ReactToFalling".</b> The shipped map sends <c>RobotFalling</c> to the
-/// behaviour <c>ReactToImpact</c>, which is always runnable; <c>BehaviorReactToImpact::TransitionToPlayingAnim</c>
+/// behaviour <c>ReactToImpact</c>. Its base run gates require treads and an empty lift. <c>BehaviorReactToImpact::TransitionToPlayingAnim</c>
 /// plays <see cref="AnimationTrigger.ReactToImpact"/> only when its +0x11e byte is set, which a FallingStopped
 /// stores as <c>impactIntensity &gt; 1000.0f</c> (<see cref="ReactToImpactBehavior"/>). Nothing in the engine plays
 /// <c>AnimationTrigger.ReactToFalling</c> from these classes.
