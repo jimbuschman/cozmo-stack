@@ -555,6 +555,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var activity in AllActivities(Tree))activity.SparkedOwner?.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeLookForFaceAndCubeBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeFindFacesSocialize>())candidate.Dispose();
+        foreach(var candidate in Bound.Values.OfType<NativeSearchForFaceBehavior>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<FistBumpBehavior>())candidate.RetireNativeActionOwner();
         foreach(var candidate in Bound.Values.OfType<NativeInteractWithFaces>())candidate.Dispose();
         foreach(var candidate in Bound.Values.OfType<NativeReactToPetBehavior>())candidate.Dispose();

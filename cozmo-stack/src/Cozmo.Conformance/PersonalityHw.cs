@@ -25,6 +25,14 @@ internal static class PersonalityHw
 
     internal const string BehaviorReportSource = "M8-012, E2G 0x87 at 0x005A22B4..0x005A24AC, payload 0x0071B806..0x0071B884";
     internal const string ReactionReportSource = "M8-012, E2G 0x88 at 0x005A20AA..0x005A20D6 and 0x005A2EE8";
+    internal static bool TryRequestSearchForFace(CozmoRobot robot)
+    {
+        // 0x005C9170 gates on HasAnyFaces(0,false); Selection admits G2E 0x94 at 0x0060AA58.
+        if (robot.Vision.Faces.HasAnyFaces(0, false)) return false;
+        robot.SetEnableFreeplayActivity(false);
+        robot.ExecuteBehaviorById((byte)BehaviorID.VC_SearchForFace, 1);
+        return true;
+    }
     internal readonly record struct NeedsLevels(float Repair, float Energy, float Play)
     {
         internal string Describe() => FormattableString.Invariant(
@@ -94,10 +102,9 @@ internal static class PersonalityHw
             "Did Cozmo turn to or track the face?",
             new(BehaviorID.InteractWithFaces, "IsRunnableInternal selects a recent face and requires a valid target (0x005C23AC..0x005C23EE). Socialize checks this behavior in phase 0 and selects it when runnable (0x005B02F6..0x005B0302, branch to 0x005B0354).")),
         new("search-for-face",
-            "For the engine's search request, leave the camera view and allow the FaceWorld to empty. An enrolled face may remain in the FaceWorld.",
+            "Leave the camera view and allow the FaceWorld to empty. An enrolled face may remain in the FaceWorld. When Cozmo begins searching, show your face again so he can play the found-face response.",
             "Did Cozmo search for a face?",
-            new(BehaviorID.VC_SearchForFace, "voiceCommands/VC_SearchForFace.json maps the requested ID to SearchForFace. IsRunnableInternal requires !FaceWorld::HasAnyFaces(0,false) (0x005C9170..0x005C9180). Selection handles ExecuteBehaviorByID (G2E 0x94, 0x0060AA58..0x0060AB7A).",
-                Missing: "SearchForFace is unbuilt in the configured native factory (case 0x0059CFA6).")),
+            new(BehaviorID.VC_SearchForFace, "voiceCommands/VC_SearchForFace.json maps the requested ID to SearchForFace. IsRunnableInternal requires !FaceWorld::HasAnyFaces(0,false) (0x005C9170..0x005C9180). Selection handles ExecuteBehaviorByID (G2E 0x94, 0x0060AA58..0x0060AB7A).")),
         new("drive-to-face",
             "Keep one face in view farther than 20 cm from Cozmo on a clear level surface.",
             "Did Cozmo approach the face?",
@@ -368,6 +375,12 @@ internal sealed partial class M15CubeRun
                     using var stimulus = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
                     try
                     {
+                        if (step.Id == "search-for-face")
+                        {
+                            Console.WriteLine("Waiting for the current-origin FaceWorld to empty, then requesting SearchForFace.");
+                            Poll(() => PersonalityHw.TryRequestSearchForFace(robot),
+                                Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
+                        }
                         Task<AiTurnActionResult>? turn = step.Id == "react-to-unexpected-movement"
                             ? robot.Motion.QueueAiTurnInPlaceAsync(MathF.PI, TurnInPlaceAction.DefaultMaxSpeed,
                                 TurnInPlaceAction.DefaultAccel, cancellationToken: stimulus.Token) : null;
@@ -382,6 +395,7 @@ internal sealed partial class M15CubeRun
                     {
                         checkEnd = Now;
                         stimulus.Cancel();
+                        if (step.Id == "search-for-face") robot.SetEnableFreeplayActivity(true);
                     }
                 }
                 try

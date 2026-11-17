@@ -16,8 +16,10 @@ lets you observe whether he responds by name. Each question takes a yes/no obser
 
 The face checks `acknowledge-face`, `interact-with-faces` and optional `react-to-pet` use a 45-second window
 for the named engine behavior. The harness records the matching start and stop transitions. A start earns the
-step's pass, and the operator's answer remains an observation. The plan shows `search-for-face` and
-`drive-to-face` as MISSING because their configured behavior constructors are unavailable in the stack.
+step's pass, and the operator's answer remains an observation. The `search-for-face` step waits for the
+current-origin FaceWorld to empty, selects the search behavior, then waits for its reports. Show your face
+when the search animation begins to exercise the found-face response. An enrolled face can remain in
+FaceWorld until the robot changes origin. The `drive-to-face` constructor remains MISSING.
 
 The needs steps `express-needs`, `needs-change-animation` and `drive-in-desperation` temporarily set Energy
 to the Warning or Critical bracket through the engine's ForceSetNeedsLevels message. Keep Cozmo off his

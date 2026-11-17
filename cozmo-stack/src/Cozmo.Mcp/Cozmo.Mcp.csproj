@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>cozmo-mcp</AssemblyName>
+    <CETCompat>false</CETCompat>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Cozmo.Bridge\Cozmo.Bridge.csproj" />
+    <ProjectReference Include="..\Cozmo.Conformance\Cozmo.Conformance.csproj" />
+  </ItemGroup>
+</Project>
