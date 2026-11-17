@@ -269,11 +269,12 @@ static int Usage()
           vision <robot-ip> [--seconds 60] [--nominal] [--unconnected] [--acceptance [file]] [--out <dir>]
                                              M11 acceptance: read the camera calibration from NV storage, stream the camera, print markers,
                                              objects and pose-state changes (--nominal: fall back to a stand-in calibration)
-          manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]]
+          manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]] [--yes]
+          manip --validate [--yes]
                                              M12 acceptance: drive to a located cube's pre-dock pose, pick it up, place it, roll it or
                                              stack two, printing every path/dock message and the robot's results (--obb: plan with the
                                              engine's lattice planner instead of the straight-line stand-in)
-          manip <robot-ip> --flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--acceptance [file]]
+          manip <robot-ip> --flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--acceptance [file]] [--yes]
                                              M13 acceptance: flip a cube (DriveAndFlipBlockAction), knock over a stack, pop a wheelie,
                                              mount the charger from its marker, or drive off the charger
           manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y>]...

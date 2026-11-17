@@ -65,7 +65,7 @@ first, and use `--with-drive` only after that pickup works, with a hand ready ne
 
 ## Skill rounds (opt-in)
 
-Add `--skills` to run stack, roll, flip, wheelie, go-to, and mount after the pickup rounds. Follow each prompt to reset the upright cube. The flip and wheelie rounds record the action result and wire traffic. For the go-to round, clear space for a 20 cm drive and a left turn. The script records the requested and observed poses. The charger round runs last. Clear the
+Add `--skills` to run stack, roll, flip, wheelie, go-to, and mount after the pickup rounds. Follow each prompt to reset the upright cube. The flip and wheelie rounds record the action result and wire traffic. Before the go-to round, remove all cubes from the table and clear space for a 20 cm drive and a left turn. The script records the requested and observed poses. The charger round runs last. Clear the
 cubes away and put the powered charger 20–40 cm straight ahead, marker facing Cozmo. The script waits for a fresh
 located visual observation in the current origin, then records the queued mount result and the robot's contact bit
 (M13-008, 0x0054E7B0). It selects the target from the charger E2G 0x44 report in the current BlockWorld origin.

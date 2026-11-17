@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Cozmo.Conformance;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -40,6 +41,44 @@ public class HardwareRunnerTests
         PropertyNameCaseInsensitive = true,
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
     };
+
+    [Fact]
+    public void CommandReactionWindowRecordsTheTurnAndRetriesExactlyOnce()
+    {
+        static JsonObject Turn(double at, string key, string text) =>
+            new() { ["kind"] = "engine-log", ["atMs"] = at, ["name"] = key, ["text"] = text };
+        byte positionUpdated = (byte)Cozmo.Robot.Behavior.ReactionTrigger.ObjectPositionUpdated;
+        var start = new JsonObject
+        {
+            ["kind"] = "command-reaction-transition", ["atMs"] = 49522d,
+            ["OldTrigger"] = (byte)0x16, ["NewTrigger"] = positionUpdated, ["newReaction"] = "ObjectPositionUpdated",
+        };
+        var ended = (JsonObject)start.DeepClone();
+        ended["atMs"] = 50600d;
+        ended["OldTrigger"] = positionUpdated;
+        ended["NewTrigger"] = (byte)0x16;
+        JsonObject[] events = [
+            Turn(49521, "TurnInPlaceAction.CheckIfDone.AngleNotReached", "[17] angDistTravd=+86.800000deg"),
+            start,
+            Turn(49523, "TurnInPlaceAction.CheckIfDone.InPosition", "[20] angDistTravd=+13.000000deg"),
+            ended,
+            Turn(56800, "TurnInPlaceAction.CheckIfDone.InPosition", "[31] angDistTravd=-7.500000deg"),
+        ];
+        const uint cancelled = 0x02000000;
+
+        var (reaction, retry) = CommandsHw.ReactionInterruption(cancelled, 1, 49000, 49530, events);
+        Assert.Same(start, reaction);
+        Assert.True(retry);
+        Assert.Equal("OBSERVATION", CommandsHw.Verdict(cancelled, 0, judge: reaction is null, harnessError: false));
+        Assert.Equal(86.8, CommandsHw.LastTurnAngle(49000, reaction!["atMs"]!.GetValue<double>(), events)!["degrees"]!.GetValue<double>());
+        Assert.False(CommandsHw.ReactionInterruption(cancelled, 2, 49000, 49530, events).Retry);
+        // A reaction that began during the preflight wait falls before the actual request window.
+        Assert.Null(CommandsHw.ReactionInterruption(cancelled, 1, 50600, 50700, events).Reaction);
+        Assert.Null(CommandsHw.ReactionInterruption(0, 1, 49000, 49530, events).Reaction);
+        Assert.Equal("PASS", CommandsHw.Verdict(0, 0, judge: true, harnessError: false));
+        Assert.Equal("FAIL", CommandsHw.Verdict(cancelled, 0, judge: true, harnessError: false));
+        Assert.Equal(-7.5, CommandsHw.LastTurnAngle(56000, 56900, events)!["degrees"]!.GetValue<double>());
+    }
 
     [Fact]
     public void CommandsWaitForBothNativeReactionAndExternalActionFlag()

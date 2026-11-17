@@ -56,7 +56,9 @@ public static class M14SpeechHw
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
             var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"));
-            if (validate) { Console.WriteLine($"{TestId}: {records.Count} valid records; no network opened."); return 0; }
+            var revision = HarnessRevision.Check(root, Console.Out);
+            if (!revision.Confirm(yes, Console.In, Console.Out)) return 1;
+            if (validate) { Console.WriteLine($"{TestId}: {records.Count} valid records; no robot connection opened."); return 0; }
             banks = Path.GetFullPath(banks ?? Path.Combine(root, "re-analysis", "obb", "sound_meta"));
             foreach (string bank in new[] { "Init.bnk", Path.Combine("English(US)", "Cozmo.bnk") })
                 if (!File.Exists(Path.Combine(banks, bank))) throw new ArgumentException($"Sound bank {bank} not found under {banks}; pass --banks <folder holding Init.bnk>.");
@@ -64,7 +66,7 @@ public static class M14SpeechHw
                 throw new ArgumentException("The shipped libraries (resources/lib/armeabi-v7a, libcozmoEngine.so and the Acapela library) are not on this PC.");
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + TestId + "-" + Guid.NewGuid().ToString("N")[..6]);
-            return new M14SpeechRun(root, bundle, ip, options.ResourcesPath!, banks, records, args, yes).Execute();
+            return new M14SpeechRun(root, bundle, ip, options.ResourcesPath!, banks, records, args, yes) { Revision = revision }.Execute();
         }
         catch (Exception e) { Console.Error.WriteLine("m14-speech-hw: " + e.Message + "\nusage: m14-speech-hw [robot-ip] --resources <dir> [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
     }
@@ -82,6 +84,7 @@ internal sealed class M14SpeechRun
     double Now => clock.Elapsed.TotalMilliseconds;
     public M14SpeechRun(string root, string bundle, IPAddress ip, string resources, string banks, List<JsonObject> records, string[] argv, bool yes)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.banks = banks; this.records = records; this.argv = argv; this.yes = yes; }
+    internal HarnessRevision? Revision { get; init; }
     void Event(string kind, JsonObject data) { data["atMs"] = Now; data["kind"] = kind; events.Enqueue(data); }
     bool Poll(Func<bool> predicate, int ms) { double end = Now + ms; while (Now < end) { if (predicate()) return true; if (cancel.Token.WaitHandle.WaitOne(10)) cancel.Token.ThrowIfCancellationRequested(); } return predicate(); }
     JsonObject[] EngineLogs() => events.Where(e => e["kind"]?.GetValue<string>() == "engine-log").ToArray();
@@ -237,8 +240,10 @@ internal sealed class M14SpeechRun
                 string dest = Path.Combine(bundle, "provenance", relative); Directory.CreateDirectory(Path.GetDirectoryName(dest)!); File.Copy(source, dest, true);
                 files.Add(new JsonObject { ["path"] = relative, ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant() });
             }
-            string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
-            var report = new JsonObject { ["testId"] = M14SpeechHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv),
+            var report = new JsonObject { ["testId"] = M14SpeechHw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"),
+                ["commit"] = Revision?.Commit, ["checkoutCommit"] = Revision?.HeadCommit,
+                ["behindOriginMain"] = Revision?.BehindOriginMain, ["buildBehindOriginMain"] = Revision?.BuildBehindOriginMain,
+                ["argv"] = JsonSerializer.SerializeToNode(argv),
                 ["resources"] = resources, ["banks"] = banks, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(),
                 ["missingReported"] = JsonSerializer.SerializeToNode(missing), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors),
                 ["acceptance"] = "NOT_JUDGED: manager review required; hardware success does not raise provenance" };

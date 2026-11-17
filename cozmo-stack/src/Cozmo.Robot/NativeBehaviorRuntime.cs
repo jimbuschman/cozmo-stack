@@ -41,8 +41,7 @@ public sealed partial class CozmoRobot
         Engine.PostGameMessage(()=>
         {
             if(owner is null || !ReferenceEquals(Engine.Robot,owner) || owner.NativeBehaviorRuntime is not {} runtime)return;
-            if(activityId is "Feeding" or "Freeplay" or "Selection" or "MeetCozmoFindFaces")runtime.AdmitNativeHighLevel(activityId);
-            else runtime.AdmitActivity(activityId); // existing host subactivity extension
+            runtime.AdmitHostActivity(activityId);
         });
     }
 

@@ -20,12 +20,30 @@ public static class ManipTool
     {
         if (a.Length < 2) { Console.WriteLine(Usage); return 1; }
         if (a[1] == "--plan") return Plan(a);
+        bool validate = a.Contains("--validate");
+        IPAddress? ip = null;
+        if (!validate && !IPAddress.TryParse(a[1], out ip)) { Console.WriteLine(Usage); return 1; }
+        string root = LinkCheck.FindRepoRoot() ?? Directory.GetCurrentDirectory();
+        var revision = HarnessRevision.Check(root, Console.Out);
+        if (!revision.Confirm(a.Contains("--yes"), Console.In, Console.Out)) return 1;
+        if (validate) { Console.WriteLine("manip: no robot connection opened."); return 0; }
         string mode = a.Skip(2).FirstOrDefault(x => x is "--driveto" or "--pickup" or "--putdown" or "--roll" or "--stack" or "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff") ?? "--driveto";
         string? obb = Arg(a, "--obb");
         int seconds = int.TryParse(Arg(a, "--seconds"), out var s) ? s : 120;
         string? acceptance = AcceptancePath(a);
-        Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
+        string bundle = Path.Combine(root, "re-analysis", "acceptance", "hardware",
+            DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-MANIP-" + Guid.NewGuid().ToString("N")[..6]);
+        Directory.CreateDirectory(bundle);
+        string resultFile = Path.Combine(bundle, "result.json");
+        File.WriteAllText(resultFile, JsonSerializer.Serialize(new
+        {
+            testId = "MANIP", mode, createdUtc = DateTime.UtcNow,
+            commit = revision.Commit, checkoutCommit = revision.HeadCommit,
+            behindOriginMain = revision.BehindOriginMain, buildBehindOriginMain = revision.BuildBehindOriginMain,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine($"Run revision saved to {resultFile}");
+        Console.WriteLine($"connecting to {ip}...");
+        using var robot = await CozmoRobot.ConnectAsync(ip!, engineOptions: EngineStartupResources.Options(a));
         var vision = robot.Vision;
         using var m = new ManipulationSystem(robot, vision);
         var log = new DiagnosticJournal<string>();
@@ -266,7 +284,7 @@ public static class ManipTool
             robot.StopCamera();
             if (acceptance is not null)
             {
-                var record = WriteAcceptance("manip", acceptance, success, robot, humanCheck,
+                var record = WriteAcceptance("manip", acceptance, success, robot, humanCheck, revision,
                     new { mode = what, outcome = result, messagesSent = m.Paths.Sent.Count + m.Docking.Sent.Count, log = log.Snapshot() }, what is "--flip" or "--knockover" or "--wheelie" or "--mount" or "--driveoff" ? "M13" : "M12");
                 Console.WriteLine($"acceptance record: {record}");
             }
@@ -315,7 +333,7 @@ public static class ManipTool
         }
     }
 
-    private const string Usage = "manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack|--flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]]  |  manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y> --carried-object-id none|<uint>]";
+    private const string Usage = "manip <robot-ip> --driveto|--pickup|--putdown|--roll|--stack|--flip|--knockover|--wheelie|--mount|--driveoff [--obb <dir>] [--seconds 120] [--nominal] [--acceptance [file]] [--yes]  |  manip --validate [--yes]  |  manip --plan <x> <y> <angleDeg> [--obb <dir>] [--obstacle <x> <y> --carried-object-id none|<uint>]";
 
     private static int Plan(string[] a)
     {
@@ -367,12 +385,15 @@ public static class ManipTool
         return null;
     }
 
-    private static string WriteAcceptance(string tool, string path, bool automatedPass, CozmoRobot robot, string humanCheck, object detail, string milestone = "M12")
+    private static string WriteAcceptance(string tool, string path, bool automatedPass, CozmoRobot robot, string humanCheck,
+        HarnessRevision revision, object detail, string milestone = "M12")
     {
         var file = Path.GetFullPath(string.IsNullOrEmpty(path) ? $"cozmo-acceptance-{tool}-{DateTime.Now:yyyyMMdd-HHmmss}.json" : path);
         var record = new
         {
             tool, milestone, timestampUtc = DateTime.UtcNow, firmware = robot.State.FirmwareVersionNumber, serial = robot.State.SerialNumber,
+            commit = revision.Commit, checkoutCommit = revision.HeadCommit,
+            behindOriginMain = revision.BehindOriginMain, buildBehindOriginMain = revision.BuildBehindOriginMain,
             automated = new { pass = automatedPass, detail },
             human = new { check = humanCheck, verdict = "PENDING - fill in after watching the robot" },
         };
