@@ -110,6 +110,20 @@ public sealed partial class CozmoBridge
     private sealed record KnownCube(uint? FactoryId, uint? RadioObjectId, uint? WorldObjectId, string Type, bool Connected,
         string? PoseState, uint? LastObservedTimestamp);
 
+    /// <summary>Authored animation triggers and clip names loaded by the current robot.</summary>
+    public JsonElement ListAnimations()
+    {
+        ThrowIfDisposed();
+        var library = Robot.Animations.Library;
+        return JsonSerializer.SerializeToElement(new
+        {
+            loaded = library is not null,
+            triggers = Enum.GetValues<Cozmo.Robot.Behavior.AnimationTrigger>()
+                .Where(trigger => library?.HasAnimationForTrigger(trigger) == true).Select(trigger => trigger.ToString()),
+            clips = library?.ClipNames ?? Array.Empty<string>(),
+        }, Json);
+    }
+
     private void OnFace(RobotObservedFaceReport report)
     {
         var payload = JsonSerializer.SerializeToElement(report, Json);
