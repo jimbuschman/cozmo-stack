@@ -77,6 +77,10 @@ geometry and raw payload (0x48, M12-014, producer at 0x0063BE80). These are obse
 be written, the other files are still attempted and `write-errors.txt` records the failure. Non-finite numbers
 appear as the JSON strings `"NaN"`, `"Infinity"` and `"-Infinity"`.
 
+Before each skill command, the script waits up to 15 seconds for the current reaction to finish and
+the engine to enable external actions. The go-to start pose is sampled after the wait. A timeout or a refused
+command is recorded as a harness error with no engine result.
+
 Run `m15-cube-hw --skills --validate` to check the planned rounds and record references without a robot.
 
 ## Freeplay control (standalone round)

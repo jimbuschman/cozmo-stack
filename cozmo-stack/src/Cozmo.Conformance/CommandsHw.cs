@@ -189,15 +189,15 @@ internal sealed partial class M15CubeRun
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 65000);
 
         PromptCommand(M15CubeHw.GotoSetup + " Press Enter when the area is clear.");
-        if (r.Motion.GetAiBodyObservation().LastState is { } pose)
+        RunCommand("go-to-pose", t =>
         {
+            if (r.Motion.GetAiBodyObservation().LastState is not { } pose)
+                return Task.FromResult(new AiDriveActionResult(false, null, "No published engine pose."));
             float x = pose.Pose.X + 200 * MathF.Cos(pose.PoseAngleRad);
             float y = pose.Pose.Y + 200 * MathF.Sin(pose.PoseAngleRad);
             float angle = Radians.Rescale(pose.PoseAngleRad + MathF.PI / 2);
-            RunCommand("go-to-pose", t => r.Motion.QueueAiGotoPoseAsync(x, y, angle, t),
-                a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
-        }
-        else SkipCommand("go-to-pose", "No published engine pose.");
+            return r.Motion.QueueAiGotoPoseAsync(x, y, angle, t);
+        }, a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
 
         RunCommandEnrollment(r);
     }
@@ -266,11 +266,18 @@ internal sealed partial class M15CubeRun
                     result = value.Result;
                     return value;
                 });
-            }, limitMs);
+            }, limitMs, waitForExternalActions: true);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             phase = CommandPhase(id, begin, e.Message);
+            RecordHarnessError(id, phase, e.Message);
+        }
+        if (phase["harnessError"] is not null)
+        {
+            SaveCommandResult(step, phase, null, judge: false);
+            Event("command-result", (JsonObject)phase.DeepClone());
+            return false;
         }
         // A tracking result is judged only when the script reached its deliberate cancel interval.
         bool scheduledStopReached = stopAfter is null || (actionCancel.IsCancellationRequested && !cancel.IsCancellationRequested);
@@ -338,6 +345,15 @@ internal sealed partial class M15CubeRun
         var step = CommandsHw.Steps.Single(s => s.Id == id);
         Console.WriteLine($"\n[{id}] {step.Plan}");
         double begin = Now;
+        if (!WaitForExternalActions(id))
+        {
+            var skipped = CommandPhase(id, begin, ExternalActionsWaitDetail);
+            RecordHarnessError(id, skipped, ExternalActionsWaitDetail);
+            SaveCommandResult(step, skipped, null, judge: false);
+            Event("command-result", (JsonObject)skipped.DeepClone());
+            return null;
+        }
+
         T? report = null;
         string detail = $"No matching engine report arrived within {limitMs / 1000} seconds.";
         try
@@ -380,7 +396,9 @@ internal sealed partial class M15CubeRun
         phase["engineResult"] = FormatCode(actual);
         phase["expected"] = FormatCode(step.Expected);
         phase["source"] = new JsonObject { ["record"] = step.Record, ["address"] = step.Address };
-        string verdict = !judge || actual is null || step.Expected is null ? "OBSERVATION" : actual == step.Expected ? "PASS" : "FAIL";
+        string verdict = phase["harnessError"] is not null ? "HARNESS ERROR"
+            : !judge || actual is null || step.Expected is null ? "OBSERVATION"
+            : actual == step.Expected ? "PASS" : "FAIL";
         phase["verdict"] = verdict;
         phases.Add(phase);
         Console.WriteLine($"    {verdict} {FormatCode(actual)} {phase["detail"]}");
