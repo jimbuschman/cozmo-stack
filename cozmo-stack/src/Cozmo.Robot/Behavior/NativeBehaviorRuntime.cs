@@ -70,6 +70,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private bool _retired;
     internal bool IsRetired=>_retired;
     private long _admissionEpoch;
+    private int _aiCommands;
+    private bool _resumeFreeplayAfterAi;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
     private readonly VisionSystem? _vision;
@@ -312,6 +314,63 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         // Spark is written only by the unbuilt specialized Freeplay selection path 0x005AE4E2..F2.
         _manager.Activity=new ConfiguredActivity(selected,_robot,_manager,Context,()=>WaitForParentPicker(selected),()=>AwaitingParentActivityPick,()=>RetireUnavailable(selected,epoch));
     }
+    internal void AdmitHostActivity(string requested)
+    {
+        if (requested == "Freeplay" && _aiCommands != 0 && _highLevel == 2)
+        {
+            _resumeFreeplayAfterAi = true;
+            return;
+        }
+        _resumeFreeplayAfterAi = false;
+        if (requested is "Feeding" or "Freeplay" or "Selection" or "MeetCozmoFindFaces")
+            AdmitNativeHighLevel(requested);
+        else
+            AdmitActivity(requested);
+    }
+
+    // Unity NeedsHub_2018.ResetRobotBehavior and HandleEndGameDialog bracket the game with
+    // SetEnableFreeplayActivity(false / true). The AI host uses the same activity/Wait requests
+    // across its admitted command batch. Reaction arbitration remains ahead of normal selection.
+    internal IDisposable BeginAiCommand()
+    {
+        var lease = new AiCommandLease(this);
+        try
+        {
+            if (++_aiCommands == 1 && _highLevel == 1)
+            {
+                _resumeFreeplayAfterAi = true;
+                // G2E 0x92 at 0x005A4FA2; Selection's 0x93 Wait/-1 at 0x0060AAAE.
+                AdmitNativeHighLevel("Selection");
+                if (IsCurrentAiCommandOwner() && _highLevel == 2)
+                    _facade.Engine.AnimationMessages.Deliver(0x93, false,
+                        new Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage(0x0B, -1).PackBody());
+            }
+            return lease;
+        }
+        catch
+        {
+            lease.Dispose();
+            throw;
+        }
+    }
+
+    private bool IsCurrentAiCommandOwner() => !_retired && !_robot.Lifetime.Destroying
+        && ReferenceEquals(_facade.Engine.Robot, _robot) && ReferenceEquals(_robot.NativeBehaviorRuntime, this);
+
+    private void EndAiCommand()
+    {
+        if (--_aiCommands != 0) return;
+        bool resume = _resumeFreeplayAfterAi;
+        _resumeFreeplayAfterAi = false;
+        if (resume && _highLevel == 2 && IsCurrentAiCommandOwner()) AdmitNativeHighLevel("Freeplay");
+    }
+
+    private sealed class AiCommandLease(NativeBehaviorRuntime runtime) : IDisposable
+    {
+        private NativeBehaviorRuntime? _owner = runtime;
+        public void Dispose() => Interlocked.Exchange(ref _owner, null)?.EndAiCommand();
+    }
+
     internal void AdmitNativeHighLevel(string requested)
     {
         if(_retired || !ReferenceEquals(_facade.Engine.Robot,_robot) || !ReferenceEquals(_robot.NativeBehaviorRuntime,this))return;

@@ -1,4 +1,5 @@
 using System.Text;
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
@@ -227,36 +228,92 @@ public sealed class AiFreeplayControlTests
     }
 
     [Fact]
-    public async Task OutsideAnimationLeavesFreeplayActiveThroughCompletion()
+    public async Task LowEnergyDuringOutsideAnimationWaitsForTheCommandAndFreeplayResumes()
     {
-        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var engine = f.Rig.Engine;
         var manager = f.Robot.BehaviorManagerOwner!;
+        engine.AnimationMessages.Deliver(0xC6, false, new[] { 1f, 1f, 1f });
         f.Rig.Robot.SetEnableFreeplayActivity(true);
-        f.Rig.Tick();
-        Assert.Same(f.Runtime.FreeplayObserver, manager.Activity);
-        var freeplay = manager.Activity;
-
-        var earlier = Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction());
-        var request = f.Rig.Robot.Motion.QueueAiAnimationAsync(AnimationTrigger.CozmoSaysSpeakLoop);
-        Assert.Same(earlier, f.Robot.ActionList.GetCurrentAction());
-        var runner = Assert.Single(f.Robot.ActionList.QueueAt(0)!.Pending
-            .OfType<TriggerAnimationAction>(), a => a.AiNativeEnded is not null);
-        Assert.False(request.IsCompleted);
-        // End this competing behavior so its repeated Now requests cannot take the queue's front.
-        manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
-        Assert.Same(runner, f.Robot.ActionList.GetCurrentAction());
-        f.Robot.ActionList.Update();
-        Assert.True(runner.Initialized);
+        f.Rig.Tick(78_000);
+        var freeplay = f.Runtime.FreeplayObserver;
         Assert.Same(freeplay, manager.Activity);
-        // Supply a terminal result to exercise the real action-list delivery. Firmware playback is
-        // covered independently by AiAuthoredAnimationTests.
-        runner.State = EngineActionResult.Success;
-        f.Robot.ActionList.Update();
+        var events = new List<string>();
+        uint watchedTag = 0;
+        engine.ActionCompleted += report => { if (report.Tag == watchedTag) events.Add($"complete:{report.Result}"); };
+        engine.BehaviorTransition += report => events.Add($"behavior:{(BehaviorID)report.NewId}");
+        int mark = f.Rig.Mark();
+        var request = f.Rig.Robot.Motion.QueueAiAnimationAsync(AnimationTrigger.CozmoSaysSpeakLoop);
+        var runner = Assert.IsAssignableFrom<TriggerAnimationAction>(f.Robot.ActionList.GetCurrentAction());
+        watchedTag = runner.Tag;
+        Assert.NotSame(freeplay, manager.Activity);
+        Assert.Same(f.Runtime.Bound["Wait"], manager.Current);
+        for (int i = 0; i < 20 && !f.Rig.SentSince(mark).OfType<StartOfAnimation>().Any(); i++) f.Rig.Tick();
+        Assert.True(runner.Initialized);
+        byte animationTag = Assert.Single(f.Rig.SentSince(mark).OfType<StartOfAnimation>()).AnimId;
+        f.Rig.Data(new AnimationStarted { AnimId = animationTag });
+        f.Rig.Tick();
+        engine.AnimationMessages.Deliver(0xC6, false, new[] { 1f, 0.4f, 1f });
+        f.Rig.Tick(62);
+        Assert.Same(f.Runtime.Bound["Wait"], manager.Current);
+        Assert.False(request.IsCompleted);
+        f.Rig.Data(new AnimationEnded { AnimId = animationTag });
+        f.Rig.Tick();
 
         var result = await request.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.True(result.Admitted);
         Assert.Equal(0u, result.EngineResult);
+        Assert.False(f.Robot.ActionList.ContainsRunner(runner));
         f.Rig.Tick();
+        Assert.Same(freeplay, manager.Activity);
+        int complete = events.IndexOf("complete:0");
+        Assert.True(complete >= 0);
+        Assert.Contains(events.Skip(complete + 1), message => message.StartsWith("behavior:") && message != "behavior:Wait");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ASecondCommandHoldsSelectionAndExplicitDisableTakesPrecedence(bool disable)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var freeplay = f.Runtime.FreeplayObserver;
+        f.Rig.Robot.SetEnableFreeplayActivity(true);
+        f.Rig.Tick();
+        var first = f.Rig.Robot.Motion.QueueAiHeadAngleAsync(0);
+        using var cancellation = new CancellationTokenSource();
+        var second = f.Rig.Robot.Motion.QueueAiLiftHeightAsync(80, cancellation.Token);
+        var head = Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction());
+        head.State = EngineActionResult.Success;
+        f.Robot.ActionList.Update();
+        Assert.Equal(0u, (await first.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
+        Assert.NotSame(freeplay, manager.Activity);
+        if (disable) f.Rig.Robot.SetEnableFreeplayActivity(false);
+        f.Rig.Tick();
+        Assert.False(second.IsCompleted);
+        Assert.Equal(EngineActionResult.Running, f.Robot.ActionList.GetCurrentAction()!.State);
+        cancellation.Cancel();
+        f.Rig.Tick();
+        Assert.Equal(EngineActionResult.Cancelled, (await second.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
+        Assert.Equal(!disable, ReferenceEquals(freeplay, manager.Activity));
+    }
+
+    [Fact]
+    public async Task FreeplayRequestPostedBeforeACommandTakesEffectAfterTheCommandRetires()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture();
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var freeplay = f.Runtime.FreeplayObserver;
+        f.Rig.Robot.SetEnableFreeplayActivity(true);
+        using var cancellation = new CancellationTokenSource();
+        var command = f.Rig.Robot.Motion.QueueAiLiftHeightAsync(80, cancellation.Token);
+        f.Rig.Tick();
+        Assert.NotSame(freeplay, manager.Activity);
+        Assert.False(command.IsCompleted);
+        cancellation.Cancel();
+        f.Rig.Tick();
+        Assert.Equal(EngineActionResult.Cancelled, (await command.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
         Assert.Same(freeplay, manager.Activity);
     }
 }

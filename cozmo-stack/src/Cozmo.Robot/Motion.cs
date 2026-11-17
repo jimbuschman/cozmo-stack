@@ -630,7 +630,6 @@ public sealed class CozmoMotion
             action.RetireNeverAdmittedTree();
             return Task.FromResult(new AiHeadActionResult(false, null, "Request cancelled before admission"));
         }
-        if (motionProfile is { IsCustom: true }) Path.SetNativeCustomMotionProfileForAction(owner, motionProfile, action);
         var completion = new TaskCompletionSource<(uint Result, bool OwnerRetired)>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (action is MoveAction move) { move.AiNativeEnded = completion; move.AiOwner = owner; }
         else if(action is Manipulation.NativePlaceGroundRunner ground)ground.AiNativeEnded=completion;
@@ -660,33 +659,59 @@ public sealed class CozmoMotion
             return Task.FromResult(new AiHeadActionResult(false,null,"Robot changed or request cancelled before admission",owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot,owner)));
         }
         bool disabled = owner.ActionList.ExternalActionsDisabled;
-        if (action is MoveAction registered) lock (_gate) _actions.Add(registered);
-        bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner);
-        int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
-        if (disabled || queued != 0)
+        IDisposable? freeplay = null;
+        try { if (!disabled) freeplay = owner.NativeBehaviorRuntime?.BeginAiCommand(); }
+        catch
         {
-            if (action.CanDetachWatcherForRetirement())
-            {
-                action.Watcher = null; action.RetireNeverAdmittedTree();
-                if (action is MoveAction detached) lock (_gate) _actions.Remove(detached);
-            }
-            return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed",owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot,owner)));
+            action.RetireNeverAdmittedTree();
+            throw;
         }
-        return AwaitAiMove(action, completion, owner, cancellationToken, detail);
+        try
+        {
+            bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner);
+            if (!Current() || cancellationToken.IsCancellationRequested || admissionValid is not null && !admissionValid())
+            {
+                action.RetireNeverAdmittedTree();
+                return Task.FromResult(new AiHeadActionResult(false, null, "Robot changed or request cancelled before admission", !Current()));
+            }
+            if (motionProfile is { IsCustom: true }) Path.SetNativeCustomMotionProfileForAction(owner, motionProfile, action);
+            disabled = owner.ActionList.ExternalActionsDisabled;
+            if (action is MoveAction registered) lock (_gate) _actions.Add(registered);
+            int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
+            if (disabled || queued != 0)
+            {
+                if (action.CanDetachWatcherForRetirement())
+                {
+                    action.Watcher = null; action.RetireNeverAdmittedTree();
+                    if (action is MoveAction detached) lock (_gate) _actions.Remove(detached);
+                }
+                return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed", !Current()));
+            }
+            var task = AwaitAiMove(action, completion, owner, cancellationToken, detail, freeplay);
+            freeplay = null; // The terminal action owns the activity handoff from here.
+            return task;
+        }
+        finally { freeplay?.Dispose(); }
     }
 
-    private async Task<AiHeadActionResult> AwaitAiMove(ActionRunner action, TaskCompletionSource<(uint Result, bool OwnerRetired)> completion, EngineRobot owner, CancellationToken token, string detail)
+    private async Task<AiHeadActionResult> AwaitAiMove(ActionRunner action, TaskCompletionSource<(uint Result, bool OwnerRetired)> completion, EngineRobot owner, CancellationToken token, string detail, IDisposable? freeplay)
     {
         using var registration = token.Register(() => _robot.Engine.PostGameMessage(() =>
         {
             if (owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) return;
             if (owner.ActionList.ContainsRunner(action)) owner.ActionList.Cancel(action.Tag);
         }));
-        var ended = await completion.Task.ConfigureAwait(false);
-        // WatcherEnding precedes queue unlink. Reenter the engine owner before publishing the
-        // result so another thread cannot observe completion while that unlink is still pending.
-        using (_robot.Engine.EnterSynchronousOwner()) { }
-        return new AiHeadActionResult(true, ended.Result, detail, ended.OwnerRetired);
+        try
+        {
+            var ended = await completion.Task.ConfigureAwait(false);
+            return new AiHeadActionResult(true, ended.Result, detail, ended.OwnerRetired);
+        }
+        finally
+        {
+            // WatcherEnding precedes queue unlink. Resume only after the action has left its queue.
+            using var lease = _robot.Engine.EnterSynchronousOwner();
+            freeplay?.Dispose();
+        }
     }
 
     internal CozmoMotion(CozmoRobot robot)
