@@ -486,6 +486,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     }
 
     internal FreeplayDecision Observe()=>new(_facade.Engine.Timer.SecondsF,_selected?.Id=="Freeplay"?_observer?.Current?.Id:_selected?.Id,_manager.Current?.Id,"native engine observation");
+    internal string? SelectedActivityId => _selected?.Id;
     private FreeplaySystem? _observer;
     internal FreeplaySystem FreeplayObserver=>_observer??=new FreeplaySystem(_manager,Context,
         Tree.FirstOrDefault(a=>a.Id=="Freeplay")??throw new InvalidOperationException("Configured Freeplay resources unavailable"),
