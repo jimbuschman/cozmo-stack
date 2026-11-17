@@ -1,4 +1,6 @@
+using System.Net;
 using System.Reflection;
+using Cozmo.Conformance;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -492,6 +494,8 @@ public sealed class CanonicalReactionBindingTests
         var manager = native.BehaviorManagerOwner!;
         OpenGate(native, manager);
         rig.Tick(4000); // Native fall latch compares unsigned absolute stamps against now - 3000.
+        var capture = new M15CubeRun("", "", IPAddress.Loopback, "", [], [], false, false) { Personality = true };
+        capture.SubscribeBehaviorReports(rig.Engine);
         var transitions = new List<(ReactionTrigger Trigger, OffTreadsState Treads)>();
         manager.ReactionTriggered += sw => transitions.Add((sw.Trigger, rig.Robot.Sensors.OffTreadsState));
         var falling = (GenericReactionStrategy)manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotFalling).Strategy;
@@ -558,6 +562,94 @@ public sealed class CanonicalReactionBindingTests
             first => Assert.Equal(OffTreadsState.OnTreads, first.Treads),
             second => Assert.Equal(OffTreadsState.OnTreads, second.Treads));
         Assert.False(impact.ImpactRecorded); // 361 and 235 are below the animation threshold of 1000.
+        rig.Engine.DrainAppDelivery();
+        var check = PersonalityHw.SelectSteps("react-to-impact").Single().Check!;
+        Assert.Equal(2, capture.StepTransitions(check, 0, double.MaxValue).Count(check.Starts));
+    }
+
+    [Theory]
+    [InlineData("react-to-placed-on-slope")]
+    [InlineData("react-to-unexpected-movement")]
+    [InlineData("react-to-motor-calibration")]
+    [InlineData("react-to-on-charger")]
+    [InlineData("react-to-frustration")]
+    public async Task PersonalityReactionRoundTests_ReplayedTriggerPublishesTheExpectedEndpoint(string stepId)
+    {
+        using var fixture = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var rig = fixture.Rig;
+        var native = fixture.Robot;
+        var manager = native.BehaviorManagerOwner!;
+        OpenGate(native, manager);
+        var capture = new M15CubeRun("", "", IPAddress.Loopback, "", [], [], false, false) { Personality = true };
+        capture.SubscribeBehaviorReports(rig.Engine);
+        var check = PersonalityHw.SelectSteps(stepId).Single().Check!;
+        RobotState State(RobotStatusFlag extra = 0) => rig.MakeState(
+            RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | extra,
+            origin: native.CurrentOriginId, frame: native.PoseFrameId);
+        void Tick(double milliseconds = 33)
+        {
+            rig.Tick(milliseconds);
+            manager.CheckReactions(rig.Engine.Timer.Seconds);
+            rig.Engine.DrainAppDelivery();
+        }
+        bool Started() => capture.StepTransitions(check, 0, double.MaxValue).Any(check.Starts);
+
+        switch (check.Trigger)
+        {
+            case ReactionTrigger.RobotPlacedOnSlope:
+                var tilted = State(RobotStatusFlag.IsPickedUp);
+                tilted.Pose.Pitch = 0.35f;
+                tilted.Gyro = new GyroData { X = 0.1f };
+                rig.Data(tilted);
+                Tick();
+                Assert.False(Started());
+                tilted = State(RobotStatusFlag.IsPickedUp);
+                tilted.Pose.Pitch = 0.35f;
+                rig.Data(tilted);
+                Tick(450);
+                break;
+            case ReactionTrigger.UnexpectedMovement:
+                Assert.True(native.IsPhysicalRobot);
+                for (int i = 0; i < 11; ++i)
+                {
+                    var turning = State(RobotStatusFlag.AreWheelsMoving);
+                    turning.LwheelSpeedMmps = -35f;
+                    turning.RwheelSpeedMmps = 35f;
+                    rig.Data(turning);
+                    Tick();
+                    if (i < 10) Assert.False(Started());
+                }
+                break;
+            case ReactionTrigger.MotorCalibration:
+                rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
+                Tick();
+                Assert.False(Started());
+                rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
+                Tick();
+                break;
+            case ReactionTrigger.PlacedOnCharger:
+                rig.Data(State(RobotStatusFlag.IsOnCharger));
+                Tick();
+                Assert.False(Started());
+                rig.Data(State());
+                Tick(22_000);
+                rig.Data(State(RobotStatusFlag.IsOnCharger));
+                Tick();
+                break;
+            case ReactionTrigger.Frustration:
+                for (int i = 0; i < 12 && !Started(); ++i)
+                {
+                    var failedDrive = PersonalityHw.QueueAbsentObjectDrive(rig.Engine, CancellationToken.None);
+                    Tick();
+                    Assert.Equal((uint)ActionResult.BadObject, await failedDrive.WaitAsync(TimeSpan.FromSeconds(2)));
+                    Tick();
+                    if (i == 0) Assert.False(Started());
+                    if (!Started()) Tick(30_000);
+                }
+                break;
+        }
+
+        Assert.True(Started(), string.Join(" | ", rig.Log.TakeLast(25)));
     }
 
     [Fact]

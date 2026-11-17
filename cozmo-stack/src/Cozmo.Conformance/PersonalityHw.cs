@@ -4,6 +4,8 @@ using System.Text.Json.Nodes;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 
 namespace Cozmo.Conformance;
 
@@ -15,12 +17,14 @@ internal static class PersonalityHw
 
     internal static readonly string[] RecordIds =
     {
-        "M7-001", "M7-019", "M8-012", "M10-001", "M10-003", "M10-004", "M10-008",
+        "M7-001", "M7-019", "M7-020", "M8-012", "M10-001", "M10-002", "M10-003", "M10-004", "M10-007",
+        "M10-008", "M10-011", "M4-012", "M12-029", "M13-040",
         "M4-009", "M4-023", "M11-085", "M13-038", "M14-004", "M14-008", "M15-014", "M15-031", "M15-048",
         "M15-058", "M15-080", "M15-082", "M15-091", "M15-104", "M15-108"
     };
 
     internal const string BehaviorReportSource = "M8-012, E2G 0x87 at 0x005A22B4..0x005A24AC, payload 0x0071B806..0x0071B884";
+    internal const string ReactionReportSource = "M8-012, E2G 0x88 at 0x005A20AA..0x005A20D6 and 0x005A2EE8";
     internal readonly record struct NeedsLevels(float Repair, float Energy, float Play)
     {
         internal string Describe() => FormattableString.Invariant(
@@ -61,7 +65,15 @@ internal static class PersonalityHw
     }
 
     internal sealed record BehaviorCheck(BehaviorID Id, string Source, bool Optional = false, string? Missing = null,
-        int WindowSeconds = 45);
+        int WindowSeconds = 45, ReactionTrigger? Trigger = null)
+    {
+        internal string ReportSource => Trigger is null ? BehaviorReportSource : ReactionReportSource;
+        internal string Name => Trigger?.ToString() ?? Id.ToString();
+        internal bool Starts(JsonObject report) => Trigger is { } trigger
+            ? IsReactionTransition(report, trigger, entering: true) : IsBehaviorStart(report, Id);
+        internal bool Stops(JsonObject report) => Trigger is { } trigger
+            ? IsReactionTransition(report, trigger, entering: false) : IsBehaviorStop(report, Id);
+    }
     internal sealed record Step(string Id, string Instruction, string Question, BehaviorCheck? Check = null, NeedsLevels? Needs = null);
 
     internal static readonly Step[] Steps =
@@ -118,6 +130,37 @@ internal static class PersonalityHw
             "Run an activity that ordinarily earns a Freeplay Sparks reward, then watch for the reward behavior.",
             "Did you see the earned-Sparks animation?",
             new(BehaviorID.EarnedSparks, "Levels are unchanged. EarnedSparks reads NeedsManager's pending reward byte at +0x3D8 (0x005DAEC2..0x005DAECA). ForceSetNeedsLevels only stores levels and sends NoAction (0x00697E78..0x00697EC6). A genuine reward can make EarnedSparks runnable in the Freeplay interlude (socialize.json, hiking.json).")),
+        new("react-to-impact",
+            "Keep Cozmo supported while gently lifting him upright and setting him back on his treads. Use this window if the firmware has been reporting falls during normal handling.",
+            "Did you observe the impact reaction?",
+            new(BehaviorID.ReactToImpact, "The firmware's FallingStarted report is forwarded at 0x00534F3C. The enabled strategy latches it for 3000 ms (0x0060D838, 0x0060DD6E); the reaction waits for treads and empty lift (0x005BD864..0x005BD874, 0x0102BEB0..0x0102BEB8, 0x00606482). FallingStopped intensity above 1000 enables the later impact animation (0x0060642C..0x0060644E, 0x00606348). A bump alone does not supply FallingStarted.",
+                Optional: true, Trigger: ReactionTrigger.RobotFalling)),
+        new("react-to-placed-on-slope",
+            "Gently lift Cozmo, then promptly place him at 15 to 25 degrees nose-up on a stable, grippy incline. Keep him steady on his treads with room to react.",
+            "Did you observe the slope reaction?",
+            new(BehaviorID.ReactToPlacedOnSlope, "Pitch must be above 10 and below 55 degrees, with all gyro axes at or below 0.01 rad/s for more than 0.4 s. The strategy requires pickup or less than 1.5 s since pickup, and off-treads state below OnBack (0x006144FC..0x00614688, strategy at 0x00612EB0..0x00612ECC).",
+                Trigger: ReactionTrigger.RobotPlacedOnSlope)),
+        new("react-to-unexpected-movement",
+            "On a clear level surface, gently keep Cozmo facing the same direction during the script's in-place turn. Leave both treads free to turn. Release him when the reaction starts or the turn ends.",
+            "Did you observe the unexpected-movement reaction?",
+            new(BehaviorID.ReactToUnexpectedMovement, "For a held turn the physical detector reads opposite wheel signs, sum of absolute wheel speeds at least 20 mm/s and absolute gyro Z below 0.174533 rad/s. It fires after the count exceeds 10 (0x0063E398..0x0063E5DA; event at 0x0063E932, strategy 0x0060D96A).",
+                Optional: true, Trigger: ReactionTrigger.UnexpectedMovement)),
+        new("react-to-motor-calibration",
+            "The offline replay supplies the firmware's automatic calibration start.",
+            "Did you observe the motor calibration reaction?",
+            new(BehaviorID.ReactToMotorCalibration, "The R2E 0xD1 filter requires CalibStarted and AutoStarted (0x0060D618, 0x0060DCFA..0x0060DD16).",
+                Missing: "StartMotorCalibration 0x58 requests head/lift calibration (M4-012). No supported request is known to produce the firmware's AutoStarted flag.",
+                Trigger: ReactionTrigger.MotorCalibration)),
+        new("react-to-on-charger",
+            "Keep Cozmo off his charger for the first 22 seconds of this step, then place him on the charger.",
+            "Did you observe the on-charger reaction?",
+            new(BehaviorID.ReactToOnCharger, "Charger contacts rising broadcasts ChargerEvent 0x39 with OnCharger true (0x00511BF4..0x00511C0A). The first strategy evaluation sets a 20 s deadline, and each evaluation consumes the latch even before that deadline (0x00614474..0x006144D0, 0x006120D0..0x006120E8).",
+                Trigger: ReactionTrigger.PlacedOnCharger)),
+        new("react-to-frustration",
+            "Keep Cozmo off his charger and give him room to react. The script queues up to 12 drive-to-object actions for an absent object, 30 seconds apart, until the reaction starts.",
+            "Did you observe the frustration reaction?",
+            new(BehaviorID.ReactToFrustrationMinor, "DriveToObject aborts before moving when the target is absent (0x00559670..0x00559676, 0x00559798..0x005597AC). Its ABORT maps to a Confident change of -0.2 (mood_config.json, emotionevents/action_events.json; 0x0067B318). The script spaces attempts at the 30 s full-weight point of the shipped default repetition graph. The strategy checks Confident below -0.6 with a 60 s cooldown for minor, or below -0.9 for major (0x0060EE6E..0x0060EED8; reactionTrigger_behavior_map.json). The engine uses no fixed failure count.",
+                WindowSeconds: 375, Trigger: ReactionTrigger.Frustration)),
         new("alone", $"Place Cozmo in the clear enclosed area, move yourself and the cube out of view, and leave him alone for {IdleMinutes} minutes.", "Did you observe Cozmo do anything on his own while left alone?")
     };
 
@@ -152,8 +195,8 @@ internal static class PersonalityHw
             if (step.Check is { } check)
             {
                 Console.WriteLine($"  {check.Source}");
-                Console.WriteLine($"  Start and stop: {check.Id}, {BehaviorReportSource}.");
-                if (check.Optional) Console.WriteLine("  Optional. Skip if no pet is available.");
+                Console.WriteLine($"  Start and stop within {check.WindowSeconds} s: {check.Name}, {check.ReportSource}.");
+                if (check.Optional) Console.WriteLine("  Optional. Run only when the setup is available.");
                 if (check.Missing is { } missing)
                 {
                     Console.WriteLine($"  MISSING: {missing}");
@@ -175,11 +218,48 @@ internal static class PersonalityHw
         e["kind"]?.GetValue<string>() == "behavior-transition"
         && e[nameof(BehaviorTransitionReport.OldId)]?.GetValue<byte>() == (byte)id
         && e[nameof(BehaviorTransitionReport.NewId)]?.GetValue<byte>() != (byte)id;
+
+    private static bool IsReactionTransition(JsonObject report, ReactionTrigger trigger, bool entering)
+    {
+        if (report["kind"]?.GetValue<string>() != "reaction-transition") return false;
+        var old = report[nameof(ReactionTransitionReport.OldTrigger)]!.GetValue<byte>();
+        var next = report[nameof(ReactionTransitionReport.NewTrigger)]!.GetValue<byte>();
+        return entering ? next == (byte)trigger && old != next : old == (byte)trigger && old != next;
+    }
+
+    internal static Task<uint> QueueAbsentObjectDrive(CozmoEngine engine, CancellationToken cancellation)
+    {
+        using var lease = engine.EnterSynchronousOwner();
+        cancellation.ThrowIfCancellationRequested();
+        if (engine.Robot is not { Lifetime.Destroying: false } owner
+            || owner.NativeBehaviorRuntime?.Manipulation is not { } manipulation)
+            throw new InvalidOperationException("MISSING: The native drive-to-object owner is unavailable.");
+
+        const uint absentId = uint.MaxValue;
+        if (manipulation.World.GetLocatedObjectByIdHelper(absentId) is not null)
+            throw new InvalidOperationException("The reserved absent object ID unexpectedly has a pose.");
+        // This diagnostic only takes the absent-target precondition. Let Freeplay retain its tracks.
+        var drive = new NativeDriveToObjectRunner(manipulation, owner, absentId, PreActionType.Docking)
+        {
+            SuppressTrackLocking = true,
+        };
+        var completed = new TaskCompletionSource<uint>(TaskCreationOptions.RunContinuationsAsynchronously);
+        drive.AddCompletionCallback(result => completed.TrySetResult(result));
+        if (owner.ActionList.QueueAction(QueueActionPosition.InParallel, drive) != 0)
+            throw new InvalidOperationException("The absent-object drive was rejected.");
+        return WaitForResult();
+
+        async Task<uint> WaitForResult()
+        {
+            using var registration = cancellation.Register(() => owner.ActionList.Cancel(drive.Tag));
+            return await completed.Task.WaitAsync(cancellation).ConfigureAwait(false);
+        }
+    }
 }
 
 internal sealed partial class M15CubeRun
 {
-    private readonly ConcurrentQueue<JsonObject> behaviorTransitions = new();
+    private readonly ConcurrentQueue<JsonObject> personalityTransitions = new();
 
     void SubscribePersonalityReports(CozmoEngine engine)
     {
@@ -280,26 +360,52 @@ internal sealed partial class M15CubeRun
             Console.WriteLine(step.Instruction);
             if (step.Check is { } check)
             {
-                Console.WriteLine($"Waiting up to {check.WindowSeconds} seconds for {check.Id} to start and stop.");
-                bool Started(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && PersonalityHw.IsBehaviorStart(e, check.Id);
-                bool Stopped(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && PersonalityHw.IsBehaviorStop(e, check.Id);
+                Console.WriteLine($"Waiting up to {check.WindowSeconds} seconds for {check.Name} to start and stop.");
+                bool Started(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && check.Starts(e);
+                bool Stopped(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && check.Stops(e);
                 void WaitForReports()
                 {
-                    try { Poll(() => behaviorTransitions.Any(Started) && behaviorTransitions.Any(Stopped), check.WindowSeconds * 1000); }
-                    finally { checkEnd = Now; }
+                    using var stimulus = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
+                    try
+                    {
+                        Task<AiTurnActionResult>? turn = step.Id == "react-to-unexpected-movement"
+                            ? robot.Motion.QueueAiTurnInPlaceAsync(MathF.PI, TurnInPlaceAction.DefaultMaxSpeed,
+                                TurnInPlaceAction.DefaultAccel, cancellationToken: stimulus.Token) : null;
+                        if (step.Id == "react-to-frustration")
+                            RunFrustrationActions(robot, () => personalityTransitions.Any(Started), start, stimulus.Token);
+                        Poll(() => personalityTransitions.Any(Started) && personalityTransitions.Any(Stopped),
+                            Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
+                        if (turn?.IsCompletedSuccessfully == true)
+                            Event("reaction-stimulus-turn", JsonSerializer.SerializeToNode(turn.Result, BundleJson)!.AsObject());
+                    }
+                    finally
+                    {
+                        checkEnd = Now;
+                        stimulus.Cancel();
+                    }
                 }
-                if (step.Needs is { } levels)
-                    levels.WithOverride(robot.Engine, WaitForReports, (restored, values) => Event(
-                        restored ? "needs-levels-restored" : "needs-levels-forced", new()
-                        {
-                            ["phase"] = step.Id,
-                            ["repair"] = values[0], ["energy"] = values[1], ["play"] = values[2],
-                        }));
-                else
-                    WaitForReports();
-                checkResult = BehaviorTransitions(check.Id, start, checkEnd ?? Now).Any(e => PersonalityHw.IsBehaviorStart(e, check.Id))
-                    ? "passed" : "failed";
-                Console.WriteLine(checkResult == "passed" ? "Engine start report observed." : "No matching engine start report in the window.");
+                try
+                {
+                    if (step.Needs is { } levels)
+                        levels.WithOverride(robot.Engine, WaitForReports, (restored, values) => Event(
+                            restored ? "needs-levels-restored" : "needs-levels-forced", new()
+                            {
+                                ["phase"] = step.Id,
+                                ["repair"] = values[0], ["energy"] = values[1], ["play"] = values[2],
+                            }));
+                    else
+                        WaitForReports();
+                    checkResult = StepTransitions(check, start, checkEnd ?? Now).Any(check.Starts)
+                        ? "passed" : "failed";
+                    Console.WriteLine(checkResult == "passed" ? "Engine start report observed." : "No matching engine start report in the window.");
+                }
+                catch (InvalidOperationException e) when (check.Trigger is not null)
+                {
+                    checkResult = "harness-error";
+                    errors.Enqueue($"{step.Id}: {e.Message}");
+                    Console.WriteLine(e.Message);
+                    Event("reaction-stimulus-error", new() { ["phase"] = step.Id, ["detail"] = e.Message });
+                }
             }
             if (step.Id == "alone")
             {
@@ -326,12 +432,12 @@ internal sealed partial class M15CubeRun
                 ["question"] = step.Question, ["observed"] = observed };
             if (step.Check is { } check)
             {
-                phase["behaviorCheck"] = new JsonObject
+                phase[check.Trigger is null ? "behaviorCheck" : "reactionCheck"] = new JsonObject
                 {
-                    ["expected"] = check.Id.ToString(), ["source"] = check.Source,
-                    ["reportSource"] = PersonalityHw.BehaviorReportSource, ["result"] = checkResult ?? "interrupted",
+                    ["expected"] = check.Name, ["source"] = check.Source,
+                    ["reportSource"] = check.ReportSource, ["result"] = checkResult ?? "interrupted",
                     ["windowEndMs"] = checkEnd,
-                    ["transitions"] = new JsonArray(BehaviorTransitions(check.Id, start, checkEnd ?? Now)
+                    ["transitions"] = new JsonArray(StepTransitions(check, start, checkEnd ?? Now)
                         .Select(e => e.DeepClone()).ToArray()),
                 };
             }
@@ -346,9 +452,31 @@ internal sealed partial class M15CubeRun
     }
 
     internal JsonObject[] BehaviorTransitions(BehaviorID id, double start, double end)
-        => behaviorTransitions.Where(e => e["atMs"]!.GetValue<double>() >= start && e["atMs"]!.GetValue<double>() <= end
-                && (PersonalityHw.IsBehaviorStart(e, id) || PersonalityHw.IsBehaviorStop(e, id)))
+        => StepTransitions(new(id, ""), start, end);
+
+    internal JsonObject[] StepTransitions(PersonalityHw.BehaviorCheck check, double start, double end)
+        => personalityTransitions.Where(e => e["atMs"]!.GetValue<double>() >= start && e["atMs"]!.GetValue<double>() <= end
+                && (check.Starts(e) || check.Stops(e)))
             .OrderBy(e => e["atMs"]!.GetValue<double>()).ToArray();
+
+    private void RunFrustrationActions(CozmoRobot robot, Func<bool> started, double start, CancellationToken cancellation)
+    {
+        for (int attempt = 1; attempt <= 12 && !started() && Now < start + 365_000; attempt++)
+        {
+            using var action = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            action.CancelAfter(TimeSpan.FromSeconds(2));
+            uint result;
+            try { result = PersonalityHw.QueueAbsentObjectDrive(robot.Engine, action.Token).GetAwaiter().GetResult(); }
+            catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
+            {
+                throw new InvalidOperationException("The absent-object drive did not report completion in two seconds.");
+            }
+            Event("reaction-stimulus-action", new() { ["attempt"] = attempt, ["engineResult"] = result });
+            if (result != (uint)ActionResult.BadObject)
+                throw new InvalidOperationException($"Absent-object drive returned 0x{result:X8}.");
+            if (attempt < 12) Poll(started, 30_000);
+        }
+    }
 
     JsonArray PersonalityReports(double start, double end)
     {

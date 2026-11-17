@@ -300,7 +300,7 @@ internal sealed partial class M15CubeRun
             data["oldBehavior"] = ((BehaviorID)report.OldId).ToString();
             data["newBehavior"] = ((BehaviorID)report.NewId).ToString();
             Event("behavior-transition", data);
-            if (Personality) behaviorTransitions.Enqueue(data);
+            if (Personality) personalityTransitions.Enqueue(data);
         };
         engine.ReactionTransition += report =>
         {
@@ -308,6 +308,7 @@ internal sealed partial class M15CubeRun
             data["oldReaction"] = ReactionName(report.OldTrigger);
             data["newReaction"] = ReactionName(report.NewTrigger);
             Event("reaction-transition", data);
+            if (Personality) personalityTransitions.Enqueue(data);
         };
         engine.EngineToGameMessage += (tag, body) =>
         {
@@ -793,6 +794,7 @@ internal sealed partial class M15CubeRun
                 : Personality
                 ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]?.AsArray().Count}"
                     + (p["behaviorCheck"] is { } check ? $", behavior check={check["result"]}" : "")
+                    + (p["reactionCheck"] is { } reaction ? $", reaction check={reaction["result"]}" : "")
                 : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
             + "\n\nCube reports seen: " + observations.Count
             + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
