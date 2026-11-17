@@ -7,6 +7,97 @@ public sealed partial class OkaoFaceDetection
     private uint _frScratchFeature;
     private uint _frFeature, _frPtResult, _frImage;
     private int _frWidth, _frHeight;
+
+    // FR_ExtractHandle_GRAY (0x0092C918..0x0092C92C) reads the PT
+    // validity word and twelve points/confidences via PT_GetResult.
+    private const uint PartResultDataOffset = 0x0C;
+    private const uint PartResultDataLength = 0x90; // 0x00922C08..0x00922C64
+    private const uint FeatureBytes = 0xB0; // FR_WriteFeatureToMemory 0x0092CF0C..0x0092CF5C
+    internal sealed record RecognitionFrame(byte[] Pixels, int Width, int Height, uint PartsValid, byte[] Parts);
+    internal sealed record RecognitionExtraction(int Result, byte[]? Feature);
+
+    internal RecognitionFrame FrCaptureCurrentImage()
+    {
+        // 0x00865A50..0x00865A78 snapshots the input. After admission,
+        // 0x0086DBAA..0x0086DBB2 swaps the part handle used by detection.
+        var frame = new RecognitionFrame(_m.Read(_buf, checked((uint)(_w * _h))), _w, _h,
+            _m.R32(_ptResult + 4), _m.Read(_ptResult + PartResultDataOffset, PartResultDataLength));
+        if (_frPtResult == 0) _frPtResult = _m.Call(_m.Symbol("OKAO_PT_CreateResultHandle"), new[] { _co });
+        if (_frPtResult == 0) throw new EmulationAbort("OKAO recognition part-result allocation failed");
+        (_ptResult, _frPtResult) = (_frPtResult, _ptResult);
+        return frame;
+    }
+
+    internal static OkaoFaceDetection CreateRecognitionExtractor(string libDir)
+    {
+        var worker = new OkaoFaceDetection(libDir, poison: 0, staged: true);
+        try
+        {
+            worker._co = worker._m.Call(worker._m.Symbol("OKAO_CO_CreateHandle"));
+            if (worker._co == 0) throw new EmulationAbort("OKAO recognition common-handle allocation failed");
+            worker._frFeature = worker._m.Call(worker._m.Symbol("OKAO_FR_CreateFeatureHandle"), new[] { worker._co });
+            worker._frPtResult = worker._m.Call(worker._m.Symbol("OKAO_PT_CreateResultHandle"), new[] { worker._co });
+            if (worker._frFeature == 0 || worker._frPtResult == 0)
+                throw new EmulationAbort("OKAO recognition worker handle allocation failed");
+            return worker;
+        }
+        catch
+        {
+            worker.Dispose();
+            throw;
+        }
+    }
+
+    internal RecognitionExtraction FrExtractFrame(RecognitionFrame frame)
+    {
+        // The receive-side PT object owns its own magic and common pointer.
+        // Copy only the fields the native extractor consumes, never guest pointers.
+        _m.W32(_frPtResult + 4, frame.PartsValid);
+        _m.Write(_frPtResult + PartResultDataOffset, frame.Parts);
+        uint image = _m.Malloc((uint)frame.Pixels.Length);
+        if (image == 0) throw new EmulationAbort("OKAO recognition image allocation failed");
+        try
+        {
+            _m.Write(image, frame.Pixels);
+            int result = FrExtract(image, frame.Width, frame.Height, _frPtResult);
+            if (result != 0) return new RecognitionExtraction(result, null);
+        }
+        catch { _faulted = true; throw; }
+        finally { _m.Free(image); }
+
+        uint output = _m.Malloc(FeatureBytes);
+        if (output == 0) throw new EmulationAbort("OKAO feature transfer allocation failed");
+        try
+        {
+            int result = FrCall("OKAO_FR_WriteFeatureToMemory", _frFeature, output, FeatureBytes);
+            return new RecognitionExtraction(result, result == 0 ? _m.Read(output, FeatureBytes) : null);
+        }
+        catch { _faulted = true; throw; }
+        finally { _m.Free(output); }
+    }
+
+    internal OkaoFaceFeature FrImportFeature(byte[] feature)
+    {
+        if (feature.Length != FeatureBytes) throw new ArgumentException("Unexpected OKAO feature size", nameof(feature));
+        uint input = _m.Malloc(FeatureBytes);
+        if (input == 0) throw new EmulationAbort("OKAO feature transfer allocation failed");
+        try
+        {
+            _m.Write(input, feature);
+            // The other guest's feature uses the shipped reader at
+            // 0x0092CFA0..0x0092D0A4 before entering the album machine.
+            var read = FrOneOut("OKAO_FR_ReadFeatureFromMemory", new[] { _frFeature, input, FeatureBytes });
+            if (read.Result != 0 || read.Value != 0)
+                throw new EmulationAbort($"OKAO feature transfer returned {read.Result}/{read.Value}");
+            return new OkaoFaceFeature(this, _frFeature);
+        }
+        finally { _m.Free(input); }
+    }
+
+    private int FrExtract(uint image, int width, int height, uint partResult)
+        => unchecked((int)_m.Call(_m.Symbol("OKAO_FR_ExtractHandle_GRAY"),
+            new[] { _frFeature, image, (uint)width, (uint)height }, new[] { 0u, partResult }));
+
     internal OkaoFaceFeature FrPendingFeature => new(this, _frFeature);
     internal void FrQueueCurrentImage()
     {
@@ -26,8 +117,7 @@ public sealed partial class OkaoFaceDetection
         if (_frImage == 0) throw new InvalidOperationException("recognition slot has no image");
         try
         {
-            return unchecked((int)_m.Call(_m.Symbol("OKAO_FR_ExtractHandle_GRAY"),
-                new[] { _frFeature, _frImage, (uint)_frWidth, (uint)_frHeight }, new[] { 0u, _frPtResult }));
+            return FrExtract(_frImage, _frWidth, _frHeight, _frPtResult);
         }
         catch { _faulted = true; throw; }
         finally { _m.Free(_frImage); _frImage = 0; }
