@@ -72,6 +72,45 @@ public sealed class AiFlipWheelieControlTests
         finally { f.Robot.ActionList.Clear(); }
     }
 
+    [Theory]
+    [InlineData(80.5000076f, true)]  // Captured body Y, frame 10641.
+    [InlineData(84.5f, false)]      // Same cube and X, beyond the 5-degree-derived Y limit.
+    public void CapturedFlipCubePoseUsesTheNativeArrivalGuard(float robotY, bool accepted)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        const ObjectType type = ObjectType.Block_LIGHTCUBE2;
+        var cube = new ObservableObject(0, type, CubeGeometry.MarkersFor(type))
+        {
+            Pose = new Pose3d(new Rotation3d(.71344143f, 1.414938e-8f, -2.2599734e-7f, -.7007149f),
+                new Vec3(228.92612f, -3.0567493f, 12.637633f), parent: origin),
+            OriginId = f.Robot.CurrentOriginId, PoseState = PoseState.Known
+        };
+        f.M.World.AddLocatedObject(cube);
+        f.X = 146.5683136f;
+        f.Y = robotY;
+        f.Yaw = -.7377589345f;
+        f.Motors();
+        using var lease = f.Rig.Engine.EnterSynchronousOwner();
+        var logs = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Add;
+        var flip = new NativeFlipBlockRunner(f.M, cube.ObjectId);
+        try
+        {
+            var result = accepted ? ActionResult.Success : ActionResult.DidNotReachPreActionPose;
+            Assert.Equal(unchecked((int)result), flip.Init());
+            Assert.Equal(cube.ObjectId, f.M.World.SelectedObjectId);
+            var tooFar = logs.Where(entry => entry.Name == "IsCloseEnoughToPreActionPose.TooFarFromGoal");
+            if (accepted) Assert.Empty(tooFar);
+            else Assert.Contains("(2.4mm, 10.4mm)", Assert.Single(tooFar).Text);
+        }
+        finally
+        {
+            f.Rig.Engine.LogEntry -= logs.Add;
+            flip.WatcherEnding();
+        }
+    }
+
     [Fact]
     public async Task CubeMovedReactionReplacesFlipDuringItsFinalTurn()
     {

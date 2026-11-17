@@ -169,6 +169,84 @@ public sealed class FaceIdentityTests
     }
 
     [Fact]
+    public async Task SteadyStockRecognizedFaceAdvancesRetainedEnrollmentToSayName()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory = banks, LabLocaleLanguage = "en", BlockPoolPath = "" };
+        using var fixture = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true,
+            engineOptions: options, sourceNvStored: tag => tag switch
+            {
+                VisionSystem.FaceAlbumNvTag => Album(),
+                VisionSystem.FaceEnrollmentNvTag => Enrollment(),
+                _ => null,
+            });
+        var sink = new EnrollmentSink();
+        fixture.Robot.CannedSpeechSinkForTest = () => sink;
+        var vision = fixture.M.Vision;
+        vision.Enabled = true;
+        fixture.Rig.Robot.SetEnableFreeplayActivity(false);
+        fixture.Rig.Robot.SetVisionWhileMoving(true);
+        fixture.Rig.Tick();
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "okao", "okao_oracle.json")));
+        var root = doc.RootElement;
+        var frames = root.GetProperty("frames").EnumerateArray().Where(f =>
+            f.GetProperty("name").GetString()!.StartsWith("face_s10_", StringComparison.Ordinal)).Take(3)
+            .Select(f => Convert.FromBase64String(root.GetProperty("images").GetProperty(f.GetProperty("image").GetString()!).GetString()!))
+            .ToArray();
+        Assert.Equal(3, frames.Length);
+
+        var behavior = Assert.IsType<Cozmo.Robot.Behavior.NativeEnrollFaceBehavior>(fixture.Runtime.Bound["EnrollFace"]);
+        fixture.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
+        fixture.Rig.Robot.SetFaceToEnroll("Ada", saveId: 7);
+        fixture.Rig.DefaultTickMs = 0;
+        long start = fixture.Rig.NowNs;
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        vision.FaceRecognitionClockForTest = () => 30_000_000 + elapsed.Elapsed.Ticks / 10;
+        int mark = fixture.Rig.Mark(), sent = 0, frameIndex = 0;
+        uint image = 400;
+        byte? animationTag = null;
+        bool selected = false;
+        while (elapsed.Elapsed < TimeSpan.FromSeconds(25) && behavior.Phase != 4)
+        {
+            fixture.Rig.NowNs = start + elapsed.Elapsed.Ticks * 100;
+            sink.CompleteOne();
+            var stream = fixture.Rig.Robot.Animations.Scheduler.Stream;
+            fixture.Rig.Data(new AnimationState { NumAudioFramesPlayed = stream.FramesStreamed, NumAnimBytesPlayed = stream.BytesStreamed });
+            fixture.Motors(RobotStatusFlag.IsBodyAccMode);
+            if (behavior.EngineRunning && behavior.Phase is 2 or 3)
+            {
+                fixture.NativeCameraFrame(image++, frames[Math.Min(frameIndex++, 2)]);
+                fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
+                fixture.Rig.Tick();
+                selected |= vision.LastFaces.Any(face => face.Id == 7);
+            }
+            var messages = fixture.Rig.SentSince(mark);
+            for (; sent < messages.Count; sent++)
+            {
+                switch (messages[sent])
+                {
+                    case StartOfAnimation animation:
+                        animationTag = animation.AnimId;
+                        fixture.Rig.Data(new AnimationStarted { AnimId = animation.AnimId });
+                        break;
+                    case EndOfAnimation when animationTag is { } tag:
+                        fixture.Rig.Data(new AnimationEnded { AnimId = tag });
+                        animationTag = null;
+                        break;
+                }
+            }
+            await Task.Delay(15);
+        }
+        Assert.True(selected, $"phase={behavior.Phase}, frames={frameIndex}, remaining={vision.Recognizer.EnrollmentCount}, staged={behavior.StagedName}");
+        Assert.True(vision.Faces.EnrollmentCompleted, $"phase={behavior.Phase}, frames={frameIndex}, remaining={vision.Recognizer.EnrollmentCount}");
+        Assert.Equal(7, behavior.Selected);
+        Assert.Equal(4, behavior.Phase);
+        Assert.Equal("Ada", vision.Recognizer.EnrolledFaces.Single(face => face.FaceID == 7).Name);
+    }
+
+    [Fact]
     public void StockEraseStartsAlbumSaveBeforePublishingErasedFace()
     {
         if (ShippedLibraries.FindLibDir() is null) return;
@@ -356,7 +434,7 @@ public sealed class FaceIdentityTests
         var root=doc.RootElement;
         var images=root.GetProperty("images").EnumerateObject().ToDictionary(p=>p.Name,p=>Convert.FromBase64String(p.Value.GetString()!));
         var frames=root.GetProperty("frames").EnumerateArray().ToDictionary(f=>f.GetProperty("name").GetString()!,f=>images[f.GetProperty("image").GetString()!]);
-        var detector=Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
+        Assert.IsType<OkaoFaceDetector>(vision.FaceDetector);
         uint imageId=800;
         void Frame(string name)
         {
@@ -365,18 +443,27 @@ public sealed class FaceIdentityTests
             fixture.Rig.Engine.VisionUpdateAllResultsFailed!();
             fixture.Rig.Tick();
         }
+        void AdvanceCameraUntil(Func<bool> observed)
+        {
+            // A frame can finish and consume its own recognition task. Wait for
+            // the state delivered by vision instead of requiring the intermediate slot to be visible.
+            Assert.True(SpinWait.SpinUntil(() =>
+            {
+                if (observed()) return true;
+                Frame("face_s10_3");
+                return observed();
+            }, TimeSpan.FromSeconds(10)), $"No expected face state at {now} us (remaining samples: {vision.Recognizer.EnrollmentCount}).");
+        }
+
         Frame("face_s10_1");
         Frame("face_s10_2");
-        Assert.True(SpinWait.SpinUntil(()=>detector.RecognitionWorkCompleted,TimeSpan.FromSeconds(10)));
-        Frame("face_s10_3");
+        AdvanceCameraUntil(() => vision.LastFaces.Any(face => face.Id == 7));
         Assert.Equal(7,Assert.Single(vision.LastFaces).Id);
         for(int step=1;step<=3;step++)
         {
             now=10_000_000+step*1_000_000;
-            for(int attempt=0;attempt<12&&!detector.RecognitionWorkCompleted;attempt++)Frame("face_s10_3");
-            Assert.True(SpinWait.SpinUntil(()=>detector.RecognitionWorkCompleted,TimeSpan.FromSeconds(10)));
-            Frame("face_s10_3");
-            Assert.Equal(4-step,vision.Recognizer.EnrollmentCount);
+            int remaining=4-step;
+            AdvanceCameraUntil(() => vision.Recognizer.EnrollmentCount == remaining);
         }
         Assert.True(vision.AssignStockFaceName(7, "New", 8));
         Assert.Equal("New", vision.Recognizer.EnrolledFaces.Single(f => f.FaceID == 8).Name);
@@ -387,15 +474,7 @@ public sealed class FaceIdentityTests
         vision.Faces.FaceObserved+=observation=>
         {if(observation.Face.Id==8)order.Add(vision.Faces.EnrollmentCompleted?"pulse-observe":"observe");};
         now=14_000_000;
-        for(int attempt=0;attempt<20 && !vision.Faces.EnrollmentCompleted;attempt++)
-        {
-            if(detector.RecognitionWorkCompleted)Frame("face_s10_3");
-            else
-            {
-                Frame("face_s10_3");
-                SpinWait.SpinUntil(()=>detector.RecognitionWorkCompleted,TimeSpan.FromSeconds(10));
-            }
-        }
+        AdvanceCameraUntil(() => vision.Faces.EnrollmentCompleted);
         Assert.True(vision.Faces.EnrollmentCompleted);
         Assert.Equal("New", vision.Faces.GetFace(8)?.Name);
         Assert.Equal(8,vision.Recognizer.EnrollmentTargetId);
@@ -450,12 +529,19 @@ public sealed class FaceIdentityTests
         for (int step = 1; step <= 4; step++)
         {
             now = 10_000_000 + step * 1_000_000;
-            // The worker's mailbox discards a frame that arrives while it is busy (native completion), so under full-suite load a burst of frames can all be
-            // dropped; wait for the processor to go idle after each frame so every attempt is actually processed.
-            for (int attempt = 0; attempt < 12 && !detector.RecognitionWorkCompleted; attempt++) { Frame("face_s10_3"); vision.WaitForProcessorIdle(); }
-            Assert.True(SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(10)), $"no FR work at step {step}; faces={vision.LastFaces.Count}");
-            Frame("face_s10_3");
-            Assert.Equal(4 - step, vision.Recognizer.EnrollmentCount);
+            int remaining = 4 - step;
+            // An independent extraction may have completed and been consumed
+            // by a frame already, so observe either that update or a ready slot.
+            for (int attempt = 0; attempt < 12 && vision.Recognizer.EnrollmentCount != remaining &&
+                 !detector.RecognitionWorkCompleted; attempt++)
+                Frame("face_s10_3");
+            if (vision.Recognizer.EnrollmentCount != remaining)
+            {
+                Assert.True(SpinWait.SpinUntil(() => detector.RecognitionWorkCompleted, TimeSpan.FromSeconds(10)),
+                    $"no FR work at step {step}; faces={vision.LastFaces.Count}");
+                Frame("face_s10_3");
+            }
+            Assert.Equal(remaining, vision.Recognizer.EnrollmentCount);
         }
         Assert.True(vision.Faces.EnrollmentCompleted);
         Assert.True(sawCompletionInObservation);

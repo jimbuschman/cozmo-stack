@@ -2,8 +2,8 @@ using Cozmo.Robot.Emulation;
 
 namespace Cozmo.Robot.Vision;
 
-// Stock-only adapter. Every handle belongs to the shared DT/PT machine. UseSession serializes
-// native calls with video detection and its recognition worker.
+// Stock-only album adapter. Its handles belong to the DT/PT machine.
+// The separate extraction worker transfers completed features through OKAO's byte format.
 internal sealed class NativeOkaoFaceRecognizer : IOkaoFaceRecognizer
 {
     private readonly OkaoFaceDetector _detector;

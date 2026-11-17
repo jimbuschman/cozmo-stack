@@ -102,6 +102,63 @@ internal static class NativePlanDependencies
         return initial>0 && !attempted?unchecked((byte)(initial-1)):initial;
     }
 
+    // PathSegment::OffsetStart 0x0085BE20 translates the coordinate words only.
+    internal static PathSegment OffsetStart(PathSegment raw, float x, float y, float heading) => raw switch
+    {
+        PathSegment.Line line => line with { FromX = line.FromX + x, FromY = line.FromY + y, ToX = line.ToX + x, ToY = line.ToY + y },
+        PathSegment.Arc arc => arc with { CenterX = arc.CenterX + x, CenterY = arc.CenterY + y },
+        PathSegment.PointTurn turn => turn with { X = turn.X + x, Y = turn.Y + y },
+        _ => throw new ArgumentOutOfRangeException(nameof(raw))
+    };
+
+    // DefineLine 0x0085BC00..0x0085BC7A and DefineArc 0x0085BC98..0x0085BD0C store the heading separately.
+    internal static PathSegment.Line DefineLine(float fromX, float fromY, float toX, float toY,
+        float speed, float accel, float decel) => new(fromX, fromY, toX, toY, speed, accel, decel)
+    {
+        DefinedEndHeading = LineHeading(fromX, fromY, toX, toY, speed)
+    };
+
+    internal static PathSegment.Arc DefineArc(float x, float y, float radius, float start, float sweep,
+        float speed, float accel, float decel) => new(x, y, radius, start, sweep, speed, accel, decel)
+    {
+        DefinedEndHeading = ArcHeading(start, sweep, speed)
+    };
+
+    private static float LineHeading(float fromX, float fromY, float toX, float toY, float speed)
+        => EngineF.Rescale(MathF.Atan2(toY - fromY, toX - fromX) + (speed < 0 ? MathF.PI : 0));
+
+    private static float ArcHeading(float start, float sweep, float speed)
+        => EngineF.Rescale(((start + sweep) + (sweep > 0 ? MathF.PI / 2 : -MathF.PI / 2)) + (speed < 0 ? MathF.PI : 0));
+
+    // GetEndPose 0x0085BF5C..0x0085BFEC. The arc evaluates center + radius * trig(start + sweep).
+    internal static StateC GetEndPose(PathSegment segment) => segment switch
+    {
+        PathSegment.Line line => new(line.ToX, line.ToY, line.DefinedEndHeading ??
+            LineHeading(line.FromX, line.FromY, line.ToX, line.ToY, line.SpeedMmps)),
+        PathSegment.Arc arc => new(arc.CenterX + arc.RadiusMm * MathF.Cos(arc.StartAngleRad + arc.SweepRad),
+            arc.CenterY + arc.RadiusMm * MathF.Sin(arc.StartAngleRad + arc.SweepRad),
+            arc.DefinedEndHeading ?? ArcHeading(arc.StartAngleRad, arc.SweepRad, arc.SpeedMmps)),
+        PathSegment.PointTurn turn => new(turn.X, turn.Y, turn.TargetAngleRad),
+        _ => throw new ArgumentOutOfRangeException(nameof(segment))
+    };
+
+    // GetLength 0x0085BD60..0x0085BDE8. In-place turns contribute zero translation.
+    internal static float GetLength(PathSegment segment)
+    {
+        switch (segment)
+        {
+            case PathSegment.Line line:
+                float dx = line.FromX - line.ToX, dy = line.FromY - line.ToY;
+                return MathF.Sqrt(dx * dx + dy * dy);
+            case PathSegment.Arc arc:
+                return arc.RadiusMm * MathF.Abs(arc.SweepRad);
+            case PathSegment.PointTurn:
+                return 0;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(segment));
+        }
+    }
+
     internal readonly record struct Geometry(int Kind,StateC Start,StateC End,float Length,float Raw0C,float Raw14,float CenterX=0,float CenterY=0,float Radius=0,float StartRad=0);
     internal static float ApplyPathSegment(PathSegment segment,Geometry g,ref StateC state,bool check,float threshold,
         int numAngles,float inverseAngleStep,Func<int,float,float,IEnumerable<float>> containedPenalties,SourceLogSink source,Action<string> missing)

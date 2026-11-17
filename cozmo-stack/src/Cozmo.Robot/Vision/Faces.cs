@@ -84,7 +84,8 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
             _detector.StockCreateOverrideForTest=createOverride;
         }
     }
-    private Task<int>? _recognitionWorker;
+    private Task<Emulation.OkaoFaceDetection.RecognitionExtraction>? _recognitionWorker;
+    private Emulation.OkaoFaceDetection? _recognitionExtractor;
     private int _pendingTrack;
     private bool _pendingRegistrationAllowed;
     internal bool RecognitionWorkCompleted { get { lock (_gate) return _recognitionWorker is { IsCompleted: true }; } }
@@ -161,32 +162,40 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                     DetectedFace Project(int[] raw, DetectedFace face, bool enrollable, bool excluded)
                     {
                         int track = raw[2];
-                        if (_recognitionWorker is { IsCompleted: true } failed && failed.GetAwaiter().GetResult() is var failedResult && failedResult != 0)
+                        if (_recognitionWorker is { IsCompleted: true } failed && failed.GetAwaiter().GetResult() is { Result: not 0 } failure)
                         {
-                            diagnostics.Add($"M14-011 OKAO_FR_ExtractHandle_GRAY returned {failedResult}");
-                            _recognitionWorker = null; // 0x8650A4: failure publishes state 0 before the next admission
+                            // ExtractFeatures 0x008650BE..0x008650CC publishes idle on failure.
+                            diagnostics.Add($"FaceRecognizer.ExtractFeatures.FaceLibFailure: Going back to Idle state. FaceLib Result={failure.Result}");
+                            _recognitionWorker = null;
                         }
                         // 0x865A1C: attempt admission before consuming the prior completed slot.
                         if (!excluded && raw[12] == 0 && face.LeftEye is not null && face.RightEye is not null &&
                             _recognitionWorker is null && (enrollable || recognizer.StockFaceCount != 0))
                         {
-                            machine.FrQueueCurrentImage();
+                            var frame = machine.FrCaptureCurrentImage();
                             _pendingTrack = track;
                             _pendingRegistrationAllowed = enrollable;
-                            Behavior.SteppedBehavior.ReportMissing("M14-011 native concurrent recognition cadence is not reproduced: FR and DT/PT share one serialized emulator");
+                            // FaceRecognizer::Run (0x00862D70) extracts from the
+                            // held image while the vision thread advances DT/PT.
                             _recognitionWorker = Task.Run(() =>
                             {
-                                lock (_gate)
+                                try
                                 {
-                                    try { return machine.FrExtractQueued(); }
-                                    catch { _faulted = true; throw; }
+                                    _recognitionExtractor ??= Emulation.OkaoFaceDetection.CreateRecognitionExtractor(path);
+                                    return _recognitionExtractor.FrExtractFrame(frame);
+                                }
+                                catch
+                                {
+                                    lock (_gate) _faulted = true;
+                                    throw;
                                 }
                             });
                         }
                         if (_recognitionWorker is { IsCompleted: true } worker)
                         {
-                            int result = worker.GetAwaiter().GetResult();
-                            if (result == 0) recognizer.ConsumeStockFeature(machine.FrPendingFeature, _pendingTrack, _pendingRegistrationAllowed);
+                            var result = worker.GetAwaiter().GetResult();
+                            if (result.Feature is { } feature && _pendingTrack != 0)
+                                recognizer.ConsumeStockFeature(machine.FrImportFeature(feature), _pendingTrack, _pendingRegistrationAllowed);
                             _recognitionWorker = null;
                         }
                         var identity = recognizer.LookupStockTrack(track);
@@ -212,7 +221,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     }
     internal void RetireRecognition()
     {
-        Task<int>? worker;
+        Task<Emulation.OkaoFaceDetection.RecognitionExtraction>? worker;
         lock (_gate) { if (_disposed) return; _retiring = true; worker = _recognitionWorker; }
         try { worker?.GetAwaiter().GetResult(); }
         catch (Exception ex) { Diagnostic?.Invoke($"M1-034 M14-011 recognition worker faulted; guest owner quarantined: {ex.Message}"); }
@@ -222,7 +231,20 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     public void Dispose()
     {
         RetireRecognition();
-        lock (_gate) { if (_disposed) return; _disposed = true; _detector?.Dispose(); _cleanupFailures=_detector?.StockCleanupFailures.ToArray() ?? Array.Empty<string>(); _detector = null; _recognitionWorker = null; }
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            try { _recognitionExtractor?.Dispose(); }
+            finally
+            {
+                _recognitionExtractor = null;
+                _detector?.Dispose();
+                _cleanupFailures = _detector?.StockCleanupFailures.ToArray() ?? Array.Empty<string>();
+                _detector = null;
+                _recognitionWorker = null;
+            }
+        }
     }
 }
 

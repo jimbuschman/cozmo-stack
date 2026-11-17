@@ -49,7 +49,9 @@ internal sealed class NativeDriveAndFlipRunner:AiCubeTrickCompound
         poses=Array.Empty<PreActionPose>();
         if (AiOwner is not null && !AiExecutionCurrent()) return ActionResult.CancelledWhileRunning;
         var owner=AiOwner??_m.Robot.Engine.Robot!;var main=owner.GetCheckedMainPose();
-        var output=DockPreActionPoses.Get(new(obj,PreActionType.Flipping,false,FlipBlockAction.InitAngleToleranceRad,0,false,0),main,owner.CarryingOwner!.CarriedObjectId,()=>_m.NativeObstacles(main));
+        // GetPossiblePoses calls IDockAction::GetPreActionPoses (0x0055E4D4), including SelectObject at 0x00550988.
+        var output=DockPreActionPoses.GetNative(new(obj,PreActionType.Flipping,false,FlipBlockAction.InitAngleToleranceRad,0,false,0),
+            main,owner.CarryingOwner!.CarriedObjectId,()=>_m.NativeObstacles(main,AiOwner),_m.World);
         if(output.Result!=ActionResult.Success)return output.Result;
         using var face=new Pose3d("");bool known=_m.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),true,face);
         if(output.Poses.Count==0)return ActionResult.NoPreActionPoses;

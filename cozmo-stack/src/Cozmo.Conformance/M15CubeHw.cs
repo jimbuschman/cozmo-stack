@@ -428,10 +428,10 @@ internal sealed partial class M15CubeRun
         {
             var (first, second) = (cubes[0], cubes[1]);
             Console.WriteLine($">>> WATCH: Cozmo should pick up cube {first.ObjectId}, then drive to cube {second.ObjectId} and set it on top <<<");
-            var pick = Phase("stack-pickup", () => { var t = r.Motion.QueueAiPickupCubeAsync(first.ObjectId, true, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 90000);
+            var pick = Phase("stack-pickup", () => { var t = r.Motion.QueueAiPickupCubeAsync(first.ObjectId, true, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 90000, waitForExternalActions: true);
             pick["objectId"] = first.ObjectId; phases.Add(pick); Console.WriteLine("    " + pick["detail"]);
             Thread.Sleep(1000);
-            var stack = Phase("stack-place", () => { var t = r.Motion.QueueAiStackOnCubeAsync(second.ObjectId, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 90000);
+            var stack = Phase("stack-place", () => { var t = r.Motion.QueueAiStackOnCubeAsync(second.ObjectId, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 90000, waitForExternalActions: true);
             stack["objectId"] = second.ObjectId; phases.Add(stack); Console.WriteLine("    " + stack["detail"]);
         }
         Console.WriteLine("\nROLL ROUND. Take the cubes apart. Put ONE cube about 20 cm (8 in) in front of him, UPRIGHT, a side marker facing him;\n"
@@ -440,7 +440,7 @@ internal sealed partial class M15CubeRun
         var target = SeeCubes("roll", 1);
         if (target.Count == 0) { errors.Enqueue("roll: no cube seen; roll round skipped"); Console.WriteLine("    He did not report a cube; skipping the roll round."); return; }
         Console.WriteLine($">>> WATCH: Cozmo should drive to cube {target[0].ObjectId} and roll it <<<");
-        var roll = Phase("roll", () => { var t = r.Motion.QueueAiRollCubeAsync(target[0].ObjectId, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 120000);
+        var roll = Phase("roll", () => { var t = r.Motion.QueueAiRollCubeAsync(target[0].ObjectId, cancel.Token); return (t, () => t.IsCompletedSuccessfully ? (t.Result.Admitted, t.Result.EngineResult, t.Result.Detail, t.Result.OwnerRetired) : default); }, 120000, waitForExternalActions: true);
         roll["objectId"] = target[0].ObjectId; phases.Add(roll); Console.WriteLine("    " + roll["detail"]);
     }
 
@@ -469,7 +469,7 @@ internal sealed partial class M15CubeRun
             var task = queued = queue(id, actionCancel.Token);
             return (task, () => task.IsCompletedSuccessfully ?
                 (task.Result.Admitted, task.Result.EngineResult, task.Result.Detail, task.Result.OwnerRetired) : default);
-        }, 120000);
+        }, 120000, waitForExternalActions: true);
         phase["objectId"] = id;
         phases.Add(phase);
         Console.WriteLine("    " + phase["detail"]);
@@ -487,25 +487,23 @@ internal sealed partial class M15CubeRun
         Console.WriteLine("\n" + M15CubeHw.GotoSetup);
         ReadLineBounded();
         cancel.Token.ThrowIfCancellationRequested();
-        if (r.Motion.GetAiBodyObservation().LastState is not { } start)
-        {
-            errors.Enqueue("go-to-pose: no published engine pose");
-            return;
-        }
-
-        // The operator's relative setup is converted to the absolute world-origin API input.
-        float x = start.Pose.X + 200f * MathF.Cos(start.PoseAngleRad);
-        float y = start.Pose.Y + 200f * MathF.Sin(start.PoseAngleRad);
-        float angle = Radians.Rescale(start.PoseAngleRad + MathF.PI / 2);
+        JsonObject? goal = null;
         using var actionCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
         Task<AiDriveActionResult>? queued = null;
         var phase = Phase("go-to-pose", () =>
         {
+            // Sample the relative setup after any reaction has finished moving the robot.
+            if (r.Motion.GetAiBodyObservation().LastState is not { } start)
+                return (Task.CompletedTask, () => (false, null, "No published engine pose", false));
+            float x = start.Pose.X + 200f * MathF.Cos(start.PoseAngleRad);
+            float y = start.Pose.Y + 200f * MathF.Sin(start.PoseAngleRad);
+            float angle = Radians.Rescale(start.PoseAngleRad + MathF.PI / 2);
+            goal = new JsonObject { ["xMm"] = x, ["yMm"] = y, ["angleRad"] = angle, ["originId"] = start.Pose.OriginId };
             var task = queued = r.Motion.QueueAiGotoPoseAsync(x, y, angle, actionCancel.Token);
             return (task, () => task.IsCompletedSuccessfully ?
                 (task.Result.Admitted, task.Result.EngineResult, task.Result.Detail, task.Result.OwnerRetired) : default);
-        }, 35000);
-        phase["goal"] = new JsonObject { ["xMm"] = x, ["yMm"] = y, ["angleRad"] = angle, ["originId"] = start.Pose.OriginId };
+        }, 35000, waitForExternalActions: true);
+        phase["goal"] = goal;
         var end = r.Motion.GetAiBodyObservation().LastState;
         phase["finalPose"] = end is null ? null : JsonSerializer.SerializeToNode(end.Pose, BundleJson);
         phases.Add(phase);
@@ -568,9 +566,46 @@ internal sealed partial class M15CubeRun
         return seen;
     }
 
-    JsonObject Phase(string name, Func<(Task Task, Func<(bool Admitted, uint? Result, string? Detail, bool Retired)> Read)> start, int limitMs)
+    internal const int ExternalActionWaitMs = 15000;
+
+    // GetCurrentReactionTrigger 0x005A19EC and Robot+0x2C7, written at 0x005A2F60
+    // and read by ActionList::QueueAction at 0x0053D94E before admitting an external tag.
+    internal static bool ExternalActionsReady(CozmoRobot? robot)
+        => robot?.Engine.Robot is { BehaviorManagerOwner: { } manager } owner &&
+            manager.CurrentReactionTrigger is null && !owner.ActionList.ExternalActionsDisabled;
+
+    bool WaitForExternalActions(string name)
+    {
+        cancel.Token.ThrowIfCancellationRequested();
+        if (ExternalActionsReady(robot)) return true;
+        Console.WriteLine($"    Waiting up to {ExternalActionWaitMs / 1000} seconds for Cozmo to finish reacting and accept commands.");
+        Event("external-actions-wait", new() { ["phase"] = name, ["limitMs"] = ExternalActionWaitMs });
+        return Poll(() => ExternalActionsReady(robot), ExternalActionWaitMs);
+    }
+
+    string ExternalActionsWaitDetail => $"Cozmo did not enable external actions within {ExternalActionWaitMs / 1000} seconds. The command was skipped.";
+
+    void RecordHarnessError(string name, JsonObject phase, string detail)
+    {
+        errors.Enqueue($"{name}: {detail}");
+        phase["harnessError"] = detail;
+        phase["detail"] = detail;
+        phase["engineResult"] = null;
+    }
+
+    JsonObject Phase(string name, Func<(Task Task, Func<(bool Admitted, uint? Result, string? Detail, bool Retired)> Read)> start,
+        int limitMs, bool waitForExternalActions = false)
     {
         double begin = Now; Event("phase-start", new() { ["phase"] = name });
+        if (waitForExternalActions && !WaitForExternalActions(name))
+        {
+            var skipped = CommandPhase(name, begin, ExternalActionsWaitDetail);
+            skipped["admitted"] = false;
+            RecordHarnessError(name, skipped, ExternalActionsWaitDetail);
+            Event("phase-end", (JsonObject)skipped.DeepClone());
+            return skipped;
+        }
+
         var (task, read) = start();
         bool finished = Poll(() => task.IsCompleted, limitMs);
         var (admitted, result, detail, retired) = finished && task.IsCompletedSuccessfully ? read() : default;
@@ -583,6 +618,8 @@ internal sealed partial class M15CubeRun
             ["detail"] = detail ?? (finished ? "faulted" : "timed out"),
             ["carryingAfter"] = robot?.State.Latest?.Has(RobotStatusFlag.IsCarryingBlock),
         };
+        if (waitForExternalActions && finished && task.IsCompletedSuccessfully && !admitted)
+            RecordHarnessError(name, o, $"Command admission refused. {detail ?? "No detail from the command API."}");
         Event("phase-end", (JsonObject)o.DeepClone());
         return o;
     }

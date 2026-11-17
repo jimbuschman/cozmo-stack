@@ -41,12 +41,16 @@ public abstract record PathSegment
     /// <summary>A straight drive; negative speed drives it backwards.</summary>
     public sealed record Line(float FromX, float FromY, float ToX, float ToY, float SpeedMmps, float AccelMmps2, float DecelMmps2) : PathSegment
     {
+        internal float? DefinedEndHeading { get; init; } // DefineLine +0x14; native merge preserves this word.
+
         public Line(double fromX, double fromY, double toX, double toY, float speedMmps, float accelMmps2, float decelMmps2)
             : this((float)fromX, (float)fromY, (float)toX, (float)toY, speedMmps, accelMmps2, decelMmps2) { }
     }
     /// <summary>A circular arc about a centre.</summary>
     public sealed record Arc(float CenterX, float CenterY, float RadiusMm, float StartAngleRad, float SweepRad, float SpeedMmps, float AccelMmps2, float DecelMmps2) : PathSegment
     {
+        internal float? DefinedEndHeading { get; init; } // DefineArc +0x18; SetSpeedProfile leaves it intact.
+
         public Arc(double centerX, double centerY, double radiusMm, double startAngleRad, double sweepRad, float speedMmps, float accelMmps2, float decelMmps2)
             : this((float)centerX, (float)centerY, (float)radiusMm, (float)startAngleRad, (float)sweepRad, speedMmps, accelMmps2, decelMmps2) { }
     }

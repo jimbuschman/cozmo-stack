@@ -41,6 +41,28 @@ public class HardwareRunnerTests
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
     };
 
+    [Fact]
+    public void CommandsWaitForBothNativeReactionAndExternalActionFlag()
+    {
+        using var rig = new M4ControlTests.Rig();
+        Assert.False(M15CubeRun.ExternalActionsReady(rig.Robot));
+        rig.ToSynced();
+        var owner = rig.Engine.Robot!;
+        var manager = owner.BehaviorManagerOwner!;
+
+        // Set the independently read state as it can appear during a reaction transition.
+        Assert.True(M15CubeRun.ExternalActionsReady(rig.Robot));
+        owner.ActionList.ExternalActionsDisabled = true;
+        Assert.False(M15CubeRun.ExternalActionsReady(rig.Robot));
+        var trigger = typeof(Cozmo.Robot.Behavior.BehaviorManager).GetField("_currentReaction",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        trigger.SetValue(manager, Cozmo.Robot.Behavior.ReactionTrigger.ObjectPositionUpdated);
+        owner.ActionList.ExternalActionsDisabled = false;
+        Assert.False(M15CubeRun.ExternalActionsReady(rig.Robot));
+        trigger.SetValue(manager, null);
+        Assert.True(M15CubeRun.ExternalActionsReady(rig.Robot));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

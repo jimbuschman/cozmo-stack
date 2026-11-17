@@ -33,6 +33,10 @@ a partial bundle.
 
 Send the folder named at the end for review.
 
+Before each command, the script waits up to 15 seconds for the current reaction to finish and
+the engine to enable external actions. The go-to start pose is sampled after the wait. A timeout or a refused
+command is recorded as a harness error with no engine result.
+
 To validate the plan and source record references without a robot:
 
 ```powershell
