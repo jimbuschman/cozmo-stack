@@ -9,8 +9,7 @@ internal static class PersonalityHw
 {
     internal const string TestId = "PERSONALITY-HW-1";
     internal const int IdleMinutes = 15;
-    internal const string Setup = "Start Cozmo off his charger on a clear, well-lit surface. Have one working light cube ready.\n"
-        + "Stay close enough to catch him at the edge. Use a clear, flat floor or enclosed area for the 15-minute round.";
+    private const string Setup = "Start Cozmo off his charger on a clear, well-lit surface.";
 
     internal static readonly string[] RecordIds =
     {
@@ -23,7 +22,7 @@ internal static class PersonalityHw
     internal static readonly Step[] Steps =
     {
         new("pickup", "Gently pick Cozmo up, keep him upright and hold him still.", "Did you see or hear a pickup reaction?"),
-        new("putdown", "Set Cozmo back down on his treads.", "Did you see or hear a reaction to being put down?"),
+        new("putdown", "If Cozmo is already on his treads, gently pick him up and hold him upright briefly. Set him back down on his treads.", "Did you see or hear a reaction to being put down?"),
         new("on-back", "Gently place Cozmo on his back. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his back?"),
         new("on-side", "Gently place Cozmo on one side. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his side?"),
         new("on-face", "Support Cozmo facing down. Watch his response, then return him to his treads.", "Did you see or hear a response to being face down?"),
@@ -35,10 +34,32 @@ internal static class PersonalityHw
         new("alone", $"Place Cozmo in the clear enclosed area, move yourself and the cube out of view, and leave him alone for {IdleMinutes} minutes.", "Did you observe Cozmo do anything on his own while left alone?")
     };
 
-    internal static void PrintPlan()
+    internal static IReadOnlyList<Step> SelectSteps(string? list)
     {
-        Console.WriteLine(Setup);
-        foreach (var step in Steps)
+        if (list is null) return Steps;
+        var requested = list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ids = Steps.Select(s => s.Id).ToArray();
+        var unknown = requested.Except(ids, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (unknown.Length > 0 || requested.Count == 0)
+            throw new ArgumentException($"--steps takes a comma list of: {string.Join(",", ids)}"
+                + (unknown.Length > 0 ? $" (unknown: {string.Join(",", unknown)})" : ""));
+        return Steps.Where(s => requested.Contains(s.Id)).ToArray();
+    }
+
+    internal static string SetupFor(IReadOnlyList<Step> steps)
+    {
+        var setup = Setup;
+        if (steps.Any(s => s.Id is "cube-tap" or "cube-move")) setup += "\nHave one working light cube ready.";
+        if (steps.Any(s => s.Id == "cliff")) setup += "\nStay close enough to catch him at the edge.";
+        if (steps.Any(s => s.Id == "alone")) setup += "\nUse a clear, flat floor or enclosed area for the 15-minute round.";
+        return setup;
+    }
+
+    internal static void PrintPlan(IReadOnlyList<Step> steps)
+    {
+        Console.WriteLine(SetupFor(steps));
+        foreach (var step in steps)
         {
             Console.WriteLine($"[{step.Id}] {step.Instruction}");
             Console.WriteLine($"  {step.Question} [yes/no]");
@@ -97,7 +118,7 @@ internal sealed partial class M15CubeRun
         r.SetEnableFreeplayActivity(true);
         try
         {
-            foreach (var step in PersonalityHw.Steps)
+            foreach (var step in PersonalitySteps)
             {
                 Console.WriteLine($"\nPress Enter to start [{step.Id}].");
                 ReadOperatorInput();

@@ -182,7 +182,7 @@ static int Usage()
           m13-driveoff-hw [robot-ip] --resources <dir> [--freeplay] [--out <dir>] [--yes] | --validate | --preview
           m13-idle-hw [robot-ip] --resources <dir> [--minutes <n>] [--out <dir>] [--yes] | --validate
           m14-speech-hw [robot-ip] --resources <dir> [--banks <dir>] [--out <dir>] [--yes] | --validate
-          m15-cube-hw [robot-ip] --resources <dir> [--out <dir>] [--yes] [--with-drive] [--skills] [--freeplay-control | --personality | --commands] [--banks <dir>] | --validate
+          m15-cube-hw [robot-ip] --resources <dir> [--out <dir>] [--yes] [--with-drive] [--skills] [--freeplay-control | --personality [--steps <comma list>] | --commands] [--banks <dir>] | --validate
           m3m4-hw [robot-ip] --resources <dir> [--only <checks>] [--include-lift] [--allow-drive] [--cube-wait <s>] [--photo KEY=path] [--out <dir>] [--yes]
                                              DRAFT hardware run M3M4-HW (M3-008, M3-016, M3-036, M4-013, M4-021, M4-024): observations only, no PASS
           m1m2-hw [robot-ip] --resources <cozmo_resources> [--skip-connect-async] [--operator <label>] [--out <dir>] [--yes]

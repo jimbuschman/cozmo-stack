@@ -68,7 +68,7 @@ public static class M15CubeHw
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
             bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false, personality = false, commands = false;
-            string? resources = null, output = null, banks = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            string? resources = null, output = null, banks = null, steps = null; IPAddress ip = RobotAddress.DefaultFor(false);
             HashSet<string>? rounds = null;
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
@@ -83,6 +83,7 @@ public static class M15CubeHw
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     case "--rounds": rounds = args[++i].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase); break;
+                    case "--steps": steps = ++i < args.Length ? args[i] : ""; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
             int standaloneCount = new[] { freeplayControl, personality, commands }.Count(enabled => enabled);
@@ -92,6 +93,8 @@ public static class M15CubeHw
                 throw new ArgumentException("This round needs the operator's observations. Omit --yes.");
             if (banks is not null && !commands)
                 throw new ArgumentException("--banks applies to the commands round.");
+            if (steps is not null && !personality)
+                throw new ArgumentException("--steps applies to --personality.");
             if (rounds is not null)
             {
                 if (!skills) throw new ArgumentException("--rounds applies to --skills.");
@@ -99,6 +102,7 @@ public static class M15CubeHw
                 if (unknown.Count > 0 || rounds.Count == 0)
                     throw new ArgumentException($"--rounds takes a comma list of: {string.Join(",", SkillRounds)}" + (unknown.Count > 0 ? $" (unknown: {string.Join(",", unknown)})" : ""));
             }
+            var personalitySteps = PersonalityHw.SelectSteps(steps);
             string testId = commands ? CommandsHw.TestId : personality ? PersonalityHw.TestId : TestId;
             var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality, commands);
             if (validate)
@@ -106,7 +110,7 @@ public static class M15CubeHw
                 Console.WriteLine($"{testId}: {records.Count} valid records; no network opened.");
                 if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
                 if (freeplayControl) Console.WriteLine($"{FreeplaySetup}\nFreeplay for {FreeplaySeconds} s, queue CozmoSaysSpeakLoop once, then another {FreeplaySeconds} s of Freeplay.");
-                if (personality) PersonalityHw.PrintPlan();
+                if (personality) PersonalityHw.PrintPlan(personalitySteps);
                 if (commands) CommandsHw.PrintPlan();
                 return 0;
             }
@@ -120,10 +124,10 @@ public static class M15CubeHw
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
                 CommandBanks = banks is null ? null : Path.GetFullPath(banks),
-                Rounds = rounds,
+                Rounds = rounds, PersonalitySteps = personalitySteps,
             }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills [--rounds pickup,stack-roll,flip,wheelie,goto,charger]] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills [--rounds pickup,stack-roll,flip,wheelie,goto,charger]] [--freeplay-control | --personality [--steps <comma list>] | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -144,6 +148,7 @@ internal sealed partial class M15CubeRun
     public bool Skills { get; init; }
     public bool FreeplayControl { get; init; }
     public bool Personality { get; init; }
+    public IReadOnlyList<PersonalityHw.Step> PersonalitySteps { get; init; } = PersonalityHw.Steps;
     public bool Commands { get; init; }
     public string? CommandBanks { get; init; }
     /// <summary>The --skills rounds to run; null runs all of them.</summary>
@@ -201,7 +206,7 @@ internal sealed partial class M15CubeRun
         Console.WriteLine((Commands
             ? "OUTSIDE-AI COMMANDS\n\n" + CommandsHw.Setup
             : Personality
-            ? "PERSONALITY OBSERVATIONS (about 25 minutes)\n\n" + PersonalityHw.Setup
+            ? "PERSONALITY OBSERVATIONS\n\n" + PersonalityHw.SetupFor(PersonalitySteps)
             : FreeplayControl
             ? "FREEPLAY CONTROL (about 3 minutes)\n\n" + M15CubeHw.FreeplaySetup
             : "CUBE PICKUP AND PUT-DOWN TEST (about 5 minutes)\n\n"

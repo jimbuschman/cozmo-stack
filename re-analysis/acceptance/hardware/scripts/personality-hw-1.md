@@ -27,3 +27,6 @@ To print the plan and validate its record references without a robot:
 ```powershell
 dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m15-cube-hw --personality --validate
 ```
+
+Add `--steps pickup,putdown` to run just those two steps, in the usual script order. The plan above lists
+the available step IDs. You can combine `--steps` with `--validate` to preview a partial run.
