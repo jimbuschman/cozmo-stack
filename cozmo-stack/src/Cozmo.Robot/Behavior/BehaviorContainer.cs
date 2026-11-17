@@ -329,6 +329,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.SearchForFace] = (ctx,json)=>new NativeSearchForFaceBehavior(ctx,json),
+        [BehaviorClass.DriveToFace] = (ctx,json)=>new NativeDriveToFaceBehavior(ctx,json),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeInteractWithFaces(ctx,json),
         [BehaviorClass.ReactToPet] = (ctx,json)=>new NativeReactToPetBehavior(ctx,json),
         [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
@@ -440,6 +441,12 @@ public sealed class BehaviorFactory
         {
             SteppedBehavior.ReportMissing("SearchForFace factory 0x0059CFA6 requires the original Robot, vision and manipulation owners");
             status = BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
+        if (cls == BehaviorClass.DriveToFace && (ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("DriveToFace factory 0x0059CB00 requires the original Robot, vision and manipulation owners");
+            status=BehaviorCreateStatus.NotImplemented;
             return null;
         }
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))

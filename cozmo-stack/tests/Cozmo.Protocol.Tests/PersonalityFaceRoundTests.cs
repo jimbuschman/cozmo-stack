@@ -136,14 +136,15 @@ public sealed class PersonalityFaceRoundTests
 
     [Theory]
     [InlineData("drive-to-face", BehaviorID.VC_ComeHere)]
-    public void ConfiguredVoiceCommandGapsCannotProduceAStartVerdict(string stepId, BehaviorID id)
+    public void DriveToFaceWithoutAFaceCannotProduceAStartVerdict(string stepId, BehaviorID id)
     {
         using var f = new Fixture(sourceNvEmpty: true);
         var check = Assert.Single(PersonalityHw.SelectSteps(stepId)).Check!;
         Assert.Equal(id, check.Id);
-        Assert.NotNull(check.Missing);
+        Assert.Null(check.Missing);
         Assert.True(f.Rig.Engine.HostBehaviorMap!.ContainsKey(id));
-        Assert.False(f.Runtime.Bound.ContainsKey(id.ToString()));
+        Assert.IsType<NativeDriveToFaceBehavior>(f.Runtime.Bound[id.ToString()]);
+        Assert.False(PersonalityHw.TryRequestDriveToFace(f.Rig.Robot));
         var run = StartWindow(f);
         f.Rig.Robot.ExecuteBehaviorById((byte)id, 1);
         f.Rig.Tick();

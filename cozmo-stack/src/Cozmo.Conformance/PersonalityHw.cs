@@ -33,6 +33,16 @@ internal static class PersonalityHw
         robot.ExecuteBehaviorById((byte)BehaviorID.VC_SearchForFace, 1);
         return true;
     }
+    internal static bool TryRequestDriveToFace(CozmoRobot robot)
+    {
+        using var owner=robot.Engine.EnterSynchronousOwner();
+        var runtime=robot.Engine.Robot?.NativeBehaviorRuntime;
+        if(runtime is null || !runtime.Bound.TryGetValue("VC_ComeHere",out var behavior) ||
+            !behavior.IsRunnable(runtime.Context)) return false;
+        robot.SetEnableFreeplayActivity(false);
+        robot.ExecuteBehaviorById((byte)BehaviorID.VC_ComeHere,1);
+        return true;
+    }
     internal readonly record struct NeedsLevels(float Repair, float Energy, float Play)
     {
         internal string Describe() => FormattableString.Invariant(
@@ -113,7 +123,7 @@ internal static class PersonalityHw
             "Keep one face in view farther than 20 cm from Cozmo on a clear level surface.",
             "Did Cozmo approach the face?",
             new(BehaviorID.VC_ComeHere, "voiceCommands/VC_ComeHere.json maps the requested ID to DriveToFace. Readiness needs a valid most recently observed face in the current origin (0x005DA588..0x005DA626). After verification, the drive branch uses the 200 mm standoff (0x005DACDC, 0x005DA950). Selection handles G2E 0x94 (0x0060AA58..0x0060AB7A).",
-                Missing: "DriveToFace is unbuilt in the configured native factory (case 0x0059CB00).")),
+                WindowSeconds: 45)),
         new("react-to-pet",
             "If a pet is available, keep its face in Cozmo's view for several camera frames. Start off the charger after at least 60 seconds without a pet reaction.",
             "Did you see or hear Cozmo react to the pet?",
@@ -385,6 +395,9 @@ internal sealed partial class M15CubeRun
                             Poll(() => PersonalityHw.TryRequestSearchForFace(robot),
                                 Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
                         }
+                        if (step.Id == "drive-to-face")
+                            Poll(() => PersonalityHw.TryRequestDriveToFace(robot),
+                                Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
                         Task<AiTurnActionResult>? turn = step.Id == "react-to-unexpected-movement"
                             ? robot.Motion.QueueAiTurnInPlaceAsync(MathF.PI, TurnInPlaceAction.DefaultMaxSpeed,
                                 TurnInPlaceAction.DefaultAccel, cancellationToken: stimulus.Token) : null;
@@ -399,7 +412,7 @@ internal sealed partial class M15CubeRun
                     {
                         checkEnd = Now;
                         stimulus.Cancel();
-                        if (step.Id == "search-for-face") robot.SetEnableFreeplayActivity(true);
+                        if (step.Id is "search-for-face" or "drive-to-face") robot.SetEnableFreeplayActivity(true);
                     }
                 }
                 try

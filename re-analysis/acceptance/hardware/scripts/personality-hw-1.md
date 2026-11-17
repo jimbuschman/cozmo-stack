@@ -19,7 +19,7 @@ for the named engine behavior. The harness records the matching start and stop t
 step's pass, and the operator's answer remains an observation. The `search-for-face` step waits for the
 current-origin FaceWorld to empty, selects the search behavior, then waits for its reports. Show your face
 when the search animation begins to exercise the found-face response. An enrolled face can remain in
-FaceWorld until the robot changes origin. The `drive-to-face` constructor remains MISSING.
+FaceWorld until the robot changes origin. The `drive-to-face` step waits for a current-origin face and requests VC_ComeHere. Keep your face more than 20 cm away: after turning and verification Cozmo drives to a 200 mm standoff, then tracks the face for up to five seconds (0x005DA950, 0x005DAB34, 0x005DA8FC). Freeplay is restored after either requested face step.
 
 The needs steps `express-needs`, `needs-change-animation` and `drive-in-desperation` temporarily set Energy
 to the Warning or Critical bracket through the engine's ForceSetNeedsLevels message. Keep Cozmo off his
