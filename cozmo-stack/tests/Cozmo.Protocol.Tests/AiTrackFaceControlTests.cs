@@ -46,6 +46,68 @@ public sealed class AiTrackFaceControlTests
         Assert.False(f.Robot.ActionList.ContainsRunner(runner));
     }
 
+    private sealed class EmptyCamera : IFaceDetector
+    {
+        public bool IsAvailable => true;
+        public string Description => "supplied frames without a target";
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image, uint timestamp) => Array.Empty<DetectedFace>();
+    }
+
+    [Fact]
+    public async Task TrackingKeepsProcessingFacesAndTurnsOnlyForANewObservation()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        f.Head = 0.37213933f;
+        f.X = 2.1375399f;
+        f.Y = -3.0828571f;
+        f.Yaw = 0.54574f;
+        f.Motors();
+        f.M.Vision.FaceDetector = new EmptyCamera();
+        f.M.Vision.Enabled = true;
+        var world = f.M.Vision.Faces;
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        var point = new Vec3(569.53925f, 96.93907f, 282.94302f);
+        uint timestamp = f.Robot.StoredState!.Timestamp;
+        var first = new TrackedFace(new DetectedFace(-1, new FaceRect(202, 53, 82, 82),
+            new Vec2(264, 82), new Vec2(252, 98)), timestamp)
+        {
+            HeadPose = new Pose3d(Rotation3d.Identity, point),
+            NativeTrackingTranslation = point,
+            NativeTrackingRotation = Rotation3d.Identity,
+        };
+        Assert.NotNull(world.AddOrUpdateNativeFace(first, Pose3d.Identity, false, origin.Node!,
+            requireNativePose: true, expectedOwner: f.Robot));
+        var processed = new List<ProcessedImageReport>();
+        using var subscription = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x43, true,
+            p => processed.Add(Assert.IsType<ProcessedImageReport>(p)));
+        using var cancel = new CancellationTokenSource();
+        int mark = f.Rig.Mark();
+        var task = f.Rig.Robot.Motion.QueueAiTrackFaceAsync(-1, headOnly: false, cancel.Token);
+        f.Rig.Tick();
+
+        // 0x00565EA0..0x00565ECE uses the signed bearing of the current observation.
+        // The run's 0x39 commanded 0.1744879 rad, and the tilt was within 2 degrees.
+        var move = Assert.Single(f.Rig.SentSince(mark).OfType<SetBodyAngle>());
+        Assert.InRange(move.AngleRad, .1744f, .1746f);
+        Assert.True(move.IsAbsolute);
+        Assert.DoesNotContain(f.Rig.SentSince(mark), m => m is SetHeadAngle);
+        mark = f.Rig.Mark();
+
+        for (uint id = 501; id <= 503; id++)
+        {
+            f.Motors();
+            f.NativeCameraFrame(id, 128);
+            f.Rig.Engine.VisionUpdateAllResultsFailed!();
+            f.Rig.Tick();
+        }
+        Assert.Equal(3, processed.Count(p => p.Modes.Contains(2u)));
+        Assert.DoesNotContain(f.Rig.SentSince(mark), m => m is SetHeadAngle or SetBodyAngle);
+        Assert.False(task.IsCompleted);
+        cancel.Cancel();
+        f.Rig.Tick();
+        Assert.Equal(0x02000000u, (await task.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-19)]

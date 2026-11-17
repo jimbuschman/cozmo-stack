@@ -211,7 +211,7 @@ internal sealed partial class M15CubeRun
                 if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
-            if (Commands) SubscribeCommandCubeReports(robot);
+            if (Commands) SubscribeCommandRobotReports(robot);
             robot.Transport.FrameTrace += RecordFrame;
             robot.State.StateUpdated += s =>
             {

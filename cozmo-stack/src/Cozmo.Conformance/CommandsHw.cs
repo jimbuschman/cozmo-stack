@@ -42,7 +42,7 @@ internal static class CommandsHw
     };
 
     internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
-        { FaceSetup.Record, "M14-003", "M14-008", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
+        { FaceSetup.Record, "M14-003", "M14-008", "M11-035", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
 
     internal static T? WaitForReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
         Func<T, bool> matches, Action postRequest, TimeSpan timeout, CancellationToken cancellationToken) where T : class
@@ -110,8 +110,11 @@ internal sealed partial class M15CubeRun
         engine.FaceErased += report => CommandReport("face-erased", report);
     }
 
-    void SubscribeCommandCubeReports(CozmoRobot r)
+    void SubscribeCommandRobotReports(CozmoRobot r)
     {
+        // RobotProcessedImage (E2G 0x43, M11-035, 0x00654A14..0x00654A1C)
+        // identifies which captured timestamps actually reached each vision mode.
+        r.Vision.ProcessedImage += report => CommandReport("image-processed", report);
         r.Cubes.CubeTapped += report => CommandReport("cube-tapped", report);
         r.Cubes.CubeMoved += report => CommandReport("cube-moved", report);
         r.Cubes.TapBroadcast += report => CommandReport("cube-tap-report", report);
