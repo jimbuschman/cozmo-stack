@@ -1,0 +1,12 @@
+# PERSONALITY-FACES-ROUNDS-1
+
+The personality plan lists five selectable face steps. Three open a 45-second observation window for the named E2G `0x87` start and stop transitions (M8-012, `0x005A22B4..0x005A24AC`, payload `0x0071B806..0x0071B884`). The named start determines the verdict. The operator answer is an observation. Pet availability is optional.
+
+- **AcknowledgeFace** uses the new named face or newly-close positive-ID path in `FacePositionUpdated` (`0x0060CB84..0x0060CE20`, `0x0060CAB0..0x0060CB5E`). Its own readiness tests the desired target set (`0x006028BC..0x006028C6`), and the shipped reaction map binds the behavior.
+- **InteractWithFaces** keeps a face observed for the `SelectFaceToTrack` gate (`0x005C23AC..0x005C23EE`); the Socialize phase-0 branch `0x005B02F6..0x005B0302` tries it when the ordinary chooser found no candidate. This also needs working authored audio in the harness.
+- **ReactToPet** uses the shipped `PetInitialDetection` mapping. Three observations, an unreacted target, off-charger state and the cooldown are read at `0x00611AE4..0x00611CB6` and `0x00611DD0`. The target set is the behavior's own gate at `0x00606ED8..0x00606EEC`.
+- **SearchForFace and DriveToFace remain MISSING.** Their only shipped definitions are `voiceCommands/VC_SearchForFace.json` and `VC_ComeHere.json`. The engine's Selection recipient can request them by ID (`0x0060AA58..0x0060AB7A`, G2E `0x94`). Search requires no current-origin face in FaceWorld (`0x005C9170..0x005C9180`, `0x004F5A84..0x004F5ADE`). Drive requires a valid last-observed face in the current origin (`0x005DA588..0x005DA626`), then branches around the 200 mm standoff after verification (`0x005DACDC`, `0x005DA950`). The stack has legacy behavior classes, but the live configured factory has no constructors for these two cases (`0x0059CFA6`, `0x0059CB00`). Both steps are visible in the plan and the bundle as gaps. They issue no request in a hardware run and have no simulated start.
+
+No fidelity status changed. Review the steps' on-robot results after the operator runs them. The requested start-report coverage for the two unbound classes remains open.
+
+All 24 focused tests passed. The three implemented setups delivered start and stop through the real report path in simulation. The two missing factory cases produced no start. Offline validation listed all five sourced steps and both gaps. The fidelity check passed.

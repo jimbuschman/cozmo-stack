@@ -285,13 +285,13 @@ internal sealed partial class M15CubeRun
             Console.CancelKeyPress -= interrupt;
         }
         WriteBundle();
-        Console.WriteLine(Commands
+        Console.WriteLine(Commands || Personality
             ? "\n=== TEST FINISHED ===\nSend this folder for review: " + bundle
             : "\n=== TEST FINISHED ===\nNothing passes or fails here. Send this folder for review: " + bundle);
         return 0;
     }
 
-    void SubscribeBehaviorReports(CozmoEngine engine)
+    internal void SubscribeBehaviorReports(CozmoEngine engine)
     {
         // M8-012: 0x87 and 0x88 carry old/new endpoints. M7-019: 0x8B carries a uint objective.
         engine.BehaviorTransition += report =>
@@ -300,6 +300,7 @@ internal sealed partial class M15CubeRun
             data["oldBehavior"] = ((BehaviorID)report.OldId).ToString();
             data["newBehavior"] = ((BehaviorID)report.NewId).ToString();
             Event("behavior-transition", data);
+            if (Personality) behaviorTransitions.Enqueue(data);
         };
         engine.ReactionTransition += report =>
         {
@@ -784,12 +785,14 @@ internal sealed partial class M15CubeRun
             commit = revision;
         });
 
-        WriteText("SUMMARY.txt", () => RunName + (Commands
-            ? " test. Only sourced result codes are graded.\n\n" : " test. Nothing here passes or fails.\n\n")
+        bool hasPersonalityChecks = Personality && PersonalitySteps.Any(step => step.Check is not null);
+        WriteText("SUMMARY.txt", () => RunName + (Commands || hasPersonalityChecks
+            ? " test. Checks use sourced engine reports.\n\n" : " test. Nothing here passes or fails.\n\n")
             + string.Join("\n", phases.Select(p => Commands
                 ? $"{p!["phase"]}: {p["verdict"]}, result={p["engineResult"]}, observed={p["observed"]} ({p["detail"]})"
                 : Personality
                 ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]?.AsArray().Count}"
+                    + (p["behaviorCheck"] is { } check ? $", behavior check={check["result"]}" : "")
                 : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
             + "\n\nCube reports seen: " + observations.Count
             + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
@@ -809,7 +812,8 @@ internal sealed partial class M15CubeRun
             ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count,
             ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(), ["missingReported"] = JsonSerializer.SerializeToNode(missing, BundleJson),
             ["records"] = JsonSerializer.SerializeToNode(records, BundleJson), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors, BundleJson),
-            ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance"
+            ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : hasPersonalityChecks ? "ENGINE_REPORTS_ONLY"
+                : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance"
         }.ToJsonString(IndentedBundleJson));
         if (writeErrors.Count > 0)
             WriteLines("write-errors.txt", () => writeErrors.ToArray());
