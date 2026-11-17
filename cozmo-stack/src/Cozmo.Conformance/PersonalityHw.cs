@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Cozmo.Protocol;
 using Cozmo.Robot;
 
 namespace Cozmo.Conformance;
@@ -14,7 +15,7 @@ internal static class PersonalityHw
     internal static readonly string[] RecordIds =
     {
         "M7-001", "M7-019", "M8-012", "M10-001", "M10-003", "M10-004", "M10-008",
-        "M4-009", "M4-023", "M13-038", "M14-008", "M15-031", "M15-058"
+        "M4-009", "M4-023", "M11-085", "M13-038", "M14-008", "M15-031", "M15-058"
     };
 
     internal sealed record Step(string Id, string Instruction, string Question);
@@ -42,7 +43,7 @@ internal static class PersonalityHw
             Console.WriteLine($"[{step.Id}] {step.Instruction}");
             Console.WriteLine($"  {step.Question} [yes/no]");
         }
-        Console.WriteLine("Observations only. Each step records engine behavior, public state, reaction and objective reports.");
+        Console.WriteLine("Observations only. Each step records behavior, reactions, public state, and cube connection and movement reports.");
     }
 }
 
@@ -58,6 +59,36 @@ internal sealed partial class M15CubeRun
             ["robotTimestamp"] = face.Timestamp,
             ["name"] = face.Name
         });
+        engine.EngineToGameMessage += (tag, body) =>
+        {
+            switch (tag)
+            {
+                case ObjectConnectionStateMessage.UnionTag when body.Length == 13:
+                    // M11-085: the E2G connection body carries the world ObjectID.
+                    var reader = new CladReader(body);
+                    Event("cube-connection", new()
+                    {
+                        ["objectId"] = reader.U32(), ["factoryId"] = reader.U32(),
+                        ["objectType"] = reader.I32(), ["connected"] = reader.U8() != 0
+                    });
+                    break;
+                case 0x0F when body.Length == 21:
+                    // M4-009: ObjectMoved broadcast 0x00534190..0x005341B0.
+                    var move = ObjectMoved.Read(new CladReader(body));
+                    Event("cube-movement", new()
+                    {
+                        ["objectId"] = move.ObjectID, ["robotTimestamp"] = move.Timestamp, ["moving"] = true
+                    });
+                    break;
+                case 0x10 when body.Length == 8:
+                    var stop = ObjectStoppedMoving.Read(new CladReader(body));
+                    Event("cube-movement", new()
+                    {
+                        ["objectId"] = stop.ObjectID, ["robotTimestamp"] = stop.Timestamp, ["moving"] = false
+                    });
+                    break;
+            }
+        };
     }
 
     void RunPersonality(CozmoRobot r)
@@ -125,7 +156,8 @@ internal sealed partial class M15CubeRun
     JsonArray PersonalityReports(double start, double end)
     {
         return new JsonArray(events.Where(e =>
-                e["kind"]!.GetValue<string>() is "behavior-transition" or "reaction-transition" or "behavior-objective" or "robot-public-state" or "face-observed"
+                e["kind"]!.GetValue<string>() is "behavior-transition" or "reaction-transition" or "behavior-objective"
+                    or "robot-public-state" or "face-observed" or "cube-connection" or "cube-movement"
                 && e["atMs"]!.GetValue<double>() >= start && e["atMs"]!.GetValue<double>() <= end)
             .OrderBy(e => e["atMs"]!.GetValue<double>()).Select(e => e.DeepClone()).ToArray());
     }
