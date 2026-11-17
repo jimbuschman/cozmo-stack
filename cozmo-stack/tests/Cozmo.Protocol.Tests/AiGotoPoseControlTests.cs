@@ -61,9 +61,15 @@ public sealed class AiGotoPoseControlTests
             for (int i = 0; i < 70 && !f.Rig.SentSince(mark).OfType<ExecutePath>().Any(); i++)
                 f.Motors();
             var sent = f.Rig.SentSince(mark);
-            var line = Assert.Single(sent.OfType<AppendPathSegmentLine>());
+            // ApplyMotionProfile 0x00508AE4..0x005090DE splits the stop-ended line before its
+            // deceleration tail (two DefineLine/append calls, 0x00508FD4 and 0x0050905A): the
+            // first part keeps the profile, the tail runs at 20 mm/s into the stop.
+            var lines = sent.OfType<AppendPathSegmentLine>().ToList();
+            Assert.Equal(2, lines.Count);
+            var line = lines[0];
             Assert.Equal((expected.SpeedMmps, expected.AccelMmps2, expected.DecelMmps2),
                 (line.Speed.SpeedMmps, line.Speed.AccelMmps2, line.Speed.DecelMmps2));
+            Assert.Equal(20f, lines[1].Speed.SpeedMmps);
             var execute = Assert.Single(sent.OfType<ExecutePath>());
             f.Rig.Data(new PathFollowingEvent { EventId = execute.EventId, EventType = (byte)PathEventType.Started });
             f.Motors();
