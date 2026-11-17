@@ -171,6 +171,64 @@ public sealed class M13PlannerOwnershipTests
     }
 
     [Fact]
+    public void CapturedChargerMarkerKeepsNativeTiltThroughPreDockArrival()
+    {
+        // Shipped ARM detector replay, image 134775 of 20261116-194237-M15-CUBE-HW-0cbdb7.
+        var corners = new Vec2[]
+        {
+            new(149.5237274f, 65.2415924f), new(148.9995117f, 85.9845810f),
+            new(177.6782532f, 65.5837631f), new(176.8351593f, 86.5737610f),
+        };
+        // Captured NV calibration. Robot::SetCameraCalibration clears distortion for this body (0x0065AD54..0x0065AD9C).
+        var calibration = new CameraCalibration
+        {
+            FocalLengthX = 294.7164306640625, FocalLengthY = 294.89935302734375,
+            CenterX = 143.1629180908203, CenterY = 117.45443725585938, Rows = 240, Columns = 320,
+        };
+        using var robotAtImage = At(0, 0, -.026104948f);
+        using var cameraInRobot = HeadGeometry.CameraPoseInRobot(-.1834026575f);
+        using var cameraInWorld = robotAtImage.Compose(cameraInRobot);
+        var camera = new CameraModel(calibration, cameraInWorld);
+        var marker = Assert.Single(ChargerGeometry.Markers);
+        var estimate = Assert.IsType<PoseEstimation.Result>(PoseEstimation.Solve(camera, marker.CornersOnObject(), corners));
+        using var objectInCamera = estimate.ObjectInCamera;
+        using var objectInWorld = cameraInWorld.Compose(objectInCamera);
+
+        // Compare with the shipped ARM PnP output at 0x0085D77E..0x0085D8E2 composed with the capture's camera pose.
+        Assert.InRange(objectInWorld.Translation.X, 200.079, 200.100);
+        Assert.InRange(objectInWorld.Translation.Y, -12.377, -12.356);
+        Assert.InRange(objectInWorld.Translation.Z, -.515, -.494);
+        double tiltDeg = Math.Acos(objectInWorld.Rotation[2, 2]) * 180 / Math.PI;
+        Assert.InRange(tiltDeg, 10.44, 10.49);
+
+        // Creation's 5 degree gate (0x00625548..0x00625578) retains this rotation.
+        using var placed = BlockWorld.ClampPoseToFlat(objectInWorld, BlockWorld.CreationFlatClampAngleRad);
+        Assert.Equal(objectInWorld.Quaternion, placed.Quaternion);
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        rig.State();
+        var robot = rig.Engine.Robot!;
+        var origin = robot.GetNativeOrigin(robot.CurrentOriginId);
+        using var chargerPose = new Pose3d(placed.Quaternion, placed.Translation, parent: origin);
+        using var goal = ChargerGeometry.PreDockPose(chargerPose);
+        using var rootedGoal = new Pose3d(goal.Quaternion, goal.Translation, parent: origin);
+        Assert.InRange(rootedGoal.Translation.X, 42.10, 42.15);
+        Assert.InRange(rootedGoal.Translation.Y, 13.64, 13.70);
+        Assert.InRange(rootedGoal.Translation.Z, 35.62, 35.73);
+        using var arrival = At(46.298416f, 18.426844f, -.16211045f, origin); // frame 17238
+        using var manipulation = new ManipulationSystem(rig.Robot, rig.Robot.Vision);
+        using var drive = NativeDriveTestGoals.To(manipulation, rootedGoal);
+        drive.PreActionObjectPose = new Pose3d(chargerPose);
+        float height = manipulation.NativeHeight(robot);
+
+        Assert.Equal(ActionResult.FailedTraversingPath, drive.ReadyState(rootedGoal, arrival, height, 3, 3));
+        using var uprightGoal = new Pose3d(
+            Rotation3d.FromAngleAxis((float)rootedGoal.AngleAroundZ, new Vec3(0, 0, 1)),
+            rootedGoal.Translation, parent: origin);
+        Assert.Equal(ActionResult.Success, drive.ReadyState(uprightGoal, arrival, height, 3, 3));
+    }
+
+    [Fact]
     public void ReplanSnapshotsNewStartAndReusesAdmittedRawGoalsWithoutRecapturingWrappers()
     {
         // reach: unit (direct runtime replan; substituted input transforms, actual worker and search).
