@@ -21,6 +21,7 @@ degrees to one side, with a marker facing him. Bring it in only far enough for t
 view. The harness waits for a fresh report after you press Enter. Move and tap the cube when prompted.
 The animation step plays the shipped `CodeLabHappy` celebration
 (`ag_codelab_happy`, `anim_meetcozmo_celebration_02`). Press Ctrl+C to stop and save the run.
+Remove all cubes from the table before the go-to-pose prompt.
 
 The speech and named enrollment steps use the existing English voice support and local sound banks. The last
 steps enter Meet Cozmo, teach one temporary name, then rename and erase only the face successfully enrolled

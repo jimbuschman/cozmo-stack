@@ -137,6 +137,7 @@ internal static class CommandsHw
             }
             if (step.Id == "turn-to-cube")
                 Console.WriteLine($"[turn-to-cube-setup] {CubePosition} Wait up to 20 s for a fresh light-cube observation.");
+            if (step.Id == "go-to-pose") Console.WriteLine(M15CubeHw.GotoSetup);
             string check = step.Expected is { } expected ? $"expect 0x{expected:X8}" : "report only";
             Console.WriteLine($"[{step.Id}] {step.Plan} {check} ({step.Record}, {step.Address})");
         }

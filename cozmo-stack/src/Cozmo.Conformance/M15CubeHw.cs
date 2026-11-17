@@ -27,7 +27,7 @@ public static class M15CubeHw
 {
     public const string TestId = "M15-CUBE-HW";
     public static readonly string[] RecordIds = { "M15-022", "M12-015", "M12-052", "M12-005", "M12-008", "M12-013", "M12-014", "M11-038", "M4-003", "M8-015" };
-    internal const string GotoSetup = "GO-TO ROUND. Clear the table around Cozmo and leave at least 30 cm ahead. After Enter, he will drive about 20 cm ahead and turn left 90 degrees.";
+    internal const string GotoSetup = "GO-TO ROUND. Remove all cubes from the table and leave at least 30 cm clear ahead of Cozmo. After Enter, he will drive about 20 cm ahead and turn left 90 degrees.";
     internal const string ChargerSetup = "CHARGER ROUND. Clear the cubes away. Put the charger 20–40 cm directly in front of Cozmo,\n"
         + "marker facing him. Leave it powered and give him space to turn and back onto it. Press Enter when ready.";
 
