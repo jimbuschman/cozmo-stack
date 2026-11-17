@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cozmo.Conformance;
 using Cozmo.Robot;
+using Cozmo.Robot.Animation;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
@@ -68,6 +69,42 @@ public class HardwareRunnerTests
         }
         Assert.Null(delivery);
         Assert.Equal(0x3EB2B8C2u, BitConverter.SingleToUInt32Bits(CommandsHw.FaceSetupHeadAngle));
+    }
+
+    [Theory]
+    [InlineData(10f, 20f, 10f)]
+    [InlineData(10f, 30f, 20f)]
+    [InlineData(170f, -170f, 20f)]
+    [InlineData(-170f, 170f, -20f)]
+    public void CommandFaceBearingIsSignedRelativeToRobotHeading(float robotAngle, float observedAngle, float expected)
+    {
+        const float radiansPerDegree = MathF.PI / 180;
+        var robotPose = new EngineGamePose(110, 30, 0, 1, 0, 0, 0, 5);
+        var state = new EngineRobotState(robotPose, robotAngle * radiansPerDegree, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        var facePose = robotPose with
+        {
+            X = robotPose.X + 450 * MathF.Cos(observedAngle * radiansPerDegree),
+            Y = robotPose.Y + 450 * MathF.Sin(observedAngle * radiansPerDegree),
+        };
+        var face = new RobotObservedFaceReport(-1, 123, facePose, default, "", [], [], [], []);
+        var angle = Assert.IsType<float>(CommandsHw.FaceBearingDegrees(face, state));
+        Assert.InRange(angle, expected - .01f, expected + .01f);
+        Assert.Equal(MathF.Abs(expected) >= 15, MathF.Abs(angle) >= CommandsHw.MinTurnFaceBearingDegrees);
+        Assert.Null(CommandsHw.FaceBearingDegrees(face, state with { Pose = robotPose with { OriginId = 6 } }));
+    }
+
+    [Fact]
+    public void CommandDemoUsesTheShippedCelebrationWithFaceKeyframes()
+    {
+        var library = AnimationLibrary.Open(Path.Combine(PickupPyramidNativeExecutionTests.Resources(), "assets"));
+        string groupName = library.GetAnimationForTrigger(CommandsHw.DemoAnimation);
+        Assert.Equal("ag_codelab_happy", groupName);
+        var group = Assert.IsType<AnimationGroup>(library.GetGroup(groupName));
+        var clip = library.GetClip(Assert.Single(group.Entries).Name);
+        Assert.Equal("anim_meetcozmo_celebration_02", clip.Name);
+        Assert.True(clip.DurationMs > 1000);
+        Assert.NotEmpty(clip.Keyframes.OfType<FaceKeyframe>().Skip(1));
     }
 
     // ================================================================ the catalog

@@ -14,6 +14,10 @@ internal static class CommandsHw
     internal const string TestId = "AI-COMMANDS-HW-1";
     internal const int TrackSeconds = 10;
     internal const int FaceActionLimitMs = 20_000;
+    internal const float MinTurnFaceBearingDegrees = 15;
+    internal const AnimationTrigger DemoAnimation = AnimationTrigger.CodeLabHappy;
+    internal const string TurnFacePosition = "Start about 20 degrees to one side of where he is pointing, keeping both eyes in view. Hold still until he turns.";
+    internal const string CubePosition = "Place one upright light cube about 25 cm ahead and a little to one side, with a marker facing Cozmo.";
     // FindFacesLookUp supplies 20..40 degrees at 0x005C1AA6..0x005C1AC2.
     // Reuse the lower endpoint for a repeatable operator setup.
     internal const float FaceSetupHeadAngle = (float)(20 * Math.PI / 180);
@@ -33,7 +37,7 @@ internal static class CommandsHw
         new("turn-to-face", "Turn toward the operator's observed face.", "Did he turn toward your face?", "M14-002", "0x0054C500"),
         new("turn-to-cube", "Turn toward a located light cube.", "Did he turn toward the cube?", "M13-020", "0x0054ADD4"),
         new("track-face", "Request face tracking and cancel after 10 seconds.", "Did he follow your face as you moved?", "M8-015", "0x005409DC–0x00540A46", 0x02000000),
-        new("animation", "Play CozmoSaysSpeakLoop once.", "Did you see a face animation?", "M8-020", "0x005441C0"),
+        new("animation", "Play the CodeLabHappy celebration once.", "Did you see the celebration animation on his face?", "M8-020", "0x005441C0"),
         new("sentence", "Say one English sentence.", "Did you hear Cozmo say the sentence?", "M14-006", "0x00561D4C"),
         new("go-to-pose", "Drive to a point 200 mm ahead and turn left 90 degrees.", "Did he reach the point and turn left?", "M12-023", "0x0055AB4C"),
         new("teach-face", "Teach the operator's face a temporary name.", "Did you observe him learning the name?", "M14-012", "0x005FE520–0x005FE528"),
@@ -44,6 +48,18 @@ internal static class CommandsHw
     internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
         { FaceSetup.Record, "M14-003", "M14-008", "M11-035", "M11-038", "M4-009", "M4-023", "M15-031", "M2-021" }).Distinct().ToArray();
 
+    // Diagnostic relative bearing from the two public poses, using the signed
+    // yaw and a shared origin. The action still computes its own native turn.
+    internal static float? FaceBearingDegrees(RobotObservedFaceReport face, EngineRobotState? state)
+    {
+        if (state is null || state.Pose.OriginId != face.Pose.OriginId) return null;
+        float x = face.Pose.X - state.Pose.X;
+        float y = face.Pose.Y - state.Pose.Y;
+        if (!float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(state.PoseAngleRad) || (x == 0 && y == 0))
+            return null;
+        return Radians.Rescale(MathF.Atan2(y, x) - state.PoseAngleRad) * (180 / MathF.PI);
+    }
+
     internal static T? WaitForReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
         Func<T, bool> matches, Action postRequest, TimeSpan timeout, CancellationToken cancellationToken) where T : class
     {
@@ -52,6 +68,7 @@ internal static class CommandsHw
         var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
         void Receive(T report)
         {
+            if (completion.Task.IsCompleted) return;
             if ((!hasDeadline || elapsed.Elapsed <= timeout) && matches(report)) completion.TrySetResult(report);
         }
         subscribe(Receive);
@@ -77,7 +94,11 @@ internal static class CommandsHw
             {
                 Console.WriteLine($"[{step.Id}-setup] {FaceSetup.Plan} {FacePosition} ({FaceSetup.Record}, {FaceSetup.Address})");
                 Console.WriteLine($"Wait for a fresh public face observation before starting the {FaceActionLimitMs / 1000} s action window.");
+                if (step.Id == "turn-to-face")
+                    Console.WriteLine($"{TurnFacePosition} Wait for a fresh face at least {MinTurnFaceBearingDegrees} degrees off center and record its bearing.");
             }
+            if (step.Id == "turn-to-cube")
+                Console.WriteLine($"[turn-to-cube-setup] {CubePosition} Wait up to 20 s for a fresh light-cube observation.");
             string check = step.Expected is { } expected ? $"expect 0x{expected:X8}" : "report only";
             Console.WriteLine($"[{step.Id}] {step.Plan} {check} ({step.Record}, {step.Address})");
         }
@@ -135,16 +156,19 @@ internal sealed partial class M15CubeRun
             TurnInPlaceAction.DefaultMaxSpeed, TurnInPlaceAction.DefaultAccel, cancellationToken: t),
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
 
-        var face = FindCommandFace(r, "turn-to-face", "Start slightly to one side and keep still until he turns toward you.");
+        var face = FindCommandFace(r, "turn-to-face", CommandsHw.TurnFacePosition);
         if (face is not null)
             RunCommand("turn-to-face", t => r.Motion.QueueAiTurnToFaceAsync(face.FaceId, MathF.PI, t),
                 a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), CommandsHw.FaceActionLimitMs);
         else SkipCommand("turn-to-face", "The head setup action did not succeed.");
 
-        PromptCommand("Place one upright light cube in view with a marker facing Cozmo. Press Enter when ready.");
-        double since = Now;
-        RobotObservedObjectReport? cube = null;
-        Poll(() => (cube = observations.LastOrDefault(o => o.T >= since && o.Report.Family == (uint)ObjectFamily.LightCube).Report) is not null, 20000);
+        PromptCommand($"{CommandsHw.CubePosition} Press Enter when ready.");
+        var cube = CommandsHw.WaitForReport<RobotObservedObjectReport>(
+            receive => r.Engine.RobotObservedObject += receive,
+            receive => r.Engine.RobotObservedObject -= receive,
+            report => report.Family == (uint)ObjectFamily.LightCube,
+            () => Console.WriteLine("Waiting for Cozmo to see the cube. If needed, turn a marker toward him."),
+            TimeSpan.FromSeconds(20), cancel.Token);
         if (cube is not null)
             RunCommand("turn-to-cube", t => r.Motion.QueueAiTurnToObjectAsync(cube.ObjectId, MathF.PI, t),
                 a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
@@ -152,14 +176,14 @@ internal sealed partial class M15CubeRun
         PromptCommand("Tap the cube, then move it. Keep it in view briefly, then take it out of view. Press Enter when done.");
         RecordOperatorAnswer("cube-events", "Did you observe Cozmo respond to the cube being tapped or moved?");
 
-        var trackFace = FindCommandFace(r, "track-face", "Once tracking starts, slowly move side to side for 10 seconds.");
+        var trackFace = FindCommandFace(r, "track-face", "Start centered. Once tracking starts, move slowly in a small arc for 10 seconds, keeping your face fully in view.");
         if (trackFace is not null)
             RunCommand("track-face", t => r.Motion.QueueAiTrackFaceAsync(trackFace.FaceId, headOnly: false, cancellationToken: t),
                 a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), CommandsHw.FaceActionLimitMs, TimeSpan.FromSeconds(CommandsHw.TrackSeconds));
         else SkipCommand("track-face", "The head setup action did not succeed.");
         PromptCommand("Move out of the camera's view. Press Enter when ready.");
         RecordOperatorAnswer("face-events", "Did you observe Cozmo notice or recognize you?");
-        RunCommand("animation", t => r.Motion.QueueAiAnimationAsync(AnimationTrigger.CozmoSaysSpeakLoop, cancellationToken: t),
+        RunCommand("animation", t => r.Motion.QueueAiAnimationAsync(CommandsHw.DemoAnimation, cancellationToken: t),
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 65000);
         RunCommand("sentence", t => r.SayEnglishSentenceAsync("Hello. It is nice to see you.", t),
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), 65000);
@@ -185,12 +209,33 @@ internal sealed partial class M15CubeRun
             a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired), askOperator: false))
             return null;
 
-        return CommandsHw.WaitForReport<RobotObservedFaceReport>(
+        bool turning = id == "turn-to-face";
+        float bearing = 0;
+        var face = CommandsHw.WaitForReport<RobotObservedFaceReport>(
             receive => r.Engine.RobotObservedFace += receive,
             receive => r.Engine.RobotObservedFace -= receive,
-            _ => true,
-            () => Console.WriteLine($"{CommandsHw.FacePosition} {instructions} Waiting for Cozmo to see you. Ctrl+C stops the run."),
+            report =>
+            {
+                if (!turning) return true;
+                if (CommandsHw.FaceBearingDegrees(report, r.Motion.GetAiBodyObservation().LastState) is not { } angle ||
+                    MathF.Abs(angle) < CommandsHw.MinTurnFaceBearingDegrees) return false;
+                bearing = angle;
+                return true;
+            },
+            () =>
+            {
+                Console.WriteLine($"{CommandsHw.FacePosition} {instructions} Ctrl+C stops the run.");
+                Console.WriteLine(turning
+                    ? $"Waiting for a face at least {CommandsHw.MinTurnFaceBearingDegrees} degrees to either side."
+                    : "Waiting for Cozmo to see you.");
+            },
             Timeout.InfiniteTimeSpan, cancel.Token);
+        if (turning && face is not null)
+        {
+            Console.WriteLine($"Face bearing before turn: {bearing:+0.0;-0.0;0.0} degrees (positive is left).");
+            CommandReport("turn-to-face-bearing", new { face.FaceId, face.Timestamp, Degrees = bearing });
+        }
+        return face;
     }
 
     void RunCommand<T>(string id, Func<CancellationToken, Task<T>> request,
