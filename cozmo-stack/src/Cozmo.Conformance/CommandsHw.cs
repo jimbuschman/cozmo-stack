@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
@@ -17,13 +19,13 @@ internal static class CommandsHw
     internal const float MinTurnFaceBearingDegrees = 15;
     internal const AnimationTrigger DemoAnimation = AnimationTrigger.CodeLabHappy;
     internal const string TurnFacePosition = "Start about 20 degrees to one side of where he is pointing, keeping both eyes in view. Hold still until he turns.";
-    internal const string CubePosition = "Place one upright light cube about 25 cm ahead and a little to one side, with a marker facing Cozmo.";
+    internal const string CubePosition = "Place one upright light cube about 25 cm from Cozmo and about 45 degrees to one side, with a marker facing him. Bring it inward only as far as needed for the camera to see the marker.";
     // FindFacesLookUp supplies 20..40 degrees at 0x005C1AA6..0x005C1AC2.
     // Reuse the lower endpoint for a repeatable operator setup.
     internal const float FaceSetupHeadAngle = (float)(20 * Math.PI / 180);
     internal const string FacePosition = "Get down near Cozmo's level in good light, about 30–60 cm in front of him, with your face a little above his camera.";
     internal const string Setup = "Put Cozmo on a clear, well-lit surface, off his charger and well away from edges. "
-        + "Leave room to drive and turn. Have one working cube, an unenrolled guest, and someone Cozmo already knows for the event checks.";
+        + "Leave room to drive and turn. Keep the cube out of view until turn-to-cube. Have an unenrolled guest and someone Cozmo already knows for the face events.";
 
     internal sealed record Step(string Id, string Plan, string Question, string Record, string Address, uint? Expected = 0);
     internal static readonly Step FaceSetup = new("face-setup", "Raise the head to 20 degrees.",
@@ -46,8 +48,42 @@ internal static class CommandsHw
     };
 
     internal static readonly string[] RecordIds = Steps.Select(s => s.Record).Concat(new[]
-        { FaceSetup.Record, "M14-003", "M11-035", "M15-031", "M2-021" })
+        { FaceSetup.Record, "M14-003", "M11-035", "M15-031", "M2-021", "M8-012", "M10-008" })
         .Concat(CommandEventsHw.Steps.Select(s => s.Record)).Distinct().ToArray();
+
+    private static readonly Regex TraversedDegrees = new(@"(?:angDistTravd?=|traversed )([+-]?\d+(?:\.\d+)?)deg", RegexOptions.CultureInvariant);
+
+    internal static (JsonObject? Reaction, bool Retry) ReactionInterruption(
+        uint? result, int attempt, double begin, double end, IEnumerable<JsonObject> events)
+    {
+        if (result != EngineActionResult.Cancelled) return (null, false);
+        var reaction = events.FirstOrDefault(e => InWindow(e, "command-reaction-transition", begin, end)
+            && e[nameof(ReactionTransitionReport.NewTrigger)]?.GetValue<byte>() is { } next
+            && next != 0x16 && next != e[nameof(ReactionTransitionReport.OldTrigger)]?.GetValue<byte>());
+        return (reaction, reaction is not null && attempt == 1);
+    }
+
+    internal static JsonObject? LastTurnAngle(double begin, double end, IEnumerable<JsonObject> events)
+    {
+        foreach (var log in events.Where(e => InWindow(e, "engine-log", begin, end)).Reverse())
+        {
+            var name = log["name"]?.GetValue<string>();
+            if (name is null || !name.StartsWith("TurnInPlaceAction.", StringComparison.Ordinal)) continue;
+            var angle = TraversedDegrees.Match(log["text"]?.GetValue<string>() ?? "");
+            if (angle.Success && double.TryParse(angle.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double degrees))
+                return new() { ["degrees"] = degrees, ["atMs"] = log["atMs"]!.GetValue<double>(), ["name"] = name,
+                    ["text"] = log["text"]!.GetValue<string>(), ["source"] = "M13-022, TurnInPlaceAction::CheckIfDone 0x0054642C" };
+        }
+        return null;
+    }
+
+    private static bool InWindow(JsonObject item, string kind, double begin, double end) =>
+        item["kind"]?.GetValue<string>() == kind && item["atMs"]?.GetValue<double>() is { } at && at >= begin && at <= end;
+
+    internal static string Verdict(uint? actual, uint? expected, bool judge, bool harnessError) => harnessError
+        ? "HARNESS ERROR"
+        : !judge || actual is null || expected is null ? "OBSERVATION"
+        : actual == expected ? "PASS" : "FAIL";
 
     // Diagnostic relative bearing from the two public poses, using the signed
     // yaw and a shared origin. The action still computes its own native turn.
@@ -89,6 +125,7 @@ internal static class CommandsHw
     internal static void PrintPlan()
     {
         Console.WriteLine(Setup + "\nFreeplay is off.");
+        Console.WriteLine("Commands wait up to 15 s for reactions to clear. A reaction interruption is recorded as an observation, then retried once.");
         foreach (var step in Steps)
         {
             if (step.Id is "turn-to-face" or "track-face")
@@ -115,6 +152,14 @@ internal sealed partial class M15CubeRun
 
     internal void SubscribeCommandReports(CozmoEngine engine)
     {
+        // Record the synchronous emission before an action result's public delivery can end the attempt window.
+        engine.AnimationMessages.SubscribeMessage(0x88, true, payload =>
+        {
+            if (payload is not ReactionTransitionReport report) return;
+            var data = JsonSerializer.SerializeToNode(report, BundleJson)!.AsObject();
+            data["newReaction"] = ReactionName(report.NewTrigger);
+            Event("command-reaction-transition", data);
+        });
         engine.EngineToGameMessage += (tag, payload) => Volatile.Read(ref activeCommandEvent)?.AddRaw(tag, payload, Now);
         engine.RobotObservedFace += report =>
         {
@@ -172,7 +217,7 @@ internal sealed partial class M15CubeRun
     void RunCommands(CozmoRobot r)
     {
         r.SetEnableFreeplayActivity(false);
-        PromptCommand("Clear space ahead and to Cozmo's left, then press Enter for head, lift, and drive commands.");
+        PromptCommand("Put the cube out of sight and clear space ahead and to Cozmo's left. Press Enter for head, lift, and drive commands.");
         RunCommand("head", t => r.Motion.QueueAiHeadAngleAsync(0.18f, t), a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
         RunCommand("lift", t => r.Motion.QueueAiLiftHeightAsync(45, t), a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
         RunCommand("drive-straight", t => r.Motion.QueueAiDriveStraightAsync(100, 60, cancellationToken: t), a => (a.Admitted, a.EngineResult, a.Detail, a.OwnerRetired));
@@ -267,7 +312,7 @@ internal sealed partial class M15CubeRun
 
     bool RunCommand<T>(CommandsHw.Step step, Func<CancellationToken, Task<T>> request,
         Func<T, (bool Admitted, uint? Result, string? Detail, bool Retired)> read,
-        int limitMs = 45000, TimeSpan? stopAfter = null, bool askOperator = true)
+        int limitMs = 45000, TimeSpan? stopAfter = null, bool askOperator = true, int attempt = 1)
     {
         string id = step.Id;
         Console.WriteLine($"\n[{id}] {step.Plan}");
@@ -295,6 +340,7 @@ internal sealed partial class M15CubeRun
             phase = CommandPhase(id, begin, e.Message);
             RecordHarnessError(id, phase, e.Message);
         }
+        phase["attempt"] = attempt;
         if (phase["harnessError"] is not null)
         {
             SaveCommandResult(step, phase, null, judge: false);
@@ -319,6 +365,26 @@ internal sealed partial class M15CubeRun
             }
             if (task.IsCompletedSuccessfully)
                 phase["cleanupEngineResult"] = FormatCode(read(task.Result).Result);
+        }
+        if (phase["requestStartMs"]?.GetValue<double>() is { } requestStart)
+        {
+            double end = phase["endMs"]!.GetValue<double>();
+            var (reaction, retry) = CommandsHw.ReactionInterruption(result, attempt, requestStart, end, events);
+            if (id is "turn-in-place" or "turn-to-face" or "turn-to-cube")
+                phase["turnFromLog"] = CommandsHw.LastTurnAngle(requestStart, reaction?["atMs"]?.GetValue<double>() ?? end, events);
+            if (reaction is not null)
+            {
+                phase["reactionInterruption"] = reaction.DeepClone();
+                phase["detail"] = $"Interrupted during {reaction["newReaction"]}.";
+                SaveCommandResult(step, phase, result, judge: false);
+                Event("command-result", (JsonObject)phase.DeepClone());
+                if (retry)
+                {
+                    Console.WriteLine("    Waiting for the reaction to finish before retrying once.");
+                    return RunCommand(step, request, read, limitMs, stopAfter, askOperator, attempt + 1);
+                }
+                return false;
+            }
         }
         bool judge = scheduledStopReached || result != step.Expected;
         if (askOperator) FinishCommand(step, phase, result, judge);
@@ -418,9 +484,7 @@ internal sealed partial class M15CubeRun
         phase["engineResult"] = FormatCode(actual);
         phase["expected"] = FormatCode(step.Expected);
         phase["source"] = new JsonObject { ["record"] = step.Record, ["address"] = step.Address };
-        string verdict = phase["harnessError"] is not null ? "HARNESS ERROR"
-            : !judge || actual is null || step.Expected is null ? "OBSERVATION"
-            : actual == step.Expected ? "PASS" : "FAIL";
+        string verdict = CommandsHw.Verdict(actual, step.Expected, judge, phase["harnessError"] is not null);
         phase["verdict"] = verdict;
         phases.Add(phase);
         Console.WriteLine($"    {verdict} {FormatCode(actual)} {phase["detail"]}");

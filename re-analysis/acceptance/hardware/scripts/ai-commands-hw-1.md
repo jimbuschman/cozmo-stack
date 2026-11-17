@@ -16,9 +16,10 @@ before starting the 20-second action window. For tracking, start centered and mo
 while keeping your face fully in view. The harness requests cancellation after 10 seconds and judges the
 engine's active cancellation result. Visible tracking is an operator observation.
 
-For turn-to-cube, place one upright light cube about 25 cm ahead and a little to one side, with a marker
-facing Cozmo. The harness waits for a fresh report after you press Enter. Tap and move the cube when
-prompted. The animation step plays the shipped `CodeLabHappy` celebration
+Keep the cube out of view until turn-to-cube. Then place it upright about 25 cm from Cozmo and about 45
+degrees to one side, with a marker facing him. Bring it in only far enough for the marker to enter his
+view. The harness waits for a fresh report after you press Enter. Move and tap the cube when prompted.
+The animation step plays the shipped `CodeLabHappy` celebration
 (`ag_codelab_happy`, `anim_meetcozmo_celebration_02`). Press Ctrl+C to stop and save the run.
 
 The speech and named enrollment steps use the existing English voice support and local sound banks. The last
@@ -35,7 +36,10 @@ Send the folder named at the end for review.
 
 Before each command, the script waits up to 15 seconds for the current reaction to finish and
 the engine to enable external actions. The go-to start pose is sampled after the wait. A timeout or a refused
-command is recorded as a harness error with no engine result.
+command is recorded as a harness error with no engine result. Cancellation accompanied by a new reaction
+inside the command's window is an observation, with the reaction named in the bundle. The script waits and
+retries that command once. Turn results include the signed angle traversed from the last applicable
+TurnInPlace engine log when one is available.
 
 To validate the plan and source record references without a robot:
 

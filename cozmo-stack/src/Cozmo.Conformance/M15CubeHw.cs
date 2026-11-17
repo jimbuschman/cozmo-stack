@@ -633,6 +633,7 @@ internal sealed partial class M15CubeRun
             return skipped;
         }
 
+        double requestStart = Now;
         var (task, read) = start();
         bool finished = Poll(() => task.IsCompleted, limitMs);
         var (admitted, result, detail, retired) = finished && task.IsCompletedSuccessfully ? read() : default;
@@ -640,7 +641,7 @@ internal sealed partial class M15CubeRun
         else if (task.IsFaulted) errors.Enqueue($"{name}: {task.Exception}");
         var o = new JsonObject
         {
-            ["phase"] = name, ["startMs"] = begin, ["endMs"] = Now, ["admitted"] = finished && task.IsCompletedSuccessfully ? admitted : null,
+            ["phase"] = name, ["startMs"] = begin, ["requestStartMs"] = requestStart, ["endMs"] = Now, ["admitted"] = finished && task.IsCompletedSuccessfully ? admitted : null,
             ["engineResult"] = result is { } er ? $"0x{er:X8}" : null, ["ownerRetired"] = finished && task.IsCompletedSuccessfully ? retired : null,
             ["detail"] = detail ?? (finished ? "faulted" : "timed out"),
             ["carryingAfter"] = robot?.State.Latest?.Has(RobotStatusFlag.IsCarryingBlock),
