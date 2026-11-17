@@ -89,8 +89,6 @@ public static class M15CubeHw
             int standaloneCount = new[] { freeplayControl, personality, commands }.Count(enabled => enabled);
             if (standaloneCount > 1 || (standaloneCount == 1 && (skills || withDrive)))
                 throw new ArgumentException("Run the Freeplay control, personality, commands, and cube rounds separately.");
-            if ((personality || commands) && yes && !validate)
-                throw new ArgumentException("This round needs the operator's observations. Omit --yes.");
             if (banks is not null && !commands)
                 throw new ArgumentException("--banks applies to the commands round.");
             if (steps is not null && !personality)
@@ -105,9 +103,11 @@ public static class M15CubeHw
             var personalitySteps = PersonalityHw.SelectSteps(steps);
             string testId = commands ? CommandsHw.TestId : personality ? PersonalityHw.TestId : TestId;
             var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality, commands);
+            var revision = HarnessRevision.Check(root, Console.Out);
+            if (!revision.Confirm(yes, Console.In, Console.Out)) return 1;
             if (validate)
             {
-                Console.WriteLine($"{testId}: {records.Count} valid records; no network opened.");
+                Console.WriteLine($"{testId}: {records.Count} valid records; no robot connection opened.");
                 if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
                 if (freeplayControl) Console.WriteLine($"{FreeplaySetup}\nFreeplay for {FreeplaySeconds} s, queue CozmoSaysSpeakLoop once, then another {FreeplaySeconds} s of Freeplay.");
                 if (personality) PersonalityHw.PrintPlan(personalitySteps);
@@ -120,9 +120,10 @@ public static class M15CubeHw
                 throw new ArgumentException("The cube marker library is not on this PC, so Cozmo cannot read cube markers. With Python installed and resources/lib/armeabi-v7a/libcozmoEngine.so present, run: python re-analysis/tools/extract_marker_library.py resources/lib/armeabi-v7a/libcozmoEngine.so, then rebuild.");
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + testId + "-" + Guid.NewGuid().ToString("N")[..6]);
-            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes, withDrive)
+            return new M15CubeRun(root, bundle, ip, options.ResourcesPath!, records, args, yes && !personality && !commands, withDrive)
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
+                Revision = revision,
                 CommandBanks = banks is null ? null : Path.GetFullPath(banks),
                 Rounds = rounds, PersonalitySteps = personalitySteps,
             }.Execute();
@@ -149,6 +150,7 @@ internal sealed partial class M15CubeRun
     public bool FreeplayControl { get; init; }
     public bool Personality { get; init; }
     public IReadOnlyList<PersonalityHw.Step> PersonalitySteps { get; init; } = PersonalityHw.Steps;
+    internal HarnessRevision? Revision { get; init; }
     public bool Commands { get; init; }
     public string? CommandBanks { get; init; }
     /// <summary>The --skills rounds to run; null runs all of them.</summary>
@@ -771,21 +773,6 @@ internal sealed partial class M15CubeRun
             });
         }
 
-        string? commit = null;
-        TryPart("commit provenance", () =>
-        {
-            using var git = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD")
-            {
-                WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true,
-                UseShellExecute = false, CreateNoWindow = true
-            }) ?? throw new InvalidOperationException("Could not launch git");
-            string revision = git.StandardOutput.ReadToEnd().Trim();
-            string diagnostic = git.StandardError.ReadToEnd().Trim();
-            git.WaitForExit();
-            if (git.ExitCode != 0) throw new InvalidOperationException(diagnostic);
-            commit = revision;
-        });
-
         bool hasPersonalityChecks = Personality && PersonalitySteps.Any(step => step.Check is not null);
         WriteText("SUMMARY.txt", () => RunName + (Commands || hasPersonalityChecks
             ? " test. Checks use sourced engine reports.\n\n" : " test. Nothing here passes or fails.\n\n")
@@ -810,7 +797,9 @@ internal sealed partial class M15CubeRun
         WriteText("result.json", () => new JsonObject
         {
             ["testId"] = Commands ? CommandsHw.TestId : Personality ? PersonalityHw.TestId : M15CubeHw.TestId,
-            ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv, BundleJson),
+            ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = Revision?.Commit, ["checkoutCommit"] = Revision?.HeadCommit,
+            ["behindOriginMain"] = Revision?.BehindOriginMain, ["buildBehindOriginMain"] = Revision?.BuildBehindOriginMain,
+            ["argv"] = JsonSerializer.SerializeToNode(argv, BundleJson),
             ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count,
             ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(), ["missingReported"] = JsonSerializer.SerializeToNode(missing, BundleJson),
             ["records"] = JsonSerializer.SerializeToNode(records, BundleJson), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors, BundleJson),

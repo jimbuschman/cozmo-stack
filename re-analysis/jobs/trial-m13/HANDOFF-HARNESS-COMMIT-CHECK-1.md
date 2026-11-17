@@ -1,0 +1,5 @@
+# HARNESS-COMMIT-CHECK-1
+
+- The three hardware entry points print the compiled assembly revision before robot connection, fetch `origin/main`, and compare both checkout HEAD and the compiled revision. Either stale revision prints the count and `git pull` plus rebuild instructions. Enter or `--yes` acknowledges the warning. Personality and commands still ask for operator input during the run.
+- `result.json` records `commit` from the assembly, `checkoutCommit`, `behindOriginMain` for the checkout, and `buildBehindOriginMain` for the assembly. A failed fetch reports the failure, continues, and records null counts. Manipulation writes this metadata at startup and includes it in optional acceptance files.
+- Local-clone `--validate` checks covered a checkout two commits behind, the Enter/`--yes` gate, all three entry points at a current checkout, a current checkout with a binary one commit behind, and a failed fetch. These tests opened no robot connection. This is harness provenance, with no engine behavior or fidelity classification change.
