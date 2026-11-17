@@ -100,6 +100,9 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
         robot.Sensors.ChargerEventInternal += HandleChargerEvent;       // tag 0x39
     }
 
+    // BehaviorReactToCliff vptr+0x20 (0x0102BC10) resolves to the base false body 0x005BF04C.
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+
     /// <summary><c>IsRunnableInternal</c> 0x00604D4C: <c>movs r0,#1</c>.</summary>
     protected override bool IsRunnableInternal(BehaviorContext context) => true;
 
@@ -435,6 +438,9 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
     /// (0x1A9) in the fallback. Its writers are not read (RECOVERABLE_GAP); unset, the byte is taken as clear and that is reported.
     /// </summary>
     public Func<bool>? WhiteboardHiccupByte { get; set; }
+
+    // BehaviorReactToPickup vptr+0x20 (0x0102C270) resolves to 0x00607DAC, which returns true.
+    protected override bool RunnableGate20(BehaviorContext context) => true;
 
     protected override bool IsRunnableInternal(BehaviorContext context) => true;               // 0x0060774C
 

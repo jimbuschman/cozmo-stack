@@ -484,6 +484,83 @@ public sealed class CanonicalReactionBindingTests
     }
 
     [Fact]
+    public void CapturedPickupAndFallDeferImpactUntilTheRobotReturnsToTreads()
+    {
+        using var fixture = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        var rig = fixture.Rig;
+        var native = fixture.Robot;
+        var manager = native.BehaviorManagerOwner!;
+        OpenGate(native, manager);
+        rig.Tick(4000); // Native fall latch compares unsigned absolute stamps against now - 3000.
+        var transitions = new List<(ReactionTrigger Trigger, OffTreadsState Treads)>();
+        manager.ReactionTriggered += sw => transitions.Add((sw.Trigger, rig.Robot.Sensors.OffTreadsState));
+        var falling = (GenericReactionStrategy)manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotFalling).Strategy;
+        var impact = (ReactToImpactBehavior)manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.RobotFalling).Behavior;
+        var cliff = (ReactToCliffBehavior)manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.CliffDetected).Behavior;
+
+        // 20261116-193450-PERSONALITY-HW-1-59ef28. Keep the captured pitch, accelerometer and gyro
+        // fields at the status changes, plus both fall and calibration bursts. Group by host tick.
+        (int Tick, string Hex)[] replay =
+        {
+            (1, "F0564500000000000001000000DC0E39C147C89F410000000076079C3F421208BD0000000000000000863C3F3F45B641BEAD5F0F463CBFA9C463F72D46D0BAB3BE39ECE23ECC961BBF00F37D401003000045020000000000000000FF"), // frame 1998
+            (231, "F00A4600000000000001000000DC0E39C147C89F4100000000D67F713F8F6589BD0000000000000000869C3A3F45B641BEB974A845001579416445CE45AF9C903E89D8E3BDD71198BF00F37D40194100000B000000000000000000FF"), // frame 2014
+            (406, "DD37460000"), // frame 2033
+            (406, "F0DC460000010000000200000000000000000000000000000090ED86BDF683A6BD000000000000000086FC353F45B641BEF64F814589DCC644A931A8451AF6DABE9DAC31BE3DF991BE00B87E4039C0000009000000000000000000FF"), // frame 2035
+            (646, "DED147000004010000D07AB443"), // frame 2060
+            (646, "D1020101"), // frame 2060
+            (646, "D1030101"), // frame 2060
+            (701, "F0EA47000001000000020000000000000000000000000000009887ADBD000000000000000000000000F466DFBE45064BBED98784C52DD7A0442A20ED45214BA2BE451A8BBE59BE88BE00F37D401140000009000000000000000000FF"), // frame 2064
+            (1246, "D1030000"), // frame 2151
+            (1246, "F0424A0000010000000200000000000000000000000000000080489DBD9EE037BC0000000000000000F366DFBE455654BE40E98AC51038B742AC30F545693264BD499F0CBE74F2CE3D00F37D401142000009000000000000000000FF"), // frame 2159
+            (1966, "F0F44C00000200000003000000000000000000000000000000A0AB53BD663069BD0000000000000000F366DFBE45064BBEA2528BC5373B8DC41A310B4638DD693D548278BE99B3F6BE00B87E401042000009000000000000000000FF"), // frame 2272
+            (1966, "D1020000"), // frame 2272
+            (1966, "F0124D0000020000000300000000000000000000000000000050B291BD843E2FBD0000000000000000F366DFBE45064BBEC09686C5DA756BC4E2770746CBA7603E9F26DFBE129831BF00ED7C401042000009000000000000000000FF"), // frame 2275
+            (2086, "F06C4D00000200000003000000000000000000000000000000CC600FBEF18406BC0000000000000000F366DFBE45064BBEEFA18CC5F8781DC3F0DF0B46B98A1F3E74643ABEE1CB46BF00B87E401843000009000000000000000000FF"), // frame 2288
+            (3346, "F07652000003000000040000000000000000000000000000001807923DDC6518BE0000000000000000F366DFBE45064BBE467E8DC5701518C3646EE14546DA1DBE0570493D8AE10EBF00B87E40384300000A000000000000000000FF"), // frame 2486
+            (3346, "DDDB510000"), // frame 2486
+            (3586, "DE75530000BE00000080AB6A43"), // frame 2517
+            (3586, "D1020101"), // frame 2517
+            (3586, "D1030101"), // frame 2517
+            (3586, "F0845300000300000004000000000000000000000000000000A058DCBC000000000000000000000000F366DFBE45064BBE19385BC5A67B30C4613D3046C647DA3D647359BE6C81BABE00B87E40104300008C000000000000000000FF"), // frame 2518
+            (4126, "D1030000"), // frame 2575
+            (4126, "F0825500000300000004000000000000000000000000000000D053DBBC2E11233B0000000000000000F366DFBE455654BE986958C5F63553C497870C468CE0AA3B95E1CF3BBB55C53A00ED7C401003000079030000000000000000FF"), // frame 2576
+            (4366, "F07256000004000000050000000000000000000000000000000000D037E418043D0000000000000000F366DFBE45064BBE5D7E67C542A70EC4F5950C462842C3B9E0A66B390D2582B800B87E401103000079030000000000000000FF"), // frame 2604
+            (4366, "D1020000"), // frame 2604
+        };
+        int elapsed = 0;
+        foreach (var batch in replay.GroupBy(p => p.Tick))
+        {
+            foreach (var packet in batch)
+            {
+                var message = RobotMessage.Parse(Convert.FromHexString(packet.Hex));
+                if (message is RobotState state)
+                {
+                    state.PoseOriginId = native.CurrentOriginId;
+                    state.PoseFrameId = native.PoseFrameId;
+                }
+                rig.Data(message);
+            }
+            rig.Tick(batch.Key - elapsed);
+            manager.CheckReactions(rig.Engine.Timer.Seconds);
+            elapsed = batch.Key;
+            if (elapsed is 406 or 3346)
+            {
+                Assert.Equal(OffTreadsState.Falling, rig.Robot.Sensors.OffTreadsState);
+                Assert.True(falling.Latched);
+                Assert.False(impact.IsRunnable(fixture.Runtime.Context));
+                Assert.False(cliff.IsRunnable(fixture.Runtime.Context));
+            }
+        }
+        Assert.True(transitions.Count != 0, string.Join(" | ", rig.Log.TakeLast(30)));
+        Assert.Equal(ReactionTrigger.RobotPickedUp, transitions[0].Trigger);
+        Assert.Equal(OffTreadsState.InAir, transitions[0].Treads);
+        Assert.Collection(transitions.Where(s => s.Trigger == ReactionTrigger.RobotFalling),
+            first => Assert.Equal(OffTreadsState.OnTreads, first.Treads),
+            second => Assert.Equal(OffTreadsState.OnTreads, second.Treads));
+        Assert.False(impact.ImpactRecorded); // 361 and 235 are below the animation threshold of 1000.
+    }
+
+    [Fact]
     public void FreeplayAdmissionRetainsRunningReaction()
     {
         using var rig=new M4ControlTests.Rig(Resources());LoadAnimations(rig);rig.ToSynced();rig.Calibrate();
