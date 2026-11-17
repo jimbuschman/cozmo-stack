@@ -61,9 +61,18 @@ public sealed class AiGotoPoseControlTests
             for (int i = 0; i < 70 && !f.Rig.SentSince(mark).OfType<ExecutePath>().Any(); i++)
                 f.Motors();
             var sent = f.Rig.SentSince(mark);
-            var line = Assert.Single(sent.OfType<AppendPathSegmentLine>());
+            // ApplyMotionProfile 0x00508F48..0x0050906E splits the deceleration tail before the final turn.
+            var lines = sent.OfType<AppendPathSegmentLine>().ToArray();
+            Assert.Equal(2, lines.Length);
+            var (cruise, tail) = (lines[0], lines[1]);
             Assert.Equal((expected.SpeedMmps, expected.AccelMmps2, expected.DecelMmps2),
-                (line.Speed.SpeedMmps, line.Speed.AccelMmps2, line.Speed.DecelMmps2));
+                (cruise.Speed.SpeedMmps, cruise.Speed.AccelMmps2, cruise.Speed.DecelMmps2));
+            Assert.Equal((20f, expected.AccelMmps2, expected.DecelMmps2),
+                (tail.Speed.SpeedMmps, tail.Speed.AccelMmps2, tail.Speed.DecelMmps2));
+            Assert.Equal((cruise.XEndMm, cruise.YEndMm), (tail.XStartMm, tail.YStartMm));
+            Assert.InRange(MathF.Abs(tail.XEndMm - (destination - 20f)), 0, .001f);
+            float tailLength = expected.SpeedMmps * expected.SpeedMmps / (2f * expected.DecelMmps2);
+            Assert.InRange(MathF.Abs((tail.XEndMm - tail.XStartMm) - tailLength), 0, .001f);
             var execute = Assert.Single(sent.OfType<ExecutePath>());
             f.Rig.Data(new PathFollowingEvent { EventId = execute.EventId, EventType = (byte)PathEventType.Started });
             f.Motors();
