@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Cozmo.Robot\Cozmo.Robot.csproj" />
+  </ItemGroup>
+</Project>
