@@ -68,7 +68,7 @@ public static class M15CubeHw
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
             bool validate = false, yes = false, withDrive = false, skills = false, freeplayControl = false, personality = false, commands = false;
-            string? resources = null, output = null, banks = null; IPAddress ip = RobotAddress.DefaultFor(false);
+            string? resources = null, output = null, banks = null, steps = null; IPAddress ip = RobotAddress.DefaultFor(false);
             HashSet<string>? rounds = null;
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
@@ -83,6 +83,7 @@ public static class M15CubeHw
                     case "--resources": resources = args[++i]; break;
                     case "--out": output = args[++i]; break;
                     case "--rounds": rounds = args[++i].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase); break;
+                    case "--steps": steps = ++i < args.Length ? args[i] : ""; break;
                     default: if (!IPAddress.TryParse(args[i], out var parsed)) throw new ArgumentException("Unknown argument " + args[i]); ip = parsed; break;
                 }
             int standaloneCount = new[] { freeplayControl, personality, commands }.Count(enabled => enabled);
@@ -92,6 +93,8 @@ public static class M15CubeHw
                 throw new ArgumentException("This round needs the operator's observations. Omit --yes.");
             if (banks is not null && !commands)
                 throw new ArgumentException("--banks applies to the commands round.");
+            if (steps is not null && !personality)
+                throw new ArgumentException("--steps applies to --personality.");
             if (rounds is not null)
             {
                 if (!skills) throw new ArgumentException("--rounds applies to --skills.");
@@ -99,6 +102,7 @@ public static class M15CubeHw
                 if (unknown.Count > 0 || rounds.Count == 0)
                     throw new ArgumentException($"--rounds takes a comma list of: {string.Join(",", SkillRounds)}" + (unknown.Count > 0 ? $" (unknown: {string.Join(",", unknown)})" : ""));
             }
+            var personalitySteps = PersonalityHw.SelectSteps(steps);
             string testId = commands ? CommandsHw.TestId : personality ? PersonalityHw.TestId : TestId;
             var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), skills, freeplayControl, personality, commands);
             if (validate)
@@ -106,7 +110,7 @@ public static class M15CubeHw
                 Console.WriteLine($"{testId}: {records.Count} valid records; no network opened.");
                 if (skills) Console.WriteLine($"Skill rounds: stack, roll, flip, wheelie, go to pose, mount charger.\n{FlipSetup}\n{WheelieSetup}\n{GotoSetup}\n{ChargerSetup}");
                 if (freeplayControl) Console.WriteLine($"{FreeplaySetup}\nFreeplay for {FreeplaySeconds} s, queue CozmoSaysSpeakLoop once, then another {FreeplaySeconds} s of Freeplay.");
-                if (personality) PersonalityHw.PrintPlan();
+                if (personality) PersonalityHw.PrintPlan(personalitySteps);
                 if (commands) CommandsHw.PrintPlan();
                 return 0;
             }
@@ -120,10 +124,10 @@ public static class M15CubeHw
             {
                 Skills = skills, FreeplayControl = freeplayControl, Personality = personality, Commands = commands,
                 CommandBanks = banks is null ? null : Path.GetFullPath(banks),
-                Rounds = rounds,
+                Rounds = rounds, PersonalitySteps = personalitySteps,
             }.Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills [--rounds pickup,stack-roll,flip,wheelie,goto,charger]] [--freeplay-control | --personality | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m15-cube-hw: " + e.Message + "\nusage: m15-cube-hw [robot-ip] --resources <dir> [--with-drive] [--skills [--rounds pickup,stack-roll,flip,wheelie,goto,charger]] [--freeplay-control | --personality [--steps <comma list>] | --commands] [--banks <dir>] [--yes] [--out <dir>] | --validate"); return 2; }
     }
 }
 
@@ -144,6 +148,7 @@ internal sealed partial class M15CubeRun
     public bool Skills { get; init; }
     public bool FreeplayControl { get; init; }
     public bool Personality { get; init; }
+    public IReadOnlyList<PersonalityHw.Step> PersonalitySteps { get; init; } = PersonalityHw.Steps;
     public bool Commands { get; init; }
     public string? CommandBanks { get; init; }
     /// <summary>The --skills rounds to run; null runs all of them.</summary>
@@ -201,7 +206,7 @@ internal sealed partial class M15CubeRun
         Console.WriteLine((Commands
             ? "OUTSIDE-AI COMMANDS\n\n" + CommandsHw.Setup
             : Personality
-            ? "PERSONALITY OBSERVATIONS (about 25 minutes)\n\n" + PersonalityHw.Setup
+            ? "PERSONALITY OBSERVATIONS\n\n" + PersonalityHw.SetupFor(PersonalitySteps)
             : FreeplayControl
             ? "FREEPLAY CONTROL (about 3 minutes)\n\n" + M15CubeHw.FreeplaySetup
             : "CUBE PICKUP AND PUT-DOWN TEST (about 5 minutes)\n\n"
@@ -280,13 +285,13 @@ internal sealed partial class M15CubeRun
             Console.CancelKeyPress -= interrupt;
         }
         WriteBundle();
-        Console.WriteLine(Commands
+        Console.WriteLine(Commands || Personality
             ? "\n=== TEST FINISHED ===\nSend this folder for review: " + bundle
             : "\n=== TEST FINISHED ===\nNothing passes or fails here. Send this folder for review: " + bundle);
         return 0;
     }
 
-    void SubscribeBehaviorReports(CozmoEngine engine)
+    internal void SubscribeBehaviorReports(CozmoEngine engine)
     {
         // M8-012: 0x87 and 0x88 carry old/new endpoints. M7-019: 0x8B carries a uint objective.
         engine.BehaviorTransition += report =>
@@ -295,6 +300,7 @@ internal sealed partial class M15CubeRun
             data["oldBehavior"] = ((BehaviorID)report.OldId).ToString();
             data["newBehavior"] = ((BehaviorID)report.NewId).ToString();
             Event("behavior-transition", data);
+            if (Personality) personalityTransitions.Enqueue(data);
         };
         engine.ReactionTransition += report =>
         {
@@ -302,6 +308,7 @@ internal sealed partial class M15CubeRun
             data["oldReaction"] = ReactionName(report.OldTrigger);
             data["newReaction"] = ReactionName(report.NewTrigger);
             Event("reaction-transition", data);
+            if (Personality) personalityTransitions.Enqueue(data);
         };
         engine.EngineToGameMessage += (tag, body) =>
         {
@@ -779,12 +786,15 @@ internal sealed partial class M15CubeRun
             commit = revision;
         });
 
-        WriteText("SUMMARY.txt", () => RunName + (Commands
-            ? " test. Only sourced result codes are graded.\n\n" : " test. Nothing here passes or fails.\n\n")
+        bool hasPersonalityChecks = Personality && PersonalitySteps.Any(step => step.Check is not null);
+        WriteText("SUMMARY.txt", () => RunName + (Commands || hasPersonalityChecks
+            ? " test. Checks use sourced engine reports.\n\n" : " test. Nothing here passes or fails.\n\n")
             + string.Join("\n", phases.Select(p => Commands
                 ? $"{p!["phase"]}: {p["verdict"]}, result={p["engineResult"]}, observed={p["observed"]} ({p["detail"]})"
                 : Personality
                 ? $"{p!["phase"]}: observation={p["observed"]}, reports={p["engineReports"]?.AsArray().Count}"
+                    + (p["behaviorCheck"] is { } check ? $", behavior check={check["result"]}" : "")
+                    + (p["reactionCheck"] is { } reaction ? $", reaction check={reaction["result"]}" : "")
                 : $"{p!["phase"]}: admitted={p["admitted"]} result={p["engineResult"]} carryingAfter={p["carryingAfter"]} ({p["detail"]})"))
             + "\n\nCube reports seen: " + observations.Count
             + "\n\nStartup: " + (startup?.Describe() ?? "not completed")
@@ -792,7 +802,7 @@ internal sealed partial class M15CubeRun
             + "\n\nKnown gaps reported: " + missing.Length
             + "\n\nRun errors:\n" + (errors.IsEmpty ? "None." : string.Join("\n", errors)));
         WriteText("README.txt", () => Commands
-            ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, their source references and operator observations. events.jsonl contains the timestamped public face and object reports and engine diagnostics."
+            ? "AI-COMMANDS-HW-1 report. result.json contains per-command engine result codes, event checks with raw and public payloads and capture times, source references, and operator observations. events.jsonl retains the public reports and diagnostics."
             : Personality
             ? "PERSONALITY-HW-1 observations. result.json has phase times, operator answers and native behavior, public state, reaction, objective and face reports. events.jsonl retains all timestamped reports, including those between phases, and engine logs. Times are host capture times."
             : "M15-CUBE-HW evidence bundle. result.json holds each phase's action result and a timeline of the dock (0x42), place (0x44), correction (0x48) and PickAndPlaceResult (0xB8) messages interleaved with the robot's busy/carrying/moving status transitions; status.jsonl and observations.jsonl keep the full streams; messages.jsonl deduplicates reliable resends; frames.jsonl keeps every datagram. Times are host capture times. No acceptance or manifest change was made."
@@ -804,7 +814,8 @@ internal sealed partial class M15CubeRun
             ["resources"] = resources, ["connected"] = connected, ["startup"] = startup?.ToJson(), ["cubeReports"] = observations.Count,
             ["phases"] = phases.DeepClone(), ["operator"] = answers.DeepClone(), ["missingReported"] = JsonSerializer.SerializeToNode(missing, BundleJson),
             ["records"] = JsonSerializer.SerializeToNode(records, BundleJson), ["provenance"] = files, ["errors"] = JsonSerializer.SerializeToNode(errors, BundleJson),
-            ["acceptance"] = Commands ? "ENGINE_RESULTS_ONLY" : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance"
+            ["acceptance"] = Commands ? "ENGINE_RESULTS_AND_REPORTS" : hasPersonalityChecks ? "ENGINE_REPORTS_ONLY"
+                : Personality ? "OBSERVATIONS_ONLY" : "NOT_JUDGED: manager review required; hardware success does not raise provenance"
         }.ToJsonString(IndentedBundleJson));
         if (writeErrors.Count > 0)
             WriteLines("write-errors.txt", () => writeErrors.ToArray());

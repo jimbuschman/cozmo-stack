@@ -11,15 +11,18 @@ public sealed class Cube
 {
     /// <summary>The cube's permanent identifier, reported when it advertises and when it connects.</summary>
     public uint FactoryId { get; internal set; }
-    internal Cube SnapshotForApp()
+    internal Cube SnapshotForApp(uint? worldObjectId = null)
     {
         var copy=(Cube)MemberwiseClone();
+        copy.WorldObjectId = worldObjectId;
         if(LastTap is {} tap)copy.LastTap=new ObjectTapped{Timestamp=tap.Timestamp,ObjectID=tap.ObjectID,
             NumTaps=tap.NumTaps,TapTime=tap.TapTime,TapNeg=tap.TapNeg,TapPos=tap.TapPos};
         return copy;
     }
     /// <summary>The id the robot uses for this cube once connected. Null until a connection is reported.</summary>
     public uint? ObjectId { get; internal set; }
+    /// <summary>The engine's world ID on movement and tap events, when available.</summary>
+    public uint? WorldObjectId { get; private set; }
     /// <summary>Which of the three cubes this is, as the robot classifies it.</summary>
     public ObjectType Type { get; internal set; } = ObjectType.UnknownObject;
     /// <summary>Signal strength from the last advertisement, in the robot's own units.</summary>
@@ -349,7 +352,7 @@ public sealed class CozmoCubes
 
     /// <summary>+0x18: enabled from the constructor (CD10d).</summary>
     private bool _tapFilterEnabled = true;
-    private readonly List<(ObjectTapped Tap, Cube Cube, int Intensity)> _tapQueue = new();
+    private readonly List<(ObjectTapped Tap, Cube Cube, int Intensity, int? WorldId)> _tapQueue = new();
     private uint _tapDeadlineMs;
 
     /// <summary>DoubleTapInfo node: +0x18 u32 doubleTapTime, +0x1C u8 isMoving, +0x20 u32 ignoreMovementUntil, +0x24 u8 isIgnoring (CD10g).</summary>
@@ -488,6 +491,7 @@ public sealed class CozmoCubes
     internal void Update()
     {
         Cube? tapped = null;
+        int? tappedId = null;
         var ended = new List<uint>();
         lock (_gate)
         {
@@ -500,6 +504,7 @@ public sealed class CozmoCubes
                 _tapQueue.Clear();
                 RecordTap(best.Cube, best.Tap);
                 tapped = best.Cube;
+                tappedId = best.WorldId;
             }
             // fidelity: M4-023
             // Expiry flag 0x00631228..0x00631242, in key order: isIgnoring != 0 and ignoreMovementUntil <= now (unsigned): isIgnoring := 0. The dirty
@@ -512,14 +517,25 @@ public sealed class CozmoCubes
                         ended.Add(unchecked((uint)key));
                     }
         }
-        if (tapped is not null)
-        {
-            var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
-            _robot.Engine.QueueAppEvent(CubeTapped,tapped.SnapshotForApp());
-            _robot.Engine.QueueAppBroadcast(TapBroadcast,new CubeTimestampEvent(tapped.SnapshotForApp(),notice.Timestamp));
-        }
+        if (tapped is not null) PublishTap(tapped, tappedId);
         // CD10g (0x0063128A..0x00631360): MarkObjectDirty on every located copy with that ID, in every origin, whose pose state is Known (+0x24 == 1).
         foreach (var id in ended) EventFan.Raise(DoubleTapPendingEnded, id, null);
+    }
+
+    // M4-023: 0x00630C4C..0x00630C72 and 0x00631178..0x00631192 emit E2G ObjectTapped
+    // with the world ID captured at input, plus the unchanged timestamp and four tap bytes.
+    private void PublishTap(Cube cube, int? worldId)
+    {
+        uint? id = worldId is { } value ? unchecked((uint)value) : null;
+        var tap = cube.LastTap!;
+        _robot.Engine.QueueAppEvent(CubeTapped, cube.SnapshotForApp(id));
+        _robot.Engine.QueueAppBroadcast(TapBroadcast, new CubeTimestampEvent(cube.SnapshotForApp(id), tap.Timestamp));
+        if (id is { } objectId && _robot.Engine.Robot?.HasExternalInterface == true)
+        {
+            var body = new CladWriter().U32(tap.Timestamp).U32(objectId)
+                .U8(tap.NumTaps).U8(tap.TapTime).I8(tap.TapNeg).I8(tap.TapPos);
+            _robot.Engine.DeliverAnimationReportToApp(0x13, body.ToArray());
+        }
     }
 
     // ----------------------------------------------------------------- plumbing
@@ -594,6 +610,7 @@ public sealed class CozmoCubes
     internal void Handle(RobotMessage m)
     {
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
+        int? tappedId = null;
         ObjectPowerLevel? powerBroadcast = null;
         CubeTimestampEvent? movementBroadcast = null;
         RobotMessage? nativeMovement = null;
@@ -724,19 +741,21 @@ public sealed class CozmoCubes
                         SourceLog(EngineLogLevel.Warning, null, "BlockTapFilterComponent.HandleActiveObjectTapped.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)t.ObjectID)}");
                         break;
                     }
+                    int? worldId = WorldId(c, Log);
                     bool physical = _robot.Engine.Robot?.IsPhysicalRobot ?? false;
                     if (_tapFilterEnabled && physical)
                     {
                         if (_tapQueue.Count == 0) _tapDeadlineMs = unchecked(NowMs + TapQueueMs);
-                        _tapQueue.Add((t, c, intensity));
+                        _tapQueue.Add((t, c, intensity, worldId));
                     }
                     else
                     {
                         RecordTap(c, t);
                         tapped = c;
+                        tappedId = worldId;
                     }
                     // Key 0x00630BF6..0x00630C04, 0x00630C8C: the found object's ObjectID value (object+0x18) goes to CheckForDoubleTap for every accepted tap.
-                    if (WorldId(c, Log) is { } tapKey) CheckForDoubleTap(tapKey, SourceLog);
+                    if (worldId is { } tapKey) CheckForDoubleTap(tapKey, SourceLog);
                     break;
                 }
                 case ObjectMoved mv:
@@ -764,9 +783,9 @@ public sealed class CozmoCubes
                     callouts.Add(() => MovementLocatedLoop(mv.ObjectID, movedWorldId, true, mv.Timestamp, "Robot.ActiveObjectMoved."));
                     if (ExcludeFromMovedBroadcast?.Invoke(c) != true)
                     {
-                        moved = c;
                         c.LastBroadcastTimestamp = mv.Timestamp;
-                        movementBroadcast = new CubeTimestampEvent(c, c.LastBroadcastTimestamp);
+                        moved = c.SnapshotForApp(unchecked((uint)movedWorldId));
+                        movementBroadcast = new CubeTimestampEvent(moved, c.LastBroadcastTimestamp);
                         // E2G ObjectMoved at 0x00534190..0x005341B0 substitutes the world ID.
                         nativeMovement = new ObjectMoved
                         {
@@ -802,7 +821,7 @@ public sealed class CozmoCubes
                     {
                         moved = c;
                         c.LastBroadcastTimestamp = sm.Timestamp;
-                        movementBroadcast = new CubeTimestampEvent(c, sm.Timestamp);
+                        movementBroadcast = new CubeTimestampEvent(c.SnapshotForApp(unchecked((uint)stoppedWorldId)), sm.Timestamp);
                         // E2G ObjectStoppedMoving at 0x005349A6..0x005349AE uses the connected world ID.
                         nativeMovement = new ObjectStoppedMoving { Timestamp = sm.Timestamp, ObjectID = unchecked((uint)stoppedWorldId) };
                     }
@@ -833,14 +852,10 @@ public sealed class CozmoCubes
         // and never fires in this build; the advertisement is still tracked for the connection path.
         if (discovered is not null && BroadcastsAvailableObjects) CubeDiscovered?.Invoke(discovered);
         if (connectionChanged is not null) ConnectionChanged?.Invoke(connectionChanged);
-        if (tapped is not null)
-        {
-            var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
-            _robot.Engine.QueueAppEvent(CubeTapped,tapped.SnapshotForApp());
-            _robot.Engine.QueueAppBroadcast(TapBroadcast,new CubeTimestampEvent(tapped.SnapshotForApp(),notice.Timestamp));
-        }
-        if(moved is not null)_robot.Engine.QueueAppEvent(CubeMoved,moved.SnapshotForApp());
-        if(movementBroadcast is not null)_robot.Engine.QueueAppBroadcast(MovementBroadcast,new CubeTimestampEvent(movementBroadcast.Cube.SnapshotForApp(),movementBroadcast.Timestamp));
+        if (tapped is not null) PublishTap(tapped, tappedId);
+        if(moved is not null)_robot.Engine.QueueAppEvent(CubeMoved,moved);
+        if(movementBroadcast is not null)_robot.Engine.QueueAppBroadcast(MovementBroadcast,new CubeTimestampEvent(
+            movementBroadcast.Cube.SnapshotForApp(movementBroadcast.Cube.WorldObjectId),movementBroadcast.Timestamp));
         if (nativeMovement is not null && _robot.Engine.Robot?.HasExternalInterface == true)
         {
             var writer = new CladWriter();
