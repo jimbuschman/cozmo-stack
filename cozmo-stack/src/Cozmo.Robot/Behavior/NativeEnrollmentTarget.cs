@@ -22,6 +22,16 @@ internal sealed class NativeEnrollmentTarget
     }
     internal void ClearWrong() { WrongId = 0; WrongName = string.Empty; }
 
+    // 0x005FDAB2..0x005FDAC2 clears the time for either kind of target.
+    // At 0x005FDB72..0x005FDB82 only an automatically selected ID is cleared.
+    internal bool ForgetIfStale(uint imageTimestamp, bool keepSelected)
+    {
+        if (unchecked(imageTimestamp - LastObserved) < 1501) return false;
+        LastObserved = 0;
+        if (!keepSelected) Selected = 0;
+        return true;
+    }
+
     internal void Update(ManipulationSystem system, EngineRobot owner, int saveId, uint imageTimestamp,
         uint maxFaces, float recentSeconds, float now, Func<bool> current)
     {

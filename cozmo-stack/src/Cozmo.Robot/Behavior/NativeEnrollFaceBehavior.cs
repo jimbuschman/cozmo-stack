@@ -189,6 +189,7 @@ internal sealed class NativeEnrollFaceBehavior : SteppedBehavior, IDisposable
     }
     private void LookComplete(long generation)
     {
+        // 0x005FFC6E..0x005FFC74: the look sequence needs an observation since the last loss.
         if (_target.LastObserved == 0)
         {
             if (TimedOut()) { Phase = 6; return; }
@@ -275,10 +276,13 @@ internal sealed class NativeEnrollFaceBehavior : SteppedBehavior, IDisposable
             catch (Exception ex) when (ex is InvalidOperationException or NativeActionUnavailable)
             { ReportMissing("M14-008 enrollment target unavailable: " + ex.Message); return; }
             if (!Current(generation)) return;
-            if (Phase == 3 && unchecked(image - _target.LastObserved) >= 1501)
+            int missingId = _target.Selected;
+            if (Phase == 3 && _target.ForgetIfStale(image, _initialSelected))
             {
-                if (!_initialSelected) _target.Selected = 0;
-                Look(generation, true);
+                string target = _initialSelected ? $"face {missingId}" : "any face";
+                _owner.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "BehaviorEnrollFace.CheckIfDone.NoLongerSeeingFace",
+                    $"Have not seen face {missingId} in 1500ms, going back to LookForFace state for {target}");
+                if (Current(generation)) Look(generation, true);
             }
         }
     }

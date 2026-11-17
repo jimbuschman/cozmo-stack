@@ -74,6 +74,54 @@ public sealed class NativeEnrollmentTargetTests
         Assert.Equal(0, target.WrongId);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LostEnrollmentRequiresANewEligibleSightingBeforeScanningAgain(bool explicitTarget)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var owner = f.Robot;
+        var origin = owner.GetNativeOrigin(owner.CurrentOriginId);
+        var target = new NativeEnrollmentTarget();
+        target.Reset(explicitTarget ? 5 : 0);
+
+        void See(int id, uint time)
+        {
+            var point = new Vec3(300, 0, 80);
+            var face = new TrackedFace(
+                new DetectedFace(id, new FaceRect(0, 0, 20, 20), new Vec2(4, 5), new Vec2(9, 5)), time)
+            {
+                HeadPose = new Pose3d(Rotation3d.Identity, point),
+                NativeTrackingTranslation = point,
+                NativeTrackingRotation = Rotation3d.Identity,
+            };
+            Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, Pose3d.Identity, false, origin.Node!,
+                requireNativePose: true, expectedOwner: owner));
+            target.Update(f.M, owner, 0, time, 1, .5f, time / 1000f, () => true);
+        }
+
+        // Start with a selected face, then replay anonymous observations from the
+        // evening commands run around the four immediate scanning interruptions.
+        See(5, 228_000);
+        Assert.Equal(5, target.Selected);
+        Assert.False(target.ForgetIfStale(229_500, explicitTarget));
+        Assert.True(target.ForgetIfStale(229_501, explicitTarget));
+        Assert.Equal(explicitTarget ? 5 : 0, target.Selected);
+        foreach (uint timestamp in new uint[] { 236_615, 236_750, 239_995, 240_060, 242_965, 243_370, 246_950, 247_020 })
+        {
+            See(-1, timestamp);
+            Assert.Equal(0u, target.LastObserved);
+        }
+
+        uint next = 251_005;
+        if (explicitTarget)
+            See(5, next);
+        else
+            See(6, next);
+        Assert.Equal(explicitTarget ? 5 : 6, target.Selected);
+        Assert.Equal(next, target.LastObserved);
+    }
+
     [Fact]
     public void NoEyeUpdateKeepsOldNativeTranslationAndUsesFreshRotationAndOrigin()
     {
