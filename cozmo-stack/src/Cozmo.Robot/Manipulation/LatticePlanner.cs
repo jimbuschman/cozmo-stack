@@ -118,6 +118,8 @@ public sealed record MotionPrimitive(int ActionIndex, int StartTheta, short EndX
 
     /// <summary><c>turn_in_place_direction</c> (<c>asDouble</c>, 0x00854278); null otherwise.</summary>
     public double? TurnInPlaceDirection { get; init; }
+
+    internal IReadOnlyList<PathSegment> CachedPath { get; init; } = Array.Empty<PathSegment>();
 }
 
 /// <summary>
@@ -268,13 +270,22 @@ public sealed class MotionPrimitiveSet
         else { d9 = MaxVelocityMmps; d8 = InverseMaxVelocity; }                        // 0x00854078..0x0085407C (env+0x68 and env+0x78)
         float cost = 0f;
         float straight = 0f;
+        var cachedPath = new List<PathSegment>(2);
         double straightD = p.TryGetProperty("straight_length_mm", out var sl) ? sl.GetDouble() : 0.0;
         if (!(straightD == 0.0 || double.IsNaN(straightD)))                           // vcmp.f64 d0, #0; beq/bvs 0x00854144
         {
             cost = (float)(d8 * Math.Abs(straightD) + (double)cost);                   // vabs.f64, vmul.f64 d8*|len|, vadd.f64 with the float cost widened, vcvt.f32.f64
             straight = (float)straightD;                                               // asFloat 0x008540D0
+            // 0x008540D8..0x00854140: omit tiny lines, start at the primitive origin, use signed default velocity.
+            if (Math.Abs(straight) > 0.001)
+            {
+                float heading = env.Angles[startTheta];
+                float speed = (float)(action.Reverse ? -d9 : d9);
+                cachedPath.Add(NativePlanDependencies.DefineLine(0, 0, straight * MathF.Cos(heading),
+                    straight * MathF.Sin(heading), speed, 200, 200));
+            }
         }
-        (float, float, float, float, float)? arc = null;
+        (float CenterX, float CenterY, float Radius, float StartRad, float SweepRad)? arc = null;
         double? turnDir = null;
         if (p.TryGetProperty("arc", out var ja))
         {
@@ -285,6 +296,12 @@ public sealed class MotionPrimitiveSet
             cost = cost + term;                                                         // vadd.f32 (0x008541BC)
             arc = (AsFloat(ja.GetProperty("centerPt_x_mm")), AsFloat(ja.GetProperty("centerPt_y_mm")), AsFloat(ja.GetProperty("radius_mm")),
                    AsFloat(ja.GetProperty("startRad")), AsFloat(ja.GetProperty("sweepRad")));
+            // 0x008541B4..0x008541C0 divides wheel travel by the rounded time term.
+            // 0x0085422C..0x0085425A applies reverse sign, and supplies 200 for both accelerations.
+            float speed = (float)((sweepD * radiusD) / term);
+            var a = arc.Value;
+            cachedPath.Add(NativePlanDependencies.DefineArc(a.CenterX, a.CenterY, a.Radius, a.StartRad,
+                a.SweepRad, action.Reverse ? -speed : speed, 200, 200));
         }
         else if (p.TryGetProperty("turn_in_place_direction", out var td))
         {
@@ -296,6 +313,11 @@ public sealed class MotionPrimitiveSet
             float dth = EngineF.AngularDistance(a0, a1, dir < 0);
             float term = (float)(d8 * (HalfWheelBaseMm * (double)MathF.Abs(dth)));
             cost = cost + term;
+            // 0x008542CE..0x0085431A: signed angle / wheel travel time,
+            // then append at (0,0) with the raw target heading, accel/decel 10, 2 degrees, shortest=true.
+            float speed = dth / (float)((HalfWheelBaseMm * (double)MathF.Abs(dth)) * d8);
+            cachedPath.Add(new PathSegment.PointTurn(0f, 0f, env.Angles[eth], EngineF.Bits(0x3D0EFA35),
+                speed, 10, 10, true));
         }
         // 0x00854322..0x0085437C: base cost below 1e-6 fails (printf, return 0); then * the action's extra cost factor, and the product must be at least 1e-6 as well
         if ((double)cost < 1e-6) { why = $"base action cost is {cost} for action {actionIndex}"; return false; }
@@ -306,6 +328,7 @@ public sealed class MotionPrimitiveSet
             StraightLengthMm = straight,
             Arc = arc,
             TurnInPlaceDirection = turnDir,
+            CachedPath = cachedPath.ToArray(),
         };
         return true;
     }

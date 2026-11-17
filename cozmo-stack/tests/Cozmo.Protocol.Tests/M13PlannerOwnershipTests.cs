@@ -102,6 +102,75 @@ public sealed class M13PlannerOwnershipTests
     }
 
     [Fact]
+    public void CapturedChargerPlanEndsWithinDriveToPoseTranslationAndYawTolerance()
+    {
+        // Skills capture 20261116-194237-M15-CUBE-HW-0cbdb7. Use the confirmed pre-dock
+        // observation (stamp 134775) and the last pose before planning (frame 16770).
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        rig.State();
+        var origin = rig.Engine.Robot!.GetNativeOrigin(rig.Engine.Robot.CurrentOriginId);
+        using var chargerPose = new Pose3d(new Rotation3d(.99249953f, .008334444f, .0908289f, -.0813962f),
+            new Vec3(200.08899f, -12.36417f, -.49952316f), parent: origin);
+        using var goal = ChargerGeometry.PreDockPose(chargerPose);
+        using var rootedGoal = new Pose3d(goal.Quaternion, goal.Translation, parent: origin);
+
+        using var start = At(-19.9931f, .523519f, -.026178956f, origin);
+        float yaw = (float)rootedGoal.AngleAroundZ;
+        using var driveGoal = new Pose3d(rootedGoal.Quaternion,
+            new Vec3((float)rootedGoal.Translation.X - 20 * MathF.Cos(yaw),
+                (float)rootedGoal.Translation.Y - 20 * MathF.Sin(yaw), 0), parent: origin);
+        Assert.Equal(-.16381736f, yaw, precision: 5);
+        var displacement = driveGoal.Translation - start.Translation;
+        Assert.InRange(displacement.X * displacement.X + displacement.Y * displacement.Y,
+            2066.688, 2066.709);
+        var backend = Backend();
+        using var runtime = Runtime(backend, rig);
+        Assert.Equal(1, runtime.ComputePath(start, new[]{driveGoal}));
+        Wait(runtime);
+        lock (runtime.ContextMutex)
+        {
+            var profile = PathMotionProfile.Default with
+            {
+                SpeedMmps = 167.584213f, AccelMmps2 = 82.6039047f, DecelMmps2 = 97.3960953f
+            };
+            Assert.True(runtime.GetCompletePath(start, profile, out var path, out byte picked));
+            Assert.Equal(0, picked);
+            var turn = Assert.IsType<PathSegment.PointTurn>(path[^1]);
+            var end = NativePlanDependencies.GetEndPose(path[^1]);
+            var beforeTurn = NativePlanDependencies.GetEndPose(path[^2]);
+            Assert.Equal((beforeTurn.X, beforeTurn.Y), (end.X, end.Y));
+            var latticeEnd = runtime.TotalPlan!.States().Last();
+            Assert.InRange(Math.Abs(end.X - latticeEnd.X * 10), 0, .001);
+            Assert.InRange(Math.Abs(end.Y - latticeEnd.Y * 10), 0, .001);
+            Assert.Equal(yaw, turn.TargetAngleRad);
+
+            // Invert PathComponent's -20 mm planner offset before comparing in the main-pose frame.
+            using var predictedBody = At(end.X + 20 * MathF.Cos(end.Theta), end.Y + 20 * MathF.Sin(end.Theta),
+                end.Theta, origin);
+            CubePreActionPoses.DistanceThresholdMm(rootedGoal, chargerPose, DriveToPoseAction.GoalAngleToleranceRad,
+                out double xTolerance, out double yTolerance);
+            Assert.InRange(Math.Abs(predictedBody.Translation.X - rootedGoal.Translation.X), 0, xTolerance);
+            Assert.InRange(Math.Abs(predictedBody.Translation.Y - rootedGoal.Translation.Y), 0, yTolerance);
+            Assert.InRange(Math.Abs(predictedBody.AngleAroundZ - rootedGoal.AngleAroundZ), 0,
+                DriveToPoseAction.GoalAngleToleranceRad);
+            using var manipulation = new ManipulationSystem(rig.Robot, rig.Robot.Vision);
+            using var drive = NativeDriveTestGoals.To(manipulation, rootedGoal);
+            drive.PreActionObjectPose = new Pose3d(chargerPose);
+            float height = manipulation.NativeHeight(rig.Engine.Robot);
+            // The charger observation was tilted. Pose3d::IsSameAs compares full rotation,
+            // even though the path can only change yaw. Compare with both planned and measured arrival.
+            Assert.Equal(ActionResult.FailedTraversingPath, drive.ReadyState(rootedGoal, predictedBody, height, 3, 3));
+            using var measuredBody = At(46.298416f, 18.426844f, -.16211045f, origin); // frame 17238
+            Assert.InRange(Math.Abs(measuredBody.Translation.X - rootedGoal.Translation.X), 0, xTolerance);
+            Assert.InRange(Math.Abs(measuredBody.Translation.Y - rootedGoal.Translation.Y), 0, yTolerance);
+            Assert.Equal(ActionResult.FailedTraversingPath, drive.ReadyState(rootedGoal, measuredBody, height, 3, 3));
+            using var uprightGoal = new Pose3d(predictedBody.Quaternion, rootedGoal.Translation, parent: origin);
+            Assert.Equal(ActionResult.Success, drive.ReadyState(uprightGoal, predictedBody, height, 3, 3));
+        }
+    }
+
+    [Fact]
     public void ReplanSnapshotsNewStartAndReusesAdmittedRawGoalsWithoutRecapturingWrappers()
     {
         // reach: unit (direct runtime replan; substituted input transforms, actual worker and search).

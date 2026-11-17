@@ -66,12 +66,11 @@ public sealed class M13X1BuilderTests
     public void ProfileSplitUsesForwardMagnitudeAndKeepsSignIncludingNegativeZero()
     {
         var line=new PathSegment.Line(0,0,100,0,30,200,200);
-        NativePlanDependencies.Geometry G(PathSegment s)=>new(1,new(0,0,0),new(100,0,0),100,100,0);
-        var path=NativePathBuffer.ApplyMotionProfile(new[]{line},PathMotionProfile.Default,G,(_,_,_,_)=>{},_=>{});
+        var path=NativePathBuffer.ApplyMotionProfile(new[]{line},PathMotionProfile.Default,(_,_,_,_)=>{},_=>{});
         Assert.Equal(2,path.Count);var first=Assert.IsType<PathSegment.Line>(path[0]);var second=Assert.IsType<PathSegment.Line>(path[1]);
         Assert.Equal(90,first.ToX);Assert.Equal(100,first.SpeedMmps);Assert.Equal(90,second.FromX);Assert.Equal(20,second.SpeedMmps);
         var reverse=(PathSegment.Line)NativePathBuffer.ApplyKnownProfile(new[]{line with{SpeedMmps=BitConverter.Int32BitsToSingle(unchecked((int)0x80000000))}},PathMotionProfile.Default,_=>{})[0];Assert.Equal(-100,reverse.SpeedMmps);
-        Assert.Empty(NativePathBuffer.ApplyMotionProfile(new PathSegment[]{new Unknown()},PathMotionProfile.Default,G,(_,_,_,_)=>{},_=>{}));
+        Assert.Empty(NativePathBuffer.ApplyMotionProfile(new PathSegment[]{new Unknown()},PathMotionProfile.Default,(_,_,_,_)=>{},_=>{}));
     }
     [Fact]
     public void PathSafetyAccumulatesSubthresholdRemaindersAndKeepsEmptyOutput()

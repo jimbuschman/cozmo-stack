@@ -108,10 +108,9 @@ internal static class NativePathBuffer
     private static float Speed(PathSegment s)=>s switch{PathSegment.Line l=>l.SpeedMmps,PathSegment.Arc a=>a.SpeedMmps,PathSegment.PointTurn t=>t.SpeedRadPerSec,_=>float.NaN};
     private static PathSegment Profile(PathSegment s,float speed,float accel,float decel)=>s switch
     {PathSegment.Line l=>l with{SpeedMmps=speed,AccelMmps2=accel,DecelMmps2=decel},PathSegment.Arc a=>a with{SpeedMmps=speed,AccelMmps2=accel,DecelMmps2=decel},PathSegment.PointTurn t=>t with{SpeedRadPerSec=speed,AccelRadPerSec2=accel,DecelRadPerSec2=decel},_=>s};
-    // The full checked arithmetic accepts separately recovered GetLength/GetEndPose metadata.
-    // Until M13-011 supplies those helpers, production explicitly uses only ApplyKnownProfile's bounded slice.
+    // IPathPlanner::ApplyMotionProfile 0x00508AE4..0x005090DE.
     internal static IReadOnlyList<PathSegment> ApplyMotionProfile(IReadOnlyList<PathSegment> input,PathMotionProfile p,
-        Func<PathSegment,NativePlanDependencies.Geometry> geometry,SourceLogSink source,Action<string> missing)
+        SourceLogSink source, Action<string> missing)
     {
         var reverse=new List<PathSegment>();bool boundary=true;float eps=EngineF.Bits(0x3727C5AC);
         for(int i=input.Count-1;i>=0;i--)
@@ -125,7 +124,7 @@ internal static class NativePathBuffer
             if(speed<0 && MathF.Abs(p.ReverseSpeedMmps)<=eps)missing("M13-034 reverse-speed warning 0x00508BB4..0x00508C0C has an unresolved source key; profile+0 magnitude is still used");
             float downstream=boundary?0:Speed(reverse[^1]);
             float upstream=input.Count>1 && (i==0 || input[i-1] is PathSegment.PointTurn)?0:p.SpeedMmps;
-            float length=geometry(original).Length;
+            float length=NativePlanDependencies.GetLength(original);
             float ds=downstream*downstream,us=upstream*upstream,den=length*-2f,required=(ds-us)/den;
             if(!(MathF.Abs(required)<eps) && required>p.DecelMmps2 && MathF.Abs(required-p.DecelMmps2)>1f)
             {
@@ -141,15 +140,14 @@ internal static class NativePathBuffer
             if(segment is PathSegment.PointTurn){Append(output,segment,missing);continue;}
             float downstream=i+1==reverse.Count || reverse[i+1] is PathSegment.PointTurn?0:Speed(reverse[i+1]);
             if((speed>0)!=(downstream>0))downstream=MathF.CopySign(MathF.Abs(downstream),speed);
-            var g=geometry(segment);float tail=(downstream*downstream-speed*speed)/(p.DecelMmps2*-2f);
-            if(segment is PathSegment.Line line && tail>0 && tail<g.Length && MathF.Abs(tail-g.Length)>=5f)
+            float length=NativePlanDependencies.GetLength(segment), tail=(downstream*downstream-speed*speed)/(p.DecelMmps2*-2f);
+            if(segment is PathSegment.Line line && tail>0 && tail<length && MathF.Abs(tail-length)>=5f)
             {
-                float distance=MathF.CopySign(g.Length-tail,speed);
-                float x=line.FromX+distance*MathF.Cos(g.End.Theta),y=line.FromY+distance*MathF.Sin(g.End.Theta);
-                Append(output,line with{ToX=x,ToY=y},missing);
+                float distance=MathF.CopySign(length-tail,speed), heading=NativePlanDependencies.GetEndPose(segment).Theta;
+                float x=line.FromX+distance*MathF.Cos(heading),y=line.FromY+distance*MathF.Sin(heading);
+                Append(output,NativePlanDependencies.DefineLine(line.FromX,line.FromY,x,y,speed,line.AccelMmps2,line.DecelMmps2),missing);
                 float next=downstream==0?MathF.CopySign(20,speed):MathF.CopySign(MathF.Abs(downstream),speed);
-                float secondX=line.FromX+distance*MathF.Cos(g.End.Theta),secondY=line.FromY+distance*MathF.Sin(g.End.Theta);
-                Append(output,line with{FromX=secondX,FromY=secondY,SpeedMmps=next},missing);
+                Append(output,NativePlanDependencies.DefineLine(x,y,line.ToX,line.ToY,next,line.AccelMmps2,line.DecelMmps2),missing);
             }
             else
             {

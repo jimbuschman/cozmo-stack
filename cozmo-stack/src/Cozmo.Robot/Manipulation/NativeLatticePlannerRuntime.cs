@@ -198,25 +198,30 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         if(nearest.Distance>=20f){_missing("M13-033 RobotPositionError event/format at 0x004FFDCC..0x004FFE2A remains unported");_total=null;Publish(0);return false;}
         _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","total path:");
         _missing("M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt");
-        _missing("M13-034 AppendToPath cached primitive paths/MotionPrimitive.Create and RelativePathTurn.ExtendPath are unbuilt; existing ToPath geometry remains a labelled candidate, not the native AppendToPath implementation");
-        var remaining=_total with{Start=_total.States().ElementAt(nearest.Index),Actions=_total.Actions.Skip(nearest.Index).ToArray(),Penalties=_total.Penalties.Skip(nearest.Index).ToArray()};
-        var raw=_backend.ToPath(remaining,null,profile).ToList();
-        bool hadSegments=raw.Count!=0;
-        float? onlyTurnHeading=raw.FirstOrDefault() is PathSegment.PointTurn first?first.TargetAngleRad:null;
-        while(raw.Count>0 && raw[^1] is PathSegment.PointTurn)raw.RemoveAt(raw.Count-1);
-        if(hadSegments)
+        var raw = new List<PathSegment>();
+        NativePlanDependencies.AppendToPath(_backend.Env.Primitives, _total, raw, nearest.Index,
+            primitive => primitive.CachedPath, NativePlanDependencies.OffsetStart, _missing);
+        if (raw.Count != 0)
         {
-            // Preserve the existing candidate producer's end-state input until cached native segments/GetEndPose are built.
-            int endpointIndex=remaining.Actions.Count;
-            while(endpointIndex>0 && remaining.Actions[endpointIndex-1].EndX==0 && remaining.Actions[endpointIndex-1].EndY==0)endpointIndex--;
-            var endpoint=remaining.States().ElementAt(endpointIndex);float endAngle=_backend.Env.Primitives.Angles[endpoint.Theta];
-            if(raw.Count==0 && onlyTurnHeading is {} cachedTurn)endAngle=cachedTurn;
-            float desired=(float)_goals[_chosenGoal].AngleAroundZ,delta=EngineF.RadiansMinus(desired,endAngle),speed=delta>0?2f:-2f;
-            _missing("M13-034 final turn uses the retained ToPath candidate's lattice endpoint; native GetEndPose cached heading/primitive paths remain unbuilt (0x0085BF5C)");
-            Info("LatticePlanner.ReplanIfNeeded.FinalAngleCorrection",FormattableString.Invariant($"LatticePlanner: Final angle off by {delta:F6} rad. DesiredAng = {desired:F6}, endAngle = {endAngle:F6}, rotSpeed = {speed:F6}. Adding point turn."));
-            NativePathBuffer.Append(raw,new PathSegment.PointTurn(_backend.Env.Primitives.ResolutionMm*endpoint.X,_backend.Env.Primitives.ResolutionMm*endpoint.Y,desired,EngineF.Bits(0x3DB2B8C2),speed,10,10,true),_missing,"AppendPointTurn");
+            // 0x004FFCBA..0x004FFD14: take the endpoint before popping each trailing turn.
+            // If the entire path is turns, the first turn's endpoint is retained.
+            var endpoint = NativePlanDependencies.GetEndPose(raw[^1]);
+            while (raw[^1] is PathSegment.PointTurn)
+            {
+                raw.RemoveAt(raw.Count - 1);
+                if (raw.Count == 0) break;
+                endpoint = NativePlanDependencies.GetEndPose(raw[^1]);
+            }
+
+            float desired = (float)_goals[_chosenGoal].AngleAroundZ;
+            float delta = EngineF.RadiansMinus(desired, endpoint.Theta);
+            float speed = delta > 0 ? 2f : -2f;
+            Info("LatticePlanner.ReplanIfNeeded.FinalAngleCorrection",FormattableString.Invariant($"LatticePlanner: Final angle off by {delta:F6} rad. DesiredAng = {desired:F6}, endAngle = {endpoint.Theta:F6}, rotSpeed = {speed:F6}. Adding point turn."));
+            NativePathBuffer.Append(raw, new PathSegment.PointTurn(endpoint.X, endpoint.Y, desired,
+                EngineF.Bits(0x3DB2B8C2), speed, 10, 10, true), _missing, "AppendPointTurn");
         }
-        path=NativePathBuffer.ApplyKnownProfile(raw,profile,_missing,_source);return true;
+        path = NativePathBuffer.ApplyMotionProfile(raw, profile, _source, _missing);
+        return true;
     }
     public void Dispose()
     {
