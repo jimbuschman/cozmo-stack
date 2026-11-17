@@ -217,6 +217,31 @@ public sealed class PickupPyramidNativeExecutionTests
         return value;
     }
     [Fact]
+    public void DockGoingActiveWithNoSevereNeedAddsTheSquint()
+    {
+        // IDockAction::CheckIfDone 0x00552352..0x0055235E: the raw severe-need selection (3 = none) is compared with 1,
+        // so with no selected need the dock squint is added (robot run 20261117-053040 threw here instead).
+        using var f=new Fixture();f.Add();var action=new NativePickupObjectRunner(f.M,7);
+        Assert.Equal(3,f.Rig.Engine.Needs.SevereNeeds.Selected);
+        bool Squint()=>f.Rig.Robot.Animations.Scheduler.Layers.Face.AllLayers.Any(l=>l.Name=="DockSquint");
+        f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action,0);uint image=0;bool squint=false;
+        try
+        {
+            for(int i=0;i<100&&!action.DestructionObserved&&!squint;i++)
+            {
+                f.Motors();
+                if(f.Rig.SentSince(0).OfType<DockWithObject>().Any())
+                {
+                    f.Motors(RobotStatusFlag.IsPickingOrPlacing);f.Motors(RobotStatusFlag.IsPickingOrPlacing);
+                    squint=Squint();break;
+                }
+                f.Image(++image,action.Prepared?.Children.OfType<NativeTurnTowardsObjectRunner>().Any(c=>c.Initialized)==true);
+            }
+            Assert.True(squint);
+        }
+        finally{f.Robot.ActionList.Clear();}
+    }
+    [Fact]
     public void QueuedPickupUsesRealMotorImagesDockFlagRawLoadAndCarryCompletion()
     {
         // Actual concrete owned pickup/ActionList path, supplied located scene and firmware inputs.
