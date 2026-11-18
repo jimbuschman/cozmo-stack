@@ -1297,8 +1297,8 @@ public sealed partial class NeedsManager
     public Action<bool>? LocalNotificationsSetPaused { get; set; }
 
     /// <summary>
-    /// <c>NeedsManager::SendNeedsPauseStateToGame()</c> 0x00695F78: the pause-state broadcast. The
-    /// app-facing wire is unbuilt.
+    /// <c>NeedsManager::SendNeedsPauseStateToGame()</c> 0x00696040: the pause-state broadcast;
+    /// EngineNeedsOwner binds E2G 0x63 and its one-bool body.
     /// </summary>
     // fidelity: M15-016
     public Action? SendNeedsPauseStateToGame { get; set; }
@@ -1402,8 +1402,8 @@ public sealed partial class NeedsManager
     /// This is reached <b>only</b> from app game messages: SetGameBeingPaused (tag 85),
     /// SetNeedsPauseState (tag 201, live through the generated invoker <c>FUN_0069B0E2</c>; the named
     /// <c>HandleMessage&lt;SetNeedsPauseState&gt;</c> is dead), RegisterOnboardingComplete (tag 200) and
-    /// EnterSdkMode/ExitSdkMode (tags 241/242). None of those layers is built here, so this stays the seam
-    /// the game-message layer will call.
+    /// EnterSdkMode/ExitSdkMode (tags 241/242). G2E 201 is bound by EngineNeedsOwner; the other
+    /// app/SDK callers remain outside this build.
     /// </summary>
     // fidelity: M15-016
     public void SetPaused(bool paused)
@@ -2024,6 +2024,8 @@ public sealed partial class NeedsManager
     /// <summary><c>+0x3d0</c>: a robot needs read is outstanding.</summary>
     // fidelity: M15-014
     public bool AwaitingRobotData => _awaitingRobotData;
+    // M15-014: the resolver has selected this connection's robot/PC copies; protected failed reads do not qualify.
+    internal bool NativeLevelsLoaded { get { lock(_gate) return _nativeCopiesResolved && !_awaitingRobotData; } }
     /// <summary>Whether a parsed robot copy exists.</summary>
     // fidelity: M15-014
     public bool HasRobotCopy => _robotCopy is not null;

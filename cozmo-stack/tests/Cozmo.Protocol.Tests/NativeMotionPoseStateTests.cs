@@ -5,6 +5,22 @@ using Xunit;
 namespace Cozmo.Protocol.Tests;
 public sealed class NativeMotionPoseStateTests
 {
+    // 0x006B00A2..B2 / 0x006503A8 construct a default previous carrier;
+    // 0x006B3576..0x006B35F4 still compares it on the first detection.
+    [Theory]
+    [InlineData(0f,0f,false)]
+    [InlineData(10f,0f,true)]
+    [InlineData(0f,.2f,true)]
+    public void FirstFaceFrameComparesAgainstTheDefaultCarrier(float x,float head,bool reset)
+    {
+        using var rig=new M4ControlTests.Rig();rig.ToSynced();
+        using var frame=Frame(rig.Engine.Robot!,x,0,head,1);
+        using var worker=new NativeMotionPoseState();worker.Admit(frame);
+        Assert.False(worker.HasPrevious);
+        Assert.Equal(reset,worker.ResetFaceTracking());
+        worker.Admit(frame);
+        Assert.False(worker.ResetFaceTracking());
+    }
     private static NativeGroundFrame Frame(EngineRobot owner,float x,float y,float head,uint timestamp)
     {
         using var pose=new Pose3d(Rotation3d.Identity,new Vec3(x,y,0));

@@ -10,6 +10,12 @@ namespace Cozmo.Robot.Animation;
 /// </summary>
 public abstract record AnimationDiagnostic(long Timestamp);
 
+/// <summary>Read-only identity at successful InitStream (0x0057B674).
+/// This is selection/initialization, not a robot start acknowledgement.
+/// Tracks describe keyframes present, not a claim that a motor moved.</summary>
+public sealed record AnimationClipInitializedObservation(long Timestamp, byte Tag, string Name,
+    uint DurationMs, AnimationTrack Tracks) : AnimationDiagnostic(Timestamp);
+
 // fidelity: M5-028
 /// <summary>
 /// One <c>FaceLayerManager::KeepFaceAlive</c> call (A33; the blink timer at manager+0x14). <see cref="CallNumber"/>

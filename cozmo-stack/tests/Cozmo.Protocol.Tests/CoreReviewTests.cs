@@ -1189,6 +1189,7 @@ public class CoreReviewTests
     /// is reported rather than hidden.
     /// </summary>
     [Fact]
+    [ExpectedIsolatedFault(typeof(InvalidOperationException), "a bad message subscriber", 2)]
     public void CORE011_AThrowingSubscriberDoesNotStarveTheInternalConsumers()
     {
         using var robot = CozmoRobot.CreateOffline();

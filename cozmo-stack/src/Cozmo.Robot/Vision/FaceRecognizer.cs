@@ -371,17 +371,45 @@ public sealed partial class FaceRecognizer
             if (status != 0 || id == 0 || !_faces.TryGetValue(id, out var face)) return;
             if (_trackToFace.TryGetValue(track, out int previous) && previous != id)
             {
-                if(!_faces.TryGetValue(previous,out var oldFace) || oldFace.Name.Length==0 || face.Name.Length==0)
+                // UpdateRecognitionData 0x008633BE..0x00863710. A missing old
+                // record falls through to the new mapping. Named conflicts do
+                // not merge; an unnamed conflict chooses the named record, or
+                // the older +0x28 timestamp (old wins a tie).
+                if(_faces.TryGetValue(previous,out var oldFace))
                 {
-                    Behavior.SteppedBehavior.ReportMissing("M14-011 unnamed or missing identity replacement/merge ordering remains unavailable");
-                    return;
+                    var source = SourceLog;
+                    if(oldFace.Name.Length!=0 && face.Name.Length!=0)
+                    {
+                        string message = $"While tracking face {unchecked(-track)} with ID={previous} ({oldFace.Name}), recognized as ID={id} ({face.Name}). Not merging!";
+                        LogCallbackDeferral.Run(() => source?.Invoke(EngineLogLevel.Warning, null, "FaceRecognizer.UpdateRecognitionData.ConfusedTwoNamedIDs", message));
+                        oldFace.CurrentTrack = 0;
+                        oldFace.PreviousTrack = 0;
+                        _trackToFace.Remove(track);
+                    }
+                    else
+                    {
+                        int recognized=id;
+                        bool keepOld=oldFace.Name.Length!=0 || (face.Name.Length==0 && face.Timestamp28Micros>=oldFace.Timestamp28Micros);
+                        int keep=keepOld?previous:id, remove=keepOld?id:previous;
+                        bool allowed=RegistrationAllowed && (EnrollmentTargetId==0 || EnrollmentTargetId==keep) && EnrollmentCount!=0;
+                        if(remove==recognized || allowed) // 0x0086360E..14
+                        {
+                            LogCallbackDeferral.Run(()=>source?.Invoke(EngineLogLevel.Info,"FaceRecognizer","UpdateRecognitionData.MergingFaces",
+                                $"Tracking {unchecked(-track)}: merging ID={remove} into ID={keep} (merging allowed={(allowed?1:0)})"));
+                            int result=MergeFaces(keep,remove);
+                            if(result!=0)LogCallbackDeferral.Run(()=>source?.Invoke(EngineLogLevel.Warning,null,
+                                "FaceRecognizer.UpdateRecognitionData.MergeFail",$"Trying to merge {previous} with {recognized}"));
+                        }
+                        else if(remove==EnrollmentTargetId) // 0x008636BA..0x00863708
+                        {
+                            LogCallbackDeferral.Run(()=>source?.Invoke(EngineLogLevel.Info,"FaceRecognizer","UpdateRecognitionData.UpdateEnrollmentID",
+                                $"Updating enrollment ID {remove}->{keep} while to tracking {unchecked(-track)} (not merging)"));
+                            EnrollmentTargetId=keep;
+                        }
+                        id=keep;
+                        face=_faces[keep];
+                    }
                 }
-                var source = SourceLog;
-                string message = $"While tracking face {unchecked(-track)} with ID={previous} ({oldFace.Name}), recognized as ID={id} ({face.Name}). Not merging!";
-                LogCallbackDeferral.Run(() => source?.Invoke(EngineLogLevel.Warning, null, "FaceRecognizer.UpdateRecognitionData.ConfusedTwoNamedIDs", message));
-                oldFace.CurrentTrack = 0;
-                oldFace.PreviousTrack = 0;
-                _trackToFace.Remove(track);
             }
             face.Score = score;
             _trackToFace[track] = id;

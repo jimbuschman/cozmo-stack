@@ -113,7 +113,8 @@ public sealed class SparkManagerInputCheckedRowsTests
             manager.SparkTagNameInput=_=>"tag-input";EngineErrorState.ErrorFlagSet=false;
             robot.Engine.LogEntry+=e=>{if(e.Name=="BehaviorManager.HandleEvent.UnhandledMessageUnionTag"){
                 Assert.Equal(EngineLogLevel.Error,e.Level);Assert.Null(e.Channel);Assert.Empty(e.Data);
-                Assert.Equal("Unexpected tag 254 'tag-input'",e.Text);Assert.False(EngineErrorState.ErrorFlagSet);
+                // sErrorF's tick prefix is retained in LogEntry, 0x0080DCC0..0x0080DD2E (M3-048).
+                Assert.Equal("(tc0000) : Unexpected tag 254 'tag-input'",e.Text);Assert.False(EngineErrorState.ErrorFlagSet);
             }};
             manager.HandleSparkManagerMessage(new(254));Assert.True(EngineErrorState.ErrorFlagSet);
         }

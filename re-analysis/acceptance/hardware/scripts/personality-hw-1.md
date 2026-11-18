@@ -14,12 +14,17 @@ Follow the prompts for picking him up, setting him down, each of the three off-t
 table edge, showing a face, tapping and moving a cube, and the 15-minute idle window. A previously enrolled face
 lets you observe whether he responds by name. Each question takes a yes/no observation. Ctrl+C saves a partial run.
 
+The `putdown` step checks the engine's ReactToReturnedToTreads start and stop reports. Put him down on a level
+surface: the native behavior waits 0.5 seconds and normally finishes quietly. Only an absolute pitch above
+10 degrees queues head calibration (0x00608500..0x0060868E). It queues no animation or sound. The operator's
+answer records any visible or audible observation and does not determine this engine check's verdict.
+
 The face checks `acknowledge-face`, `interact-with-faces` and optional `react-to-pet` use a 45-second window
 for the named engine behavior. The harness records the matching start and stop transitions. A start earns the
 step's pass, and the operator's answer remains an observation. The `search-for-face` step waits for the
 current-origin FaceWorld to empty, selects the search behavior, then waits for its reports. Show your face
 when the search animation begins to exercise the found-face response. An enrolled face can remain in
-FaceWorld until the robot changes origin. The `drive-to-face` constructor remains MISSING.
+FaceWorld until the robot changes origin. The `drive-to-face` step waits for a current-origin face and requests VC_ComeHere. Keep your face more than 20 cm away: after turning and verification Cozmo drives to a 200 mm standoff, then tracks the face for up to five seconds (0x005DA950, 0x005DAB34, 0x005DA8FC). Freeplay is restored after either requested face step.
 
 The needs steps `express-needs`, `needs-change-animation` and `drive-in-desperation` temporarily set Energy
 to the Warning or Critical bracket through the engine's ForceSetNeedsLevels message. Keep Cozmo off his
@@ -43,3 +48,14 @@ dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m15-cube-hw --personal
 
 Add `--steps pickup,putdown` to run just those two steps, in the usual script order. The plan above lists
 the available step IDs. You can combine `--steps` with `--validate` to preview a partial run.
+
+Each non-idle step now waits for its named engine behavior/reaction or cube
+event. Enter cannot end this waiting window. A missing trigger is reported
+explicitly at the printed deadline. The live narration identifies robot
+animation starts/ends/aborts, clip length and authored tracks, plus posture,
+behavior, action, cube and face events. The question lists clips that reported
+starting after this step's trigger and accepts `yes`, `no`, or `partly`.
+Answers remain observations; they do not replace the engine-report check.
+The result keeps the text `answer` and a compatible nullable `observed` value
+(`partly` is null). Missing end reports are stated, not treated as proof that a
+clip is still running.

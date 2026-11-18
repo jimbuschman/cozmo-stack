@@ -37,12 +37,14 @@ public sealed partial class CozmoEngine
                 n.HostEngine=this;n.NativeContextBound=true;
                 n.SourceLog=(level,channel,key,text)=>EmitSourceLog(level,channel,key,text);
                 n.State.PartDamageLog=(value,data)=>EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);
+                BindNeedsPauseReport(n);
                 n.TickCount=()=>Timer.TickCount;
                 n.PossiblyWriteLabAssignments=Experiments.PossiblyWriteLabAssignmentsToRobot;
                 BindNativeNotifications(n);
             },systemClockMicroseconds:NeedsWallClockMicros,constructorTimes:(_needsCurrentConstructorMicros,_needsCandidateConstructorMicros));
         Experiments.AttachInitializedNeeds(Needs);
         Needs.Connected=false; // native constructor manager+4 is null until InitAfterConnection (0x0069211A, 0x00694388)
+        _keepNeedsFull=Options.KeepNeedsFull;
         Needs.AttachConnectionRead(this);
         ConnectToRobotHandled+=()=>Needs.InitAfterConnection();
         SerialNumberAcquired+=serial=>Needs.InitAfterSerialNumberAcquired(serial);
@@ -50,6 +52,8 @@ public sealed partial class CozmoEngine
         NeedsSetPaused=Needs.SetPaused;
         NeedsRobotDisconnected=Needs.OnRobotDisconnected;
         AnimationMessages.SubscribeMessage(0xC6,false,p=>Needs.ForceSetNeedsLevels((IReadOnlyList<float>)p!));
+        // M15-016: live generated G2E tag201 invoker 0x0069B0E2..0x0069B0F6 -> SetPaused 0x00695E04.
+        AnimationMessages.SubscribeMessage(0xC9,false,p=>Needs.SetPaused((bool)p!));
         SteppedBehavior.ReportMissing("M15-001 NeedsManager.Init: remaining registrations 0x00692668..0x006926C8 and DAS app_start tail 0x00693486 remain unbuilt/uncertified; full StarRewardsConfig and runtime tuning lifecycle remain incomplete");
         if(Options.NeedsDeviceDirectory is null)
             SteppedBehavior.ReportMissing("M15-001 NeedsManager.InitInternal 0x00693466/0x0069347E: host nurture directory not supplied; device read/write remain unbound");
@@ -87,6 +91,7 @@ public sealed partial class CozmoEngine
         Needs.DetachConnectionRead();
         Needs=needs;
         Needs.HostEngine=this;Needs.NativeContextBound=true;
+        BindNeedsPauseReport(needs);
         Needs.AttachConnectionRead(this);
         BindNeedsRobotServices();
         NeedsUpdate=Needs.Update;NeedsSetPaused=Needs.SetPaused;NeedsRobotDisconnected=Needs.OnRobotDisconnected;
@@ -104,4 +109,18 @@ public sealed partial class CozmoEngine
     }
     public void RequestNotificationTextKeys()=>Post(()=>{if(NeedsContextAlive)AnimationMessages.Deliver(0xD5,false,null);});
     public void NotifyNotificationManagerReady()=>Post(()=>{if(NeedsContextAlive)AnimationMessages.Deliver(0xD4,false,null);});
+
+    private void BindNeedsPauseReport(NeedsManager needs)
+    {
+        // M15-016: SendNeedsPauseStateToGame 0x00696040..0x0069606C reads +0x1D5 and broadcasts.
+        // Unity NeedsPauseState.cs packs one bool; MessageEngineToGame.cs names tag 99 (0x63).
+        needs.SendNeedsPauseStateToGame=()=>
+        {
+            if(!NeedsContextAlive || !ReferenceEquals(Needs,needs))return;
+            if(!NeedsContextExternalInterfaceAvailable)
+            {SteppedBehavior.ReportMissing("M1-034/M15-016 skipped null needs pause report interface at 0x0069605C");return;}
+            bool paused=needs.IsPaused;
+            DeliverNurture(0x63,new[]{paused?(byte)1:(byte)0},paused);
+        };
+    }
 }

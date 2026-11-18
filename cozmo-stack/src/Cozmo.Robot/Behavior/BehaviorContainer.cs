@@ -329,6 +329,22 @@ public sealed class BehaviorFactory
         [BehaviorClass.LookForFaceAndCube] = (ctx,json)=>new NativeLookForFaceAndCubeBehavior(ctx,json),
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.SearchForFace] = (ctx,json)=>new NativeSearchForFaceBehavior(ctx,json),
+        [BehaviorClass.DriveToFace] = (ctx,json)=>new NativeDriveToFaceBehavior(ctx,json),
+        [BehaviorClass.ReactToCliff] = (ctx,json)=>new ReactToCliffBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToCliff actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToCliff actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString())
+            {AlwaysStreamline=json.TryGetProperty("alwaysStreamline",out var streamlined)&&streamlined.GetBoolean()},
+        [BehaviorClass.ReactToImpact] = (ctx,json)=>new ReactToImpactBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToImpact actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToImpact actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToPlacedOnSlope] = (ctx,json)=>new ReactToPlacedOnSlopeBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToUnexpectedMovement] = (ctx,json)=>new ReactToUnexpectedMovementBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToReturnedToTreads] = (ctx,json)=>new ReactToReturnedToTreadsBehavior(ctx.Manipulation,ctx.NativeRobot,
+            BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeInteractWithFaces(ctx,json),
         [BehaviorClass.ReactToPet] = (ctx,json)=>new NativeReactToPetBehavior(ctx,json),
         [BehaviorClass.EnrollFace] = (ctx,json)=>new NativeEnrollFaceBehavior(ctx,json),
@@ -442,6 +458,18 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
+        if (cls == BehaviorClass.DriveToFace && (ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("DriveToFace factory 0x0059CB00 requires the original Robot, vision and manipulation owners");
+            status=BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
+        if(cls==BehaviorClass.ReactToReturnedToTreads && (ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("ReturnedToTreads factory 0x0059D252 requires the original Robot and manipulation owners");
+            status=BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -524,6 +552,12 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("Bouncer factory: actual vision, manipulation and native Robot owners unavailable");
             status=BehaviorCreateStatus.NotImplemented; return null;
         }
+        if (cls is BehaviorClass.ReactToCliff or BehaviorClass.ReactToImpact or BehaviorClass.ReactToPlacedOnSlope or BehaviorClass.ReactToUnexpectedMovement
+            && (ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing($"{cls} factory requires actual manipulation and native Robot owners");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
         IBehavior behavior;
         try { behavior = entry.Construct(ctx, config); }
         catch (NotSupportedException error) when (cls is BehaviorClass.AcknowledgeObject or BehaviorClass.RespondToRenameFace or BehaviorClass.TrackLaser)
@@ -542,6 +576,14 @@ public sealed class BehaviorFactory
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
+            }
+            if(stepped is ReactToReturnedToTreadsBehavior or ReactToCliffBehavior or ReactToImpactBehavior or ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior)
+            {
+                // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
+                stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
+                stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner!.ActiveSparkId;
+                stepped.SparkGate=()=>native.BehaviorManagerOwner is {} manager &&
+                    manager.ActiveSparkId!=0x55 && (manager.ActiveSparkSoft^1)!=0;
             }
         }
         container.AddToFactory(behavior);

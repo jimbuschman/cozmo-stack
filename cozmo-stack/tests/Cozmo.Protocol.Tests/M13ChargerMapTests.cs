@@ -187,9 +187,15 @@ public sealed class M13ChargerMapTests
     public void RealContactIngressReachesBothChargerInserts()
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();
-        var world=rig.Robot.Vision.World;var map=world.Maps.Current!;int inserts=0;
-        map.ObjectInsertForTest=(_,data)=>{Assert.Equal(MemoryMapContentType.ObstacleCharger,data.Type);inserts++;};
+        var world=rig.Robot.Vision.World;var map=world.Maps.Current!;var inserts=new List<MemoryMapContentType>();
+        map.ObjectInsertForTest=(_,data)=>inserts.Add(data.Type);
         rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger,origin:999));rig.Tick();
-        Assert.Equal(2,inserts);
+        // Charger additions: 0x0067EFCA..0x0067F002, family mapping 0x0067F4E2..0x0067F4E8 -> 4.
+        // The same tick also inserts the robot's clear footprints (0x0067E224..0x0067E486).
+        Assert.Equal(2,inserts.Count(t=>t==MemoryMapContentType.ObstacleCharger));
+        Assert.Contains(MemoryMapContentType.ClearOfCliff,inserts);
+        Assert.Contains(MemoryMapContentType.ClearOfObstacle,inserts);
+        Assert.All(inserts,t=>Assert.Contains(t,new[]{MemoryMapContentType.ObstacleCharger,
+            MemoryMapContentType.ClearOfCliff,MemoryMapContentType.ClearOfObstacle}));
     }
 }

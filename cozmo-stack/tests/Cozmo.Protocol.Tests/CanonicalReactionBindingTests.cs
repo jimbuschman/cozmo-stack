@@ -684,19 +684,19 @@ public sealed class CanonicalReactionBindingTests
         var order=new List<string>();
         behavior.RobotCliffEventFinishedInternal+=()=>order.Add("finished");
         using var objective=rig.Engine.AnimationMessages.SubscribeMessage(0x8B,true,p=>{if(p is uint id && id==0x1C)order.Add("objective");});
-        rig.Data(new CliffEvent{Timestamp=123,DetectedFlags=1});
-        rig.Tick(0);
+        // Unit ingress boundary: run the actual handler without an intervening ActionList
+        // tick, so cancellation below is deterministic and does not depend on audio startup.
+        rig.Engine.InvokeEngineRequest(()=>{rig.Robot.Sensors.Handle(new CliffEvent{Timestamp=123,DetectedFlags=1},native);return true;});
         manager.CheckReactions(rig.Engine.Timer.Seconds);
         Assert.Same(behavior,manager.Current);
-        if(!cliff) { rig.Data(new CliffEvent{Timestamp=124,DetectedFlags=0});rig.Tick(0); }
-        // Supplied interruption boundary: stop the real tracked animation and allow its
-        // ticket callback to run. This does not claim normal firmware animation completion.
-        Assert.True(rig.Robot.Animations.Stop());
-        BehaviorTestSignals.WaitForPostedWork(behavior);
-        manager.Update(rig.Engine.Timer.Seconds*1000,rig.Engine.Timer.Seconds);
+        if(!cliff)rig.Engine.InvokeEngineRequest(()=>{rig.Robot.Sensors.Handle(new CliffEvent{Timestamp=124,DetectedFlags=0},native);return true;});
+        // 6051BC's resultless completion runs even for an unstarted cancellation. Use
+        // the real native queue and synchronous RobotCompletedAction, not a legacy ticket.
+        var animation=Assert.IsType<TriggerLiftSafeAnimationAction>(behavior.OwnedRunner);
+        Assert.Same(animation,native.ActionList.GetCurrentAction());
+        native.ActionList.Cancel(animation.Tag);
         if(cliff)
         {
-            Assert.True(SpinWait.SpinUntil(()=>native.ActionList.GetCurrentAction() is DriveStraightAction,TimeSpan.FromSeconds(5)));
             var drive=Assert.IsType<DriveStraightAction>(native.ActionList.GetCurrentAction());
             Assert.Equal(-60d,drive.DistanceMm);Assert.Equal(100f,drive.SpeedMmps);Assert.True(drive.ShouldPlayAnimation);
             Assert.Empty(order);

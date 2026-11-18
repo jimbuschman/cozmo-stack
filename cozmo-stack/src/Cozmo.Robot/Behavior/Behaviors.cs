@@ -760,7 +760,10 @@ public static class ShippedBehaviors
         Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeHiccup = null,
         AcknowledgeFaceBehavior? acknowledgeFace = null, IBehavior? nativePet = null,
         EngineRobot? nativeOwner = null, bool nativePetExpected = false,
-        Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeFistBump = null)
+        Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeFistBump = null,
+        ReactToReturnedToTreadsBehavior? nativeReturnedToTreads = null,
+        ReactToCliffBehavior? nativeCliff = null,ReactToImpactBehavior? nativeImpact = null,
+        ReactToPlacedOnSlopeBehavior? nativeSlope = null,ReactToUnexpectedMovementBehavior? nativeUnexpected = null)
     {
         if (map.Count == 0) return Array.Empty<BehaviorManager.ReactionRegistration>();
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
@@ -771,7 +774,7 @@ public static class ShippedBehaviors
         {
             // fidelity: M7-019, M7-015, M7-021
             ("ReactToCliff", ReactionTrigger.CliffDetected,
-                new ReactToCliffBehavior(robot)
+                nativeCliff??new ReactToCliffBehavior(robot)
                 {
                     // M13's DriveStraightAction(robot, distance, speed) runs the back-up drive when a manipulation system is attached.
                     DriveStraight = m is null ? null : (distance, speed, ct) => new Cozmo.Robot.Manipulation.DriveStraightAction(m, distance, speed).RunAsync(ct),
@@ -787,13 +790,13 @@ public static class ShippedBehaviors
             ("ReactToRobotOnBack", ReactionTrigger.RobotOnBack, new ReactToRobotOnBackBehavior(), strategies[ReactionTrigger.RobotOnBack]),
             ("ReactToRobotOnFace", ReactionTrigger.RobotOnFace, new ReactToRobotOnFaceBehavior(), strategies[ReactionTrigger.RobotOnFace]),
             ("ReactToRobotOnSide", ReactionTrigger.RobotOnSide, new ReactToRobotOnSideBehavior(), strategies[ReactionTrigger.RobotOnSide]),
-            ("ReactToPlacedOnSlope", ReactionTrigger.RobotPlacedOnSlope, new ReactToPlacedOnSlopeBehavior(), strategies[ReactionTrigger.RobotPlacedOnSlope]),
-            ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, new ReactToReturnedToTreadsBehavior(m), strategies[ReactionTrigger.ReturnedToTreads]),
+            ("ReactToPlacedOnSlope", ReactionTrigger.RobotPlacedOnSlope, nativeSlope??new ReactToPlacedOnSlopeBehavior(), strategies[ReactionTrigger.RobotPlacedOnSlope]),
+            ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, nativeReturnedToTreads??new ReactToReturnedToTreadsBehavior(m), strategies[ReactionTrigger.ReturnedToTreads]),
             ("ReactToRobotShaken", ReactionTrigger.RobotShaken, new ReactToRobotShakenBehavior(), strategies[ReactionTrigger.RobotShaken]),
-            ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, new ReactToUnexpectedMovementBehavior(robot), strategies[ReactionTrigger.UnexpectedMovement]),
+            ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, nativeUnexpected??new ReactToUnexpectedMovementBehavior(robot), strategies[ReactionTrigger.UnexpectedMovement]),
             ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(m), strategies[ReactionTrigger.MotorCalibration]),
             ("ReactToFrustrationMinor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Minor(frustration), frustration),
-            ("ReactToImpact", ReactionTrigger.RobotFalling, new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),
+            ("ReactToImpact", ReactionTrigger.RobotFalling, nativeImpact??new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),
             ("ReactToOnCharger", ReactionTrigger.PlacedOnCharger, new ReactToOnChargerBehavior(), strategies[ReactionTrigger.PlacedOnCharger]),
         };
         if (m is not null)

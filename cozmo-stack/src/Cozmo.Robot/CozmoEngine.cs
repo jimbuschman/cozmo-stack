@@ -67,6 +67,9 @@ public sealed class CozmoEngineOptions
     internal bool OmitVisionForTest { get; set; }
     /// <summary>Host nurture directory, supplied before NeedsManager::Init; null leaves device persistence unbound.</summary>
     public string? NeedsDeviceDirectory { get; init; }
+    /// <summary>Operator-approved app refill input: load stored needs, force full and pause changes. False keeps native decay.</summary>
+    // fidelity: M15-112
+    public bool KeepNeedsFull { get; init; } = true;
     // fidelity: M3-061 — host replacement for app DataPlatformFilesPath/persistentDataPath; scope 0 appends /output.
     public string FilesPath { get; init; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"cozmo-stack");
     // fidelity: M3-062 — host supplies DataPlatformResourcesPath (scope 1; app input GetResourcesFolder).
@@ -2283,6 +2286,7 @@ public sealed partial class CozmoEngine : IDisposable
                 if(_engineState!=3 || StartupFailed)return 0;
                 Timer.UpdateTime(elapsedNs);
                 Handler.ProcessMessages();
+                UpdateHostNeeds(); // M15-112: supply app refill/pause inputs only after the stored copies resolve.
                 // fidelity: M1-024
                 // CozmoEngine::Update state 3 calls NeedsManager::Update between ProcessMessages and
                 // UpdateAllRobots, on BaseStationTimer::GetCurrentTimeInSeconds (0x004ED632..0x004ED640).
@@ -2649,8 +2653,12 @@ public sealed partial class CozmoEngine : IDisposable
 
     private void ReportFault(Exception e)
     {
-        try { Faulted?.Invoke(e); } catch { }
+        _isolatedFaultProbe?.Invoke(e);
+        try { Faulted?.Invoke(e); }
+        catch (Exception subscriberError) { _isolatedFaultProbe?.Invoke(subscriberError); }
     }
+
+    private readonly Action<Exception>? _isolatedFaultProbe = IsolatedFaultProbe.Capture?.Invoke();
 
     // fidelity: M5-022
     /// <summary>

@@ -11,14 +11,41 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class HardwareEngineOptions
 {
+    private static readonly AsyncLocal<bool?> ScopedNeeds = new();
+    internal static bool KeepNeedsFullDefault=>ScopedNeeds.Value??true;
+
+    // Host CLI input only; strip it before the existing per-harness argument parsers.
+    public static IDisposable UseNeedsArguments(ref string[] args)
+    {
+        bool? mode = null;
+        var remaining = new List<string>();
+        for (int i=0;i<args.Length;i++)
+        {
+            if(args[i]!="--needs"){remaining.Add(args[i]);continue;}
+            if(mode.HasValue || ++i==args.Length || args[i] is not ("full" or "real"))
+                throw new ArgumentException("--needs requires full or real, once.");
+            mode=args[i]=="full";
+        }
+        args=remaining.ToArray();
+        var scope=new NeedsScope(ScopedNeeds.Value);
+        ScopedNeeds.Value=mode;
+        return scope;
+    }
+    private sealed class NeedsScope(bool? prior):IDisposable
+    {
+        private bool disposed;
+        public void Dispose(){if(disposed)return;disposed=true;ScopedNeeds.Value=prior;}
+    }
+
     public static CozmoEngineOptions Create(string resources,string? filesPath=null,string? needsDirectory=null,string? deviceIdPath=null,
-        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null)
+        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null,bool? keepNeedsFull=null)
     {
         var defaults=new CozmoEngineOptions();
         string files=filesPath??defaults.FilesPath;
         string needs=Directory.CreateDirectory(needsDirectory??Path.Combine(files,"nurture")).FullName;
         var (language,country)=Locale(localeName??HostLocaleName(),log??Console.Error.WriteLine);
         return new CozmoEngineOptions{ResourcesPath=resources,FilesPath=files,BlockPoolPath=blockPoolPath??defaults.BlockPoolPath,NeedsDeviceDirectory=needs,
+            KeepNeedsFull=keepNeedsFull??KeepNeedsFullDefault,
             NeedsSystemClockMicroseconds=clock,DasDeviceId=DasDeviceIdFile.LoadOrCreate(deviceIdPath??DasDeviceIdFile.DefaultPath),
             LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart,SpeechSoundBankDirectory=speechSoundBankDirectory};
     }

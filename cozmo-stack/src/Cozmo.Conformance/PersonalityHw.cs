@@ -33,6 +33,16 @@ internal static class PersonalityHw
         robot.ExecuteBehaviorById((byte)BehaviorID.VC_SearchForFace, 1);
         return true;
     }
+    internal static bool TryRequestDriveToFace(CozmoRobot robot)
+    {
+        using var owner=robot.Engine.EnterSynchronousOwner();
+        var runtime=robot.Engine.Robot?.NativeBehaviorRuntime;
+        if(runtime is null || !runtime.Bound.TryGetValue("VC_ComeHere",out var behavior) ||
+            !behavior.IsRunnable(runtime.Context)) return false;
+        robot.SetEnableFreeplayActivity(false);
+        robot.ExecuteBehaviorById((byte)BehaviorID.VC_ComeHere,1);
+        return true;
+    }
     internal readonly record struct NeedsLevels(float Repair, float Energy, float Play)
     {
         internal string Describe() => FormattableString.Invariant(
@@ -41,6 +51,7 @@ internal static class PersonalityHw
         internal void WithOverride(CozmoEngine engine, Action observe, Action<bool, float[]>? record = null)
         {
             float[]? saved = null;
+            bool? savedFullMode = null;
             try
             {
                 using (engine.EnterSynchronousOwner())
@@ -54,6 +65,8 @@ internal static class PersonalityHw
                         || level > (float)needs.Config.MaximumNeedLevel))
                         throw new InvalidOperationException("Cozmo's current needs are outside the range ForceSetNeedsLevels can restore.");
                     saved = snapshot;
+                    savedFullMode = engine.GetNeedsStatus().KeepFull;
+                    engine.SetNeedsMode(false);
                     var target = new[] { Repair, Energy, Play };
                     engine.AnimationMessages.Deliver(0xC6, false, target);
                     record?.Invoke(false, target);
@@ -66,6 +79,7 @@ internal static class PersonalityHw
                 {
                     using var owner = engine.EnterSynchronousOwner();
                     engine.AnimationMessages.Deliver(0xC6, false, saved);
+                    if (savedFullMode == true) engine.SetNeedsMode(true);
                     record?.Invoke(true, saved);
                 }
             }
@@ -82,17 +96,30 @@ internal static class PersonalityHw
         internal bool Stops(JsonObject report) => Trigger is { } trigger
             ? IsReactionTransition(report, trigger, entering: false) : IsBehaviorStop(report, Id);
     }
-    internal sealed record Step(string Id, string Instruction, string Question, BehaviorCheck? Check = null, NeedsLevels? Needs = null);
+    internal sealed record Step(string Id, string Instruction, string Question, BehaviorCheck? Check = null, NeedsLevels? Needs = null,
+        string? Signal = null);
+    internal const string PhysicalReactionSource = "config/engine/behaviorSystem/reactionTrigger_behavior_map.json; BehaviorTransition E2G 0x87 (0x005A22B4..0x005A24AC)";
+    internal static string SignalSource(string signal)=>signal=="cube-tap"?
+        "M4-023 BlockTapFilterComponent ObjectTapped broadcasts 0x00630C4C..0x00630C72 / 0x00631178..0x00631192":
+        "M4-009 ObjectMoved E2G 0x0F 0x00534190..0x005341B0";
 
     internal static readonly Step[] Steps =
     {
-        new("pickup", "Gently pick Cozmo up, keep him upright and hold him still.", "Did you see or hear a pickup reaction?"),
-        new("putdown", "If Cozmo is already on his treads, gently pick him up and hold him upright briefly. Set him back down on his treads.", "Did you see or hear a reaction to being put down?"),
-        new("on-back", "Gently place Cozmo on his back. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his back?"),
-        new("on-side", "Gently place Cozmo on one side. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his side?"),
-        new("on-face", "Support Cozmo facing down. Watch his response, then return him to his treads.", "Did you see or hear a response to being face down?"),
-        new("shaken", "Pick up Cozmo, give him a brief gentle shake, then set him back on his treads.", "Did you see or hear a distinct response to the shake?"),
-        new("cliff", "Let Cozmo approach a table edge under close hand supervision. Catch him if needed and then move him back to safety.", "Did you see or hear a reaction to the edge?"),
+        new("pickup", "Gently pick Cozmo up, keep him upright and hold him still. Watch the reaction, then return him to his treads.", "Did you see or hear a pickup reaction?",
+            new(BehaviorID.ReactToPickup,PhysicalReactionSource)),
+        new("putdown", "If Cozmo is already on his treads, gently pick him up and hold him upright briefly. Set him back down on a level surface. The engine normally waits quietly; it calibrates the head only when the pitch reads above 10 degrees.",
+            "Did you observe any movement or sound when he was set down?",
+            new(BehaviorID.ReactToReturnedToTreads,"ReturnedToTreads admits RobotOffTreadsStateChanged=OnTreads when trigger 14 is enabled (0x0060DE36..0x0060DE58). Init queues WaitAction(robot,0.5f) (0x00608500..0x00608528), then only |pitch degrees| > 10 queues CalibrateMotorAction(robot,true,false) (0x006085C4..0x0060868E). No animation or sound is queued.")),
+        new("on-back", "Gently place Cozmo on his back. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his back?",
+            new(BehaviorID.ReactToRobotOnBack,PhysicalReactionSource)),
+        new("on-side", "Gently place Cozmo on one side. Watch his response, then return him to his treads.", "Did you see or hear a response to being on his side?",
+            new(BehaviorID.ReactToRobotOnSide,PhysicalReactionSource)),
+        new("on-face", "Support Cozmo facing down. Watch his response, then return him to his treads.", "Did you see or hear a response to being face down?",
+            new(BehaviorID.ReactToRobotOnFace,PhysicalReactionSource)),
+        new("shaken", "Pick up Cozmo, give him a brief gentle shake, then set him back on his treads.", "Did you see or hear a distinct response to the shake?",
+            new(BehaviorID.ReactToRobotShaken,PhysicalReactionSource)),
+        new("cliff", "Let Cozmo approach a table edge under close hand supervision. Catch him if needed and then move him back to safety.", "Did you see or hear a reaction to the edge?",
+            new(BehaviorID.ReactToCliff,PhysicalReactionSource)),
         new("acknowledge-face",
             "Keep your face out of view until the step begins. Then show an enrolled face he has yet to react to this session. For a face already seen at a distance, approach from beyond 40 cm to within 30 cm when he is free to react.",
             "Did you see or hear Cozmo acknowledge the face?",
@@ -109,14 +136,15 @@ internal static class PersonalityHw
             "Keep one face in view farther than 20 cm from Cozmo on a clear level surface.",
             "Did Cozmo approach the face?",
             new(BehaviorID.VC_ComeHere, "voiceCommands/VC_ComeHere.json maps the requested ID to DriveToFace. Readiness needs a valid most recently observed face in the current origin (0x005DA588..0x005DA626). After verification, the drive branch uses the 200 mm standoff (0x005DACDC, 0x005DA950). Selection handles G2E 0x94 (0x0060AA58..0x0060AB7A).",
-                Missing: "DriveToFace is unbuilt in the configured native factory (case 0x0059CB00).")),
+                WindowSeconds: 45)),
         new("react-to-pet",
             "If a pet is available, keep its face in Cozmo's view for several camera frames. Start off the charger after at least 60 seconds without a pet reaction.",
             "Did you see or hear Cozmo react to the pet?",
             new(BehaviorID.ReactToPet, "PetInitialDetection requires three observations of an unreacted pet, off the charger, and a 60 s cooldown (0x00611AE4..0x00611CB6, 0x00611DD0). ReactToPet requires a target (0x00606ED8..0x00606EEC). reactionTrigger_behavior_map.json selects ReactToPet.", Optional: true)),
-        new("face", "Show your face in good light. Use a previously enrolled face if available and listen for recognition by name.", "Did Cozmo acknowledge your face, by name if enrolled?"),
-        new("cube-tap", "Put the light cube upright with a marker facing Cozmo. Give him time to see it, then tap the cube.", "Did you see or hear a response to the tap?"),
-        new("cube-move", "Move the cube to a different spot within Cozmo's view, keeping it upright.", "Did you see or hear a response to the cube moving?"),
+        new("face", "Show your face in good light. Use a previously enrolled face if available and listen for recognition by name.", "Did Cozmo acknowledge your face, by name if enrolled?",
+            new(BehaviorID.AcknowledgeFace,PhysicalReactionSource)),
+        new("cube-tap", "Put the light cube upright with a marker facing Cozmo. Give him time to see it, then tap the cube.", "Did you see or hear a response to the tap?",Signal:"cube-tap"),
+        new("cube-move", "Move the cube to a different spot within Cozmo's view, keeping it upright.", "Did you see or hear a response to the cube moving?",Signal:"cube-move"),
         new("express-needs",
             "Keep Cozmo on his treads, off the charger and in Freeplay. Give him room to react.",
             "Did you see or hear a low-energy request?",
@@ -211,7 +239,8 @@ internal static class PersonalityHw
                 }
             }
             if (step.Needs is { } needs) Console.WriteLine($"  {needs.Describe()}");
-            Console.WriteLine($"  {step.Question} [yes/no]");
+            if(step.Signal is {} signal)Console.WriteLine($"  Wait up to 45 s for {signal}; watch at least 5 s after it and let reported clips finish within the limit. {SignalSource(signal)}.");
+            Console.WriteLine($"  {step.Question} [yes/no/partly]");
         }
         Console.WriteLine("Operator answers are observations. Checks use the named engine report in the step window.");
     }
@@ -225,6 +254,23 @@ internal static class PersonalityHw
         e["kind"]?.GetValue<string>() == "behavior-transition"
         && e[nameof(BehaviorTransitionReport.OldId)]?.GetValue<byte>() == (byte)id
         && e[nameof(BehaviorTransitionReport.NewId)]?.GetValue<byte>() != (byte)id;
+
+    internal static bool ObservationCompleted(BehaviorCheck check,IEnumerable<JsonObject> reports,double start,double end)
+    {
+        bool started=false;
+        foreach(var report in reports.Where(report=>report["atMs"]?.GetValue<double>() is {} time&&time>=start&&time<=end)
+            .OrderBy(report=>report["atMs"]!.GetValue<double>()))
+        {
+            if(check.Starts(report))started=true;
+            else if(started&&check.Stops(report))return true;
+        }
+        return false;
+    }
+    internal static double? ObservationStartedAt(BehaviorCheck check,IEnumerable<JsonObject> reports,double start,double end)=>
+        reports.Where(report=>report["atMs"]?.GetValue<double>() is {} at&&at>=start&&at<=end&&check.Starts(report))
+            .Select(report=>(double?)report["atMs"]!.GetValue<double>()).OrderBy(at=>at).FirstOrDefault();
+    internal static string? ParseObservation(string value)=>value.Trim().ToLowerInvariant() switch
+    {"yes" or "y"=>"yes","no" or "n"=>"no","partly" or "p"=>"partly",_=>null};
 
     private static bool IsReactionTransition(JsonObject report, ReactionTrigger trigger, bool entering)
     {
@@ -345,6 +391,8 @@ internal sealed partial class M15CubeRun
         double start = Now;
         Event("phase-start", new() { ["phase"] = step.Id });
         bool? observed = null;
+        string? answer=null;
+        string question=step.Question;
         double? idleStart = null, idleEnd = null;
         double? checkEnd = null;
         string? checkResult = null;
@@ -369,7 +417,6 @@ internal sealed partial class M15CubeRun
             {
                 Console.WriteLine($"Waiting up to {check.WindowSeconds} seconds for {check.Name} to start and stop.");
                 bool Started(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && check.Starts(e);
-                bool Stopped(JsonObject e) => e["atMs"]!.GetValue<double>() >= start && check.Stops(e);
                 void WaitForReports()
                 {
                     using var stimulus = CancellationTokenSource.CreateLinkedTokenSource(cancel.Token);
@@ -381,12 +428,15 @@ internal sealed partial class M15CubeRun
                             Poll(() => PersonalityHw.TryRequestSearchForFace(robot),
                                 Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
                         }
+                        if (step.Id == "drive-to-face")
+                            Poll(() => PersonalityHw.TryRequestDriveToFace(robot),
+                                Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
                         Task<AiTurnActionResult>? turn = step.Id == "react-to-unexpected-movement"
                             ? robot.Motion.QueueAiTurnInPlaceAsync(MathF.PI, TurnInPlaceAction.DefaultMaxSpeed,
                                 TurnInPlaceAction.DefaultAccel, cancellationToken: stimulus.Token) : null;
                         if (step.Id == "react-to-frustration")
                             RunFrustrationActions(robot, () => personalityTransitions.Any(Started), start, stimulus.Token);
-                        Poll(() => personalityTransitions.Any(Started) && personalityTransitions.Any(Stopped),
+                        Poll(() => PersonalityHw.ObservationCompleted(check,personalityTransitions,start,Now),
                             Math.Max(0, (int)(start + check.WindowSeconds * 1000 - Now)));
                         if (turn?.IsCompletedSuccessfully == true)
                             Event("reaction-stimulus-turn", JsonSerializer.SerializeToNode(turn.Result, BundleJson)!.AsObject());
@@ -395,7 +445,7 @@ internal sealed partial class M15CubeRun
                     {
                         checkEnd = Now;
                         stimulus.Cancel();
-                        if (step.Id == "search-for-face") robot.SetEnableFreeplayActivity(true);
+                        if (step.Id is "search-for-face" or "drive-to-face") robot.SetEnableFreeplayActivity(true);
                     }
                 }
                 try
@@ -411,7 +461,9 @@ internal sealed partial class M15CubeRun
                         WaitForReports();
                     checkResult = StepTransitions(check, start, checkEnd ?? Now).Any(check.Starts)
                         ? "passed" : "failed";
-                    Console.WriteLine(checkResult == "passed" ? "Engine start report observed." : "No matching engine start report in the window.");
+                    Console.WriteLine(checkResult == "passed"
+                        ? (PersonalityHw.ObservationCompleted(check,personalityTransitions,start,checkEnd??Now)?"Engine start and stop reports observed.":"Engine trigger arrived; the behavior is still running at the observation limit.")
+                        : "The engine trigger never arrived in this window.");
                 }
                 catch (InvalidOperationException e) when (check.Trigger is not null)
                 {
@@ -420,6 +472,23 @@ internal sealed partial class M15CubeRun
                     Console.WriteLine(e.Message);
                     Event("reaction-stimulus-error", new() { ["phase"] = step.Id, ["detail"] = e.Message });
                 }
+            }
+            if(step.Signal is {} signal)
+            {
+                Console.WriteLine($"Waiting up to 45 seconds for the engine's {signal} report.");
+                bool received=Poll(()=>narration?.SawSignal(signal,start,Now)==true,45000);
+                if(received)
+                {
+                    // Host observation policy: leave time for a reaction after
+                    // the cube event, then let acknowledged clips finish. This
+                    // is not a native reaction threshold or a new pass criterion.
+                    double signalAt=Now;
+                    Console.WriteLine("Event received. Watching the response before asking for your observation.");
+                    Poll(()=>narration?.ObservationSettled(signalAt,Now)==true,
+                        Math.Max(0,(int)(start+45000-Now)));
+                }
+                checkEnd=Now;checkResult=received?"passed":"failed";
+                Console.WriteLine(received?"Engine event observed.":"The engine trigger never arrived in this window.");
             }
             if (step.Id == "alone")
             {
@@ -436,14 +505,25 @@ internal sealed partial class M15CubeRun
                 cancel.Token.ThrowIfCancellationRequested();
                 Event("idle-window-end", new());
             }
-            observed = ReadYesNo(step.Question);
-            answers[step.Id] = observed;
-            Event("operator-observation", new() { ["phase"] = step.Id, ["question"] = step.Question, ["observed"] = observed });
+            // Incidental Freeplay clips before this step's actual trigger must
+            // not be presented as the requested reaction.
+            double observationStart=step.Check is {} expected?
+                PersonalityHw.ObservationStartedAt(expected,personalityTransitions,start,checkEnd??Now)??Now:start;
+            question=narration?.ObservationQuestion(observationStart,Now,step.Question)??step.Question;
+            Console.WriteLine(question+" [yes/no/partly]");
+            while(answer is null)
+            {
+                answer=PersonalityHw.ParseObservation(ReadOperatorInput());
+                if(answer is null)Console.WriteLine("Enter yes, no or partly.");
+            }
+            observed=answer=="partly"?null:answer=="yes";
+            answers[step.Id] = answer;
+            Event("operator-observation", new() { ["phase"] = step.Id, ["question"] = question, ["observed"] = observed,["answer"]=answer });
         }
         finally
         {
             var phase = new JsonObject { ["phase"] = step.Id, ["startMs"] = start, ["endMs"] = Now,
-                ["question"] = step.Question, ["observed"] = observed };
+                ["question"] = question, ["observed"] = observed,["answer"]=answer };
             if (step.Check is { } check)
             {
                 phase[check.Trigger is null ? "behaviorCheck" : "reactionCheck"] = new JsonObject
@@ -455,6 +535,9 @@ internal sealed partial class M15CubeRun
                         .Select(e => e.DeepClone()).ToArray()),
                 };
             }
+            if(step.Signal is {} expectedSignal)
+                phase["signalCheck"]=new JsonObject{["expected"]=expectedSignal,["result"]=checkResult??"interrupted",
+                    ["windowEndMs"]=checkEnd,["source"]=PersonalityHw.SignalSource(expectedSignal)};
             if (idleStart is { } idle)
             {
                 phase["idleStartMs"] = idle;

@@ -445,14 +445,17 @@ public class M4ControlTests
         public static readonly IPAddress RobotIp = IPAddress.Parse("172.31.1.1");
         public static readonly IPEndPoint RobotEp = new(RobotIp, 5551);
         private uint _ts = 100;
+        internal void ContinueRobotTimestampAfterReplay(uint timestamp) => _ts = timestamp;
 
         public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null,
-                   Action<CozmoEngine>? engineCreated = null)
+                   Action<CozmoEngine>? engineCreated = null, bool keepNeedsFull = false)
         {
             // The test factory owns an isolated default animation cache until Robot.Dispose; explicit fixture paths are retained.
             var settings=engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources };
             settings.OmitVisionForTest=!attachWorld; // Explicit world-less unit composition; production always builds it.
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, settings, engineCreated);
+            // Source-behavior fixtures use native needs; host-policy replays explicitly opt into full mode.
+            Engine.SetNeedsMode(keepNeedsFull);
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
         }
 
@@ -473,14 +476,14 @@ public class M4ControlTests
         }
 
         /// <summary>Connected, validated, Success, SyncTimeAck: the robot is time synced (no state yet).</summary>
-        public void ToSynced()
+        public void ToSynced(uint bodyHwVersion=7)
         {
             Engine.ConnectToRobot(RobotIp); Tick();
             Port.Raise(ReceiverMarker.OnConnected, RobotEp); Tick();
             Data(new RobotAvailable { SerialNumberHead = 1, HwVersion = 5 });
             Data(new FirmwareVersion { RobotId = 1, Signature = Encoding.UTF8.GetBytes("{\"version\": 2381, \"time\": 1546972025, \"build\": \"DEVELOPMENT\"}") });
             Tick();
-            Data(new ManufacturingID { SerialNumber = 2, BodyHwVersion = 7, BodyColor = 2 });
+            Data(new ManufacturingID { SerialNumber = 2, BodyHwVersion = bodyHwVersion, BodyColor = 2 });
             Tick();
             Data(new SyncTimeAck());
             Tick();

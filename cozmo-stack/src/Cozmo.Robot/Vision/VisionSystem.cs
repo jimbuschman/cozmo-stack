@@ -2024,13 +2024,8 @@ public sealed partial class VisionSystem : IDisposable
                     if (faceDetector is OkaoFaceDetector okao && stockFaceDetector)
                     {
                         bool reset = false;
-                        if (nativeState?.MotionPose.Current is { } currentFacePose && nativeState.MotionPose.Previous is { } previousFacePose)
-                        {
-                            float threshold = BitConverter.UInt32BitsToSingle(0x3E0EFA35);
-                            reset = !NativeMotionPoseState.HeadSame(currentFacePose, previousFacePose, threshold) ||
-                                !NativeMotionPoseState.BodySame(currentFacePose, previousFacePose, 10f, threshold);
-                        }
-                        else if (queueForEngine) SteppedBehavior.ReportMissing("M14-010 face motion reset has no prior admitted VisionPoseData");
+                        if (nativeState?.MotionPose.Current is not null) reset = nativeState.MotionPose.ResetFaceTracking();
+                        else if (queueForEngine) SteppedBehavior.ReportMissing("M14-010 face motion reset has no admitted VisionPoseData");
                         var recognizer = capturedRecognizer;
                         if (_stockRecognizer && recognizer.OwnsStockDetector(okao) && recognizer.IsAvailable)
                         {

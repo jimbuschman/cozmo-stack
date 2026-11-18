@@ -20,18 +20,17 @@ namespace Cozmo.Robot.Behavior;
 /// <c>SendFinishedReactToCliffMessage</c> 0x006052BC, <c>UpdateInternal</c> 0x00605408, <c>StopInternal</c> 0x006053FC,
 /// <c>HandleWhileRunning</c> 0x00605580, <c>HandleWhileNotRunning</c> 0x0060541C.</item>
 /// </list>
-/// The pieces that are other layers' stay seams that say so: <see cref="BehaviorContext.AiExpressedNeedValue"/> (the value
-/// <c>[[[robot+0x264]+0x30]+0x14]</c>: unset, it is the constructed 3 and reported once), <see cref="DriveStraight"/> (M13's
-/// <c>DriveStraightAction</c>) and the game broadcast of <c>RobotCliffEventFinished</c>.
+/// The configured native instance reads the live severe-need owner, queues real native actions and broadcasts
+/// RobotCliffEventFinished. The public unbound constructor retains the optional test/host drive seam.
 /// </summary>
 // fidelity: M7-019, M7-021
-public sealed class ReactToCliffBehavior : SteppedBehavior
+public sealed partial class ReactToCliffBehavior : SteppedBehavior
 {
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
-    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version && (_physical?.Current??true);
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     /// <summary>The cliff animation's timeout, 60.0f (<c>movt r0,#0x4270</c> 0x00604FD4; 0x42700000).</summary>
     public static readonly float AnimationTimeout = BitConverter.Int32BitsToSingle(0x42700000);
@@ -82,8 +81,8 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
 
     /// <summary>
     /// <c>DriveStraightAction(robot, distance, speed, shouldPlayAnimation = true)</c> (M13, <c>TransitionToBackingUp</c> 0x0060534E): runs the drive and returns when
-    /// it ends, whatever its result (the completion callback runs for any result). The stack's <c>DriveStraightAction</c> has no
-    /// <c>shouldPlayAnimation</c> parameter. Unset: the drive cannot be started (MISSING).
+    /// it ends, whatever its result (the completion callback runs for any result). This legacy seam is only for unbound
+    /// instances; the configured native instance constructs the real DriveStraightAction with shouldPlayAnimation=true.
     /// </summary>
     public Func<float, float, CancellationToken, Task>? DriveStraight { get; set; }
 
@@ -95,9 +94,11 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     public void Attach(CozmoRobot robot)
     {
         _robot = robot;
-        robot.Sensors.CliffDetectedInternal += r => HandleCliffEvent((byte)r.Sensors);
-        robot.Sensors.RobotStoppedInternal += () => HandleRobotStopped();
-        robot.Sensors.ChargerEventInternal += HandleChargerEvent;       // tag 0x39
+        Action<CliffReport> cliff=r=>{if(_physical?.CanRun??true)HandleCliffEvent((byte)r.Sensors);};
+        Action stopped=()=>{if(_physical?.CanRun??true)HandleRobotStopped();};
+        Action<bool> charger=value=>{if(_physical?.CanRun??true)HandleChargerEvent(value);};
+        robot.Sensors.CliffDetectedInternal+=cliff;robot.Sensors.RobotStoppedInternal+=stopped;robot.Sensors.ChargerEventInternal+=charger;
+        _detachPhysicalSignals+=()=>{robot.Sensors.CliffDetectedInternal-=cliff;robot.Sensors.RobotStoppedInternal-=stopped;robot.Sensors.ChargerEventInternal-=charger;};
     }
 
     // BehaviorReactToCliff vptr+0x20 (0x0102BC10) resolves to the base false body 0x005BF04C.
@@ -173,10 +174,13 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
+        long version=CaptureHostExecutionVersion();
         // 0x00604D6A..0x00604D84: MoodManager::TriggerEmotionEvent(robot+0x440, "CliffReact", MoodManager::GetCurrentTimeInSeconds())
         Context.Mood?.Trigger(EmotionEventName, Clock() / 1000.0);
+        if(!HostExecutionVersionCurrent(version))return;
         // 0x00604DA0: IBehavior::SmartDisableReactionsWithLock(own name, table 0x00C73746)
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToCliff);
+        if(!HostExecutionVersionCurrent(version))return;
         InitSwitch();
     }
 
@@ -188,7 +192,9 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
             case 0:
             {
                 _savedThreshold = Context.Robot.Sensors.CliffDetectThreshold;                  // this+0x122 = [[robot+0x288]+0xC]
-                int sev = SevereNeedValue();
+                long version=CaptureHostExecutionVersion();int sev = SevereNeedValue();
+                if(!HostExecutionVersionCurrent(version))break;
+                if(_physical is not null){NativeCliffWait(sev);break;}
                 // StartActing<ReactToCliff>(WaitForLambdaAction($_0, FLT_MAX), sev >= 2 ? StopReaction : CliffReaction)  (0x00604DEC, 0x00604E10, 0x00604E82)
                 WaitUntil(InitWaitLambda, InitWaitTimeout,
                           _ => { if (sev >= 2) TransitionToPlayingStopReaction(); else TransitionToPlayingCliffReaction(); },
@@ -217,12 +223,14 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     private bool InitWaitLambda()
     {
+        long version=CaptureHostExecutionVersion();
         var robot = Context.Robot;
         if (robot.Motion.BodyMoving) return false;                                              // 0x006056C0
         if (_savedThreshold == robot.Sensors.CliffDetectThreshold) return true;                 // 0x006056CE..0x006056D4
         string info = "info: [Behaviors] BehaviorReactToCliff.QuittingDueToSuspiciousCliff";
         Log(info);
         (_robot ?? Context?.Robot)?.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "BehaviorReactToCliff.QuittingDueToSuspiciousCliff", "");
+        if(!HostExecutionVersionCurrent(version))return true;
         _quit = 1;                                                                              // 0x00605718
         return true;
     }
@@ -237,12 +245,15 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     private void TransitionToPlayingStopReaction()
     {
+        long version=CaptureHostExecutionVersion();
         SetStateName("PlayingStopReaction");
+        if(!HostExecutionVersionCurrent(version))return;
         if (_quit != 0)
         {
             SendFinishedReactToCliffMessage();
             return;
         }
+        if(_physical is not null){NativeCliffStopAnimation();return;}
         var compound = StartParallel(2, TransitionToPlayingCliffReaction);
         if (compound is null) return;
         RunTriggerAction(0, AnimationTrigger.ReactToCliffDetectorStop, o => compound.ChildDone(o), AnimationTrack.None, AnimationTimeout, numLoops: 1, liftSafe: true);
@@ -257,19 +268,24 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     private void TransitionToPlayingCliffReaction()
     {
+        long version=CaptureHostExecutionVersion();
         SetStateName("PlayingCliffReaction");
+        if(!HostExecutionVersionCurrent(version))return;
         if (AlwaysStreamline || SparkDisabled)
         {
             TransitionToBackingUp();
             return;
         }
         Log("DAS robot.cliff_detected");
-        EngineLog("info: DAS robot.cliff_detected");
-        EngineLog("MISSING: robot.cliff_detected engine event fields; higher-layer port deferred");
+        if(!HostExecutionVersionCurrent(version))return;
+        Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.cliff_detected",""); //60513A..60514A
+        if(!HostExecutionVersionCurrent(version))return;
         int sev = SevereNeedValue();
+        if(!HostExecutionVersionCurrent(version))return;
         var trigger = sev == 0 ? AnimationTrigger.NeedsSevereLowRepairCliffReact
                     : sev == 1 ? AnimationTrigger.NeedsSevereLowEnergyCliffReact
                     : AnimationTrigger.ReactToCliff;
+        if(_physical is not null){NativeCliffReactionAnimation(trigger);return;}
         int handle = StartActing();
         if (handle == 0) return;
         RunTriggerAction(handle, trigger, _ => TransitionToBackingUp(), AnimationTrack.None, AnimationTimeout, numLoops: 1, liftSafe: true);
@@ -284,6 +300,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     {
         if (Context.Robot.Sensors.CliffDetectedByEvent)                                          // 0x0060532E ldrb r0,[r0,#5]
         {
+            if(_physical is not null){NativeCliffBackUp();return;}
             if (DriveStraight is not { } drive)
             {
                 ReportMissing("ReactToCliff::TransitionToBackingUp DriveStraightAction(robot, -60.0f, 100.0f, true) (0x0060534E): M13's DriveStraightAction is not attached (DriveStraight seam); the drive and the RobotCliffEventFinished that follows it are not sent");
@@ -317,12 +334,13 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// <summary>SendFinishedReactToCliffMessage 0x006052BC: queue the empty host report before the local seam.</summary>
     private void SendFinishedReactToCliffMessage()
     {
+        long version=CaptureHostExecutionVersion();
         Log("broadcast RobotCliffEventFinished");
+        if(!HostExecutionVersionCurrent(version))return;
         var engine=(_robot??Context?.Robot)?.Engine;
-        if(engine is not null)engine.QueueAppBroadcast(RobotCliffEventFinished);
+        if(engine is not null)engine.ReportCliffEventFinished(RobotCliffEventFinished);
         else ReportMissing("M7-019 RobotCliffEventFinished 0x006052DA: no attached engine host FIFO");
         RobotCliffEventFinishedInternal?.Invoke();
-        ReportMissing("M7-019 RobotCliffEventFinished native local E2G emit 0x00662590 has no stack recipient; existing local seam remains synchronous");
     }
 
     /// <summary><c>UpdateInternal</c> 0x00605408: +0x125 set: cleared and the behaviour ends (returns 2); else the base <c>IBehavior::UpdateInternal</c> (tail call 0x00605418).</summary>
@@ -441,6 +459,11 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
 
     // BehaviorReactToPickup vptr+0x20 (0x0102C270) resolves to 0x00607DAC, which returns true.
     protected override bool RunnableGate20(BehaviorContext context) => true;
+
+    // Pickup vptr+0x24 at0x0102C274 ->0x0059EC12:false (on-charger platform);
+    // vptr+0x28 at0x0102C278 ->0x00607DB0:true (carrying).
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => true;
 
     protected override bool IsRunnableInternal(BehaviorContext context) => true;               // 0x0060774C
 

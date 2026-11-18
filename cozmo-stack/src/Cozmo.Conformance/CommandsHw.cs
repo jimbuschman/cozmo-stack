@@ -412,10 +412,16 @@ internal sealed partial class M15CubeRun
                 120000, report => report.Result, onNoReport: r.CancelFaceEnrollment);
             if (enrolled is not { Result: 0, Id: > 0 } || enrolled.Name != name)
             {
+                SkipCommandEvent("face-recognised", "No successful enrollment of this run's temporary face.");
                 SkipCommand("rename-face", "No successful enrollment of this run's temporary face.");
                 SkipCommand("erase-face", "No successful enrollment of this run's temporary face.");
                 return;
             }
+
+            // Recognition needs an enrolled identity. Startup NV can be empty;
+            // check this run's face while its album entry still exists.
+            r.SetEnableFreeplayActivity(false);
+            RunCommandEvent("face-recognised", enrolled.Id, enrolled.Name);
 
             WaitCommandReport<FaceRenamedReport>("rename-face",
                 h => r.Engine.FaceRenamed += h, h => r.Engine.FaceRenamed -= h,

@@ -50,7 +50,7 @@ public sealed class M15CubeBundleTests
             Assert.Equal(1, correction["frameLine"]!.GetValue<int>());
             Assert.True(File.Exists(Path.Combine(dir.FullName, "stack-log.txt")));
             Assert.True(File.Exists(Path.Combine(dir.FullName, "README.txt")));
-            Assert.Equal(5, ReadJson("result.json")["provenance"]!.AsArray().Count);
+            Assert.Equal(7, ReadJson("result.json")["provenance"]!.AsArray().Count);
             Assert.Contains("Could not write messages.jsonl", ReadJson("result.json")["errors"]!.AsArray()[0]!.GetValue<string>());
             Assert.Contains("Could not write messages.jsonl", Assert.Single(File.ReadAllLines(Path.Combine(dir.FullName, "write-errors.txt"))));
         }

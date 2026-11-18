@@ -1227,3 +1227,9 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New: BehaviorFireTruckAlarm configured lifecycle: Robot +0x354 flag predicate, Init flag set and CSharpTrickStarted broadcast, no action | M15-109 |
 | New: BehaviorOnConfigSeen configured for RespondToPyramidBase: count readiness, first lift-safe action, Resume 0 | M15-110 |
 | New: host source of SetDeterminantData (0xD6), from the app's SegmentationService | M15-111 |
+
+## Host refill input (operator, 2026-11-17; NEEDS-KEEP-FULL-1)
+
+| Record | Policy and source boundary |
+| --- | --- |
+| M15-112 | COMPATIBILITY_POLICY: the stack supplies the app's refill input. KeepNeedsFull defaults true; after this connection's stored needs copies resolve, send ForceSetNeedsLevels G2E C6 (1,1,1), then SetNeedsPauseState G2E C9 (true). C6 handler 0x00697DA4..0x00698002 stores/clamps and reports without robot NV writes. Live C9 invoker 0x0069B0E2..0x0069B0F6 calls SetPaused 0x00695E04; Update 0x00695CA4..0x00695CFA skips decay/notifications/device-write tail and RegisterNeedsActionCompleted 0x006960E0..0x006960EE skips deltas/rewards. Pause writes the PC copy at 0x00695ECA, not robot NV. Resume uses the native clock shifts. Real mode, explicit levels and personality test windows use the same existing handlers. Underlying M15-001/014/016/048 statuses remain unchanged. |

@@ -101,6 +101,7 @@ public sealed partial class CozmoBridge
             highLevelActivity = activity?.HighLevelActivity,
             behavior = activity?.Behavior,
             reaction = activity?.Reaction,
+            needs = Robot.Engine.GetNeedsStatus(),
             knownFaces = faces.Values.OrderBy(f => f.FaceId),
             knownCubes = cubes,
         }, Json);

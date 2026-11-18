@@ -5,6 +5,12 @@ It connects using the same `HardwareEngineOptions` and readiness gate as
 `m15-cube-hw`. No setup questions are read from stdin: stdin/stdout carry MCP,
 and diagnostics go to stderr. Only the operator runs it with a robot.
 
+Stderr also narrates posture, reaction and behavior changes, animation robot
+start/end/abort reports with clip duration and tracks, action results, and cube
+and face events. Track labels describe the clip's authored tracks; they do not
+claim that a motor physically moved. These lines and clip identities are saved
+as `live-narration` events. MCP stdout remains JSON-RPC only.
+
 ## Build and configure on Windows
 
 The examples assume the checkout is `C:\cozmo-stack` and the extracted resources
@@ -53,8 +59,19 @@ and [Claude Code MCP reference](https://code.claude.com/docs/en/mcp).
 
 ## Tools and results
 
-There are 24 tools: the bridge's 21 commands, with their unchanged argument
+There are 26 tools: the bridge's 23 commands, with their argument
 schemas, plus `get_state`, `read_events` and `list_animations`.
+
+Needs start full and stay full by default. This supplies the app's refill input
+after the stored needs load, then uses the engine's global needs pause (decay,
+action deltas/rewards and local notifications pause together). It writes the PC
+needs copy through the native pause handler and adds no robot NV write.
+Append `"--needs", "real"` to the configuration arguments for the original decay.
+At runtime, `set_needs_mode` takes `{"mode":"full"}` or `{"mode":"real"}`.
+In real mode, `set_needs` takes `{"repair":0.7,"energy":0.8,"play":0.9}`;
+native clamping/reporting still applies. `get_state.needs` reports the mode,
+loaded/applied status, pause and levels. These host inputs have no native action
+result code; their tool result confirms the setting/report instead.
 
 Start by asking Claude: “Use Cozmo get_state and list_animations. Tell me whether
 he is connected and ready.” Engine startup runs in the background; tools are
@@ -105,7 +122,7 @@ specifications. Supported versions: 2024-11-05, 2025-03-26, 2025-06-18 and
 2025-11-25. It advertises only tools capability; no resources/prompts/subscriptions.
 
 `McpServerTests` drives a serialized in-process client through initialization,
-the 24 schemas, real head motor command/ack/result, Freeplay, state, engine face
+the 26 schemas, real head motor command/ack/result, Freeplay, state, engine face
 events/cursor polling, pending-action cancellation, protocol/tool errors and
 session frame/message export. Existing bridge tests cover the command mappings.
 Real Claude client discovery and robot motion remain the operator's check.

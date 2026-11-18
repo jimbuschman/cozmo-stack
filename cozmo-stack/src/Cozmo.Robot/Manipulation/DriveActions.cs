@@ -738,6 +738,10 @@ public class DriveStraightAction : ActionRunner, IDisposable
     internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _started, _destroyed;
     private readonly float _nativeSpeed;
+    private float _nativeDecel=500f;
+    // 0x00547592..0x0054759C: explicit custom values, decel at +0x84. This caller already supplied its speed.
+    internal void SetDecel(float decel)=>_nativeDecel=decel;
+    internal float DecelMmps2=>_nativeDecel;
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     private readonly object _cleanupGate=new();
     private readonly HashSet<string> _missingMessages=new();
@@ -798,7 +802,7 @@ public class DriveStraightAction : ActionRunner, IDisposable
         // Fresh native Path count0, one AppendLine: the signed-negative-count branch
         // is unreachable for this producer (0x005476AE), without a fabricated failure.
         Func<RobotMessage,bool>? send=_nativeOwner is {} captured?message=>_m.Paths.SendOwned(captured,ExecutionCurrent,message):null;
-        int result=_m.Robot.Motion.Path.ExecuteCustomPath(new PathSegment[]{new PathSegment.Line(x,y,endX,endY,_nativeSpeed,200f,500f)},false,current:ExecutionCurrent,send:send);
+        int result=_m.Robot.Motion.Path.ExecuteCustomPath(new PathSegment[]{new PathSegment.Line(x,y,endX,endY,_nativeSpeed,200f,_nativeDecel)},false,current:ExecutionCurrent,send:send);
         return result==0?0:0x03000016; // P14.
     }
     public ActionResult CheckIfDone(DriveStraightTick tick) => CheckIfDone(()=>tick);

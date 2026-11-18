@@ -16,7 +16,7 @@ internal static class CommandEventsHw
             "RobotObservedFace with an empty name", "M14-008", "0x004F4B7A–0x004F4B82"),
         new("face-lost", "The same guest should leave the camera view. Keep the robot still for over 15 seconds of fresh camera frames.", 0x4B,
             "RobotDeletedFace for the guest", "M14-008", "0x004F3C2C–0x004F3C34 (emit), 0x004F5380–0x004F53AC (expiry)", 35),
-        new("face-recognised", "Show a previously enrolled face and keep it in view until Cozmo reports its name.", 0x46,
+        new("face-recognised", "Show the face just taught in this run and keep it in view until Cozmo reports its temporary name.", 0x46,
             "RobotObservedFace with a name", "M14-008", "0x004F4B7A–0x004F4B82"),
         new("cube-seen", "Set one connected light cube upright 20–25 cm ahead with a marker facing the camera.", 0x44,
             "RobotObservedObject for a light cube", "M11-038", "0x0061FFD6–0x0061FFDE"),
@@ -32,7 +32,7 @@ internal static class CommandEventsHw
     internal sealed record Key(long Id, uint? RobotTimestamp = null, string? Name = null, uint? Family = null);
     internal sealed record Sample(Key Key, double AtMs, JsonObject Payload);
 
-    internal sealed class Window(Step step, long? target, double start)
+    internal sealed class Window(Step step, long? target, double start, string? expectedName = null)
     {
         private readonly object gate = new();
         private readonly Dictionary<Key, Sample> raw = new();
@@ -40,7 +40,8 @@ internal static class CommandEventsHw
         private (Sample Raw, Sample Api)? match;
         private readonly double deadline = start + step.Seconds * 1000;
 
-        private bool Matches(Key key) => (target is null || target == key.Id) && (step.Id switch
+        private bool Matches(Key key) => (target is null || target == key.Id) &&
+            (expectedName is null || expectedName == key.Name) && (step.Id switch
         {
             "face-seen" => key.Name == "",
             "face-recognised" => !string.IsNullOrEmpty(key.Name),
@@ -118,10 +119,10 @@ internal sealed partial class M15CubeRun
         Volatile.Read(ref activeCommandEvent)?.AddApi(tag, key, Now,
             () => JsonSerializer.SerializeToNode(report, CommandPayloadOptions)!.AsObject());
 
-    internal CommandEventsHw.Window OpenCommandEvent(string id, long? target = null)
+    internal CommandEventsHw.Window OpenCommandEvent(string id, long? target = null, string? expectedName = null)
     {
         var step = CommandEventsHw.Steps.Single(s => s.Id == id);
-        var window = new CommandEventsHw.Window(step, target, Now);
+        var window = new CommandEventsHw.Window(step, target, Now, expectedName);
         Volatile.Write(ref activeCommandEvent, window);
         return window;
     }
@@ -141,15 +142,14 @@ internal sealed partial class M15CubeRun
         var guest = RunCommandEvent("face-seen");
         if (guest is not null) RunCommandEvent("face-lost", guest);
         else SkipCommandEvent("face-lost", "No guest face ID was reported in face-seen.");
-        RunCommandEvent("face-recognised");
     }
 
-    private long? RunCommandEvent(string id, long? target = null)
+    private long? RunCommandEvent(string id, long? target = null, string? expectedName = null)
     {
         var step = CommandEventsHw.Steps.Single(s => s.Id == id);
         PromptCommand($"[{id}] {step.Plan} Wait for 'Go' before changing the setup. Press Enter when ready.");
         double begin = Now;
-        var window = OpenCommandEvent(id, target);
+        var window = OpenCommandEvent(id, target, expectedName);
         try
         {
             Console.WriteLine($"Go. Waiting up to {step.Seconds} s for {step.Report}.");

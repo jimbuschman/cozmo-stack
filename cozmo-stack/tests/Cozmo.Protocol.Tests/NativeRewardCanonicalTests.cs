@@ -13,7 +13,8 @@ namespace Cozmo.Protocol.Tests;
 // reach: production. The robot is built by the production factory, its NV reads come back through the wire as a
 // fresh robot's would, ticks go through the engine, and the action enters through RegisterNeedsActionCompleted,
 // the recipient of IBehavior::NeedActionCompleted (0x005BE40C -> 0x006960D0). Options come from HardwareEngineOptions, the
-// helper m13-idle-hw uses, with the test clock and paths as the only overrides. Remaining fixture inputs: the motor, camera,
+// helper m13-idle-hw uses, with the test clock and paths overridden; the source-behavior fixture selects real needs mode.
+// Remaining fixture inputs: the motor, camera,
 // animation and NV echoes, the needs file on the PC and the robot's stored needs blob. Nothing is reseeded after startup.
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeRewardCanonicalTests(ITestOutputHelper output)
