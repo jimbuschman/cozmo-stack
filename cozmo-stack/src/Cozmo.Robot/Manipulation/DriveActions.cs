@@ -502,11 +502,13 @@ public sealed class DriveToObjectAction
     // fidelity: M12-029, M12-031
     public ActionResult GetPossiblePoses(ObservableObject obj, out IReadOnlyList<PreActionPose> posesOut, ref bool alreadyInPosition)
     {
+        LastPreActionCheckForDiagnostics = null;
         posesOut = Array.Empty<PreActionPose>();
         // Q6 (RETIRE-LEGACY-DRIVE-API-1): only the native inputs remain; the legacy CopyPreActionRobotPose/GetObstacles branch had no caller left.
         using var robot = _m.NativeMainSnapshot(NativeOwner);
         if (robot is null) return ActionResult.Abort;
-        _trace.Add("NativePreActionInputs MAIN="+NativePoseTrace(robot)+" object="+NativePoseTrace(obj.NativePose));
+        string inputDiagnostic="MAIN="+NativePoseTrace(robot)+" object="+NativePoseTrace(obj.NativePose);
+        _trace.Add("NativePreActionInputs "+inputDiagnostic);
         _m.World.SelectedObjectId=obj.ObjectId;
         var output = DockPreActionPoses.Get(new PreActionPoseInput(obj, ActionType, FlagA: false, PreActionAngleToleranceRad, DistanceFromMarkerMm, UseApproachAngle, ApproachAngleRad),
                                             robot.Value, (NativeOwner??_m.Robot.Engine.Robot)!.CarryingOwner!.CarriedObjectId,
@@ -518,12 +520,20 @@ public sealed class DriveToObjectAction
             return ActionResult.NoPreActionPoses;
         }
         alreadyInPosition = output.InPosition;
+        // Host diagnostic only: capture the already evaluated inputs before the
+        // MAIN snapshot is released. No extra pose query or acceptance rule.
+        string yaw = output.CheckedYawRad is { } tested
+            ? FormattableString.Invariant($"{tested:R}") : "not-tested";
+        LastPreActionCheckForDiagnostics = FormattableString.Invariant(
+            $"object={obj.ObjectId} offsetMm=({output.OffsetX:R},{output.OffsetY:R}) thresholdMm=({output.ThresholdX:R},{output.ThresholdY:R}) yawRad={yaw} yawLimitRad={PreActionAngleToleranceRad + DockPreActionPoses.YawSlack:R} inPosition={output.InPosition} {inputDiagnostic}");
         _trace.Add("NativePreActionGoals "+string.Join(";",output.Poses.Select(p=>NativePoseTrace(p.WorldPose))));
         _trace.Add($"GetPreActionPoses: {output.Poses.Count} pose(s), closest #{output.ClosestIndex} at |d|=({output.OffsetX:F1},{output.OffsetY:F1}), threshold=({output.ThresholdX:F1},{output.ThresholdY:F1}), inPosition={output.InPosition}");
         if (alreadyInPosition) _trace.Add("DriveToObjectAction.GetPossiblePoses.UseRobotPose: Robot's current pose is close enough to preAction pose");
         posesOut = output.Poses.ToList();
         return ActionResult.Success;
     }
+
+    internal string? LastPreActionCheckForDiagnostics;
 
     private static string NativePoseTrace(Pose3d pose)
     {

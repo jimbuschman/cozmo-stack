@@ -830,6 +830,8 @@ public sealed class PreActionPoseOutput
     public bool InPosition { get; set; }
     public double ThresholdX { get; set; } = -1.0;
     public double ThresholdY { get; set; } = -1.0;
+    // Read-only diagnostic of the angle test actually reached; not a native field.
+    internal double? CheckedYawRad { get; set; }
 }
 
 /// <summary>
@@ -942,10 +944,12 @@ public static class DockPreActionPoses
         var closest = output.Poses[output.ClosestIndex].WorldPose;
         CubePreActionPoses.DistanceThresholdMm(closest, objectPose, angleToleranceRad, out double t0, out double t1);
         output.ThresholdX = t0; output.ThresholdY = t1; output.InPosition = false;
+        output.CheckedYawRad = null;
         if (!(t0 > 0) || !(t1 > 0)) return ActionResult.Success;
         if (output.OffsetX <= t0 && output.OffsetY <= t1)
         {
             double yaw = EngineRotationYaw(closest.WithRespectTo(robotPose));
+            output.CheckedYawRad = yaw;
             if (Math.Abs(yaw) < angleToleranceRad + YawSlack) output.InPosition = true;
             return ActionResult.Success;
         }

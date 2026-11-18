@@ -118,8 +118,20 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
         using var mutation=M.World.EnterPoseMutation();
         var obj=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);
         if(obj is null)return 0x03000004;
+        Action.LastPreActionCheckForDiagnostics=null;
         bool inPosition=false;var checkedResult=Action.PosesFunction(obj,out _,ref inPosition);
         if(!ExecutionCurrent())return EngineActionResult.Cancelled;
+        if(!inPosition)
+        {
+            // 0x00559AA2..0x00559AE4 logs this even when the pose function
+            // failed: the false in-position flag selects FAILURE_RETRY.
+            EmitSource(EngineLogLevel.Info,"Unnamed","DriveToObjectAction.CheckIfDone",
+                $"[{Tag}] Robot not in position, will return FAILURE_RETRY.");
+            if(!ExecutionCurrent())return EngineActionResult.Cancelled;
+            if(Action.LastPreActionCheckForDiagnostics is {} diagnostic)
+                EmitSource(EngineLogLevel.Info,"Unnamed","CozmoStack.DriveToObject.PoseCheck",diagnostic);
+            if(!ExecutionCurrent())return EngineActionResult.Cancelled;
+        }
         return inPosition?(uint)checkedResult:0x04000001;
     }
     public override byte? GetCompletionVariant()=>0;
