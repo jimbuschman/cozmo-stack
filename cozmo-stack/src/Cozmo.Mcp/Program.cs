@@ -59,9 +59,14 @@ public static class Program
                 using var resolution = new HighResolutionTimer();
                 void Log(string text) { Console.Error.WriteLine(text); evidence.Log(text); }
                 Log($"cozmo-mcp session evidence: {evidence.DirectoryPath}");
+                var narrationClock=System.Diagnostics.Stopwatch.StartNew();
+                using var narration=new LiveNarration(Console.Error.WriteLine,()=>narrationClock.Elapsed.TotalMilliseconds,
+                    data=>{data["reportedAtMs"]=data["atMs"]?.DeepClone();evidence.Record("live-narration",JsonSerializer.SerializeToElement(data));});
                 // Same app inputs and native readiness/connect gate as m15-cube-hw.
-                var options = HardwareEngineOptions.Create(resources, log: Log, speechSoundBankDirectory: banks, beforeStart: evidence.Attach, keepNeedsFull: needsMode=="full");
+                var options = HardwareEngineOptions.Create(resources, log: Log, speechSoundBankDirectory: banks,
+                    beforeStart:engine=>{evidence.Attach(engine);narration.AttachEngine(engine);}, keepNeedsFull: needsMode=="full");
                 using var robot = CozmoRobot.Create(engineOptions: options);
+                narration.AttachRobot(robot);
                 robot.Transport.FrameTrace += evidence.Frame;
                 robot.HandlerFaulted += error => { Log(error.ToString()); evidence.Record("handler-fault", JsonSerializer.SerializeToElement(new { exception = error.ToString() })); };
                 using var bridge = new CozmoBridge(robot);

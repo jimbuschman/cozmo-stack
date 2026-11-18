@@ -5,6 +5,12 @@ It connects using the same `HardwareEngineOptions` and readiness gate as
 `m15-cube-hw`. No setup questions are read from stdin: stdin/stdout carry MCP,
 and diagnostics go to stderr. Only the operator runs it with a robot.
 
+Stderr also narrates posture, reaction and behavior changes, animation robot
+start/end/abort reports with clip duration and tracks, action results, and cube
+and face events. Track labels describe the clip's authored tracks; they do not
+claim that a motor physically moved. These lines and clip identities are saved
+as `live-narration` events. MCP stdout remains JSON-RPC only.
+
 ## Build and configure on Windows
 
 The examples assume the checkout is `C:\cozmo-stack` and the extracted resources

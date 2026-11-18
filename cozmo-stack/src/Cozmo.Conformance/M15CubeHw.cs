@@ -145,7 +145,7 @@ internal sealed partial class M15CubeRun
     readonly ConcurrentQueue<(double T, RobotObservedObjectReport Report)> chargerObservations = new();
     readonly ConcurrentQueue<string> errors = new(), stackLines = new(); readonly CancellationTokenSource cancel = new();
     readonly JsonObject answers = new(); readonly JsonArray phases = new();
-    CozmoRobot? robot; RobotConnectionResponse? response; bool connected; HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup; Task<string?>? pendingRead;
+    CozmoRobot? robot; LiveNarration? narration; RobotConnectionResponse? response; bool connected; HarnessStartup.Gate? startupGate; HarnessStartup.Report? startup; Task<string?>? pendingRead;
     uint? lastStatus;
     public bool Skills { get; init; }
     public bool FreeplayControl { get; init; }
@@ -223,8 +223,11 @@ internal sealed partial class M15CubeRun
         {
             if (!yes) { Console.WriteLine("\nWhen setup is complete, press Enter to connect. Connecting takes up to a minute."); ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested(); }
             using var resolution = new HighResolutionTimer();
+            narration=new LiveNarration(Console.WriteLine,()=>Now,data=>
+            {data["reportedAtMs"]=data["atMs"]?.DeepClone();Event("live-narration",data);});
             var options = HardwareEngineOptions.Create(resources, log: errors.Enqueue, speechSoundBankDirectory: CommandBanks, beforeStart: e =>
             {
+                narration.AttachEngine(e);
                 EngineEvidence.Subscribe(e, line => { }, Event);
                 e.StackLogLine += stackLines.Enqueue;
                 e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a, BundleJson)!.AsObject());
@@ -234,6 +237,7 @@ internal sealed partial class M15CubeRun
                 if (Commands) SubscribeCommandReports(e);
             });
             robot = CozmoRobot.Create(engineOptions: options);
+            narration.AttachRobot(robot);
             if (Commands) SubscribeCommandRobotReports(robot);
             robot.Transport.FrameTrace += RecordFrame;
             robot.State.StateUpdated += s =>
@@ -285,6 +289,7 @@ internal sealed partial class M15CubeRun
         finally
         {
             if (robot is not null) { try { if (connected) robot.StopCamera(); } catch (Exception e) { errors.Enqueue("StopCamera: " + e.Message); } var d = Task.Run(robot.Dispose); if (!d.Wait(5000)) errors.Enqueue("Dispose did not finish in 5 seconds"); }
+            try { narration?.Dispose(); } catch(Exception e) { errors.Enqueue("Narration: "+e.Message); }
             Console.CancelKeyPress -= interrupt;
         }
         WriteBundle();
@@ -756,14 +761,15 @@ internal sealed partial class M15CubeRun
             });
 
         var files = new JsonArray();
-        string[] sources = { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
+        string[] sources = { "cozmo-stack/src/Cozmo.Conformance/M15CubeHw.cs", "cozmo-stack/src/Cozmo.Conformance/PersonalityHw.cs",
+            "cozmo-stack/src/Cozmo.Conformance/LiveNarration.cs", "cozmo-stack/src/Cozmo.Conformance/HardwareEngineOptions.cs",
             "cozmo-stack/src/Cozmo.Conformance/HarnessStartup.cs", "re-analysis/fidelity_manifest.json" };
         var runSources = Commands
             ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/CommandsHw.cs", "re-analysis/acceptance/hardware/scripts/ai-commands-hw-1.md" })
             : Personality
             ? sources.Concat(new[] { "cozmo-stack/src/Cozmo.Conformance/PersonalityHw.cs", "re-analysis/acceptance/hardware/scripts/personality-hw-1.md" })
             : sources.Append("re-analysis/acceptance/hardware/scripts/m15-cube-hw-1.md");
-        foreach (string relative in runSources)
+        foreach (string relative in runSources.Distinct(StringComparer.Ordinal))
         {
             TryPart("provenance/" + relative, () =>
             {

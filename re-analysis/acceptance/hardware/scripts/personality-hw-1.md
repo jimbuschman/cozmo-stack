@@ -48,3 +48,14 @@ dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m15-cube-hw --personal
 
 Add `--steps pickup,putdown` to run just those two steps, in the usual script order. The plan above lists
 the available step IDs. You can combine `--steps` with `--validate` to preview a partial run.
+
+Each non-idle step now waits for its named engine behavior/reaction or cube
+event. Enter cannot end this waiting window. A missing trigger is reported
+explicitly at the printed deadline. The live narration identifies robot
+animation starts/ends/aborts, clip length and authored tracks, plus posture,
+behavior, action, cube and face events. The question lists clips that reported
+starting after this step's trigger and accepts `yes`, `no`, or `partly`.
+Answers remain observations; they do not replace the engine-report check.
+The result keeps the text `answer` and a compatible nullable `observed` value
+(`partly` is null). Missing end reports are stated, not treated as proof that a
+clip is still running.

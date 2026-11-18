@@ -98,3 +98,30 @@ objective reports (0x87, 0x88 and 0x8B) in `events.jsonl`. A reaction can refuse
 external-action gate. The script records the outcome and your observations.
 
 Use `m15-cube-hw --freeplay-control --validate` for the offline dry-run.
+
+## Live narration
+
+Every mode prints timestamped posture, reaction and behavior changes, robot
+animation starts/ends/aborts, clip duration and present tracks, action results,
+and cube/face events. Clip initialization alone is not announced as a robot
+start. Track labels describe authored tracks rather than measured motor travel.
+The same observations and immutable clip/tag identities are saved in
+`events.jsonl` as `live-narration` records.
+
+Personality steps wait for their named engine trigger and its stop, up to the
+printed limit. Enter cannot finish that waiting window. Missing triggers are
+reported explicitly. Cube event steps allow at least five seconds for a response
+and then wait for reported clips to finish within the 45-second step limit;
+five seconds is a harness observation policy, not a native threshold.
+The question names clips that actually reported starting after the requested
+trigger, and accepts `yes`, `no`, or `partly`. The answer is an observation;
+the engine-report check stays separate. A missing end report is displayed as
+missing, rather than claiming the animation is still running.
+
+Offline display replay: `re-analysis/tools/replay-live-narration.ps1 -Bundle
+<20261117-121734-PERSONALITY-HW-1-77ccf7 directory>`. This reads the recorded
+pickup window without constructing a physical transport. For this older
+recording, it matches the native completion's selected name to a unique CA
+inside the corresponding PlayAnimation action's recorded span. Unknown tags
+remain visible; their names are not guessed. New runs capture clip identities
+at InitStream and do not need that reconstruction.

@@ -1165,6 +1165,21 @@ public sealed class AnimationScheduler
         if (!anim.IsLive) _tlc.RemoveKeepFaceAliveGuarded(99,current);
         if(current is not null && !current())return false;
         _seamDueMs = _nowMs;
+        if (_diagnosticObserver is { } observe)
+        {
+            AnimationTrack tracks = AnimationTrack.None;
+            if (!anim.Head.IsEmpty) tracks |= AnimationTrack.Head;
+            if (!anim.Lift.IsEmpty) tracks |= AnimationTrack.Lift;
+            if (!anim.Body.IsEmpty || !anim.TurnTo.IsEmpty) tracks |= AnimationTrack.Body;
+            if (!anim.FaceAnim.IsEmpty || !anim.ProcFace.IsEmpty) tracks |= AnimationTrack.Face;
+            if (!anim.RobotAudio.IsEmpty || !anim.DeviceAudio.IsEmpty || speechPath is not null) tracks |= AnimationTrack.Audio;
+            if (!anim.Backpack.IsEmpty) tracks |= AnimationTrack.Lights;
+            if (!anim.Event.IsEmpty) tracks |= AnimationTrack.Event;
+            // Instrumentation only. A subscriber enqueues this immutable identity;
+            // CA/CB remain the source of robot-start/end narration.
+            observe(new AnimationClipInitializedObservation(System.Diagnostics.Stopwatch.GetTimestamp(),
+                tag, anim.Name, anim.LastKeyFrameEndTime, tracks));
+        }
         return true;
     }
 
