@@ -17,6 +17,7 @@ public sealed partial class CozmoBridge
     private TaskCompletionSource eventAvailable = NewEventSignal();
     private static TaskCompletionSource NewEventSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool disposed;
+    private event Action? Disposing;
 
     /// <summary>Subscribes to public reports. The caller retains ownership of the robot and connection.</summary>
     public CozmoBridge(CozmoRobot robot, int eventCapacity = 1024)
@@ -223,6 +224,7 @@ public sealed partial class CozmoBridge
             eventAvailable.TrySetResult();
         }
 
+        Disposing?.Invoke();
         DetachSenses();
         var engine = Robot.Engine;
         engine.RobotObservedFace -= OnFace;

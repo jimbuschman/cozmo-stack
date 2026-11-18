@@ -46,6 +46,7 @@ public sealed class McpServerTests
         Assert.False(reply.GetProperty("result").GetProperty("isError").GetBoolean());
         Assert.Equal(0u, Data(reply).GetProperty("engineResult").GetUInt32());
         Assert.Equal("SUCCESS", Data(reply).GetProperty("engineResultName").GetString());
+        Assert.False(Data(reply).TryGetProperty("why", out _));
         Assert.Contains(Data(reply).GetProperty("during").GetProperty("events").EnumerateArray(),
             e => e.GetProperty("type").GetString() == "face-recognised");
         var freeplay = Data(await client.Tool("freeplay", new { enabled = false }));
@@ -79,6 +80,7 @@ public sealed class McpServerTests
         var reply = await client.Receive(call);
         Assert.True(reply.GetProperty("result").GetProperty("isError").GetBoolean());
         Assert.Equal("NOT_STARTED", Data(reply).GetProperty("engineResultName").GetString());
+        Assert.Equal("NOT_STARTED", Data(reply).GetProperty("why").GetProperty("engineResultName").GetString());
         Assert.Null(f.Robot.ActionList.GetCurrentAction());
     }
 
@@ -337,6 +339,72 @@ public sealed class McpServerTests
         Assert.Equal(succeeds?0:1,result.GetProperty("playbackIssues").GetArrayLength());
     }
 
+    [Fact]
+    public async Task RollAdvancingPastAnIgnoredApproachFailureMarksItsCheckHistorical()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        f.Add(x: 500);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        int call = await client.Send("tools/call", new { name = "roll", arguments = new { objectId = 7 } });
+        var root = Assert.IsType<Cozmo.Robot.Manipulation.NativeDriveToRollRunner>(f.Robot.ActionList.GetCurrentAction());
+        root.Drive!.Initialized = true; // post-route final geometric comparison
+        f.Rig.Tick();
+        Assert.Equal(0x04000001u, root.Drive.State);
+        Assert.NotNull(root.Drive.Action.LastPreActionCheckForDiagnostics);
+        await client.Notify("notifications/cancelled", new { requestId = call });
+        f.Rig.Tick();
+        var data = Data(await client.Receive(call));
+        var why = data.GetProperty("why");
+        Assert.True(why.GetProperty("snapshot").GetProperty("poseCheck").GetProperty("superseded").GetBoolean());
+        Assert.Equal(data.GetProperty("detail").GetString(), why.GetProperty("hint").GetString());
+    }
+
+    [Fact]
+    public async Task FirmwareDockSignalIsReportedAsAnUntaggedObservationNotACancelCause()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        int call = await client.Send("tools/call", new { name = "head", arguments = new { radians = .2 } });
+        f.Rig.Tick();
+        f.Rig.Data(new PickAndPlaceResult { Field0 = 123, Field1 = false, Field2 = -7, Field3 = 0 });
+        f.Rig.Tick();
+        await client.Notify("notifications/cancelled", new { requestId = call });
+        f.Rig.Tick();
+        var data = Data(await client.Receive(call));
+        var why = data.GetProperty("why");
+        var docking = why.GetProperty("snapshot").GetProperty("docking");
+        Assert.Equal(-7, docking.GetProperty("dockingResult").GetSByte());
+        Assert.False(docking.GetProperty("success").GetBoolean());
+        Assert.Contains("not proof", docking.GetProperty("correlation").GetString());
+        Assert.Equal(data.GetProperty("detail").GetString(), why.GetProperty("hint").GetString());
+    }
+
+    [Theory]
+    [InlineData("pickup")]
+    [InlineData("roll")]
+    [InlineData("stack")]
+    [InlineData("go-to-pose")]
+    public async Task RefusedActionsExplainAdmissionWithoutInventingAnEngineCheck(string command)
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        f.Robot.ActionList.ExternalActionsDisabled = true;
+        object args = command == "go-to-pose" ? new { xMm = 100, yMm = 0, angleRadians = 0 } : new { objectId = 999 };
+        var reply = await client.Tool(command, args);
+        Assert.True(reply.GetProperty("result").GetProperty("isError").GetBoolean());
+        var data = Data(reply);
+        Assert.False(data.GetProperty("admitted").GetBoolean());
+        Assert.False(data.GetProperty("why").GetProperty("checkAvailable").GetBoolean());
+        Assert.Equal(data.GetProperty("detail").GetString(), data.GetProperty("why").GetProperty("hint").GetString());
+        Assert.Equal(JsonValueKind.Null, data.GetProperty("why").GetProperty("engineResultName").ValueKind);
+    }
+
     private static JsonElement Data(JsonElement reply)
     {
         var result = reply.GetProperty("result");
@@ -348,7 +416,7 @@ public sealed class McpServerTests
 
     // A duplex, line-oriented in-process MCP client. Every call crosses serialized JSON-RPC.
     // The channel readers remain open while awaiting replies, as a stdio client does.
-    private sealed class Client : IAsyncDisposable
+    internal sealed class Client : IAsyncDisposable
     {
         internal readonly LineReader Input = new();
         private readonly LineWriter output = new();
@@ -397,7 +465,7 @@ public sealed class McpServerTests
         }
     }
 
-    private sealed class LineReader : TextReader
+    internal sealed class LineReader : TextReader
     {
         internal readonly Channel<string> Lines = Channel.CreateUnbounded<string>(new() { AllowSynchronousContinuations = true });
         private readonly Channel<bool> read = Channel.CreateUnbounded<bool>();

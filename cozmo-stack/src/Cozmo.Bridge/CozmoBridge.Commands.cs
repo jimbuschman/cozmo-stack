@@ -133,7 +133,15 @@ public sealed partial class CozmoBridge : IDisposable
         long startCursor = ReadEvents().GetProperty("cursor").GetInt64();
         try
         {
-            var result = await entry.Execute(this, parsed, cancellationToken).ConfigureAwait(false);
+            using var capture = new ActionWhyCapture(this);
+            Task<CommandResult> pending;
+            using (Robot.Engine.EnterSynchronousOwner())
+            {
+                capture.BeforeAdmission();
+                pending = entry.Execute(this, parsed, cancellationToken);
+                capture.AfterAdmission();
+            }
+            var result = await pending.ConfigureAwait(false);
             var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
             if (command == "animation")
             {
@@ -145,6 +153,9 @@ public sealed partial class CozmoBridge : IDisposable
                 response["truncatedByRobot"] = issues.Length != 0;
                 response["playbackIssues"] = JsonSerializer.SerializeToNode(issues, Json);
             }
+            if (result.Admitted == false || result.EngineResult is > 0 || result.Status is "owner-retired" or "no-report" ||
+                response["truncatedByRobot"]?.GetValue<bool>() == true)
+                response["why"] = capture.Describe(result, response["truncatedByRobot"]?.GetValue<bool>() == true);
             response["during"] = System.Text.Json.Nodes.JsonNode.Parse(ReadEvents(startCursor).GetRawText());
             return JsonSerializer.SerializeToElement(response, Json);
         }

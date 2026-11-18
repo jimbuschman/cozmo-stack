@@ -250,12 +250,27 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         if (arguments.EnumerateObject().Any()) throw new ArgumentException("This tool takes no arguments.");
     }
 
-    private static object ToolResult(JsonElement result, bool error) => new
+    private static object ToolResult(JsonElement result, bool error)
     {
-        content = new[] { new { type = "text", text = result.GetRawText() } },
-        structuredContent = result,
-        isError = error,
-    };
+        if (error && !result.TryGetProperty("why", out _))
+        {
+            var enriched = JsonNode.Parse(result.GetRawText())!.AsObject();
+            enriched["why"] = new JsonObject
+            {
+                ["engineResultName"] = null,
+                ["snapshot"] = new JsonObject(),
+                ["checkAvailable"] = false,
+                ["hint"] = result.TryGetProperty("error", out var failure) ? failure.ToString() : "No engine failure check was captured.",
+            };
+            result = JsonSerializer.SerializeToElement(enriched, Json);
+        }
+        return new
+        {
+            content = new[] { new { type = "text", text = result.GetRawText() } },
+            structuredContent = result,
+            isError = error,
+        };
+    }
 
     private async Task Reply(TextWriter output, JsonElement? id, object? result, int? code, string? message, CancellationToken token)
     {

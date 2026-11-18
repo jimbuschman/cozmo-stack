@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Reflection;
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -13,6 +15,118 @@ public sealed class LlmMountChargerReplayTests(ITestOutputHelper output)
 {
     private static JsonDocument Inputs() => JsonDocument.Parse(File.ReadAllText(
         Path.Combine(AppContext.BaseDirectory, "Fixtures", "mount_charger_llm_native.json")));
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    public async Task McpExplainsRecordedFinalApproachFailure(int index)
+    {
+        using var inputs = Inputs();
+        using var f = new Fixture(sourceNvEmpty: true);
+        var charger = Install(f, inputs.RootElement.GetProperty("rows")[index]);
+        using var bridge = new Cozmo.Bridge.CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        int request = await client.Send("tools/call", new { name = "mount-charger", arguments = new { chargerId = charger.ObjectId } });
+        var root = Assert.IsType<NativeDriveToMountChargerRunner>(f.Robot.ActionList.GetCurrentAction());
+        // Recorded post-route boundary: skip only the already completed approach
+        // drive. The actual native final pose comparison and action retirement run.
+        root.Drive.Initialized = true;
+        for (int i = 0; i < 8; i++) f.Rig.Tick();
+        var reply = (await client.Receive(request)).GetProperty("result");
+        Assert.True(reply.GetProperty("isError").GetBoolean());
+        var data = reply.GetProperty("structuredContent");
+        Assert.Equal(0x04000001u, data.GetProperty("engineResult").GetUInt32());
+        var why = data.GetProperty("why");
+        Assert.Equal(data.GetProperty("engineResultName").GetString(), why.GetProperty("engineResultName").GetString());
+        var pose = why.GetProperty("snapshot").GetProperty("poseCheck");
+        Assert.Equal(index == 3, pose.GetProperty("yawTested").GetBoolean());
+        if (index == 0)
+        {
+            Assert.InRange(pose.GetProperty("offsetYmm").GetDouble() - pose.GetProperty("thresholdYmm").GetDouble(), 12.2, 12.3);
+            Assert.Contains("12.22 mm", why.GetProperty("hint").GetString());
+        }
+        else
+        {
+            Assert.Contains("-10.8 degrees", why.GetProperty("hint").GetString());
+            Assert.Contains("7.5 degrees", why.GetProperty("hint").GetString());
+        }
+        Assert.Equal(data.GetRawText(), JsonDocument.Parse(reply.GetProperty("content")[0].GetProperty("text").GetString()!).RootElement.GetRawText());
+    }
+
+    [Fact]
+    public async Task McpExplainsRecordedBackupPitchAfterNativeRetryDrive()
+    {
+        using var inputs = Inputs();
+        var row = inputs.RootElement.GetProperty("rows")[2];
+        using var f = new Fixture(sourceNvEmpty: true);
+        var charger = Install(f, row);
+        var state = row.GetProperty("state");
+        var packet = f.Rig.MakeState((RobotStatusFlag)state.GetProperty("status").GetUInt32(),
+            origin: f.Robot.CurrentOriginId, frame: f.Robot.PoseFrameId);
+        packet.Pose.Pitch = state.GetProperty("pitch").GetSingle();
+        f.Rig.Data(packet); f.Rig.Tick();
+        using (var main = Main(f, state)) f.Robot.SetPose(main);
+        using var bridge = new Cozmo.Bridge.CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        int request = await client.Send("tools/call", new { name = "mount-charger", arguments = new { chargerId = charger.ObjectId } });
+        var root = Assert.IsType<NativeDriveToMountChargerRunner>(f.Robot.ActionList.GetCurrentAction());
+        // This numeric fixture starts after alignment/turn, at the recorded backup
+        // comparison. Install that boundary without inventing a firmware dock result.
+        // Real BackupRunner, retry decision, retry drive and parent retirement run.
+        root.Drive.Initialized = true;
+        root.Drive.Action.CheckAtEnd = false;
+        Assert.Equal(ActionResult.Success, root.Mount.Initialize());
+        var mountRunner = root.Children[1];
+        mountRunner.Initialized = true;
+        var backupType = typeof(NativeDriveToMountChargerRunner).GetNestedType("BackupRunner", BindingFlags.NonPublic)!;
+        var backup = (ActionRunner)Activator.CreateInstance(backupType,
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, [f.M, f.Robot, root.Mount], null)!;
+        backup.Initialized = true;
+        var phaseType = mountRunner.GetType().GetNestedType("Stage", BindingFlags.NonPublic)!;
+        mountRunner.GetType().GetMethod("SetStage", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(
+            mountRunner, [Enum.Parse(phaseType, "Mount"), new ActionRunner[] { backup }]);
+        int mark = f.Rig.Mark();
+        for (int i = 0; i < 10 && !f.Rig.SentSince(mark).OfType<ExecutePath>().Any(); i++) f.Rig.Tick();
+        var execute = Assert.Single(f.Rig.SentSince(mark).OfType<ExecutePath>());
+        f.Rig.Data(new PathFollowingEvent { EventId = execute.EventId, EventType = 0 }); f.Rig.Tick();
+        f.Rig.Data(new PathFollowingEvent { EventId = execute.EventId, EventType = 2 }); f.Rig.Tick();
+        for (int i = 0; i < 5; i++) f.Rig.Tick();
+        var reply = (await client.Receive(request)).GetProperty("result");
+        Assert.True(reply.GetProperty("isError").GetBoolean());
+        var data = reply.GetProperty("structuredContent");
+        Assert.Equal(inputs.RootElement.GetProperty("backupExpected").GetProperty("retryResult").GetUInt32(), data.GetProperty("engineResult").GetUInt32());
+        var why = data.GetProperty("why");
+        Assert.Equal(packet.Pose.Pitch, why.GetProperty("snapshot").GetProperty("backup").GetProperty("pitchRad").GetDouble(), 6);
+        Assert.Contains("-15.9 degrees", why.GetProperty("hint").GetString());
+        Assert.Contains("-15.0 degree cutoff", why.GetProperty("hint").GetString());
+        Assert.NotEmpty(why.GetProperty("snapshot").GetProperty("pathPlanner").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task QueuedActionCannotInheritAnotherActionsFailedCheck()
+    {
+        using var inputs = Inputs();
+        using var f = new Fixture(sourceNvEmpty: true);
+        var charger = Install(f, inputs.RootElement.GetProperty("rows")[0]);
+        using var bridge = new Cozmo.Bridge.CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        int first = await client.Send("tools/call", new { name = "mount-charger", arguments = new { chargerId = charger.ObjectId } });
+        var root = Assert.IsType<NativeDriveToMountChargerRunner>(f.Robot.ActionList.GetCurrentAction());
+        int second = await client.Send("tools/call", new { name = "pickup", arguments = new { objectId = 999 } });
+        root.Drive.Initialized = true;
+        // The first command's real final pose failure precedes the queued
+        // pickup's BAD_OBJECT. Neither tags nor call time windows identify ownership.
+        for (int i = 0; i < 8; i++) f.Rig.Tick();
+        var firstData = (await client.Receive(first)).GetProperty("result").GetProperty("structuredContent");
+        var secondData = (await client.Receive(second)).GetProperty("result").GetProperty("structuredContent");
+        Assert.True(firstData.GetProperty("why").GetProperty("snapshot").TryGetProperty("poseCheck", out _));
+        Assert.False(secondData.GetProperty("why").GetProperty("snapshot").TryGetProperty("poseCheck", out _));
+        Assert.False(secondData.GetProperty("why").GetProperty("checkAvailable").GetBoolean());
+        Assert.Equal((uint)ActionResult.BadObject, secondData.GetProperty("engineResult").GetUInt32());
+    }
 
     // Post-vision boundary, not a camera/localisation or physical mounting oracle.
     // Expected geometry and decisions come from emu_mount_charger_llm.py running
