@@ -476,14 +476,14 @@ public class M4ControlTests
         }
 
         /// <summary>Connected, validated, Success, SyncTimeAck: the robot is time synced (no state yet).</summary>
-        public void ToSynced()
+        public void ToSynced(uint bodyHwVersion=7)
         {
             Engine.ConnectToRobot(RobotIp); Tick();
             Port.Raise(ReceiverMarker.OnConnected, RobotEp); Tick();
             Data(new RobotAvailable { SerialNumberHead = 1, HwVersion = 5 });
             Data(new FirmwareVersion { RobotId = 1, Signature = Encoding.UTF8.GetBytes("{\"version\": 2381, \"time\": 1546972025, \"build\": \"DEVELOPMENT\"}") });
             Tick();
-            Data(new ManufacturingID { SerialNumber = 2, BodyHwVersion = 7, BodyColor = 2 });
+            Data(new ManufacturingID { SerialNumber = 2, BodyHwVersion = bodyHwVersion, BodyColor = 2 });
             Tick();
             Data(new SyncTimeAck());
             Tick();

@@ -25,7 +25,7 @@ public sealed class PickupPyramidNativeExecutionTests
         internal ManipulationSystem M=>Runtime.Manipulation!;
         internal float Head=-.15f,Lift,Yaw,X,Y;
         private int _motorMark;
-        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null,Func<uint,byte[]?>? sourceNvRaw=null,Action<CozmoEngine>? engineCreated=null,bool keepNeedsFull=false)
+        internal Fixture(bool preloadAnimations=false,bool pumpAnimations=false,CozmoEngineOptions? engineOptions=null,bool sourceNvEmpty=false,Func<uint,byte[]?>? sourceNvStored=null,Func<uint,byte[]?>? sourceNvRaw=null,Action<CozmoEngine>? engineCreated=null,bool keepNeedsFull=false,uint bodyHwVersion=7)
         {
             _sourceNvStored=sourceNvStored;_sourceNvRaw=sourceNvRaw;
             Rig=new M4ControlTests.Rig(Resources(),engineOptions:engineOptions,engineCreated:engineCreated,keepNeedsFull:keepNeedsFull);
@@ -36,7 +36,7 @@ public sealed class PickupPyramidNativeExecutionTests
                 Rig.Engine.AnimationStreamerUpdate=()=>Rig.Robot.Animations.Scheduler.Advance(Rig.Engine.Timer.TimeStampMs,Rig.Engine.Timer.Nanoseconds);
             }
             if(preloadAnimations)Rig.Robot.Animations.LoadFrom(Rig.Engine.Options.ResourcesPath!);
-            Rig.ToSynced();foreach(var owner in Runtime.Bound.Values.OfType<SteppedBehavior>().Distinct())owner.EnableAnimationCompletionCaptureForTest();
+            Rig.ToSynced(bodyHwVersion);foreach(var owner in Runtime.Bound.Values.OfType<SteppedBehavior>().Distinct())owner.EnableAnimationCompletionCaptureForTest();
             Rig.Calibrate();Rig.State(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,head:Head);
             var startupTrace=new List<string>();var startupLogs=new System.Collections.Concurrent.ConcurrentQueue<string>();void Log(string text)=>startupLogs.Enqueue(text);Rig.Engine.StackLogLine+=Log;
             for(int i=0;i<35&&Rig.Robot.CameraSettings.Calibration is null;i++)
