@@ -36,6 +36,8 @@ public sealed class AiTurnToFaceControlTests
         var runner=Assert.IsType<NativeLastFaceRunner>(f.Robot.ActionList.GetCurrentAction());f.Rig.Tick();
         var result=await task.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.True(result.Admitted);Assert.Equal(0u,result.EngineResult);
+        Assert.False(result.FacePoseAvailable);
+        Assert.Contains("no turn target was available", result.Detail);
         Assert.DoesNotContain(f.Rig.SentSince(mark),m=>m is SetHeadAngle or SetBodyAngle);
         Assert.False(f.Robot.ActionList.ContainsRunner(runner));
         var report=Assert.Single(local.Where(x=>x.Tag==runner.Tag));Assert.Equal((byte)6,report.CompletionVariant);

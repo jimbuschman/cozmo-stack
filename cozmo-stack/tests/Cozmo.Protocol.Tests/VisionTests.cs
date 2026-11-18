@@ -1303,6 +1303,7 @@ public class VisionTests
     [Fact]
     public void ObjectPositionUpdatedFiresOnAFirstSightingAndAgainOnlyAfterAnEightyMillimetreMove()
     {
+        Assert.Equal(0x3F490FDBu, BitConverter.SingleToUInt32Bits((float)ObjectPositionUpdatedStrategy.SameAngleRad));
         // No marker library is needed: the observations are recorded directly (4c), so this runs everywhere.
         using var rig = new WorldRig();
         var behavior = new AcknowledgeObjectBehavior(rig.Vision.World);
@@ -1314,9 +1315,14 @@ public class VisionTests
         // gate C6 checks is supplied by a runnable stand-in, because no animation assets are loaded offline and
         // SteppedBehavior.IsRunnable needs the library.
         var runnable = M10Support.RunnableBehaviour();
+        using var origin = new Pose3d("");
+        using var initial = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22)); initial.SetParent(origin);
+        using var nearby = new Pose3d(Mat3.Identity, new Vec3(150, 40, 22)); nearby.SetParent(origin);
+        using var distant = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)); distant.SetParent(origin);
+        using var rotated = new Pose3d(Mat3.AboutZ(1.2), new Vec3(250, 0, 22)); rotated.SetParent(origin);
 
         // 4c/4e: a first sighting has no reacted time yet, so it is a target at once.
-        strategy.RecordObservation(7, new Pose3d(Mat3.Identity, new Vec3(150, 0, 22)), 1, enabled: true);
+        strategy.RecordObservation(7, initial, 1, enabled: true);
         Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
         Assert.Equal(new uint[] { 7 }, behavior.PendingTargets);
 
@@ -1328,17 +1334,58 @@ public class VisionTests
         Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
 
         // a 40 mm shift is within the 80 mm tolerance
-        strategy.RecordObservation(7, new Pose3d(Mat3.Identity, new Vec3(150, 40, 22)), 2, enabled: true);
+        strategy.RecordObservation(7, nearby, 2, enabled: true);
         Assert.False(strategy.ShouldTrigger(ctx, null, 0, runnable));
 
         // 100 mm away is a new position
-        strategy.RecordObservation(7, new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)), 3, enabled: true);
+        strategy.RecordObservation(7, distant, 3, enabled: true);
         Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
 
         // a 69 degree turn is over the 45 degree angle tolerance
         strategy.RobotReactedToId(7);
-        strategy.RecordObservation(7, new Pose3d(Mat3.AboutZ(1.2), new Vec3(250, 0, 22)), 4, enabled: true);
+        strategy.RecordObservation(7, rotated, 4, enabled: true);
         Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
+    }
+
+    // Native PoseHelper 0x006124C0/FC returns false for unrelated origins; the time fallback remains independent.
+    [Fact]
+    public void ObjectPositionUpdateWithUnrelatedOriginsWaitsForTheNativeTimeThreshold()
+    {
+        using var rig = new WorldRig();
+        var behavior = new AcknowledgeObjectBehavior(rig.Vision.World);
+        using var strategy = new ObjectPositionUpdatedStrategy(rig.Vision.World, behavior);
+        using var firstOrigin = new Pose3d("");
+        using var secondOrigin = new Pose3d("");
+        using var previous = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22)); previous.SetParent(firstOrigin);
+        using var observed = new Pose3d(Mat3.Identity, new Vec3(500, 0, 22)); observed.SetParent(secondOrigin);
+        uint time = 10;
+        strategy.LastImageTimestamp = () => time;
+        strategy.RecordObservation(7, previous, time, enabled: false);
+        strategy.RecordObservation(7, observed, ++time, enabled: true);
+        Assert.False(strategy.ShouldReactToTarget(7));
+        time = 600010;
+        Assert.False(strategy.ShouldReactToTarget(7)); // native unsigned comparison is strictly greater.
+        time++;
+        Assert.True(strategy.ShouldReactToTarget(7));
+    }
+
+    // Native HandleNewObservation copies both pose values (0x006123B6/C8), preserving the reacted snapshot.
+    [Fact]
+    public void ObjectPositionUpdateStoresPoseValuesWhenTheCallerReusesItsObservation()
+    {
+        using var rig = new WorldRig();
+        var behavior = new AcknowledgeObjectBehavior(rig.Vision.World);
+        using var strategy = new ObjectPositionUpdatedStrategy(rig.Vision.World, behavior);
+        using var origin = new Pose3d("");
+        using var observed = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22)); observed.SetParent(origin);
+        using var moved = new Pose3d(Mat3.Identity, new Vec3(300, 0, 22)); moved.SetParent(origin);
+        strategy.LastImageTimestamp = () => 11;
+        strategy.RecordObservation(7, observed, 10, enabled: false);
+        observed.Assign(moved);
+        strategy.RecordObservation(7, observed, 11, enabled: true);
+        Assert.True(strategy.ShouldReactToTarget(7));
+        strategy.RobotReactedToId(7);
+        Assert.False(strategy.ShouldReactToTarget(7));
     }
 
     // reach: unit (the strategy target set is supplied directly; B2 source 0x00603742..A2).

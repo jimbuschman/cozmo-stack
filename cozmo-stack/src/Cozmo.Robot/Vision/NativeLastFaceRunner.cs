@@ -91,6 +91,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     internal int VerifiedId=>_verified.Id;
     internal ActionRunner? ChildForTest=>_child;
     internal int RequestedId=>_requested.Id;
+    internal bool? FacePoseAvailable { get; private set; }
     internal void ConfigurePublicRequest()
     {
         _aiPublic=true;
@@ -138,7 +139,8 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             found=face is not null && CopyFacePose(face, cached);
         }
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
-        if(!found||!cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative))
+        FacePoseAvailable = found && cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative);
+        if(FacePoseAvailable != true)
         {if(RequireVerifiedFace)return unchecked((int)0x0300000E);_faceState=3;return 0;}
         SetChild(null);_verified.Reset();_best=float.MaxValue;_faceState=0;AssignGoal(relative);
         if(owner.HasExternalInterface)
