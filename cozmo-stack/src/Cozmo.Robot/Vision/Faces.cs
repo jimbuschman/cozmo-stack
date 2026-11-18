@@ -87,6 +87,10 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     private Task<Emulation.OkaoFaceDetection.RecognitionExtraction>? _recognitionWorker;
     private Emulation.OkaoFaceDetection? _recognitionExtractor;
     private int _pendingTrack;
+    private uint _pendingImageTimestamp;
+    // Observes the queued input consumed by GetRecognitionData, not the later
+    // tracker prediction on which its identity happens to become visible.
+    internal Action<uint,int>? RecognitionFeatureConsumedForTest;
     private bool _pendingRegistrationAllowed;
     internal bool RecognitionWorkCompleted { get { lock (_gate) return _recognitionWorker is { IsCompleted: true }; } }
     internal Action<string>? Diagnostic { get; set; }
@@ -174,6 +178,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                         {
                             var frame = machine.FrCaptureCurrentImage();
                             _pendingTrack = track;
+                            _pendingImageTimestamp = timestamp;
                             _pendingRegistrationAllowed = enrollable;
                             // FaceRecognizer::Run (0x00862D70) extracts from the
                             // held image while the vision thread advances DT/PT.
@@ -195,7 +200,10 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                         {
                             var result = worker.GetAwaiter().GetResult();
                             if (result.Feature is { } feature && _pendingTrack != 0)
+                            {
                                 recognizer.ConsumeStockFeature(machine.FrImportFeature(feature), _pendingTrack, _pendingRegistrationAllowed);
+                                RecognitionFeatureConsumedForTest?.Invoke(_pendingImageTimestamp,_pendingTrack);
+                            }
                             _recognitionWorker = null;
                         }
                         var identity = recognizer.LookupStockTrack(track);

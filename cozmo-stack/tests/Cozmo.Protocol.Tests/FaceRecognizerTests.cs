@@ -11,6 +11,83 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class FaceRecognizerTests
 {
+    // UpdateRecognitionData 0x0086348E..0x00863710: named identity wins;
+    // merging an old unnamed record requires the enrollment/registration gate.
+    [Theory]
+    [InlineData(true,true)]
+    [InlineData(false,false)]
+    public void StockUnnamedTrackCanAcquireANamedIdentity(bool registration,bool merged)
+    {
+        var okao=new FakeOkaoRecognizer();var recognizer=new FaceRecognizer(okao);
+        var feature=new OkaoFaceFeature();recognizer.SetAllowedEnrollments(-1,0);
+        recognizer.CurrentTrack=3;
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int guest));
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int named));
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==named).Name="Ada";
+        okao.IdentifyResults.Add((0,1000));recognizer.ConsumeStockFeature(feature,3,true);
+        recognizer.LookupStockTrack(3);
+        okao.IdentifyResults.Clear();okao.IdentifyResults.Add((1,1000));
+        recognizer.ConsumeStockFeature(feature,3,registration);
+        Assert.Equal(named,recognizer.LookupStockTrack(3).Id);
+        Assert.Equal(!merged,recognizer.EnrolledFaces.Any(f=>f.FaceID==guest));
+    }
+
+    [Fact]
+    public void StockExistingNamedTrackWinsAnUnnamedMatchEvenWithRegistrationDisabled()
+    {
+        var okao=new FakeOkaoRecognizer();var recognizer=new FaceRecognizer(okao);
+        var feature=new OkaoFaceFeature();recognizer.SetAllowedEnrollments(-1,0);
+        recognizer.CurrentTrack=3;
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int named));
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int guest));
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==named).Name="Ada";
+        okao.IdentifyResults.Add((0,1000));recognizer.ConsumeStockFeature(feature,3,true);
+        recognizer.LookupStockTrack(3);
+        okao.IdentifyResults.Clear();okao.IdentifyResults.Add((1,1000));
+        recognizer.ConsumeStockFeature(feature,3,false);
+        Assert.Equal(named,recognizer.LookupStockTrack(3).Id);
+        Assert.DoesNotContain(recognizer.EnrolledFaces,f=>f.FaceID==guest);
+    }
+
+    // 0x008635A4..BC: unnamed IDs keep the earlier +0x28 time; old wins a tie.
+    [Theory]
+    [InlineData(10,20,true)]
+    [InlineData(20,10,false)]
+    [InlineData(10,10,true)]
+    public void StockUnnamedConflictUsesTheNativeTimestampAndMergeGate(long oldTime,long newTime,bool keepOld)
+    {
+        var okao=new FakeOkaoRecognizer();var recognizer=new FaceRecognizer(okao);
+        var feature=new OkaoFaceFeature();recognizer.SetAllowedEnrollments(-1,0);
+        recognizer.CurrentTrack=3;
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int old));
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int next));
+        okao.IdentifyResults.Add((0,1000));recognizer.ConsumeStockFeature(feature,3,true);
+        recognizer.LookupStockTrack(3);
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==old).Timestamp28Micros=oldTime;
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==next).Timestamp28Micros=newTime;
+        okao.IdentifyResults.Clear();okao.IdentifyResults.Add((1,1000));
+        recognizer.ConsumeStockFeature(feature,3,false);
+        Assert.Equal(keepOld?old:next,recognizer.LookupStockTrack(3).Id);
+        Assert.Equal(keepOld?1:2,recognizer.EnrolledFaces.Count);
+    }
+
+    [Fact]
+    public void StockBlockedMergeRetargetsTheEnrollmentToTheSurvivingName()
+    {
+        var okao=new FakeOkaoRecognizer();var recognizer=new FaceRecognizer(okao);
+        var feature=new OkaoFaceFeature();recognizer.SetAllowedEnrollments(-1,0);
+        recognizer.CurrentTrack=3;
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int guest));
+        Assert.Equal(0,recognizer.RegisterNewUser(feature,out int named));
+        recognizer.EnrolledFaces.Single(f=>f.FaceID==named).Name="Ada";
+        okao.IdentifyResults.Add((0,1000));recognizer.ConsumeStockFeature(feature,3,true);
+        recognizer.LookupStockTrack(3);recognizer.SetAllowedEnrollments(4,guest);
+        okao.IdentifyResults.Clear();okao.IdentifyResults.Add((1,1000));
+        recognizer.ConsumeStockFeature(feature,3,false);
+        Assert.Equal(named,recognizer.EnrollmentTargetId);
+        Assert.Equal(2,recognizer.EnrolledFaces.Count);
+        Assert.Equal(named,recognizer.LookupStockTrack(3).Id);
+    }
     [Fact]
     public void StockTrackReacquisitionCopiesTracksBeforeNormalizationAndRemovesOldKey()
     {

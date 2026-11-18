@@ -445,6 +445,7 @@ public class M4ControlTests
         public static readonly IPAddress RobotIp = IPAddress.Parse("172.31.1.1");
         public static readonly IPEndPoint RobotEp = new(RobotIp, 5551);
         private uint _ts = 100;
+        internal void ContinueRobotTimestampAfterReplay(uint timestamp) => _ts = timestamp;
 
         public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null,
                    Action<CozmoEngine>? engineCreated = null, bool keepNeedsFull = false)

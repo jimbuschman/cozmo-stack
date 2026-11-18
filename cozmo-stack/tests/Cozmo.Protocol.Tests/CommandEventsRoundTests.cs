@@ -10,6 +10,23 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class CommandEventsRoundTests
 {
+    [Fact]
+    public void RecognitionWindowMatchesOnlyTheFaceJustTaughtByThisRun()
+    {
+        var step=CommandEventsHw.Steps.Single(s=>s.Id=="face-recognised");
+        var window=new CommandEventsHw.Window(step,1,0,"Temporary");
+        byte[] Body(int id,string name)=>new CladWriter().I32(id).U32(10).Bytes(new byte[48]).String8(name).Bytes(new byte[37]).ToArray();
+        window.AddRaw(step.Tag,Body(2,"Other"),1);
+        window.AddApi(step.Tag,new(2,10,"Other"),1,()=>new());
+        window.AddRaw(step.Tag,Body(1,""),2);
+        window.AddApi(step.Tag,new(1,10,""),2,()=>new());
+        window.AddRaw(step.Tag,Body(1,"Old"),2);
+        window.AddApi(step.Tag,new(1,10,"Old"),2,()=>new());
+        Assert.False(window.Matched());
+        window.AddRaw(step.Tag,Body(1,"Temporary"),3);
+        window.AddApi(step.Tag,new(1,10,"Temporary"),3,()=>new());
+        Assert.True(window.Matched());
+    }
     private static M15CubeRun Capture(Fixture fixture)
     {
         var run = new M15CubeRun("", "", IPAddress.Loopback, "", [], [], false, false) { Commands = true };
