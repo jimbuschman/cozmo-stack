@@ -59,6 +59,7 @@ public sealed class BehaviorObjectiveReportTests
     }
 
     [Fact]
+    [ExpectedIsolatedFault(typeof(InvalidOperationException),"objective host fixture")]
     public void DeferredHostHandlersRemainIsolated()
     {
         // reach: unit (direct source producer; intentionally throwing first host handler tests M1-034 isolation).

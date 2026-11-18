@@ -2653,8 +2653,12 @@ public sealed partial class CozmoEngine : IDisposable
 
     private void ReportFault(Exception e)
     {
-        try { Faulted?.Invoke(e); } catch { }
+        _isolatedFaultProbe?.Invoke(e);
+        try { Faulted?.Invoke(e); }
+        catch (Exception subscriberError) { _isolatedFaultProbe?.Invoke(subscriberError); }
     }
+
+    private readonly Action<Exception>? _isolatedFaultProbe = IsolatedFaultProbe.Capture?.Invoke();
 
     // fidelity: M5-022
     /// <summary>

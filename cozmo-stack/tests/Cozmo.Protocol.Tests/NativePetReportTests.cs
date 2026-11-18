@@ -17,6 +17,7 @@ public sealed class NativePetReportTests
     }
 
     [Fact]
+    [ExpectedIsolatedFault(typeof(InvalidOperationException),"test host handler",6)]
     public void QueuedCameraPublishesSignedOrderedReplacementAndEmptyClears()
     {
         using var scene=new Fixture();

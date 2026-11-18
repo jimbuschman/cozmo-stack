@@ -1089,8 +1089,12 @@ public sealed partial class CozmoRobot : IDisposable
 
     private void Fault(Exception e)
     {
-        try { HandlerFaulted?.Invoke(e); } catch { }
+        _isolatedFaultProbe?.Invoke(e);
+        try { HandlerFaulted?.Invoke(e); }
+        catch (Exception subscriberError) { _isolatedFaultProbe?.Invoke(subscriberError); }
     }
+
+    private readonly Action<Exception>? _isolatedFaultProbe = IsolatedFaultProbe.Capture?.Invoke();
 
     /// <summary>
     /// Raised when a message consumer or a subscriber to <see cref="Message"/> threw. The rest of the
