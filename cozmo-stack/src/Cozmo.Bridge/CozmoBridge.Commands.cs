@@ -129,10 +129,13 @@ public sealed partial class CozmoBridge : IDisposable
             return Error("invalid-arguments", error.Message);
         }
 
+        long startCursor = ReadEvents().GetProperty("cursor").GetInt64();
         try
         {
             var result = await entry.Execute(this, parsed, cancellationToken).ConfigureAwait(false);
-            return JsonSerializer.SerializeToElement(result, Json);
+            var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
+            response["during"] = System.Text.Json.Nodes.JsonNode.Parse(ReadEvents(startCursor).GetRawText());
+            return JsonSerializer.SerializeToElement(response, Json);
         }
         catch (InvalidOperationException error) when (error.Message.StartsWith("MISSING:", StringComparison.Ordinal))
         {

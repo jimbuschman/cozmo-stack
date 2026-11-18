@@ -14,6 +14,8 @@ public sealed partial class CozmoBridge
     private readonly object eventGate = new();
     private readonly Queue<FeedEvent> events = new();
     private long lastCursor;
+    private TaskCompletionSource eventAvailable = NewEventSignal();
+    private static TaskCompletionSource NewEventSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool disposed;
 
     /// <summary>Subscribes to public reports. The caller retains ownership of the robot and connection.</summary>
@@ -33,6 +35,7 @@ public sealed partial class CozmoBridge
         engine.BehaviorTransition += OnBehavior;
         engine.ReactionTransition += OnReaction;
         engine.ActionCompleted += OnActionCompleted;
+        AttachSenses();
     }
 
     /// <summary>Reads events strictly after a cursor. Zero is the initial cursor. Gap indicates older events were evicted.</summary>
@@ -53,22 +56,41 @@ public sealed partial class CozmoBridge
         return JsonSerializer.SerializeToElement(new { cursor = next, oldestCursor = oldest, gap = since < oldest - 1, events = page }, Json);
     }
 
+    /// <summary>Waits without consuming events. Registration and cursor check share the append lock.</summary>
+    public async Task<JsonElement> ReadEventsAsync(long since = 0, int waitMs = 0, CancellationToken token = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(waitMs);
+        if (waitMs > 30000) throw new ArgumentOutOfRangeException(nameof(waitMs));
+        Task signal;
+        lock (eventGate)
+        {
+            var page = ReadEvents(since);
+            if (waitMs == 0 || lastCursor > since) return page;
+            signal = eventAvailable.Task;
+        }
+        try { await signal.WaitAsync(TimeSpan.FromMilliseconds(waitMs), token).ConfigureAwait(false); }
+        catch (TimeoutException) { }
+        return ReadEvents(since);
+    }
+
     /// <summary>Returns the latest connection, device, activity, face and cube state exposed by the robot.</summary>
     public JsonElement GetState()
     {
         ThrowIfDisposed();
+        using var ownerRead = Robot.Engine.EnterSynchronousOwner();
+        using var poseRead = Robot.Vision.World.EnterPoseMutation();
         bool connected = Robot.Engine.ConnectionState == 2;
         var raw = connected ? Robot.State.Latest : null;
         uint? carried = connected ? Robot.Carrying.CarriedObjectId : null;
         var activity = connected ? Robot.GetActivityObservation() : null;
         var world = Robot.Vision.World;
         var faces = connected
-            ? Robot.Vision.Faces.Faces.Select(f => new KnownFace(f.Id, f.Name, f.LastObservedTimestamp)).ToDictionary(f => f.FaceId)
+            ? Robot.Vision.Faces.Faces.Select(f => new KnownFace(f.Id, f.Name, f.LastObservedTimestamp, Relative: Relative(f.HeadPose))).ToDictionary(f => f.FaceId)
             : new Dictionary<int, KnownFace>();
         if (connected)
         {
             foreach (var face in Robot.Vision.Recognizer.EnrolledFaces.Where(f => !string.IsNullOrEmpty(f.Name)))
-                faces[face.FaceID] = new(face.FaceID, face.Name, faces.GetValueOrDefault(face.FaceID)?.LastObservedTimestamp, true);
+                faces[face.FaceID] = new(face.FaceID, face.Name, faces.GetValueOrDefault(face.FaceID)?.LastObservedTimestamp, true, faces.GetValueOrDefault(face.FaceID)?.Relative);
         }
         var cubes = new List<KnownCube>();
         if (connected)
@@ -82,11 +104,11 @@ public sealed partial class CozmoBridge
                 ObservableObject? observed = null;
                 if (worldId is { } id) located.Remove(id, out observed);
                 cubes.Add(new(cube.FactoryId, cube.ObjectId, worldId, cube.Type.ToString(), cube.Connected,
-                    observed?.PoseState.ToString(), observed?.LastObservedTimestamp));
+                    observed?.PoseState.ToString(), observed?.LastObservedTimestamp, observed is null ? null : Relative(observed.NativePose)));
             }
             foreach (var cube in located.Values.OrderBy(o => o.ObjectId))
                 cubes.Add(new(cube.FactoryId == 0 ? null : cube.FactoryId, cube.ActiveId < 0 ? null : (uint)cube.ActiveId,
-                    cube.ObjectId, cube.Type.ToString(), false, cube.PoseState.ToString(), cube.LastObservedTimestamp));
+                    cube.ObjectId, cube.Type.ToString(), false, cube.PoseState.ToString(), cube.LastObservedTimestamp, Relative(cube.NativePose)));
         }
 
         return JsonSerializer.SerializeToElement(new
@@ -97,6 +119,9 @@ public sealed partial class CozmoBridge
             isCarrying = connected ? carried.HasValue : (bool?)null,
             carriedObjectId = carried,
             isOnCharger = raw?.Has(RobotStatusFlag.IsOnCharger),
+            isCharging = connected && raw is not null ? Robot.State.Charging : (bool?)null,
+            knownChargers = connected ? world.LocatedObjects.Where(o => o.OriginId == world.CurrentOriginId && o.Type == ObjectType.Charger_Basic)
+                .Select(o => new { worldObjectId = o.ObjectId, poseState = o.PoseState.ToString(), o.LastObservedTimestamp, relative = Relative(o.NativePose) }).ToArray() : [],
             activity = activity?.Activity,
             highLevelActivity = activity?.HighLevelActivity,
             behavior = activity?.Behavior,
@@ -107,9 +132,9 @@ public sealed partial class CozmoBridge
         }, Json);
     }
 
-    private sealed record KnownFace(int FaceId, string? Name, uint? LastObservedTimestamp, bool Enrolled = false);
+    private sealed record KnownFace(int FaceId, string? Name, uint? LastObservedTimestamp, bool Enrolled = false, RelativePose? Relative = null);
     private sealed record KnownCube(uint? FactoryId, uint? RadioObjectId, uint? WorldObjectId, string Type, bool Connected,
-        string? PoseState, uint? LastObservedTimestamp);
+        string? PoseState, uint? LastObservedTimestamp, RelativePose? Relative);
 
     /// <summary>Authored animation triggers and clip names loaded by the current robot.</summary>
     public JsonElement ListAnimations()
@@ -127,6 +152,7 @@ public sealed partial class CozmoBridge
 
     private void OnFace(RobotObservedFaceReport report)
     {
+        CaptureFace(report);
         var payload = JsonSerializer.SerializeToElement(report, Json);
         lock (eventGate)
         {
@@ -139,6 +165,7 @@ public sealed partial class CozmoBridge
 
     private void OnObject(RobotObservedObjectReport report)
     {
+        CaptureObject(report);
         if (report.Family == (uint)ObjectFamily.LightCube) Add("cube-seen", report, report.Timestamp);
         else if (report.Type == (uint)ObjectType.Charger_Basic) Add("charger-seen", report, report.Timestamp);
     }
@@ -179,6 +206,9 @@ public sealed partial class CozmoBridge
         if (disposed) return;
         if (events.Count == eventCapacity) events.Dequeue();
         events.Enqueue(new(++lastCursor, type, DateTimeOffset.UtcNow, robotTimestamp, payload));
+        var signal = eventAvailable;
+        eventAvailable = NewEventSignal();
+        signal.TrySetResult();
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed), this);
@@ -190,8 +220,10 @@ public sealed partial class CozmoBridge
             if (disposed) return;
             Volatile.Write(ref disposed, true);
             events.Clear();
+            eventAvailable.TrySetResult();
         }
 
+        DetachSenses();
         var engine = Robot.Engine;
         engine.RobotObservedFace -= OnFace;
         engine.RobotChangedObservedFaceId -= OnFaceIdChanged;
