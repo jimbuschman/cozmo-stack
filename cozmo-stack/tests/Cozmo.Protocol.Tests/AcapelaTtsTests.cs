@@ -84,6 +84,23 @@ public sealed class AcapelaTtsTests
         Assert.Equal(expected, got);
     }
 
+    // Original guest execution with the block hook: 128736 samples, this SHA256.
+    // FACE-GREETING-REPLAY-1's recorded Name_Normal scalar 1.1 gives Android rate 45.
+    [Fact]
+    public void RecordedLongNameRetainsTheOriginalNativeSamples()
+    {
+        var lib = ShippedLibraries.FindLibDir();
+        var tts = TtsDir();
+        if (lib is null || tts is null) return;
+        using var native = new AcapelaTts(lib, javaGlue: true);
+        native.LoadVoice(tts, "Ryan");
+        var samples = native.Synthesize("Test Robin 30c00a", 45, 100, 100);
+        Assert.Equal(128736, samples.Length);
+        var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(samples.AsSpan());
+        Assert.Equal("A44DF02968C651A40C5E0815D904A23EF3A9778E1E7088C01A2C0FFE3861E76C",
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)));
+    }
+
     /// <summary>The engine's credential getters, run under the emulator, give the values the research note reads from the
     /// instructions: GetUserid = 0x6BA483B0 ^ 0x0ACADADA (0x0069F8DC..F6), GetPassword = 0x0AC94A41 ^ 0x0ACADADA
     /// (0x0069F8F8..912), GetLicense the 0xE5-byte string at 0x00C00713 (0x0069F914)
