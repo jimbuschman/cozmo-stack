@@ -460,6 +460,11 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
     // BehaviorReactToPickup vptr+0x20 (0x0102C270) resolves to 0x00607DAC, which returns true.
     protected override bool RunnableGate20(BehaviorContext context) => true;
 
+    // Pickup vptr+0x24 at0x0102C274 ->0x0059EC12:false (on-charger platform);
+    // vptr+0x28 at0x0102C278 ->0x00607DB0:true (carrying).
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => true;
+
     protected override bool IsRunnableInternal(BehaviorContext context) => true;               // 0x0060774C
 
     /// <summary>UpdateInternal polls with no action in flight (gate 1 returns 1 only while +0x84 is set), so the behaviour outlives its actions.</summary>
