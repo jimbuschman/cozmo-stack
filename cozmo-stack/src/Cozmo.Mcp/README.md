@@ -156,3 +156,21 @@ are in millimetres, in MAIN robot axes; `distanceMm` is planar distance and
 the object and robot have no common pose root or no robot owner is available.
 Enrolled faces that are not currently observed retain their name but have no
 invented distance.
+
+## Firmware animation guard
+
+The default animation budget is 7,370 serialized bytes, an operator-approved
+empirical guard measured from firmware 2457 captures. It is not a claim about the
+firmware allocator's capacity. `--animation-budget-bytes 8192` selects the original
+engine constant; the same flag works with `cozmo-conformance m15-cube-hw`. Values
+must be 1–30000. The C# setting is `CozmoEngineOptions.AnimationStreamBudgetBytes`.
+Neither the 14-frame gate nor any other streaming step changes.
+
+Animation responses preserve `engineResult` / `engineResultName`. If a BufferFull
+trace occurs during the call, or its started playback ends before a successful
+EndOfAnimation send, `truncatedByRobot` is true, `playbackIssues` gives the observed
+tag/name and raw trace arguments, and MCP `isError` is true even if the engine
+reports SUCCESS. Narration says “cut off by robot buffer”. A prior host abort is
+not misreported as an unexpected robot end. Unknown trace-to-stream identity stays
+null. These facts diagnose a cutoff; they do not assert how much was physically
+heard or seen.

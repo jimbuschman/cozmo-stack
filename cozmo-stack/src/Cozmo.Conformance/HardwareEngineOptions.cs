@@ -12,6 +12,7 @@ namespace Cozmo.Conformance;
 public static class HardwareEngineOptions
 {
     private static readonly AsyncLocal<bool?> ScopedNeeds = new();
+    private static readonly AsyncLocal<int?> ScopedAnimationBudget = new();
     internal static bool KeepNeedsFullDefault=>ScopedNeeds.Value??true;
 
     // Host CLI input only; strip it before the existing per-harness argument parsers.
@@ -37,8 +38,41 @@ public static class HardwareEngineOptions
         public void Dispose(){if(disposed)return;disposed=true;ScopedNeeds.Value=prior;}
     }
 
+    public static int ParseAnimationBudget(string value)
+    {
+        if (!int.TryParse(value,System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out int budget) ||
+            budget < 1 || budget > 30000)
+            throw new ArgumentException("--animation-budget-bytes requires an integer from 1 to 30000.");
+        return budget;
+    }
+    public static IDisposable UseAnimationBudgetArguments(ref string[] args)
+    {
+        int? budget=null;
+        var remaining=new List<string>();
+        for(int i=0;i<args.Length;i++)
+        {
+            if(args[i]!="--animation-budget-bytes"){remaining.Add(args[i]);continue;}
+            if(budget.HasValue || ++i==args.Length)
+                throw new ArgumentException("--animation-budget-bytes requires one value, once.");
+            budget=ParseAnimationBudget(args[i]);
+        }
+        args=remaining.ToArray();
+        var scope=new AnimationBudgetScope(ScopedAnimationBudget.Value);
+        ScopedAnimationBudget.Value=budget;
+        return scope;
+    }
+    private sealed class AnimationBudgetScope(int? prior):IDisposable
+    {
+        private bool disposed;
+        public void Dispose(){if(disposed)return;disposed=true;ScopedAnimationBudget.Value=prior;}
+    }
+
     public static CozmoEngineOptions Create(string resources,string? filesPath=null,string? needsDirectory=null,string? deviceIdPath=null,
         string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null,bool? keepNeedsFull=null)
+        => CreateWithAnimationBudget(resources,filesPath,needsDirectory,deviceIdPath,blockPoolPath,clock,beforeStart,localeName,log,speechSoundBankDirectory,keepNeedsFull);
+
+    public static CozmoEngineOptions CreateWithAnimationBudget(string resources,string? filesPath=null,string? needsDirectory=null,string? deviceIdPath=null,
+        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null,bool? keepNeedsFull=null,int? animationStreamBudgetBytes=null)
     {
         var defaults=new CozmoEngineOptions();
         string files=filesPath??defaults.FilesPath;
@@ -46,6 +80,7 @@ public static class HardwareEngineOptions
         var (language,country)=Locale(localeName??HostLocaleName(),log??Console.Error.WriteLine);
         return new CozmoEngineOptions{ResourcesPath=resources,FilesPath=files,BlockPoolPath=blockPoolPath??defaults.BlockPoolPath,NeedsDeviceDirectory=needs,
             KeepNeedsFull=keepNeedsFull??KeepNeedsFullDefault,
+            AnimationStreamBudgetBytes=animationStreamBudgetBytes??ScopedAnimationBudget.Value??defaults.AnimationStreamBudgetBytes,
             NeedsSystemClockMicroseconds=clock,DasDeviceId=DasDeviceIdFile.LoadOrCreate(deviceIdPath??DasDeviceIdFile.DefaultPath),
             LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart,SpeechSoundBankDirectory=speechSoundBankDirectory};
     }

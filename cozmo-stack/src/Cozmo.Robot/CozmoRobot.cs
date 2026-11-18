@@ -330,7 +330,7 @@ public sealed partial class CozmoRobot : IDisposable
             settings=new CozmoEngineOptions {
                 FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,SpeechSoundBankDirectory=settings.SpeechSoundBankDirectory,SpeechAudioArchivePath=settings.SpeechAudioArchivePath,BlockPoolPath=settings.BlockPoolPath,ReconnectPooledCubes=settings.ReconnectPooledCubes,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,NeedsSystemClockMicroseconds=settings.NeedsSystemClockMicroseconds,NotificationHistory=settings.NotificationHistory,OmitNotificationHistoryForTests=settings.OmitNotificationHistoryForTests,
                 DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,BeforeStart=settings.BeforeStart,
-                AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
+                AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,AnimationStreamBudgetBytes=settings.AnimationStreamBudgetBytes,
                 VisionCalibration=settings.VisionCalibration,VisionDetector=settings.VisionDetector,
                 VisionOkaoRecognizer=settings.VisionOkaoRecognizer,OmitVisionForTest=settings.OmitVisionForTest,
                 DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,

@@ -102,6 +102,18 @@ public sealed class StreamSendBuffer
     /// <summary>The byte budget's cap per Update: 30000 (C9).</summary>
     public const int MaxBytesPerUpdate = 30000;
 
+    private readonly int _byteBudget;
+    /// <summary>Native 8192 by default for standalone/native conformance callers.
+    /// Live robot construction supplies the operator's host setting (M1-063).</summary>
+    public StreamSendBuffer() : this(BytesAhead) { }
+    public StreamSendBuffer(int byteBudget)
+    {
+        if (byteBudget < 1 || byteBudget > MaxBytesPerUpdate)
+            throw new ArgumentOutOfRangeException(nameof(byteBudget), "Animation byte budget must be 1..30000.");
+        _byteBudget = byteBudget;
+    }
+    public int ByteBudget => _byteBudget;
+
     private sealed class Entry
     {
         public object? Owner;
@@ -156,7 +168,7 @@ public sealed class StreamSendBuffer
         BudgetRefreshObservation? refresh = null;
         lock (_gate)
         {
-            int bytes = unchecked(bytesPlayed - _bytesStreamed + BytesAhead);
+            int bytes = unchecked(bytesPlayed - _bytesStreamed + _byteBudget);
             if (_bytesStreamed < 0 && bytesPlayed >= 1)
                 logs.Add((EngineLogLevel.Info, "Unnamed", "AnimationStreamer.UpdateAmountToSend.BytesStreamedOverflow", $"free {bytes} (streamed = {_bytesStreamed}, played {bytesPlayed})"));
             if (bytes < 0)
@@ -557,7 +569,11 @@ public sealed class AnimationScheduler
     /// /dev/urandom (gap4 R1..R3, C3). A test seam: a given instance seeds both, so a timeline can be reproduced.
     /// </param>
     public AnimationScheduler(IAnimationSink sink, Random? random = null, EngineRandom? contextRandom = null)
+        : this(sink, StreamSendBuffer.BytesAhead, random, contextRandom) { }
+
+    public AnimationScheduler(IAnimationSink sink, int animationStreamBudgetBytes, Random? random = null, EngineRandom? contextRandom = null)
     {
+        Stream = new StreamSendBuffer(animationStreamBudgetBytes);
         _sink = sink;
         _keyframeRng = random is null ? new EngineRandom() : new EngineRandom(random);
         // fidelity: M5-045
@@ -585,7 +601,7 @@ public sealed class AnimationScheduler
     /// The engine's send buffer, budgets and stream counters (M3-012..M3-014). The policy APIs that stream audio
     /// outside an animation (<see cref="CozmoAudio.Play"/>, M3-017) go through the same buffer and budget.
     /// </summary>
-    public StreamSendBuffer Stream { get; } = new();
+    public StreamSendBuffer Stream { get; }
 
     /// <summary>Where the sound for an audio keyframe comes from (M6); null leaves audio keyframes silent.</summary>
     public IAnimationAudioSource? AudioSource { get; set; }

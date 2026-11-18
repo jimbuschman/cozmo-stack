@@ -12,6 +12,10 @@ IDisposable needsInput;
 try { needsInput=HardwareEngineOptions.UseNeedsArguments(ref args); }
 catch(ArgumentException error){Console.Error.WriteLine(error.Message);return 2;}
 using var needsScope=needsInput;
+IDisposable animationBudgetInput;
+try { animationBudgetInput=HardwareEngineOptions.UseAnimationBudgetArguments(ref args); }
+catch(ArgumentException error){Console.Error.WriteLine(error.Message);return 2;}
+using var animationBudgetScope=animationBudgetInput;
 return args.Length == 0 ? Usage() : args[0] switch
 {
     "decode" => Decode(args.Skip(1)),

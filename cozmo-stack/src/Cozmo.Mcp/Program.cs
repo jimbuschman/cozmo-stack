@@ -20,14 +20,14 @@ public static class Program
         Console.SetOut(Console.Error);
         try
         {
-            var flags = new HashSet<string>(["--resources", "--banks", "--robot-ip", "--out", "--needs"], StringComparer.Ordinal);
+            var flags = new HashSet<string>(["--resources", "--banks", "--robot-ip", "--out", "--needs", "--animation-budget-bytes"], StringComparer.Ordinal);
             var values = new Dictionary<string, string>(StringComparer.Ordinal);
             bool validate = false;
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] is "--help" or "-h")
                 {
-                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--validate]");
+                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--animation-budget-bytes <1..30000>] [--validate]");
                     return 0;
                 }
                 if (args[i] == "--validate") { validate = true; continue; }
@@ -42,11 +42,13 @@ public static class Program
             var ip = IPAddress.Parse(values.GetValueOrDefault("--robot-ip") ?? "172.31.1.1");
             string needsMode=values.GetValueOrDefault("--needs")??"full";
             if(needsMode is not ("full" or "real"))throw new ArgumentException("--needs requires full or real.");
+            int animationBudget=values.TryGetValue("--animation-budget-bytes",out var budgetValue)
+                ? HardwareEngineOptions.ParseAnimationBudget(budgetValue) : new CozmoEngineOptions().AnimationStreamBudgetBytes;
             string directory = values.GetValueOrDefault("--out") ?? Path.Combine(FindRepository(), "re-analysis", "acceptance", "hardware",
                 DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-LLM-SESSION");
             if (validate)
             {
-                Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Needs: {needsMode}. Evidence: {Path.GetFullPath(directory)}. No connection requested.");
+                Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Needs: {needsMode}. Animation budget: {animationBudget} bytes. Evidence: {Path.GetFullPath(directory)}. No connection requested.");
                 return 0;
             }
 
@@ -63,8 +65,8 @@ public static class Program
                 using var narration=new LiveNarration(Console.Error.WriteLine,()=>narrationClock.Elapsed.TotalMilliseconds,
                     data=>{data["reportedAtMs"]=data["atMs"]?.DeepClone();evidence.Record("live-narration",JsonSerializer.SerializeToElement(data));});
                 // Same app inputs and native readiness/connect gate as m15-cube-hw.
-                var options = HardwareEngineOptions.Create(resources, log: Log, speechSoundBankDirectory: banks,
-                    beforeStart:engine=>{evidence.Attach(engine);narration.AttachEngine(engine);}, keepNeedsFull: needsMode=="full");
+                var options = HardwareEngineOptions.CreateWithAnimationBudget(resources, log: Log, speechSoundBankDirectory: banks,
+                    beforeStart:engine=>{evidence.Attach(engine);narration.AttachEngine(engine);}, keepNeedsFull: needsMode=="full", animationStreamBudgetBytes: animationBudget);
                 using var robot = CozmoRobot.Create(engineOptions: options);
                 narration.AttachRobot(robot);
                 robot.Transport.FrameTrace += evidence.Frame;

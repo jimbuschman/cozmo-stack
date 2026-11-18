@@ -276,6 +276,67 @@ public sealed class McpServerTests
         Assert.Equal(2,during.EnumerateArray().Count(e=>e.GetProperty("type").GetString()=="off-treads-changed"));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EarlyRobotAnimationEndKeepsNativeSuccessButReportsCutoffToClientAndNarration(bool trace)
+    {
+        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true);
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        var lines=new List<string>();
+        using var narration=new Cozmo.Conformance.LiveNarration(lines.Add,()=>f.Rig.Engine.Timer.TimeStampMs,automaticFlush:false);
+        narration.AttachEngine(f.Rig.Engine);narration.AttachRobot(f.Rig.Robot);
+        await using var client=new Client(bridge);
+        await client.Initialize();
+        int mark=f.Rig.Mark();
+        int call=await client.Send("tools/call",new {name="animation",arguments=new {trigger="CozmoSaysSpeakLoop",loops=1}});
+        for(int i=0;i<20&&!f.Rig.SentSince(mark).OfType<StartOfAnimation>().Any();i++)f.Rig.Tick();
+        byte tag=Assert.Single(f.Rig.SentSince(mark).OfType<StartOfAnimation>()).AnimId;
+        f.Rig.Data(new AnimationStarted{AnimId=tag});f.Rig.Tick();
+        if(trace) {f.Rig.Data(new PrintTrace{FormatId=6,NameId=379,Level=2,Args=[707,747]});f.Rig.Tick();}
+        Assert.Empty(f.Rig.SentSince(mark).OfType<EndOfAnimation>());
+        f.Rig.Data(new AnimationEnded{AnimId=tag});f.Rig.Tick();
+        var reply=await client.Receive(call);
+        var result=Data(reply);
+        Assert.Equal(0u,result.GetProperty("engineResult").GetUInt32());
+        Assert.Equal("SUCCESS",result.GetProperty("engineResultName").GetString());
+        Assert.True(result.GetProperty("truncatedByRobot").GetBoolean());
+        Assert.True(reply.GetProperty("result").GetProperty("isError").GetBoolean());
+        Assert.Equal(tag,result.GetProperty("report").GetProperty("playbackTag").GetByte());
+        var issue=Assert.Single(result.GetProperty("playbackIssues").EnumerateArray());
+        Assert.Equal(tag,issue.GetProperty("tag").GetByte());
+        Assert.True(issue.GetProperty("endedBeforeEndSent").GetBoolean());
+        Assert.Equal(trace?1:0,issue.GetProperty("traces").GetArrayLength());
+        f.Rig.Engine.DrainAppDelivery();narration.Flush();
+        Assert.Contains(lines,line=>line.Contains("cut off by robot buffer"));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DirectEndOutsideSchedulerCountsOnlyWhenItsSendSucceeds(bool succeeds)
+    {
+        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true);
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        await using var client=new Client(bridge);
+        await client.Initialize();
+        int mark=f.Rig.Mark();
+        int call=await client.Send("tools/call",new {name="animation",arguments=new {trigger="CozmoSaysSpeakLoop",loops=1}});
+        for(int i=0;i<20&&!f.Rig.SentSince(mark).OfType<StartOfAnimation>().Any();i++)f.Rig.Tick();
+        byte tag=Assert.Single(f.Rig.SentSince(mark).OfType<StartOfAnimation>()).AnimId;
+        f.Rig.Data(new AnimationStarted{AnimId=tag});f.Rig.Tick();
+        if(!succeeds)f.Robot.SendFault=m=>m is EndOfAnimation?false:null;
+        f.Rig.Robot.EndAnimation();
+        Assert.Equal(succeeds?1:0,f.Rig.SentSince(mark).OfType<EndOfAnimation>().Count());
+        f.Rig.Data(new AnimationEnded{AnimId=tag});f.Rig.Tick();
+        var reply=await client.Receive(call);
+        var result=Data(reply);
+        Assert.Equal(0u,result.GetProperty("engineResult").GetUInt32());
+        Assert.Equal(!succeeds,result.GetProperty("truncatedByRobot").GetBoolean());
+        Assert.Equal(!succeeds,reply.GetProperty("result").GetProperty("isError").GetBoolean());
+        Assert.Equal(succeeds?0:1,result.GetProperty("playbackIssues").GetArrayLength());
+    }
+
     private static JsonElement Data(JsonElement reply)
     {
         var result = reply.GetProperty("result");

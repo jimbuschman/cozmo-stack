@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "c92d7702e6d245524e40bf6658f95b1715bc6c605c9c8c52f9f66c27895b3b33",
+  "inventory_sha256": "4fe01a1510d26d82969f888e8c5b00b81832c3eca60835805538a1f03c0bc9e5",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -769,6 +769,27 @@
       ],
       "live_path": true,
       "hardware_required": false
+    },
+    "M1-063": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Firmware-2457 animation byte budget and honest host cutoff reporting",
+      "authority": "Operator decision 2026-11-18 in re-analysis/jobs/trial-m13/QUEUE.md ANIM-BUDGET-FIRMWARE-1: measure and supply a smaller firmware-2457 animation budget; preserve native SUCCESS and report cutoffs separately in host outputs. The empirical budget is not recovered firmware capacity.",
+      "evidence": [
+        "0x0057C6F0..0x0057C7AC UpdateAmountToSend: native byte constant 8192, cap 30000, unchanged 14-frame allowance; SendBufferedMessages 0x0057BF60..0x0057C010",
+        "0x007ABB90 / 0x007BCDAA: AudioSample serialized size 745; StartOfAnimation size 2, executed by re-analysis/tools/emu/emu_anim_buffer.py",
+        "re-analysis/obb/assets/cozmo_resources/config/engine/AnkiLogStringTables.json nameTable[379] AnimationController.BufferKeyFrame.BufferFull; raw trace argument meanings remain unknown",
+        "cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/animation_budget_firmware.json: 28 available bundle copies, 26 raw captures, 12 BufferFull traces; all counters start at zero, unique reliable sends deduplicated; two older bundles lack frames",
+        "re-analysis/tools/measure_anim_budget.py: lowest 100/500/1000-ms pre-error peak 8125; highest clean observed value below that floor 8117, at 20261117-053040-M15-CUBE-HW-b22d48 frames line 16053, 138853.7051 ms (349618 streamed - 341501 played). Default = 8117 - (745+2) = 7370."
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
-  }
+  },
+  "policy_additions": [
+    {
+      "id": "M1-063",
+      "approved": "2026-11-18",
+      "authority": "operator decision ANIM-BUDGET-FIRMWARE-1; existing records unchanged"
+    }
+  ]
 }

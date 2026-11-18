@@ -25,6 +25,7 @@ public sealed partial class CozmoBridge
     private readonly Dictionary<byte, string> clipNames = new();
     private readonly Dictionary<byte, string?> playingNames = new();
     private readonly Dictionary<byte, string?> lastPlayingNames = new();
+    private AnimationPlaybackMonitor? playbackMonitor;
     private CameraFrame? cameraFrame;
     private double? cameraHead;
     private sealed record RelativePose(double XMm, double YMm, double ZMm, double DistanceMm, double BearingDeg);
@@ -42,6 +43,8 @@ public sealed partial class CozmoBridge
 
     private void AttachSenses()
     {
+        playbackMonitor = new AnimationPlaybackMonitor(Robot);
+        playbackMonitor.Issue += PlaybackIssue;
         Robot.Camera.FrameReceived += CameraReceived;
         Robot.Vision.FrameProcessed += VisionProcessed;
         Robot.Animations.Scheduler.Diagnostic += AnimationDiagnostic;
@@ -51,6 +54,7 @@ public sealed partial class CozmoBridge
     }
     private void DetachSenses()
     {
+        if (playbackMonitor is {} monitor) { monitor.Issue -= PlaybackIssue; monitor.Dispose(); }
         Robot.Camera.FrameReceived -= CameraReceived;
         Robot.Vision.FrameProcessed -= VisionProcessed;
         Robot.Animations.Scheduler.Diagnostic -= AnimationDiagnostic;
@@ -135,6 +139,8 @@ public sealed partial class CozmoBridge
             void Pixel(int x,int y) { int i=(y*width+x)*3;rgb[i]=r;rgb[i+1]=g;rgb[i+2]=b; }
         }
     }
+
+    private void PlaybackIssue(AnimationPlaybackIssue issue) => Add("animation-cut-off-by-robot", issue);
 
     private void AnimationDiagnostic(AnimationDiagnostic diagnostic)
     {
