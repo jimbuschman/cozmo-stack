@@ -110,7 +110,7 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                             capabilities = new { tools = new { listChanged = false } },
                             serverInfo = new { name = "cozmo-mcp", version = "1.0.0" },
                             instructions = "Read get_state before moving. Object IDs are engine world IDs. Use list_animations for trigger names. " +
-                                "Read engine results and poll read_events with the returned cursor. Track-face runs until completion or cancellation.",
+                                "Action results include during events. Use get_camera_image to see; read_events supports waitMs up to 30000. Track-face runs until completion or cancellation.",
                         };
                         break;
                     case "ping":
@@ -159,8 +159,10 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         return catalogue.Concat(
         [
             Tool("get_state", "Read connection, battery, carrying, charger, activity, faces and cubes.", """{"type":"object","properties":{},"additionalProperties":false}"""),
-            Tool("read_events", "Read buffered events since a cursor. Zero starts a feed. A gap means older events were evicted.",
-                """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0}},"additionalProperties":false}"""),
+            Tool("get_camera_image", "Read the latest camera image with matching observation boxes and exposure-time head angle.",
+                """{"type":"object","properties":{"annotate":{"type":"boolean","default":false}},"additionalProperties":false}"""),
+            Tool("read_events", "Read buffered events since a cursor; waitMs waits for the next event, up to 30 seconds. A gap means older events were evicted.",
+                """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0},"waitMs":{"type":"integer","minimum":0,"maximum":30000,"default":0}},"additionalProperties":false}"""),
             Tool("list_animations", "List loaded authored animation trigger names and clip names.", """{"type":"object","properties":{},"additionalProperties":false}"""),
         ]).ToArray();
     }
@@ -182,6 +184,24 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
             JsonElement result;
             switch (tool)
             {
+                case "get_camera_image":
+                    if (args.EnumerateObject().Any(key => key.Name != "annotate"))
+                        throw new ArgumentException("get_camera_image accepts only 'annotate'.");
+                    bool annotate = false;
+                    if (args.TryGetProperty("annotate", out var flag))
+                    {
+                        if (flag.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                            throw new ArgumentException("'annotate' must be a boolean.");
+                        annotate = flag.GetBoolean();
+                    }
+                    var image = bridge.GetCameraImage(annotate);
+                    return new
+                    {
+                        content = new object[] { new { type = "text", text = image.Metadata.GetRawText() },
+                            new { type = "image", mimeType = "image/png", data = Convert.ToBase64String(image.Png) } },
+                        structuredContent = image.Metadata,
+                        isError = false,
+                    };
                 case "get_state":
                     NoArguments(args);
                     result = bridge.GetState();
@@ -192,13 +212,17 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                     break;
                 case "read_events":
                     var keys = args.EnumerateObject().ToArray();
-                    if (keys.Length > 1 || keys.Any(key => key.Name != "since"))
-                        throw new ArgumentException("read_events accepts only 'since'.");
+                    if (keys.Any(key => key.Name is not ("since" or "waitMs")))
+                        throw new ArgumentException("read_events accepts only 'since' and 'waitMs'.");
                     long since = 0;
                     if (args.TryGetProperty("since", out var cursor) &&
                         (cursor.ValueKind != JsonValueKind.Number || !cursor.TryGetInt64(out since) || since < 0))
                         throw new ArgumentException("'since' must be a nonnegative integer.");
-                    result = bridge.ReadEvents(since);
+                    int waitMs = 0;
+                    if (args.TryGetProperty("waitMs", out var wait) &&
+                        (wait.ValueKind != JsonValueKind.Number || !wait.TryGetInt32(out waitMs) || waitMs < 0 || waitMs > 30000))
+                        throw new ArgumentException("'waitMs' must be an integer between 0 and 30000.");
+                    result = await bridge.ReadEventsAsync(since, waitMs, token).ConfigureAwait(false);
                     break;
                 default:
                     result = await bridge.ExecuteAsync(tool, args, token).ConfigureAwait(false);

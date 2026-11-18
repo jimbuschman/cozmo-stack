@@ -126,3 +126,33 @@ the 26 schemas, real head motor command/ack/result, Freeplay, state, engine face
 events/cursor polling, pending-action cancellation, protocol/tool errors and
 session frame/message export. Existing bridge tests cover the command mappings.
 Real Claude client discovery and robot motion remain the operator's check.
+
+## Seeing and waiting
+
+Call `get_camera_image` with `{}` for a PNG image content block plus metadata:
+robot timestamp, exposure-time head angle (null if unavailable), and face/cube/
+charger rectangles from observation reports carrying that exact timestamp.
+`{"annotate":true}` draws green face boxes and amber object boxes. Empty boxes mean
+no matching reports are currently available; older observations are never moved
+onto a newer picture. This tool reads the camera stream already running; it does
+not enable a different vision mode.
+
+Action responses include `during`, an event page covering delivery from invocation
+through completion. It uses the same cursor/gap format as `read_events`, including
+animation robot start/end/abort reports with clip names, off-treads transitions,
+and the existing behavior, reaction, face and object reports. The feed is bounded:
+if `gap` is true, older events were evicted. Poll during long-running actions to
+retain the full history.
+
+`read_events({"since":cursor,"waitMs":30000})` waits until an event arrives or the
+timeout expires. The range is 0–30000 ms; the default 0 returns immediately.
+Concurrent waits do not consume one another's events. MCP cancellation cancels the
+wait. A regular tool call can run while another call waits.
+
+`get_state` includes `isCharging`, `knownChargers` (world ID and pose state), and
+`relative` coordinates for located cubes, chargers and observed faces. Coordinates
+are in millimetres, in MAIN robot axes; `distanceMm` is planar distance and
+`bearingDeg` is atan2(y,x), positive to the robot's left. A null relative pose means
+the object and robot have no common pose root or no robot owner is available.
+Enrolled faces that are not currently observed retain their name but have no
+invented distance.

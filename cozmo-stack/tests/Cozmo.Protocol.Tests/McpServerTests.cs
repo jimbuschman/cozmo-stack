@@ -22,7 +22,7 @@ public sealed class McpServerTests
         await using var client = new Client(bridge);
         await client.Initialize();
         var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
-        Assert.Equal(26, tools.GetArrayLength());
+        Assert.Equal(27, tools.GetArrayLength());
         foreach (var entry in bridge.GetCommandCatalogue().EnumerateArray())
         {
             var tool = Assert.Single(tools.EnumerateArray(), t => t.GetProperty("name").GetString() == entry.GetProperty("name").GetString());
@@ -33,6 +33,9 @@ public sealed class McpServerTests
 
         int mark = f.Rig.Mark();
         int call = await client.Send("tools/call", new { name = "head", arguments = new { radians = 0.23 } });
+        f.Rig.Engine.PublishRobotObservedFace(new(8, 1000,
+            new EngineGamePose(200,15,60,1,0,0,0,f.Robot.CurrentOriginId), new FaceRect(100,50,50,50), "Ada", [],[],[],[]));
+        f.Rig.Engine.DrainAppDelivery();
         f.Rig.Tick();
         var motor = Assert.Single(f.Rig.SentSince(mark).OfType<SetHeadAngle>());
         Assert.Equal(0.23f, motor.AngleRad);
@@ -43,6 +46,8 @@ public sealed class McpServerTests
         Assert.False(reply.GetProperty("result").GetProperty("isError").GetBoolean());
         Assert.Equal(0u, Data(reply).GetProperty("engineResult").GetUInt32());
         Assert.Equal("SUCCESS", Data(reply).GetProperty("engineResultName").GetString());
+        Assert.Contains(Data(reply).GetProperty("during").GetProperty("events").EnumerateArray(),
+            e => e.GetProperty("type").GetString() == "face-recognised");
         var freeplay = Data(await client.Tool("freeplay", new { enabled = false }));
         Assert.Equal("submitted", freeplay.GetProperty("status").GetString());
         f.Rig.Tick();
@@ -52,7 +57,7 @@ public sealed class McpServerTests
         f.Rig.Engine.PublishRobotObservedFace(new(7, 1001, pose, new FaceRect(100, 50, 50, 50), "Ada", [], [], [], []));
         f.Rig.Engine.DrainAppDelivery();
         var page = Data(await client.Tool("read_events", new { since = 0 }));
-        var seen = Assert.Single(page.GetProperty("events").EnumerateArray(), e => e.GetProperty("type").GetString() == "face-recognised");
+        var seen = Assert.Single(page.GetProperty("events").EnumerateArray(), e => e.GetProperty("type").GetString() == "face-recognised" && e.GetProperty("robotTimestamp").GetUInt32() == 1001);
         Assert.Equal("Ada", seen.GetProperty("payload").GetProperty("name").GetString());
         Assert.Equal(1001u, seen.GetProperty("robotTimestamp").GetUInt32());
         Assert.Empty(Data(await client.Tool("read_events", new { since = page.GetProperty("cursor").GetInt64() })).GetProperty("events").EnumerateArray());
@@ -143,6 +148,132 @@ public sealed class McpServerTests
             Assert.Contains(File.ReadLines(Path.Combine(path, "messages.jsonl")), line => line.Contains("payloadHex"));
         }
         finally { if (Directory.Exists(path)) Directory.Delete(path, true); }
+    }
+
+    [Fact]
+    public async Task CameraReturnsPngAndOnlyReportsFromItsExactTimestampWithOptionalBoxes()
+    {
+        using var f = new Fixture();
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        Assert.True((await client.Tool("get_camera_image", new {})).GetProperty("result").GetProperty("isError").GetBoolean());
+        f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, head: 0.2f);
+        uint stamp=f.Robot.StoredState!.Timestamp;
+        f.Rig.CameraGrayFrame(700,stamp,Enumerable.Repeat((byte)150,320*240).ToArray());
+        f.M.Vision.WaitForProcessorIdle();
+        var pose=new EngineGamePose(200,0,60,1,0,0,0,f.Robot.CurrentOriginId);
+        f.Rig.Engine.PublishRobotObservedFace(new(7,stamp,pose,new FaceRect(20,30,40,50),"Ada",[],[],[],[]));
+        f.Rig.Engine.PublishRobotObservedFace(new(8,stamp-1,pose,new FaceRect(1,1,10,10),"Old",[],[],[],[]));
+        f.Rig.Engine.DeliverObservedObjectToApp(new(stamp,(uint)ObjectFamily.LightCube,(uint)ObjectType.Block_LIGHTCUBE1,55,100,100,30,30,pose,0,true));
+        f.Rig.Engine.DrainAppDelivery();
+        var plain=await client.Tool("get_camera_image",new {});
+        var metadata=Data(plain);
+        Assert.Equal(stamp,metadata.GetProperty("robotTimestamp").GetUInt32());
+        Assert.Equal(0.2,metadata.GetProperty("headAngleRad").GetDouble(),5);
+        Assert.Equal(7,Assert.Single(metadata.GetProperty("faces").EnumerateArray()).GetProperty("faceId").GetInt32());
+        Assert.Equal(55u,Assert.Single(metadata.GetProperty("objects").EnumerateArray()).GetProperty("worldObjectId").GetUInt32());
+        var png=plain.GetProperty("result").GetProperty("content")[1];
+        Assert.Equal("image",png.GetProperty("type").GetString());
+        Assert.Equal("image/png",png.GetProperty("mimeType").GetString());
+        var pixels=StbImageSharp.ImageResult.FromMemory(Convert.FromBase64String(png.GetProperty("data").GetString()!),StbImageSharp.ColorComponents.RedGreenBlue);
+        Assert.Equal((320,240),(pixels.Width,pixels.Height));
+        var annotated=await client.Tool("get_camera_image",new {annotate=true});
+        var drawn=StbImageSharp.ImageResult.FromMemory(Convert.FromBase64String(annotated.GetProperty("result").GetProperty("content")[1].GetProperty("data").GetString()!),StbImageSharp.ColorComponents.RedGreenBlue);
+        int at=(30*320+20)*3;
+        Assert.Equal(new byte[]{0,255,0},drawn.Data[at..(at+3)]);
+        Assert.NotEqual(pixels.Data[at],drawn.Data[at]);
+        // A later image has no boxes until reports carrying that timestamp arrive.
+        f.Rig.CameraGrayFrame(701,stamp+1,Enumerable.Repeat((byte)150,320*240).ToArray());
+        f.M.Vision.WaitForProcessorIdle();
+        Assert.Empty(Data(await client.Tool("get_camera_image",new {})).GetProperty("faces").EnumerateArray());
+        Assert.True((await client.Tool("get_camera_image",new {annotate="yes"})).GetProperty("result").GetProperty("isError").GetBoolean());
+    }
+
+    [Fact]
+    public async Task LongPollWakesOnDeliverySupportsConcurrentReadersAndDoesNotLoseAlreadyArrivedEvents()
+    {
+        using var f=new Fixture();
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        await using var client=new Client(bridge);
+        await client.Initialize();
+        long cursor=bridge.ReadEvents().GetProperty("cursor").GetInt64();
+        int first=await client.Send("tools/call",new {name="read_events",arguments=new {since=cursor,waitMs=30000}});
+        int second=await client.Send("tools/call",new {name="read_events",arguments=new {since=cursor,waitMs=30000}});
+        Assert.True((await client.Request("ping",new {})).TryGetProperty("result",out _));
+        f.Rig.Engine.PublishFaceIdReport(0x4B,new NativeDeletedFace(7));
+        f.Rig.Engine.DrainAppDelivery();
+        Assert.Single(Data(await client.Receive(first)).GetProperty("events").EnumerateArray());
+        Assert.Single(Data(await client.Receive(second)).GetProperty("events").EnumerateArray());
+        Assert.Single(Data(await client.Tool("read_events",new {since=cursor,waitMs=30000})).GetProperty("events").EnumerateArray());
+        long latest=bridge.ReadEvents().GetProperty("cursor").GetInt64();
+        Assert.Empty(Data(await client.Tool("read_events",new {since=latest,waitMs=10})).GetProperty("events").EnumerateArray());
+        int cancel=await client.Send("tools/call",new {name="read_events",arguments=new {since=latest,waitMs=30000}});
+        await client.Notify("notifications/cancelled",new {requestId=cancel});
+        Assert.Equal(-32800,(await client.Receive(cancel)).GetProperty("error").GetProperty("code").GetInt32());
+        foreach(int invalid in new[]{-1,30001})
+            Assert.True((await client.Tool("read_events",new {waitMs=invalid})).GetProperty("result").GetProperty("isError").GetBoolean());
+        var pending=bridge.ReadEventsAsync(latest,30000);
+        bridge.Dispose();
+        await Assert.ThrowsAsync<ObjectDisposedException>(()=>pending);
+    }
+
+    [Fact]
+    public async Task StateReportsChargingLocatedChargerAndRobotRelativeFaceAndCubePoses()
+    {
+        using var f=new Fixture();
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        await using var client=new Client(bridge);
+        await client.Initialize();
+        f.Rig.State(RobotStatusFlag.IsCharging | RobotStatusFlag.IsOnCharger | RobotStatusFlag.HeadInPos);
+        using var main=new Pose3d(f.Robot.GetCheckedMainPose());
+        var charger=new ObservableObject(27,ObjectType.Charger_Basic,ChargerGeometry.Markers)
+        {
+            Pose=new Pose3d(Cozmo.Robot.Vision.Rotation3d.Identity,new Vec3(300,40,0),parent:main),
+            OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known,
+        };
+        var cube=new ObservableObject(28,ObjectType.Block_LIGHTCUBE1,CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
+        {
+            Pose=new Pose3d(Rotation3d.Identity,new Vec3(30,40,22),parent:main),
+            OriginId=f.Robot.CurrentOriginId,PoseState=PoseState.Known,
+        };
+        f.M.World.AddLocatedObject(charger);f.M.World.AddLocatedObject(cube);
+        var face=new TrackedFace(new DetectedFace(-7,new(100,50,50,50)),f.Robot.StoredState!.Timestamp)
+        { HeadPose=new Pose3d(Rotation3d.Identity,new Vec3(100,0,60),parent:main) };
+        Assert.NotNull(f.M.Vision.Faces.AddOrUpdateFace(face,main,false));
+        var state=Data(await client.Tool("get_state",new {}));
+        Assert.True(state.GetProperty("isCharging").GetBoolean());
+        Assert.Equal(27u,Assert.Single(state.GetProperty("knownChargers").EnumerateArray(), c => c.GetProperty("worldObjectId").GetUInt32()==27).GetProperty("worldObjectId").GetUInt32());
+        var relative=Assert.Single(state.GetProperty("knownCubes").EnumerateArray()).GetProperty("relative");
+        Assert.Equal(50,relative.GetProperty("distanceMm").GetDouble(),3);
+        Assert.Equal(53.130102,relative.GetProperty("bearingDeg").GetDouble(),3);
+        Assert.Equal(100,Assert.Single(state.GetProperty("knownFaces").EnumerateArray()).GetProperty("relative").GetProperty("distanceMm").GetDouble(),3);
+    }
+
+    [Fact]
+    public async Task ActionDuringContainsNamedRobotPlaybackReportsAndOffTreadsTransitions()
+    {
+        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true);
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        await using var client=new Client(bridge);
+        await client.Initialize();
+        int action=await client.Send("tools/call",new {name="track-face",arguments=new {faceId=-7}});
+        var clip=f.Rig.Robot.Animations.Library!.GetClip("anim_reacttocliff_pickup_03");
+        var ticket=f.Rig.Robot.Animations.PlayTracked(clip)!;
+        Assert.DoesNotContain(bridge.ReadEvents().GetProperty("events").EnumerateArray(),e=>e.GetProperty("type").GetString()=="animation-started");
+        // Feed the engine's public-delivery seam before retiring the action.
+        f.Rig.Engine.PublicRoute!(new AnimationStarted{AnimId=ticket.Tag});
+        f.Rig.Engine.PublicRoute!(new AnimationEnded{AnimId=ticket.Tag});
+        f.Rig.Engine.DeliverAnimationReportToApp(0x5F,new Cozmo.Protocol.CladWriter().U32(ticket.Tag).ToArray());
+        f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnTreads,OffTreadsState.InAir);
+        f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.InAir,OffTreadsState.OnTreads);
+        f.Rig.Engine.DrainAppDelivery();
+        await client.Notify("notifications/cancelled",new {requestId=action});
+        f.Rig.Tick();
+        var during=Data(await client.Receive(action)).GetProperty("during").GetProperty("events");
+        foreach(string type in new[]{"animation-started","animation-ended","animation-aborted"})
+            Assert.Equal(clip.Name,Assert.Single(during.EnumerateArray(),e=>e.GetProperty("type").GetString()==type).GetProperty("payload").GetProperty("name").GetString());
+        Assert.Equal(2,during.EnumerateArray().Count(e=>e.GetProperty("type").GetString()=="off-treads-changed"));
     }
 
     private static JsonElement Data(JsonElement reply)
