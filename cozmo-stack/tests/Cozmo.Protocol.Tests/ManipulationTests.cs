@@ -383,7 +383,8 @@ public class ManipulationTests
         rig.Cube = CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         rig.DockSucceeds = false;
-        var dock = rig.M.Docking.DockAsync(obj, obj.Markers.First(k => k.Code == MarkerType.LightCubeI_Front), DockAction.PickupLow, PathMotionProfile.Default, timeout: TimeSpan.FromSeconds(5));
+        // Wall-clock guard for a missing robot result only; 30 s like the test above, since the full-suite gate on 31d1ab91 ran this for 11 s.
+        var dock = rig.M.Docking.DockAsync(obj, obj.Markers.First(k => k.Code == MarkerType.LightCubeI_Front), DockAction.PickupLow, PathMotionProfile.Default, timeout: TimeSpan.FromSeconds(30));
         SignalTestContext.Run(dock, () => rig.Pump());
         Assert.False(dock.Result!.Succeeded);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
