@@ -13,6 +13,7 @@ import struct
 from pathlib import Path
 from emu_common import Emu, BASE, UC_HOOK_CODE, UC_ARM_REG_PC
 from so import ELF, RAW
+from unicorn.arm_const import UC_ARM_REG_R0, UC_ARM_REG_R5
 
 
 def verify_recorded_inputs(bundle):
@@ -78,9 +79,23 @@ def verify_recorded_inputs(bundle):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle', help='Optional private session directory; verify the recorded counter inputs')
+    parser.add_argument('--byte-budget', type=int, default=8192,
+                        help='Operator-policy constant substitution only; original native value is 8192')
     args = parser.parse_args()
+    if not 1 <= args.byte_budget <= 30000:
+        parser.error('--byte-budget must be 1..30000')
     capture = verify_recorded_inputs(args.bundle) if args.bundle else None
     e = Emu()
+    if args.byte_budget != 8192:
+        # Policy experiment, not recovered native configuration. Original
+        # 0x0057C706 is ADD.W r5,r0,#8192 without S. Substitute that literal
+        # addition only, leave flags from the preceding CMP and all following
+        # native branches/clamps untouched. 7370 is not a Thumb modified immediate.
+        def policy_add(uc, address, size, data):
+            uc.reg_write(UC_ARM_REG_R5, (uc.reg_read(UC_ARM_REG_R0) + args.byte_budget) & 0xffffffff)
+            uc.reg_write(UC_ARM_REG_PC, 0x0057C70B)
+        e.uc.hook_add(UC_HOOK_CODE, policy_add, begin=0x0057C706, end=0x0057C706)
+    e.hook(0x4A4540, lambda emu: 0)  # C9 negative-budget warning only, no state output
 
     def forward(plt, fragment):
         matches = [s for s in ELF.dynamic_symbols if s.value and s.name.endswith(fragment)]
@@ -126,7 +141,8 @@ def main():
     e.w32(robot + 0x244, 5407)
     e.call(0x57C6F1, stream, robot)
     before = [e.r32(stream + 0x98), e.r32(stream + 0x9C)]
-    assert before == [786, 2], before
+    expected_bytes = min(max(472279 - 479685 + args.byte_budget, 0), 30000)
+    assert before == [expected_bytes, 2], before
 
     e.w8(message, 0x8E)
     e.w32(stream + 0x8C, node)
@@ -138,7 +154,9 @@ def main():
     result = e.call(0x57BF61, stream, robot)
     after = [e.r32(stream + 0x98), e.r32(stream + 0x9C),
              e.r32(robot + 0x23C), e.r32(robot + 0x244)]
-    assert result == 0 and len(sent) == 1 and after == [41, 1, 480430, 5408], (result, sent, after)
+    admitted = expected_bytes >= 745
+    expected_after = [expected_bytes - 745, 1, 480430, 5408] if admitted else [expected_bytes, 2, 479685, 5407]
+    assert result == 0 and len(sent) == int(admitted) and after == expected_after, (result, sent, after)
 
     # Actual EndAnimationHandler and CheckIfDone: CA already seen, matching CB,
     # one loop. There is no endSent/HasFramesLeft/buffer-full predicate here.
@@ -155,8 +173,10 @@ def main():
     completion = e.call(0x5441C1, action)
     assert completion == 0, completion
     print(json.dumps(dict(binary_sha256=hashlib.sha256(RAW).hexdigest(), capture=capture,
-                          sizes=sizes, budget_before=before, drain_result=result,
-                          packet_admitted=True, after=after,
+                          sizes=sizes, byte_budget_constant=args.byte_budget,
+                          constant_override_site=None if args.byte_budget == 8192 else "0x0057C706 ADD.W literal substitution; remainder native",
+                          budget_before=before, drain_result=result,
+                          packet_admitted=admitted, after=after,
                           early_matching_end_action_result=completion,
                           firmware_playback='MISSING: firmware buffer allocation and flush semantics; not emulated'),
                      indent=2))

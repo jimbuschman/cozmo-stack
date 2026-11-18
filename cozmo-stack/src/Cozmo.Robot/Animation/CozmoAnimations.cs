@@ -163,7 +163,9 @@ public sealed class CozmoAnimations : IDisposable
         _sink = new RobotAnimationSink(robot);
         DrivingAnimations = new DrivingAnimationHandler(robot);
         // fidelity: M5-045
-        _scheduler = new AnimationScheduler(_sink, contextRandom: robot.Engine.ContextRandom);
+        // fidelity: M1-063 — only the native C9 8192 constant is supplied by host policy.
+        _scheduler = new AnimationScheduler(_sink, contextRandom: robot.Engine.ContextRandom,
+            animationStreamBudgetBytes: robot.Engine.Options.AnimationStreamBudgetBytes);
         robot.Engine.AnimationMutationLockHeld=()=>_scheduler.MutationLockHeldByCurrentThread;
         robot.Engine.WaitForAnimationMutation=_scheduler.WaitForMutationBoundary;
         _scheduler.Stream.Log = robot.Engine.Log;

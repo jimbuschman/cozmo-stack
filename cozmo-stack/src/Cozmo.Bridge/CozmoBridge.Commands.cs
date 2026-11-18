@@ -129,11 +129,22 @@ public sealed partial class CozmoBridge : IDisposable
             return Error("invalid-arguments", error.Message);
         }
 
+        long callStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         long startCursor = ReadEvents().GetProperty("cursor").GetInt64();
         try
         {
             var result = await entry.Execute(this, parsed, cancellationToken).ConfigureAwait(false);
             var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
+            if (command == "animation")
+            {
+                var details = JsonSerializer.SerializeToElement(result.Report, Json);
+                byte? tag = details.ValueKind == JsonValueKind.Object && details.TryGetProperty("playbackTag", out var playbackTag) &&
+                    playbackTag.ValueKind == JsonValueKind.Number ? playbackTag.GetByte() : null;
+                string? name = details.ValueKind == JsonValueKind.Object && details.TryGetProperty("animationName", out var clip) ? clip.GetString() : null;
+                var issues = tag is null ? [] : playbackMonitor?.IssuesSince(callStartedAt, tag, name) ?? [];
+                response["truncatedByRobot"] = issues.Length != 0;
+                response["playbackIssues"] = JsonSerializer.SerializeToNode(issues, Json);
+            }
             response["during"] = System.Text.Json.Nodes.JsonNode.Parse(ReadEvents(startCursor).GetRawText());
             return JsonSerializer.SerializeToElement(response, Json);
         }
@@ -172,7 +183,7 @@ public sealed partial class CozmoBridge : IDisposable
             AiTurnToFaceActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
             AiTurnToObjectActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
             AiTrackFaceActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.FaceId }),
-            AiAnimationActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.AnimationName }),
+            AiAnimationActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.AnimationName, r.PlaybackTag }),
             AiSpeechActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
             AiPickupActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
             Cozmo.Robot.Manipulation.ActionResult r => new("completed", null, (uint)r, Enum.GetName((NativeActionResultName)r)),

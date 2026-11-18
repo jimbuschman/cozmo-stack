@@ -60,6 +60,9 @@ public sealed class LiveNarration : IDisposable
     }
     public void AttachRobot(CozmoRobot robot)
     {
+        var monitor = new AnimationPlaybackMonitor(robot);
+        monitor.Issue += PlaybackIssue;
+        _detach.Add(() => { monitor.Issue -= PlaybackIssue; monitor.Dispose(); });
         robot.Animations.Scheduler.Diagnostic+=Diagnostic;
         robot.Message+=Message;robot.Sensors.OffTreadsStateChanged+=OffTreads;
         robot.Cubes.CubeTapped+=Tapped;
@@ -92,6 +95,7 @@ public sealed class LiveNarration : IDisposable
         if(message is AnimationStarted started)RobotStarted(_now(),started.AnimId);
         else if(message is AnimationEnded ended)RobotEnded(_now(),ended.AnimId);
     }
+    private void PlaybackIssue(AnimationPlaybackIssue issue) => _pending.Enqueue(new(_now(),"robot-cutoff",issue));
     private void Diagnostic(AnimationDiagnostic observation)
     {
         if(observation is AnimationClipInitializedObservation clip)
@@ -125,6 +129,12 @@ public sealed class LiveNarration : IDisposable
         if(fact.Kind is "cube-tap" or "cube-move")_signals.Add((fact.At,fact.Kind));
         switch(fact.Kind)
         {
+            case "robot-cutoff":
+                var cutoff=(AnimationPlaybackIssue)fact.Value;
+                Say(fact.At,$"{cutoff.Name ?? (cutoff.Tag is {} tagId ? "animation tag "+tagId : "animation (tag not established)")}: cut off by robot buffer"+
+                    (cutoff.Traces.Length==0?" (robot ended before EndOfAnimation was sent; no BufferFull trace observed)":
+                     " (BufferFull "+string.Join("; ",cutoff.Traces.Select(t=>"["+string.Join(", ",t.Args)+"]"))+")"));
+                return;
             case "clip":
                 var clip=(ClipInfo)fact.Value;_clips[clip.Tag]=clip;
                 _record?.Invoke(new(){["atMs"]=fact.At,["event"]="clip-initialized",["tag"]=clip.Tag,["name"]=clip.Name,

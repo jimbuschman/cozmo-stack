@@ -110,10 +110,12 @@ public class SourceLogMigrationTests
         Assert.Contains(stack, s => s.StartsWith("MISSING: ERobotDriveToPoseStatus name for status 7"));
     }
 
-    [Fact]
-    public void BufferedPortsRetainCallOrderAndEmitAfterTheBudgetLock()
+    [Theory]
+    [InlineData(8192, -808)]  // native C9 0x0057C706
+    [InlineData(7370, -1630)] // operator policy M1-063
+    public void BufferedPortsRetainCallOrderAndEmitAfterTheBudgetLock(int budget, int expectedFree)
     {
-        using var robot = CozmoRobot.CreateOffline();
+        using var robot = CozmoRobot.CreateOffline(engineOptions: new CozmoEngineOptions { AnimationStreamBudgetBytes = budget });
         var stream = robot.Animations.Scheduler.Stream;
         var entries = new List<EngineLogEntry>();
         var budgets = new List<int>();
@@ -130,7 +132,7 @@ public class SourceLogMigrationTests
         Assert.Equal(EngineLogLevel.Warning, entry.Level);
         Assert.Null(entry.Channel);
         Assert.Equal("AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot", entry.Name);
-        Assert.Equal("minBytesFree:-808 numBytesStreamed:0 numBytesPlayed:-9000",
+        Assert.Equal($"minBytesFree:{expectedFree} numBytesStreamed:0 numBytesPlayed:-9000",
             Regex.Replace(entry.Text, @"^\(tc[0-9]+\) : ", ""));
     }
 }

@@ -838,3 +838,14 @@ M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/fo
 | Change | Records |
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows read (OV127 check) | M1-061 |
+
+## Operator firmware policy addition (2026-11-18)
+
+| Record | Classification | Authorized input and boundary |
+| --- | --- | --- |
+| M1-063 | COMPATIBILITY_POLICY | ANIM-BUDGET-FIRMWARE-1, operator decision 2026-11-18: measured firmware-2457 byte budget 7370 (8117 clean observed frontier below 8125 pre-error floor, minus native AudioSample+Start 747); 8192 selectable. C9 0x0057C6F0..0x0057C7AC changes only its 8192 input; all other steps stay native. Host cutoff reporting preserves native SUCCESS at 0x005441C0. |
+
+Statistics and limitations are in Fixtures/animation_budget_firmware.json under
+Cozmo.Protocol.Tests and the M1-063 record. This single operator-authorized policy
+addition extends the frozen snapshot; it does not reapprove or settle other records
+or change the subsystem's existing acceptance state/commit.

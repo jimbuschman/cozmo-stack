@@ -57,6 +57,12 @@ public sealed class RobotConnectionException : IOException
 /// <summary>Where the engine finds its inputs, and the app defaults policy M1-042 sends.</summary>
 public sealed class CozmoEngineOptions
 {
+    // fidelity: M1-063
+    /// <summary>Operator-approved firmware-2457 guard from the recorded corpus.
+    /// 8117 observed bytes minus a 745-byte audio frame and 2-byte start = 7370.
+    /// This is not recovered firmware capacity. Set 8192 for the engine's original budget.</summary>
+    public int AnimationStreamBudgetBytes { get; init; } = 7370;
+
     /// <summary>Optional initial camera calibration; null keeps the connection-time NV calibration path.</summary>
     public Vision.CameraCalibration? VisionCalibration { get; init; }
     /// <summary>Optional marker detector for the robot-owned vision system.</summary>
@@ -638,6 +644,10 @@ internal sealed class MessageHandler
         return data.Length == 1;
     }
 
+    // Host-only successful-send observation. Covers scheduler and direct 0x9A
+    // routes; no native result, counter or message is changed.
+    internal event Action? EndOfAnimationSent;
+
     // fidelity: M1-026, M1-030
     /// <summary>
     /// MessageHandler::SendMessage (B28, CB29): its reliable and hot arguments are ignored; it always counts the
@@ -650,7 +660,10 @@ internal sealed class MessageHandler
         Interlocked.Increment(ref _sendCalls);
         if (!Initialised || _rcm.Rcd.State != 2) return false;
         if (_engine.Robots.ShouldFilterMessage(CozmoEngine.RobotId, (byte)m.Id, robotToEngine: false)) return false;
-        return _rcm.SendData(m.ToBytes());
+        bool sent = _rcm.SendData(m.ToBytes());
+        if (sent && m.Id == RobotMessageId.AnimEndOfAnimation && EndOfAnimationSent is {} handlers)
+            foreach (Action handler in handlers.GetInvocationList()) _engine.DeliverIsolated(handler);
+        return sent;
     }
 
     // fidelity: M1-031, M1-025

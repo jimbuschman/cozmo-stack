@@ -27,7 +27,7 @@ internal sealed class BackupTestResources : IDisposable
             ResourcesPath = options.ResourcesPath ?? resources, FilesPath = Root, BlockPoolPath = options.BlockPoolPath, ReconnectPooledCubes = options.ReconnectPooledCubes, OmitNotificationHistoryForTests = options.OmitNotificationHistoryForTests,
             NeedsDeviceDirectory=options.NeedsDeviceDirectory, KeepNeedsFull=options.KeepNeedsFull, NeedsSystemClockMicroseconds=options.NeedsSystemClockMicroseconds,NotificationHistory=options.NotificationHistory,
             DataCollectionEnabled = options.DataCollectionEnabled, DasDeviceIdPath = options.DasDeviceIdPath, DasDeviceId = options.DasDeviceId, LabLocaleLanguage=options.LabLocaleLanguage, LabLocaleCountry=options.LabLocaleCountry,EngineConfigJson=options.EngineConfigJson,
-            AnimationCachePath = options.AnimationCachePath, VerboseLogDisplay = options.VerboseLogDisplay,
+            AnimationCachePath = options.AnimationCachePath, VerboseLogDisplay = options.VerboseLogDisplay, AnimationStreamBudgetBytes = options.AnimationStreamBudgetBytes,
             DataPlatformPersistentPath = options.DataPlatformPersistentPath, RobotVolume = options.RobotVolume,
             VisionCalibration=options.VisionCalibration,VisionDetector=options.VisionDetector,
             VisionOkaoRecognizer=options.VisionOkaoRecognizer,OmitVisionForTest=options.OmitVisionForTest,

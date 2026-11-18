@@ -73,7 +73,11 @@ public sealed record AiDriveActionResult(bool Admitted, uint? EngineResult, stri
 public sealed record AiTurnActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, uint? RelocalizationCount = null);
 
 /// <summary>The terminal native result and selected authored animation name.</summary>
-public sealed record AiAnimationActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, string? AnimationName = null);
+public sealed record AiAnimationActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, string? AnimationName = null)
+{
+    /// <summary>Read-only host diagnostic; preserves the existing constructor/deconstruction.</summary>
+    public byte? PlaybackTag { get; init; }
+}
 
 /// <summary>The native terminal result and signed face ID retained by the tracking action.</summary>
 public sealed record AiTrackFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, int? FaceId = null);
@@ -238,7 +242,8 @@ public sealed class CozmoMotion
         }
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,action.HostUnavailable ?? result.Detail,result.OwnerRetired,
-            result.Admitted ? action.GetAnimationCompletionName() : null);
+            result.Admitted ? action.GetAnimationCompletionName() : null)
+            { PlaybackTag = result.Admitted ? action.HostAnimationTag : null };
     }
 
     /// <summary>Queues a lift request after existing actions. A 32 mm request while carrying places the object on the ground.</summary>

@@ -38,7 +38,8 @@ internal class TriggerAnimationAction : ActionRunner
     private bool _started, _ended, _failed;
     private uint _loops;
     private byte _animationTag;
-    internal byte AnimationTagForTest => _animationTag;
+    internal byte HostAnimationTag => _animationTag; // read-only PlayAnimation +0x8B diagnostic
+    internal byte AnimationTagForTest => HostAnimationTag;
     private RetainedSubscription? _ca, _cb, _d5, _aborted;
     private readonly Action<string> _missing;
     internal TriggerAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null, bool liftSafe = false, AnimationClip? directClip = null) : base(0x1A, (uint)request.Argument4)

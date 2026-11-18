@@ -34,4 +34,22 @@ public sealed class HardwareEngineOptionsTests:IDisposable
         var log=new List<string>();var options=Create("en",log);
         Assert.Null(options.LabLocaleCountry);Assert.Contains(log,line=>line.Contains("M15-052"));
     }
+    [Fact]
+    public void AnimationBudgetCliSelectsNativeAndRestoresTheMeasuredDefault()
+    {
+        Assert.Equal(7370,Create("en-US").AnimationStreamBudgetBytes);
+        string[] args=["m15-cube-hw","--skills","--animation-budget-bytes","8192","--validate"];
+        using(HardwareEngineOptions.UseAnimationBudgetArguments(ref args))
+        {
+            Assert.Equal(new[]{"m15-cube-hw","--skills","--validate"},args);
+            Assert.Equal(8192,Create("en-US").AnimationStreamBudgetBytes);
+        }
+        Assert.Equal(7370,Create("en-US").AnimationStreamBudgetBytes);
+        foreach(string[] bad in new[]{new[]{"--animation-budget-bytes"},new[]{"--animation-budget-bytes","0"},new[]{"--animation-budget-bytes","30001"},new[]{"--animation-budget-bytes","8192","--animation-budget-bytes","7370"}})
+        {
+            var invalid=bad;
+            Assert.Throws<ArgumentException>(()=>HardwareEngineOptions.UseAnimationBudgetArguments(ref invalid));
+        }
+    }
+
 }
