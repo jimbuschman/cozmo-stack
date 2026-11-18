@@ -70,7 +70,7 @@ public static class UnexpectedMovementResponse
     /// </summary>
     public static Pose3d ObstacleInRobotFrame(UnexpectedMovementSide side)
     {
-        double depth = MarkerlessObject.SizeByType(ObjectType.CollisionObstacle)!.Value.X + ClearanceMm;
+        float depth = (float)MarkerlessObject.SizeByType(ObjectType.CollisionObstacle)!.Value.X + ClearanceMm; //63E6D4 f32
         return side switch
         {
             UnexpectedMovementSide.Front => new Pose3d(Mat3.Identity, new Vec3(depth + FrontOffsetMm, 0, 0)),
@@ -89,7 +89,12 @@ public static class UnexpectedMovementResponse
     /// B15 steps 1..2: the historical pose with its 32-byte Rotation3d overwritten by the robot's current rotation,
     /// which is the pose SetNewPose receives.
     /// </summary>
-    public static Pose3d RewoundPose(Pose3d historical, Pose3d now) => new(now, historical.Translation);
+    public static Pose3d RewoundPose(Pose3d historical, Pose3d now)
+    {
+        // 63E842 copies the historical pose (including parent), 63E868..878 copies
+        // only the current 32-byte Rotation3d over its transform.
+        var result=new Pose3d(historical);result.Node!.Transform=new(now.Quaternion,historical.Translation);return result;
+    }
 
     /// <summary>The word the engine puts in "Adding obstacle %s robot" (log strings 0x63EAC8..0x63EAF0).</summary>
     public static string Name(UnexpectedMovementSide side) => side switch
@@ -120,10 +125,8 @@ public static class UnexpectedMovementResponse
 /// <b>Response (M10-007, B12..B18):</b> gate IsReactionTriggerEnabled(20); ComputeStateAt(+0x94); side from the wheel
 /// means; the rewind and the obstacle; then on every fire the broadcast and the reset.
 ///
-/// MISSING (B15): the AbsoluteLocalizationUpdate that SetNewPose leads to (AddVisionOnlyStateToHistory → +0x2C6 →
-/// Robot::Update's SendAbsLocalizationUpdate(), M4 C9 F1..F3): its field values (timestamp, frame id after the ++,
-/// origin, pose) are not in any inventory row (the F rows are not in the M4 inventory file). So the rewind is not
-/// performed, and neither is the obstacle (B16), whose parent is the rewound pose; both are logged as MISSING.
+/// B15/B16 use the actual owning Robot's SetNewPose/history/publication and BlockWorld collision insertion.
+/// A standalone detector without that owner retains a visible missing response boundary.
 /// </summary>
 public sealed class UnexpectedMovementDetector
 {
@@ -212,6 +215,7 @@ public sealed class UnexpectedMovementDetector
     /// <summary>Feeds one synced robot state. Returns the broadcast when one is raised on this state.</summary>
     public UnexpectedMovementReport? Update(RobotState s)
     {
+        var native=HostEngine?.Robot;
         if (!IsPhysical) return null;                                            // B2
         if (AnimationStateTag != 0 && !BodyTrackLocked) return null;             // B3
         if (s.Has(RobotStatusFlag.IsPickingOrPlacing)) return null;              // B4: no reset
@@ -246,8 +250,11 @@ public sealed class UnexpectedMovementDetector
 
         if (Count <= CountThreshold) return null;                                // B11
         Log?.Invoke($"MovementComponent.CheckForUnexpectedMovement: Unexpected movement detected {TypeName(type)}");
-        Log?.Invoke("MISSING: MovementComponent.CheckForUnexpectedMovement warning at 0x0063E5DA; M10 log port deferred");
-        var side = Respond(Count);                                               // B12..B16
+        SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Warning,null,
+            "MovementComponent.CheckForUnexpectedMovement",$"Unexpected movement detected {TypeName(type)}"); //63E5DA
+        if(native is not null && (native.Lifetime.Destroying||!ReferenceEquals(HostEngine?.Robot,native)))return null;
+        var side = Respond(Count,native);                                        // B12..B16
+        if(native is not null && (native.Lifetime.Destroying||!ReferenceEquals(HostEngine?.Robot,native)))return null;
         // B17: the broadcast on every fire, with the current state's timestamp, then the reset.
         var report = new UnexpectedMovementReport(s.Timestamp, type, side, SumLeft / Count, SumRight / Count, Count)
         { StartTimestamp = StartTimestamp };
@@ -259,7 +266,7 @@ public sealed class UnexpectedMovementDetector
     }
 
     /// <summary>B12..B16. Returns the side the broadcast carries.</summary>
-    private UnexpectedMovementSide Respond(int n)
+    private UnexpectedMovementSide Respond(int n,EngineRobot? native)
     {
         if (ReactionTriggerEnabled?.Invoke() != true) return UnexpectedMovementSide.Unknown;          // B12
         if (ComputeStateAt is not { } lookup)
@@ -268,6 +275,7 @@ public sealed class UnexpectedMovementDetector
             return UnexpectedMovementSide.Unknown;
         }
         var (result, hist) = lookup(StartTimestamp);                                                     // B13
+        using var historical=hist;
         if (result == HistoryLookupResult.OriginMismatch)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, null, "MovementComponent.CheckForUnexpectedMovement.PoseHistoryOriginMismatch", "");
@@ -285,15 +293,41 @@ public sealed class UnexpectedMovementDetector
                  : !lf && !rf ? UnexpectedMovementSide.Back
                  : rf ? UnexpectedMovementSide.Left
                  : UnexpectedMovementSide.Right;
-        // B15, B16: MISSING (see the summary). The poses they would use are computable; the send is not.
-        var now = CurrentRobotPose?.Invoke();
+        if(native is not null)
+        {
+            ApplyNativeResponse(native,hist,side);
+            return side;
+        }
+        using var now = CurrentRobotPose?.Invoke();
         if (now is { } p)
         {
-            var rewound = UnexpectedMovementResponse.RewoundPose(hist, p);
+            using var rewound = UnexpectedMovementResponse.RewoundPose(hist, p);
             Log?.Invoke($"MISSING: MovementComponent.CheckForUnexpectedMovement: SetNewPose({rewound.Translation}) and its AbsoluteLocalizationUpdate are not sent (M4 C9 F1..F3 not in the rows); the collision obstacle{UnexpectedMovementResponse.Name(side)} robot is not added");
         }
         else Log?.Invoke("MISSING: MovementComponent.CheckForUnexpectedMovement: the rewind (SetNewPose) and the collision obstacle are not applied");
         return side;
+    }
+
+    // fidelity: M10-007
+    private void ApplyNativeResponse(EngineRobot native,Pose3d historical,UnexpectedMovementSide side)
+    {
+        bool Current()=>!native.Lifetime.Destroying&&ReferenceEquals(native.Engine.Robot,native);
+        if(!Current())return;
+        var world=native.Engine.DelocalizationWorld;
+        if(world is null){Behavior.SteppedBehavior.ReportMissing("M10-007 unexpected-movement response63E87E..63E916: no owning BlockWorld");return;}
+        using var frame=world.EnterPoseMutation();
+        using var gate=LogCallbackDeferral.EnterGated(native.PoseTreeGate);
+        if(!Current())return;
+        using var rewind=UnexpectedMovementResponse.RewoundPose(historical,native.GetCheckedMainPose());
+        if(native.SetNewPose(rewind)!=0) //63E87E; even failure continues to obstacle insertion63E8BA.
+            native.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MovementComponent.CheckForUnexpectedMovement.SetNewPose","Failed to set new pose");
+        if(!Current())return;
+        using var local=UnexpectedMovementResponse.ObstacleInRobotFrame(side);
+        local.SetParent(native.GetCheckedMainPose()); //63E8C4, then root conversion63E8CC.
+        using var root=local.GetWithRespectToRoot();
+        native.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","MovementComponent.CheckForUnexpectedMovement.AddingCollisionObstacle",
+            $"Adding obstacle {UnexpectedMovementResponse.Name(side)} robot"); //63E8EA
+        if(Current())world.AddCollisionObstacle(root); //63E916; caller ignores result.
     }
 
     private void Accumulate(RobotState s, float l, float r, int by)

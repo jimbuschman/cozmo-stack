@@ -330,6 +330,19 @@ public sealed class BehaviorFactory
         [BehaviorClass.FindFaces] = (ctx,json)=>new NativeFindFacesSocialize(ctx,json),
         [BehaviorClass.SearchForFace] = (ctx,json)=>new NativeSearchForFaceBehavior(ctx,json),
         [BehaviorClass.DriveToFace] = (ctx,json)=>new NativeDriveToFaceBehavior(ctx,json),
+        [BehaviorClass.ReactToCliff] = (ctx,json)=>new ReactToCliffBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToCliff actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToCliff actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString())
+            {AlwaysStreamline=json.TryGetProperty("alwaysStreamline",out var streamlined)&&streamlined.GetBoolean()},
+        [BehaviorClass.ReactToImpact] = (ctx,json)=>new ReactToImpactBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToImpact actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToImpact actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToPlacedOnSlope] = (ctx,json)=>new ReactToPlacedOnSlopeBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToUnexpectedMovement] = (ctx,json)=>new ReactToUnexpectedMovementBehavior(
+            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual manipulation owner"),
+            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.ReactToReturnedToTreads] = (ctx,json)=>new ReactToReturnedToTreadsBehavior(ctx.Manipulation,ctx.NativeRobot,
             BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeInteractWithFaces(ctx,json),
@@ -539,6 +552,12 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("Bouncer factory: actual vision, manipulation and native Robot owners unavailable");
             status=BehaviorCreateStatus.NotImplemented; return null;
         }
+        if (cls is BehaviorClass.ReactToCliff or BehaviorClass.ReactToImpact or BehaviorClass.ReactToPlacedOnSlope or BehaviorClass.ReactToUnexpectedMovement
+            && (ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing($"{cls} factory requires actual manipulation and native Robot owners");
+            status=BehaviorCreateStatus.NotImplemented;return null;
+        }
         IBehavior behavior;
         try { behavior = entry.Construct(ctx, config); }
         catch (NotSupportedException error) when (cls is BehaviorClass.AcknowledgeObject or BehaviorClass.RespondToRenameFace or BehaviorClass.TrackLaser)
@@ -558,7 +577,7 @@ public sealed class BehaviorFactory
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
             }
-            if(stepped is ReactToReturnedToTreadsBehavior)
+            if(stepped is ReactToReturnedToTreadsBehavior or ReactToCliffBehavior or ReactToImpactBehavior or ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior)
             {
                 // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);

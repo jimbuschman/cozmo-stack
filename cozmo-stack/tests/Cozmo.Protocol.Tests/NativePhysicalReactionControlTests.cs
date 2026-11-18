@@ -1,0 +1,144 @@
+using Cozmo.Protocol;
+using Cozmo.Robot;
+using Cozmo.Robot.Animation;
+using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
+using Xunit;
+using Fixture=Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.Fixture;
+
+namespace Cozmo.Protocol.Tests;
+
+[Collection("SteppedBehavior missing-report statics")]
+public sealed class NativePhysicalReactionControlTests
+{
+    private static Fixture NewFixture()
+    {
+        var f=new Fixture(sourceNvEmpty:true);
+        f.Rig.Robot.SetEnableFreeplayActivity(false);f.Rig.Tick(4000);
+        var manager=f.Robot.BehaviorManagerOwner!;manager.Activity=null;
+        manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);
+        manager.DisableAllReactionsWithLock("physical-unit-input");
+        return f;
+    }
+    private static void Start(Fixture f,SteppedBehavior behavior)=>behavior.StartAsync(f.Runtime.Context,new BehaviorScope(),default).GetAwaiter().GetResult();
+
+    [Fact]
+    public void AllFiveReactionRowsUseTheirConfiguredConstructorInstances()
+    {
+        using var f=NewFixture();var manager=f.Robot.BehaviorManagerOwner!;
+        foreach(var (id,trigger) in new[]{("ReactToCliff",ReactionTrigger.CliffDetected),("ReactToImpact",ReactionTrigger.RobotFalling),
+            ("ReactToPlacedOnSlope",ReactionTrigger.RobotPlacedOnSlope),("ReactToReturnedToTreads",ReactionTrigger.ReturnedToTreads),
+            ("ReactToUnexpectedMovement",ReactionTrigger.UnexpectedMovement)})
+            Assert.Same(f.Runtime.Bound[id],Assert.Single(manager.Reactions,r=>r.Strategy.Trigger==trigger).Behavior);
+    }
+
+    // Ctor arguments from 60518E..6051BC,6080B2..6080F8,609B12..609B68, not a substitute clip selector.
+    [Theory]
+    [InlineData("ReactToCliff",0,0x13D)] [InlineData("ReactToCliff",1,0x131)] [InlineData("ReactToCliff",3,0x19D)]
+    [InlineData("ReactToPlacedOnSlope",0,0x145)] [InlineData("ReactToPlacedOnSlope",1,0x139)] [InlineData("ReactToPlacedOnSlope",3,0x1A8)]
+    [InlineData("ReactToUnexpectedMovement",0,0x1AE)] [InlineData("ReactToUnexpectedMovement",1,0x1AD)] [InlineData("ReactToUnexpectedMovement",3,0x1AC)]
+    public void NativeAdmissionQueuesTheSelectedNeedActionWithEveryDefaultArgument(string id,int need,int trigger)
+    {
+        using var f=NewFixture();if(need<3)f.Rig.Engine.Needs.SevereNeeds.Set((NeedId)need);
+        var behavior=Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[id]);
+        if(behavior is ReactToCliffBehavior cliff)cliff.HandleCliffEvent(1); // unit boundary: subscribed CliffEvent+4 is nonzero
+        Start(f,behavior);
+        try
+        {
+            var action=Assert.IsAssignableFrom<TriggerAnimationAction>(behavior.OwnedRunner);
+            if(id=="ReactToPlacedOnSlope")Assert.IsType<TriggerAnimationAction>(action);
+            else Assert.IsType<TriggerLiftSafeAnimationAction>(action);
+            Assert.Equal(trigger,(int)action.Request.Trigger);Assert.Equal(1,action.Request.Argument2);
+            Assert.True(action.Request.Argument3);Assert.Equal(0,action.Request.Argument4);
+            Assert.Equal(0x42700000u,BitConverter.SingleToUInt32Bits(action.Request.Argument5));Assert.False(action.Request.Argument6);
+            Assert.Same(action,f.Robot.ActionList.GetCurrentAction());
+        }
+        finally{behavior.Stop(BehaviorStopReason.Interrupted);}
+    }
+
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public void ImpactQuietBranchDeliversTheActualWaitResult(bool timeout)
+    {
+        using var f=NewFixture();var b=Assert.IsType<ReactToImpactBehavior>(f.Runtime.Bound["ReactToImpact"]);
+        // Unit inputs of AlwaysHandle606408; the wire replay separately exercises actual ingress.
+        b.HandleFallingStarted();b.HandleFallingStopped(1000f);if(!timeout)b.HandleMotorCalibration(true,true);
+        var reports=new List<ActionCompletionReport>();f.Rig.Engine.ActionCompleted+=reports.Add;
+        Start(f,b);var wait=Assert.IsType<NativePredicateWaitRunner>(b.OwnedRunner);
+        Assert.Equal(0x33,wait.Type);Assert.Equal(0u,wait.RequiredTrackMask);Assert.Equal(5f,wait.TimeoutSeconds);
+        f.Rig.Tick();if(timeout)f.Rig.Tick(5001);f.Rig.Engine.DrainAppDelivery();
+        Assert.Contains(reports,r=>r.Tag==wait.Tag&&r.Result==(timeout?0x03000018u:0u));
+        Assert.Equal(timeout,b.WaitedOut);Assert.Null(b.OwnedRunner);
+        Assert.DoesNotContain(reports,r=>r.AnimationName is not null);
+        b.Stop(BehaviorStopReason.Completed);
+    }
+
+    [Theory] [InlineData(.3f,true)] [InlineData(-.3f,false)]
+    public void SlopeStoresSignedPitchAndClearsRepeatFlagAtCalibrationAdmission(float pitch,bool high)
+    {
+        using var f=NewFixture();
+        var state=f.Rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,
+            origin:f.Robot.CurrentOriginId,frame:f.Robot.PoseFrameId);state.Pose.Pitch=pitch;f.Rig.Data(state);f.Rig.Tick();
+        var b=Assert.IsType<ReactToPlacedOnSlopeBehavior>(f.Runtime.Bound["ReactToPlacedOnSlope"]);
+        Start(f,b);var first=Assert.IsType<TriggerAnimationAction>(b.OwnedRunner);
+        // The source callback ignores result (608240): use real queue cancellation/completion, not a direct flag write.
+        f.Robot.ActionList.Cancel(first.Tag);Assert.Equal(high,b.PitchWasHigh);b.Stop(BehaviorStopReason.Interrupted);
+        Start(f,b);
+        if(high){Assert.IsType<NativeHeadCalibrationRunner>(b.OwnedRunner);Assert.False(b.PitchWasHigh);}
+        else Assert.IsType<TriggerAnimationAction>(b.OwnedRunner);
+        b.Stop(BehaviorStopReason.Interrupted);
+    }
+
+    [Fact]
+    public void CliffFinishedBroadcastQueuesRawReportBeforeSynchronousLocalAndHostCallback()
+    {
+        using var f=NewFixture();var order=new List<string>();
+        f.Rig.Engine.EngineToGameMessage+=(tag,body)=>{if(tag==0x36){Assert.Empty(body.ToArray());order.Add("raw");}};
+        using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x36,true,p=>{Assert.IsType<NativeCliffEventFinished>(p);order.Add("local");});
+        f.Rig.Engine.ReportCliffEventFinished(()=>order.Add("host"));Assert.Equal(new[]{"local"},order);
+        f.Rig.Engine.DrainAppDelivery();Assert.Equal(new[]{"local","raw","host"},order);
+    }
+
+    [Theory] [InlineData(9990,true)] [InlineData(10000,false)]
+    public void SlopeRepeatUsesStrictTenSecondsFromTheFloatEngineClock(int elapsed,bool calibrate)
+    {
+        using var f=NewFixture();
+        var state=f.Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos,
+            origin:f.Robot.CurrentOriginId,frame:f.Robot.PoseFrameId);state.Pose.Pitch=.3f;f.Rig.Data(state);f.Rig.Tick();
+        var b=Assert.IsType<ReactToPlacedOnSlopeBehavior>(f.Runtime.Bound["ReactToPlacedOnSlope"]);
+        Start(f,b);var first=Assert.IsType<TriggerAnimationAction>(b.OwnedRunner);
+        f.Robot.ActionList.Cancel(first.Tag);Assert.True(b.PitchWasHigh);b.Stop(BehaviorStopReason.Interrupted);
+        f.Rig.Tick(elapsed);Start(f,b);
+        if(calibrate)Assert.IsType<NativeHeadCalibrationRunner>(b.OwnedRunner);
+        else Assert.IsType<TriggerAnimationAction>(b.OwnedRunner);
+        b.Stop(BehaviorStopReason.Interrupted);
+    }
+
+    [Fact]
+    public void RetiredPhysicalInstancesCannotRunAgainstAReplacementRobot()
+    {
+        using var f=NewFixture();var context=f.Runtime.Context;
+        var bodies=new[]{"ReactToCliff","ReactToImpact","ReactToPlacedOnSlope","ReactToUnexpectedMovement"}
+            .Select(id=>Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[id])).ToArray();
+        f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);f.Rig.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        int mark=f.Rig.Mark();foreach(var body in bodies){Assert.False(body.IsRunnable(context));StartRetired(body,context);}
+        Assert.Empty(f.Rig.SentSince(mark));
+        static void StartRetired(SteppedBehavior body,BehaviorContext context)=>Assert.Throws<ObjectDisposedException>(
+            ()=>body.StartAsync(context,new BehaviorScope(),default).GetAwaiter().GetResult());
+    }
+
+    [Fact]
+    public void UnexpectedRewindPreservesHistoricalParentAndObstacleOffsetsUseNativeFloatBits()
+    {
+        using var origin=new Pose3d("history-origin");
+        using var historical=new Pose3d(Rotation3d.Identity,new Vec3(100,200,3),parent:origin);
+        using var current=new Pose3d(Rotation3d.FromAngleAxis(.2f,new Vec3(0,0,1)),new Vec3(9,8,7));
+        using var rewind=UnexpectedMovementResponse.RewoundPose(historical,current);
+        Assert.Same(historical.Node!.Parent,rewind.Node!.Parent);
+        Assert.Equal(new Vec3(100,200,3),rewind.Translation);Assert.Equal(current.Quaternion,rewind.Quaternion);
+        using var left=UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Left);
+        using var front=UnexpectedMovementResponse.ObstacleInRobotFrame(UnexpectedMovementSide.Front);
+        Assert.Equal(0x42506666u,BitConverter.SingleToUInt32Bits((float)left.Translation.Y));
+        Assert.Equal(0x423C6666u,BitConverter.SingleToUInt32Bits((float)front.Translation.X));
+    }
+}

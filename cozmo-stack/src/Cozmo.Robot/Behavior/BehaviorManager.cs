@@ -152,6 +152,10 @@ public sealed partial class BehaviorManager : IDisposable
             nativeOwner: nativeOwner, nativePetExpected: nativeOwner is not null,
             nativeReturnedToTreads: bound is not null && bound.TryGetValue("ReactToReturnedToTreads",out var returned)
                 ? returned as ReactToReturnedToTreadsBehavior : null,
+            nativeCliff: bound is not null&&bound.TryGetValue("ReactToCliff",out var cliff)?cliff as ReactToCliffBehavior:null,
+            nativeImpact: bound is not null&&bound.TryGetValue("ReactToImpact",out var impact)?impact as ReactToImpactBehavior:null,
+            nativeSlope: bound is not null&&bound.TryGetValue("ReactToPlacedOnSlope",out var slope)?slope as ReactToPlacedOnSlopeBehavior:null,
+            nativeUnexpected: bound is not null&&bound.TryGetValue("ReactToUnexpectedMovement",out var unexpected)?unexpected as ReactToUnexpectedMovementBehavior:null,
             nativeFistBump: row =>
             {
                 if (nativeOwner is null || row.BehaviorId != "FistBump" || bound is null ||

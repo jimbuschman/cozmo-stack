@@ -246,7 +246,7 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 /// +0x11d and +0x11e.
 /// </summary>
 // fidelity: M7-003, M7-014
-public sealed class ReactToImpactBehavior : SteppedBehavior
+public sealed partial class ReactToImpactBehavior : SteppedBehavior
 {
     /// <summary>The engine's 5 s allowance for the post-fall motor recalibration (0x40a00000 in InitInternal).</summary>
     public const double CalibrationWaitSec = 5.0;
@@ -267,9 +267,11 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     /// </summary>
     public ReactToImpactBehavior(CozmoRobot robot, string id = "ReactToImpact") : this(id)
     {
-        robot.Sensors.FallingStartedInternal += _ => HandleFallingStarted();
-        robot.Sensors.FallingStoppedInternal += r => HandleFallingStopped(r.ImpactIntensity);
-        robot.Sensors.MotorCalibrationReportedInternal += _ => HandleMotorCalibration(robot.State.HeadCalibrated, robot.State.LiftCalibrated);
+        Action<uint> started=_=>{if(_physical?.CanRun??true)HandleFallingStarted();};
+        Action<FallingStoppedReport> stopped=r=>{if(_physical?.CanRun??true)HandleFallingStopped(r.ImpactIntensity);};
+        Action<Cozmo.Protocol.MotorCalibration> calibrated=_=>{if(_physical?.CanRun??true)HandleMotorCalibration(robot.State.HeadCalibrated,robot.State.LiftCalibrated);};
+        robot.Sensors.FallingStartedInternal+=started;robot.Sensors.FallingStoppedInternal+=stopped;robot.Sensors.MotorCalibrationReportedInternal+=calibrated;
+        _detachPhysicalSignals=()=>{robot.Sensors.FallingStartedInternal-=started;robot.Sensors.FallingStoppedInternal-=stopped;robot.Sensors.MotorCalibrationReportedInternal-=calibrated;};
     }
 
     private volatile bool _impact;             // +0x11e
@@ -314,8 +316,10 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     /// <summary><c>InitInternal</c> 0x006061F8: the lock, then the 5 s <c>WaitForLambdaAction(+0x11d &amp;&amp; +0x11c)</c> whichever the flags say.</summary>
     protected override void OnStart()
     {
+        long version=CaptureHostExecutionVersion();
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToImpact);   // 0x00606216
         WaitedOut = false;
+        if(_physical is not null){if(HostExecutionVersionCurrent(version))NativeImpactWait();return;}
         WaitUntil(() => _fallingStoppedSeen && _calibrated, CalibrationWaitSec,
                   met => { WaitedOut = !met; TransitionToPlayingAnim(); }, "the motor recalibration a fall triggers");
     }
@@ -327,14 +331,15 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     private void TransitionToPlayingAnim()
     {
         if (!_impact) return;
+        if(_physical is not null){NativeImpactAnimation();return;}
         PlayTrigger(AnimationTrigger.ReactToImpact, () => { }, timeoutSec: AnimationTimeoutSec);
     }
 
     /// <summary><c>StopInternal</c> 0x006063fc: +0x11c, +0x11d and +0x11e cleared.</summary>
-    protected override void OnStop(BehaviorStopReason reason) { _impact = false; _calibrated = false; _fallingStoppedSeen = false; }
+    protected override void OnStop(BehaviorStopReason reason) { _physical?.Advance();_impact = false; _calibrated = false; _fallingStoppedSeen = false; }
 }
 
-public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior
+public sealed partial class ReactToPlacedOnSlopeBehavior : SteppedBehavior
 {
     public const double RepeatWithinSec = 10.0;
     public const float HighPitchDeg = 10f;
@@ -348,7 +353,9 @@ public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior
     protected override void OnStart()
     {
         // fidelity: M7-014
+        long version=CaptureHostExecutionVersion();
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToPlacedOnSlope);
+        if(_physical is not null){if(HostExecutionVersionCurrent(version))NativeSlopeStart();return;}
         double now = Clock();
         if (now - _lastRunMs < RepeatWithinSec * 1000 && PitchWasHigh)
         {
@@ -629,7 +636,7 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 /// <c>StopInternal</c> is empty (T1); Resume is the base one (P1).
 /// </summary>
 // fidelity: M7-031
-public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
+public sealed partial class ReactToUnexpectedMovementBehavior : SteppedBehavior
 {
     public const string EmotionEventName = "ReactToUnexpectedMovement";
     /// <summary>K2 0x00609C5A: <c>movs r1,#0x25</c>, BehaviorObjective ReactedToUnexpectedMovement.</summary>
@@ -645,10 +652,13 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
     public ReactToUnexpectedMovementBehavior() : base("ReactToUnexpectedMovement", "ReactToUnexpectedMovement") { }
 
     /// <summary>C1: subscribes to the UnexpectedMovement broadcast (tag 0x3C) for the behaviour's lifetime.</summary>
-    public ReactToUnexpectedMovementBehavior(CozmoRobot robot) : this()
+    public ReactToUnexpectedMovementBehavior(CozmoRobot robot) : this(robot,"ReactToUnexpectedMovement") { }
+    private ReactToUnexpectedMovementBehavior(CozmoRobot robot,string id) : base(id,"ReactToUnexpectedMovement")
     {
         // H1/H2/H3: AlwaysHandle runs inside the broadcast (Sensors' synchronous in-engine delivery), before the manager's switch.
-        robot.Sensors.UnexpectedMovementDetectedInternal += r => Volatile.Write(ref _side, (byte)r.Side);
+        Action<UnexpectedMovementReport> moved=r=>{if(_physical?.CanRun??true)Volatile.Write(ref _side,(byte)r.Side);};
+        robot.Sensors.UnexpectedMovementDetectedInternal+=moved;
+        _detachPhysicalSignals=()=>robot.Sensors.UnexpectedMovementDetectedInternal-=moved;
         _subscribed = true;
         // I6/K1: StartActing's completion arrives through the IBehavior ctor's RobotCompletedAction subscription (0x005BBD5E..7A).
         BindActionCompletionOwner(robot);
@@ -668,6 +678,8 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
     protected override void OnStart()
     {
         var robot = Context.Robot;
+        var native=_physical;long nativeVersion=native?.Version??0;
+        if(native is not null&&!native.CurrentAt(nativeVersion)){InitFailed=true;return;}
         if (!_subscribed)
         {
             ReportMissing("REACT-UNEXPECTED-MOVEMENT-1 C1/H2 (0x00609A58, 0x00609BF8): this instance has no robot UnexpectedMovement subscription, so +0x11C is not maintained; Init not performed");
@@ -690,6 +702,7 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
         // I1 0x00609ACC..0x00609AF4: TriggerEmotionEvent("ReactToUnexpectedMovement").
         bool known = Context.Mood?.Trigger(EmotionEventName, Clock() / 1000.0) ?? false;
         Log($"emotion event {EmotionEventName}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
+        if(native is not null&&!native.CurrentAt(nativeVersion))return;
         // I2 0x00609B06..0x00609B10: the selected severe need.
         int need = needs.SevereNeeds.Selected;
         // I4 0x00609B1E..0x00609B22: `cmp r7,#2; moveq r2,#4`: BODY iff +0x11C == 2 (BACK).
@@ -699,7 +712,8 @@ public sealed class ReactToUnexpectedMovementBehavior : SteppedBehavior
         // I5 0x00609B12..0x00609B4E: TriggerLiftSafeAnimationAction(robot, trigger, 1, true, lock, 60.0f, false).
         var action = new TriggerLiftSafeAnimationAction(robot, new((AnimationTrigger)trigger, 1, true, tracksToLock, AnimationTimeoutSec, false));
         // I6 0x00609B52..0x00609B92: StartActing (the void() callback overload); Init returns 0.
-        StartActing(action, OnActionCompleted);
+        if(native is not null)native.Start(this,native.Prepare(action),OnActionCompleted,nativeVersion);
+        else StartActing(action, OnActionCompleted);
     }
 
     // K1 0x005BF790: the wrapper ignores the ActionResult. K2 0x00609C5A..0x00609C60: BehaviorObjectiveAchieved(0x25, true).

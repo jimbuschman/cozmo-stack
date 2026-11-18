@@ -662,6 +662,10 @@ public sealed class NativeTrackFaceTests
     public void EnrollmentProfileClampsSmallAnglesAndMissingNativePositionDoesNotMove(bool cliff)
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        // This unit tests the tracking runner's cliff-dependent track mask/angle clamp.
+        // Keep the actual cliff input while excluding the independent high-level reaction,
+        // whose native completion is now allowed to queue a backup after cancellation.
+        f.Robot.BehaviorManagerOwner!.DisableAllReactionsWithLock("track-face-enrollment-profile");
         f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, head: 0);
         if (cliff)
         {
