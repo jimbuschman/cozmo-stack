@@ -109,10 +109,10 @@ public sealed unsafe partial class ArmMachine : IDisposable
     private long _pressure;
     private Exception? _executionFailure;
     private long _deadline;
-    // Sampling bounds the extra guest execution after expiry to at most 64 translated blocks.
-    // Fault latches are still checked on every block, including after nested calls resume.
-    private const int DeadlineSampleBlocks = 64;
-    private int _blocksUntilDeadlineCheck = DeadlineSampleBlocks;
+    // Host timeout machinery must not add a managed callback to every guest basic block:
+    // that overhead made native name synthesis exceed the engine's unchanged 30 s action timeout.
+    private readonly object _deadlineGate = new();
+    private Timer? _deadlineWatchdog;
     private uint _activeCall;
     private int _runDepth;
 
@@ -174,8 +174,6 @@ public sealed unsafe partial class ArmMachine : IDisposable
             // The stub hook stops before the guest-routine page: those routines run as ordinary emulated code.
             Check(uc_hook_add(_uc, &hh, UC_HOOK_CODE, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&StubThunk,
                 (void*)GCHandle.ToIntPtr(_self), StubBase, GuestRoutineBase - 1), "hook stubs");
-            Check(uc_hook_add(_uc, &hh, UC_HOOK_BLOCK, (delegate* unmanaged[Cdecl]<nint, ulong, uint, nint, void>)&DeadlineThunk,
-                (void*)GCHandle.ToIntPtr(_self), 1, 0), "hook deadline");
             Check(uc_hook_add(_uc, &hh, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_FETCH_UNMAPPED,
                 (delegate* unmanaged[Cdecl]<nint, int, ulong, int, long, nint, byte>)&UnmappedThunk,
                 (void*)GCHandle.ToIntPtr(_self), 1, 0), "hook unmapped");
@@ -201,10 +199,17 @@ public sealed unsafe partial class ArmMachine : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        if (_runDepth != 0) throw new InvalidOperationException("cannot dispose an executing emulator");
-        _disposed = true;
-        if (_uc != 0) { uc_close(_uc); _uc = 0; }
+        lock (_deadlineGate)
+        {
+            if (_disposed) return;
+            if (_runDepth != 0) throw new InvalidOperationException("cannot dispose an executing emulator");
+            _disposed = true;
+            _deadline = 0;
+            _deadlineWatchdog?.Dispose();
+            _deadlineWatchdog = null;
+            // The watchdog cannot stop an engine while its handle is being closed.
+            if (_uc != 0) { uc_close(_uc); _uc = 0; }
+        }
         foreach (var r in _regions) NativeMemory.Free(r.Alloc);
         if (_pressure > 0) { GC.RemoveMemoryPressure(_pressure); _pressure = 0; }
         _regions.Clear();
@@ -452,26 +457,6 @@ public sealed unsafe partial class ArmMachine : IDisposable
     // ---- hook dispatch
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
-    private static void DeadlineThunk(nint uc, ulong address, uint size, nint user)
-    {
-        var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
-        if (m._executionFailure is not null)
-        {
-            m._pending ??= new EmulationAbort("emulator is faulted after a previous call failed", m._executionFailure);
-            uc_emu_stop(uc);
-        }
-        else if (--m._blocksUntilDeadlineCheck <= 0)
-        {
-            m._blocksUntilDeadlineCheck = DeadlineSampleBlocks;
-            if (m._deadline != 0 && Stopwatch.GetTimestamp() >= m._deadline)
-            {
-                m._pending ??= new EmulationAbort($"M1-034: call to 0x{m._activeCall:X} exceeded its emulation timeout at pc 0x{address:X}");
-                uc_emu_stop(uc);
-            }
-        }
-    }
-
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static void StubThunk(nint uc, ulong address, uint size, nint user)
     {
         var m = (ArmMachine)GCHandle.FromIntPtr(user).Target!;
@@ -627,7 +612,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         }
         finally
         {
-            _deadline = 0;
+            EndDeadline();
             _runDepth--;
             GC.KeepAlive(this);
         }
@@ -645,9 +630,48 @@ public sealed unsafe partial class ArmMachine : IDisposable
         if (CallTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(CallTimeout));
         double ticks = CallTimeout.TotalSeconds * Stopwatch.Frequency;
         long now = Stopwatch.GetTimestamp();
-        _deadline = ticks >= long.MaxValue - now ? long.MaxValue : now + Math.Max(1, (long)ticks);
-        _blocksUntilDeadlineCheck = DeadlineSampleBlocks;
-        _activeCall = address;
+        lock (_deadlineGate)
+        {
+            _deadline = ticks >= long.MaxValue - now ? long.MaxValue : now + Math.Max(1, (long)ticks);
+            _activeCall = address;
+            // A disabled/queued timer must not root an otherwise unowned native machine.
+            _deadlineWatchdog ??= new Timer(static state =>
+            {
+                if (((WeakReference<ArmMachine>)state!).TryGetTarget(out var owner)) owner.PollDeadline();
+            }, new WeakReference<ArmMachine>(this), Timeout.Infinite, Timeout.Infinite);
+            ArmDeadlineWatchdog(now);
+        }
+    }
+
+    private void ArmDeadlineWatchdog(long now)
+    {
+        double remainingMs = (_deadline - now) * 1000.0 / Stopwatch.Frequency;
+        long due = remainingMs <= 0 ? 0 : (long)Math.Min(uint.MaxValue - 1d, Math.Ceiling(remainingMs));
+        // No callbacks before the deadline. Repeating after expiry covers an emu_start race
+        // that could otherwise consume a single stop request before guest execution begins.
+        _deadlineWatchdog!.Change(due, 1);
+    }
+
+    private void PollDeadline()
+    {
+        lock (_deadlineGate)
+        {
+            if (_disposed || _deadline == 0 || _uc == 0) return;
+            long now = Stopwatch.GetTimestamp();
+            if (now < _deadline) { ArmDeadlineWatchdog(now); return; }
+            // Unicorn 2.1.4 uc.c _timeout_fn/enable_emu_timer uses this same cross-thread stop.
+            // Only the owning call reads guest registers, reports M1-034 and latches its failure.
+            uc_emu_stop(_uc);
+        }
+    }
+
+    private void EndDeadline()
+    {
+        lock (_deadlineGate)
+        {
+            _deadline = 0;
+            _deadlineWatchdog?.Change(Timeout.Infinite, Timeout.Infinite);
+        }
     }
 
     private void CheckDeadline()
@@ -761,7 +785,7 @@ public sealed unsafe partial class ArmMachine : IDisposable
         }
         finally
         {
-            if (ownsDeadline) _deadline = 0;
+            if (ownsDeadline) EndDeadline();
             _activeCall = previousCall;
             _runDepth--;
             GC.KeepAlive(this);

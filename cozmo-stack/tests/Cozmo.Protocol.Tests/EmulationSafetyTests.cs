@@ -200,6 +200,39 @@ public sealed class EmulationSafetyTests
         Assert.Same(failure, Assert.Throws<EmulationAbort>(() => machine.Call(entry)).InnerException);
     }
 
+    [Fact]
+    public void CompletedCallDeadlineCannotFaultAnIdleOrLaterCall()
+    {
+        using var machine = Machine();
+        uint good = Code(machine, 0xE3A0002A, 0xE12FFF1E); // mov r0,#42; bx lr
+        machine.CallTimeout = TimeSpan.FromMilliseconds(50);
+        Assert.Equal(42u, machine.Call(good));
+        Thread.Sleep(150);
+        machine.CallTimeout = TimeSpan.FromSeconds(1);
+        Assert.Equal(42u, machine.Call(good));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference UnownedMachineAfterCompletedCall()
+    {
+        var machine = Machine();
+        machine.Call(Code(machine, 0xE12FFF1E));
+        return new WeakReference(machine);
+    }
+
+    [Fact]
+    public void CompletedCallWatchdogDoesNotRootTheNativeOwner()
+    {
+        var weak = UnownedMachineAfterCompletedCall();
+        for (int i = 0; weak.IsAlive && i < 5; i++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+        Assert.False(weak.IsAlive);
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference UnownedMachine()
     {
