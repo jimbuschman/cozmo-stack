@@ -29,19 +29,29 @@ namespace Cozmo.Robot.Behavior;
 /// nothing (3c); GetBestTarget is on no path (4g). EnabledStateChanged is a no-op (0x60B73A).</item>
 /// </list>
 /// Seams (M11/M12): the carried and docking object ids, Robot::GetLastImageTimeStamp, the manager's current behaviour.
-/// MISSING (4d): the frame the {80, 80, 80} per-axis test is made in (GetWithRespectTo then IsSameAs) is not in the rows;
-/// the world-frame <see cref="Pose3d.IsSameAs"/> is used.
+/// PoseHelper 0x006124BA..0x006124FC converts reacted with respect to observed; conversion failure returns false.
+/// It then compares observed with that relative pose, using equal 80 mm thresholds (the spherical IsSameAs branch).
 /// </summary>
 public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDisposable
 {
     public const double SameDistanceMm = 80.0;
-    public const double SameAngleRad = 0.785398;
+    public const double SameAngleRad = MathF.PI / 4f; // native f32 0x3F490FDB, 0x00612182..0x0061218A
     public const uint TimeThresholdMs = 600000;
 
-    private sealed class Record
+    // Native ReactionData owns two distinct pose values, not references to the mutable world observation.
+    // HandleNewObservation 0x006123B6/C8 and 0x006123DA..0x00612426; RobotReactedToId 0x00612ADE.
+    private sealed class Record : IDisposable
     {
-        public Pose3d ObservedPose, ReactedPose;
+        public readonly Pose3d ObservedPose, ReactedPose;
         public uint ObservedTime, ReactedTime;
+        internal Record(Pose3d pose, uint time, bool enabled)
+        {
+            ObservedPose = new(pose);
+            ReactedPose = new("");
+            ObservedTime = time;
+            if (!enabled) { ReactedPose.Assign(ObservedPose); ReactedTime = time; }
+        }
+        public void Dispose() { ObservedPose.Dispose(); ReactedPose.Dispose(); }
     }
 
     private readonly CozmoRobot? _robot;
@@ -103,15 +113,11 @@ public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDi
         {
             if (_records.TryGetValue(id, out var r))
             {
-                r.ObservedPose = pose; r.ObservedTime = time;
-                if (!enabled) { r.ReactedPose = pose; r.ReactedTime = time; }
+                r.ObservedPose.Assign(pose); r.ObservedTime = time;
+                if (!enabled) { r.ReactedPose.Assign(r.ObservedPose); r.ReactedTime = time; }
                 return;
             }
-            _records[id] = new Record
-            {
-                ObservedPose = pose, ObservedTime = time,
-                ReactedPose = enabled ? default : pose, ReactedTime = enabled ? 0 : time,
-            };
+            _records[id] = new Record(pose, time, enabled);
         }
     }
 
@@ -125,13 +131,18 @@ public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDi
                 _robot?.Engine.EmitSourceLog(EngineLogLevel.Debug, null, "ReactionTriggerStrategyPositionUpdate.RobotReactedToId", $"no record for {id}");
                 return;
             }
-            r.ReactedPose = r.ObservedPose;
+            r.ReactedPose.Assign(r.ObservedPose);
             r.ReactedTime = LastImageTs();
         }
     }
 
-    /// <summary>4d: moved more than 80 mm or 45°.</summary>
-    private static bool PoseHelper(Pose3d observed, Pose3d reacted) => !reacted.IsSameAs(observed, SameDistanceMm, SameAngleRad);
+    /// <summary>4d: native 0x00612484..0x00612508; unrelated origins do not count as movement.</summary>
+    private static bool PoseHelper(Pose3d observed, Pose3d reacted)
+    {
+        using var relative = new Pose3d("");
+        if (!reacted.TryWithRespectTo(observed, relative)) return false; // 0x006124C0/FC
+        return !observed.IsSameAs(relative, SameDistanceMm, SameAngleRad); // 0x006124F2/F6
+    }
 
     /// <summary>4e with anyMode false.</summary>
     public bool ShouldReactToTarget(uint id)
@@ -172,6 +183,11 @@ public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDi
     {
         _world.ObjectObserved -= OnObserved;
         _behavior.RemoveListener(_listener);
+        lock (_gate)
+        {
+            foreach (var record in _records.Values) record.Dispose();
+            _records.Clear();
+        }
     }
 }
 

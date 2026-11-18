@@ -12,6 +12,21 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class BridgeCommandTests
 {
+    [Fact]
+    public async Task MissingFaceSuccessExplainsThatNoTurnTargetWasAvailable()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        int mark = f.Rig.Mark();
+        var task = Invoke(bridge, "turn-to-face", """{"faceId":1,"maximumTurnRadians":3.14}""");
+        f.Rig.Tick();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(0u, result.GetProperty("engineResult").GetUInt32());
+        Assert.False(result.GetProperty("report").GetProperty("facePoseAvailable").GetBoolean());
+        Assert.Contains("no turn target was available", result.GetProperty("detail").GetString());
+        Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is Cozmo.Protocol.SetHeadAngle or Cozmo.Protocol.SetBodyAngle);
+    }
+
     [Theory]
     [InlineData("head", """{"radians":0.18}""", "MoveAction", 18)]
     [InlineData("lift", """{"heightMm":45}""", "MoveAction", 19)]

@@ -83,7 +83,10 @@ public sealed record AiAnimationActionResult(bool Admitted, uint? EngineResult, 
 public sealed record AiTrackFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, int? FaceId = null);
 
 /// <summary>The terminal native result of a turn toward a face.</summary>
-public sealed record AiTurnToFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+public sealed record AiTurnToFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false)
+{
+    public bool? FacePoseAvailable { get; init; }
+}
 /// <summary>The result of a queued turn toward an object.</summary>
 public sealed record AiTurnToObjectActionResult(bool Admitted, uint? EngineResult, string Detail,
     bool OwnerRetired = false, ObjectInteractionCompletion? ObjectInteraction = null);
@@ -169,6 +172,7 @@ public sealed class CozmoMotion
         if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
         var engine=_robot.Engine;var owner=engine.Robot;
         Task<AiHeadActionResult> task;
+        Vision.NativeLastFaceRunner action;
         using(engine.EnterSynchronousOwner())
         {
             if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
@@ -179,13 +183,15 @@ public sealed class CozmoMotion
             uint tag=AllocateAiTag();
             if(tag==0)return new(false,null,"No external action tag is available");
             float maximum=MathF.Abs(new Radians(maximumTurnRadians).Value);
-            var action=new Vision.NativeLastFaceRunner(manipulation,owner,faceId,maximum);
+            action=new Vision.NativeLastFaceRunner(manipulation,owner,faceId,maximum);
             action.ConfigurePublicRequest();
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native face turn ended",true,
                 ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime));
         }
         var result=await task.ConfigureAwait(false);
-        return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired);
+        return new(result.Admitted,result.EngineResult,
+            action.FacePoseAvailable == false ? "Native face turn ended without a face pose; no turn target was available" : result.Detail,
+            result.OwnerRetired) { FacePoseAvailable = action.FacePoseAvailable };
     }
 
     /// <summary>Queues a turn toward an observed object; cancellation targets this action.</summary>
