@@ -50,6 +50,14 @@ Only jobs that finish a SCOPE.md item go in the queue.
 new rows to main on their own, straight away, never waiting on a merge or the test suite. Before marking a row READY,
 a worker also runs every test class that names a symbol or MISSING text it changed, not only its new tests.
 
+**One full suite per handoff, not two (operator, 2026-11-18).** The full suite still passes before anything goes to
+main, but it runs once. Codex runs it on its handoff commit after merging origin/main, with every private case enabled
+and the Cozmo MCP server closed (it holds UDP 47817). The READY row then states `full clean`, the test total and the
+gate key (`. scripts/hooks/gate-key.sh; gate_key HEAD`). If the manager's merge has the same gate key, the manager
+records that key as passed (`echo <key> >> .scratch/pre-push-passed`), runs only the changed and affected test classes
+itself, and pushes. A run with any failure, or a key that differs (main moved with code), gets the full suite here as
+before.
+
 The fidelity manifest, the inventories and the research files stay as reference material. `fidelity.py --check` and
 the push gate still run, so nothing in them may be left inconsistent.
 
