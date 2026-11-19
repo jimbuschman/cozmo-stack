@@ -77,6 +77,8 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
         int call = await client.Send("tools/call", new { name = "put-down", arguments = new { } });
         uint tag = f.Robot.ActionList.GetCurrentAction()!.Tag;
         var rawCompletionTags = new List<uint>();
+        var publicCompletionTags = new List<uint>();
+        f.Rig.Engine.ActionCompleted += report => publicCompletionTags.Add(report.Tag);
         f.Rig.Engine.EngineToGameMessage += (kind, body) =>
         {
             if (kind == 0x5A) rawCompletionTags.Add(new CladReader(body.ToArray()).U32());
@@ -97,6 +99,7 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
                 e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == tag);
         Assert.True(during.TryGetProperty("continuation", out _));
         Assert.DoesNotContain(tag, rawCompletionTags);
+        Assert.DoesNotContain(tag, publicCompletionTags);
     }
 
     [Fact]
