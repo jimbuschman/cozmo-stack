@@ -59,8 +59,13 @@ and [Claude Code MCP reference](https://code.claude.com/docs/en/mcp).
 
 ## Tools and results
 
-There are 26 tools: the bridge's 23 commands, with their argument
-schemas, plus `get_state`, `read_events` and `list_animations`.
+There are 28 tools: the bridge's 24 commands, with their argument
+schemas, plus `get_state`, `get_camera_image`, `read_events` and `list_animations`.
+Each description states success and failure meaning. The static `cozmo-guide`
+resource at `cozmo://guide` contains the [operating guide](CozmoGuide.md), including
+the complete `get_state` field reference. Discover it with `resources/list`, then
+read it with `resources/read` and `uri=cozmo://guide`. It is available after MCP
+initialization even while the robot is starting.
 
 Needs start full and stay full by default. This supplies the app's refill input
 after the stored needs load, then uses the engine's global needs pause (decay,
@@ -81,8 +86,10 @@ Object IDs are engine **world** IDs from the state/event feed.
 
 Tool results include both a text JSON block and `structuredContent`. Action
 results retain `admitted`, `engineResult`, `engineResultName`, `detail` and
-`ownerRetired`. An admission failure, native failure or invalid arguments sets
-MCP `isError`. Freeplay is a posted message; face rename/erase are reports, so
+`ownerRetired`. An admission failure, native failure, owner retirement, no-report, invalid arguments
+or observed animation truncation sets MCP `isError`. Read `why` and `during`;
+an unknown face ID can still return native SUCCESS with
+`report.facePoseAvailable=false` and no turn. Freeplay is a posted message; face rename/erase are reports, so
 they do not invent a native action result. Poll `read_events` with its returned
 `cursor`; `gap` reports buffer eviction. `list_animations` lists loaded mapped
 triggers and clip names without choosing/playing one. A pending action does not
@@ -119,10 +126,13 @@ Primary protocol references are the MCP
 [lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle)
 and [tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)
 specifications. Supported versions: 2024-11-05, 2025-03-26, 2025-06-18 and
-2025-11-25. It advertises only tools capability; no resources/prompts/subscriptions.
+2025-11-25. It advertises tools and a static resources capability. The only resource is
+`cozmo://guide`; templates are empty and subscriptions/list-change notifications
+are not advertised. Resource shapes and errors follow the official
+[resources specification](https://modelcontextprotocol.io/specification/2025-11-25/server/resources).
 
 `McpServerTests` drives a serialized in-process client through initialization,
-the 26 schemas, real head motor command/ack/result, Freeplay, state, engine face
+the 28 schemas and the embedded operating guide, real head motor command/ack/result, Freeplay, state, engine face
 events/cursor polling, pending-action cancellation, protocol/tool errors and
 session frame/message export. Existing bridge tests cover the command mappings.
 Real Claude client discovery and robot motion remain the operator's check.
@@ -174,3 +184,14 @@ reports SUCCESS. Narration says “cut off by robot buffer”. A prior host abor
 not misreported as an unexpected robot end. Unknown trace-to-stream identity stays
 null. These facts diagnose a cutoff; they do not assert how much was physically
 heard or seen.
+
+## Preparing the next LLM session
+
+Read `cozmo-guide` before acting. Look with `get_camera_image`, choose current
+world IDs from state/events, and use `read_events` with its returned cursor while
+action calls are pending. The [guide](CozmoGuide.md) explains the approximately
+7.5-degree / 21-mm recorded charger approach checks and their geometry/axis limits,
+unknown-face success without motion, `why`, `during`, animation cutoff reporting,
+and the face enrollment/rename/erase confirmation semantics. Its source references
+point to the handoffs that established those details. A connected client's actual
+robot use remains the operator's check.
