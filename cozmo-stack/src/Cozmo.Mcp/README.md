@@ -140,12 +140,13 @@ Real Claude client discovery and robot motion remain the operator's check.
 ## Seeing and waiting
 
 Call `get_camera_image` with `{}` for a PNG image content block plus metadata:
-robot timestamp, exposure-time head angle (null if unavailable), and face/cube/
-charger rectangles from observation reports carrying that exact timestamp.
-`{"annotate":true}` draws green face boxes and amber object boxes. Empty boxes mean
-no matching reports are currently available; older observations are never moved
-onto a newer picture. This tool reads the camera stream already running; it does
-not enable a different vision mode.
+robot timestamp, exposure-time head angle (null if unavailable), and any matching
+face, cube or charger rectangles for the newest received image.
+`{"annotate":true}` selects the newest vision-processed image and draws its green
+face boxes and amber object boxes. Compare `imageId` to `latestReceivedImageId`
+to see when the processed image is older. Before vision has consumed a frame,
+the tool returns the newest image with `visionProcessed: false`. Reads use the
+existing camera stream and vision settings.
 
 Action responses include `during`, an event page covering delivery from invocation
 through completion. It uses the same cursor/gap format as `read_events`, including

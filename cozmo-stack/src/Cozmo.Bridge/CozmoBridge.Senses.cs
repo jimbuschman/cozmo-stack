@@ -11,23 +11,16 @@ public sealed record BridgeCameraImage(byte[] Png, JsonElement Metadata);
 
 public sealed partial class CozmoBridge
 {
-    // Host presentation only: immutable reports are joined by exact robot timestamp.
-    // Never pair a frame with the most recent observation from another frame.
-    private sealed class FrameReports
-    {
-        internal readonly Dictionary<int, RobotObservedFaceReport> Faces = new();
-        internal readonly Dictionary<uint, RobotObservedObjectReport> Objects = new();
-    }
     private readonly object cameraGate = new();
-    private readonly Dictionary<uint, FrameReports> frameReports = new();
-    private readonly Queue<uint> reportOrder = new();
+    private sealed record ReceivedCameraFrame(EngineRobot? Owner, CameraFrame Frame, double? Head);
+    private ReceivedCameraFrame? receivedCamera;
+    private ProcessedCameraCapture? processedCamera;
+    private double? processedCameraHead;
     private readonly Dictionary<byte, string> clipNames = new();
     private readonly Dictionary<byte, string?> sentClipNames = new();
     private readonly Dictionary<byte, string?> playingNames = new();
     private readonly Dictionary<byte, string?> lastPlayingNames = new();
     private AnimationPlaybackMonitor? playbackMonitor;
-    private CameraFrame? cameraFrame;
-    private double? cameraHead;
     private sealed record RelativePose(double XMm, double YMm, double ZMm, double DistanceMm, double BearingDeg);
 
     // Caller holds World's pose gate, shared with MAIN/world writers.
@@ -61,33 +54,38 @@ public sealed partial class CozmoBridge
         Robot.Message -= RobotMessage;
         Robot.Engine.AnimationAbortObserved -= AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged -= OffTreads;
-        lock (cameraGate) { cameraFrame = null; frameReports.Clear(); reportOrder.Clear(); }
+        lock (cameraGate) { receivedCamera = null; processedCamera = null; }
     }
     private void CameraReceived(CameraFrame frame)
     {
+        var owner = Robot.Engine.Robot;
         // History supplies the exposure-time head angle; current head can be newer.
         var state = Robot.Vision.History.At(frame.Timestamp);
         double? head = state?.HeadAngleRad;
         state?.RobotPose.Dispose();
-        lock (cameraGate) { cameraFrame = frame; cameraHead = head; }
-    }
-    private void VisionProcessed(VisionFrameResult result)
-    {
         lock (cameraGate)
-            if (cameraFrame is {} frame && frame.ImageId == result.ImageId && frame.Timestamp == result.Timestamp)
-                cameraHead = result.PoseData.HeadAngleRad;
+        {
+            if (!ReferenceEquals(owner, Robot.Engine.Robot) || owner?.Lifetime.Destroying == true) return;
+            if (receivedCamera is { } previous && (!ReferenceEquals(previous.Owner, owner) ||
+                frame.Timestamp < previous.Frame.Timestamp))
+                processedCamera = null;
+            receivedCamera = new(owner, frame, head);
+        }
     }
-    private FrameReports Reports(uint timestamp)
+
+    internal void VisionProcessed(VisionFrameResult result)
     {
-        if (frameReports.TryGetValue(timestamp, out var found)) return found;
-        if (reportOrder.Count == 32) frameReports.Remove(reportOrder.Dequeue());
-        reportOrder.Enqueue(timestamp);
-        return frameReports[timestamp] = new();
+        if (result.CameraCapture is not { } capture) return;
+        lock (cameraGate)
+        {
+            if (receivedCamera is not { } received || capture.Owner.Lifetime.Destroying ||
+                !ReferenceEquals(capture.Owner, Robot.Engine.Robot) || !ReferenceEquals(capture.Owner, received.Owner) ||
+                capture.Frame.Timestamp > received.Frame.Timestamp)
+                return;
+            processedCamera = capture;
+            processedCameraHead = result.PoseData.HeadAngleRad;
+        }
     }
-    private void CaptureFace(RobotObservedFaceReport report)
-    { lock (cameraGate) Reports(report.Timestamp).Faces[report.FaceId] = report; }
-    private void CaptureObject(RobotObservedObjectReport report)
-    { lock (cameraGate) Reports(report.Timestamp).Objects[report.ObjectId] = report; }
 
     private Task<CommandResult> SetCameraColor(bool enabled, CancellationToken token)
     {
@@ -112,17 +110,24 @@ public sealed partial class CozmoBridge
         ThrowIfDisposed();
         CameraFrame frame;
         double? head;
-        RobotObservedFaceReport[] faces;
-        RobotObservedObjectReport[] objects;
+        CameraFrame newest;
+        ProcessedCameraCapture? reports;
         lock (cameraGate)
         {
-            frame = cameraFrame ?? throw new InvalidOperationException("No camera frame has arrived.");
-            head = cameraHead;
-            frameReports.TryGetValue(frame.Timestamp, out var reports);
-            faces = reports?.Faces.Values.ToArray() ?? [];
-            objects = reports?.Objects.Values.Where(o => o.Family == (uint)ObjectFamily.LightCube ||
-                o.Type == (uint)ObjectType.Charger_Basic).ToArray() ?? [];
+            var owner = Robot.Engine.Robot;
+            if (receivedCamera is not { } received || !ReferenceEquals(owner, received.Owner) ||
+                owner?.Lifetime.Destroying == true)
+                throw new InvalidOperationException("No camera frame has arrived.");
+
+            newest = received.Frame;
+            reports = processedCamera;
+            if (!annotate && !ReferenceEquals(reports?.Frame, newest)) reports = null;
+            frame = reports?.Frame ?? newest;
+            head = reports is null ? received.Head : processedCameraHead;
         }
+        var faces = reports?.Faces ?? [];
+        var objects = reports?.Objects.Where(o => o.Family == (uint)ObjectFamily.LightCube ||
+            o.Type == (uint)ObjectType.Charger_Basic).ToArray() ?? [];
         if (!frame.TryDecodeRgb(out var decoded, out var error))
             throw new InvalidOperationException("Camera frame could not be decoded: " + error);
         byte[] rgb = (byte[])decoded!.Clone();
@@ -138,11 +143,12 @@ public sealed partial class CozmoBridge
         {
             frame.ImageId, robotTimestamp = frame.Timestamp, frame.ReceivedUtc, width, height,
             frame.IsColor, frame.Encoding,
-            headAngleRad = head, annotated = annotate,
+            headAngleRad = head, annotated = annotate && reports is not null,
+            visionProcessed = reports is not null, latestReceivedImageId = newest.ImageId,
             faces = faces.Select(f => new { f.FaceId, f.Name, f.Rect }),
             objects = objects.Select(o => new { worldObjectId = o.ObjectId, type = ((ObjectType)o.Type).ToString(),
                 rect = new FaceRect(o.ImageX,o.ImageY,o.ImageWidth,o.ImageHeight) }),
-            observationReportsAvailable = faces.Length != 0 || objects.Length != 0,
+            observationReportsAvailable = faces.Count != 0 || objects.Length != 0,
         }, Json);
         return new(output.ToArray(), metadata);
 

@@ -14,6 +14,9 @@ internal sealed record NativeFaceFeatures(
             if (indices.Any(i => points[i].X == -1 || points[i].Y == -1)) return Array.Empty<Vec2>();
             return Array.AsReadOnly(indices.Select(i => new Vec2((float)points[i].X, (float)points[i].Y)).ToArray());
         }
-        return new(Group(5, 1, 6), Group(9, 10), Group(7, 11, 8, 2, 7), Group(4, 0, 3));
+        // DetectFaceParts selects slots 0, 1, 7 and 4 at 0x0086CDFC, 0x0086CE52,
+        // 0x0086CEA8 and 0x0086CEFC. FaceWorld copies them into CLAD in that order
+        // (0x004F4A7C..0x004F4AF8); 0x0086D130..0x0086D164 keeps image X then Y.
+        return new(Group(4, 0, 3), Group(5, 1, 6), Group(9, 10), Group(7, 11, 8, 2, 7));
     }
 }

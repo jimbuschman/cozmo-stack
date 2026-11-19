@@ -220,43 +220,67 @@ public sealed class McpServerTests
     }
 
     [Fact]
-    public async Task CameraReturnsPngAndOnlyReportsFromItsExactTimestampWithOptionalBoxes()
+    public async Task CameraAnnotatesTheProcessedCaptureEvenWhenANewerImageHasTheSameTimestamp()
     {
         using var f = new Fixture();
         using var bridge = new CozmoBridge(f.Rig.Robot);
         await using var client = new Client(bridge);
         await client.Initialize();
         Assert.True((await client.Tool("get_camera_image", new {})).GetProperty("result").GetProperty("isError").GetBoolean());
-        f.Rig.State(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, head: 0.2f);
-        uint stamp=f.Robot.StoredState!.Timestamp;
-        f.Rig.CameraGrayFrame(700,stamp,Enumerable.Repeat((byte)150,320*240).ToArray());
-        f.M.Vision.WaitForProcessorIdle();
-        var pose=new EngineGamePose(200,0,60,1,0,0,0,f.Robot.CurrentOriginId);
-        f.Rig.Engine.PublishRobotObservedFace(new(7,stamp,pose,new FaceRect(20,30,40,50),"Ada",[],[],[],[]));
-        f.Rig.Engine.PublishRobotObservedFace(new(8,stamp-1,pose,new FaceRect(1,1,10,10),"Old",[],[],[],[]));
-        f.Rig.Engine.DeliverObservedObjectToApp(new(stamp,(uint)ObjectFamily.LightCube,(uint)ObjectType.Block_LIGHTCUBE1,55,100,100,30,30,pose,0,true));
+
+        f.Add();
+        f.Head = 0.02f;
+        ProcessedCameraCapture? capture = null;
+        for (uint id = 690; id <= 700; id++)
+        {
+            f.Motors();
+            f.Image(id, cube: true);
+            capture = Assert.IsType<ProcessedCameraCapture>(f.M.Vision.LastResult?.CameraCapture);
+            if (capture?.Objects.Any(o => o.Family == (uint)ObjectFamily.LightCube) == true) break;
+        }
+        Assert.NotNull(capture);
+        uint stamp = capture.Frame.Timestamp;
+        var cube = Assert.Single(capture.Objects.Where(o => o.Family == (uint)ObjectFamily.LightCube));
+        f.M.Vision.Enabled = false;
+        f.Rig.CameraGrayFrame(701, stamp, Enumerable.Repeat((byte)130, 320*240).ToArray());
+
+        // Same-timestamp app events with no provenance in the vision result must not attach.
+        f.Rig.Engine.PublishRobotObservedFace(new(7,stamp,cube.Pose,new FaceRect(20,30,40,50),"Ada",[],[],[],[]));
         f.Rig.Engine.DrainAppDelivery();
-        var plain=await client.Tool("get_camera_image",new {});
-        var metadata=Data(plain);
-        Assert.Equal(stamp,metadata.GetProperty("robotTimestamp").GetUInt32());
-        Assert.Equal(0.2,metadata.GetProperty("headAngleRad").GetDouble(),5);
-        Assert.Equal(7,Assert.Single(metadata.GetProperty("faces").EnumerateArray()).GetProperty("faceId").GetInt32());
-        Assert.Equal(55u,Assert.Single(metadata.GetProperty("objects").EnumerateArray()).GetProperty("worldObjectId").GetUInt32());
-        var png=plain.GetProperty("result").GetProperty("content")[1];
-        Assert.Equal("image",png.GetProperty("type").GetString());
-        Assert.Equal("image/png",png.GetProperty("mimeType").GetString());
-        var pixels=StbImageSharp.ImageResult.FromMemory(Convert.FromBase64String(png.GetProperty("data").GetString()!),StbImageSharp.ColorComponents.RedGreenBlue);
-        Assert.Equal((320,240),(pixels.Width,pixels.Height));
-        var annotated=await client.Tool("get_camera_image",new {annotate=true});
-        var drawn=StbImageSharp.ImageResult.FromMemory(Convert.FromBase64String(annotated.GetProperty("result").GetProperty("content")[1].GetProperty("data").GetString()!),StbImageSharp.ColorComponents.RedGreenBlue);
-        int at=(30*320+20)*3;
-        Assert.Equal(new byte[]{0,255,0},drawn.Data[at..(at+3)]);
-        Assert.NotEqual(pixels.Data[at],drawn.Data[at]);
-        // A later image has no boxes until reports carrying that timestamp arrive.
-        f.Rig.CameraGrayFrame(701,stamp+1,Enumerable.Repeat((byte)150,320*240).ToArray());
-        f.M.Vision.WaitForProcessorIdle();
-        Assert.Empty(Data(await client.Tool("get_camera_image",new {})).GetProperty("faces").EnumerateArray());
-        Assert.True((await client.Tool("get_camera_image",new {annotate="yes"})).GetProperty("result").GetProperty("isError").GetBoolean());
+        var plain = await client.Tool("get_camera_image", new {});
+        var latest = Data(plain);
+        Assert.Equal(701u, latest.GetProperty("imageId").GetUInt32());
+        Assert.False(latest.GetProperty("visionProcessed").GetBoolean());
+        Assert.Empty(latest.GetProperty("objects").EnumerateArray());
+
+        var annotated = await client.Tool("get_camera_image", new { annotate = true });
+        var metadata = Data(annotated);
+        Assert.Equal(capture.Frame.ImageId, metadata.GetProperty("imageId").GetUInt32());
+        Assert.Equal(701u, metadata.GetProperty("latestReceivedImageId").GetUInt32());
+        Assert.Equal(stamp, metadata.GetProperty("robotTimestamp").GetUInt32());
+        Assert.Equal(0.02, metadata.GetProperty("headAngleRad").GetDouble(), 5);
+        Assert.True(metadata.GetProperty("visionProcessed").GetBoolean());
+        Assert.Empty(metadata.GetProperty("faces").EnumerateArray());
+        Assert.Equal(cube.ObjectId, Assert.Single(metadata.GetProperty("objects").EnumerateArray()).GetProperty("worldObjectId").GetUInt32());
+
+        var png = annotated.GetProperty("result").GetProperty("content")[1];
+        Assert.Equal("image", png.GetProperty("type").GetString());
+        Assert.Equal("image/png", png.GetProperty("mimeType").GetString());
+        var drawn = StbImageSharp.ImageResult.FromMemory(Convert.FromBase64String(png.GetProperty("data").GetString()!), StbImageSharp.ColorComponents.RedGreenBlue);
+        Assert.Equal((320,240), (drawn.Width,drawn.Height));
+        int at = (Math.Clamp((int)cube.ImageY,0,239)*320 + Math.Clamp((int)cube.ImageX,0,319))*3;
+        Assert.Equal(new byte[]{255,180,0}, drawn.Data[at..(at+3)]);
+
+        f.Motors();
+        f.Image(702);
+        metadata = Data(await client.Tool("get_camera_image", new { annotate = true }));
+        Assert.Equal(702u, metadata.GetProperty("imageId").GetUInt32());
+        Assert.True(metadata.GetProperty("visionProcessed").GetBoolean());
+        Assert.Empty(metadata.GetProperty("objects").EnumerateArray());
+
+        f.Rig.Engine.Robots.RemoveRobot(CozmoEngine.RobotId, wasConnecting: false);
+        Assert.True((await client.Tool("get_camera_image", new {})).GetProperty("result").GetProperty("isError").GetBoolean());
+        Assert.True((await client.Tool("get_camera_image", new {annotate="yes"})).GetProperty("result").GetProperty("isError").GetBoolean());
     }
 
     [Fact]

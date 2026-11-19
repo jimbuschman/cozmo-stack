@@ -105,14 +105,15 @@ internal static class NativeObjectPose
 
 public sealed partial class VisionSystem
 {
-    private void PublishObservedObject(EngineRobot owner, ObservableObject obj, NativeObservedObject prefix, Func<bool> current)
+    private RobotObservedObjectReport? PublishObservedObject(EngineRobot owner, ObservableObject obj, NativeObservedObject prefix, Func<bool> current)
     {
-        if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return;
+        if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return null;
         var calibration=Calibration;
         using var cameraPose=owner.CopyCurrentCameraPose(_robot.Motion.ObservationHeadAngleRad);
-        if(!NativeObjectObservation.TryCreate(obj,cameraPose.Pose,calibration,owner,out var report)) return;
-        if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return;
+        if(!NativeObjectObservation.TryCreate(obj,cameraPose.Pose,calibration,owner,out var report)) return null;
+        if(!current() || owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,owner) || !owner.HasExternalInterface) return null;
         _robot.Engine.DeliverObservedObjectToApp(report);
         _robot.Engine.AnimationMessages.Deliver(0x44,true,prefix);
+        return report;
     }
 }

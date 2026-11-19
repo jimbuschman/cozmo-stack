@@ -157,7 +157,6 @@ public sealed partial class CozmoBridge
 
     private void OnFace(RobotObservedFaceReport report)
     {
-        CaptureFace(report);
         var payload = JsonSerializer.SerializeToElement(report, Json);
         lock (eventGate)
         {
@@ -170,7 +169,6 @@ public sealed partial class CozmoBridge
 
     private void OnObject(RobotObservedObjectReport report)
     {
-        CaptureObject(report);
         if (report.Family == (uint)ObjectFamily.LightCube) Add("cube-seen", report, report.Timestamp);
         else if (report.Type == (uint)ObjectType.Charger_Basic) Add("charger-seen", report, report.Timestamp);
     }

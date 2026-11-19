@@ -6,6 +6,11 @@ using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Vision;
 
+// Host presentation carries the capture itself through the vision mailbox. The engine
+// keys RobotProcessedImage with the result timestamp (0x006549A2..0x00654A1C).
+internal sealed record ProcessedCameraCapture(EngineRobot Owner, CameraFrame Frame,
+    IReadOnlyList<RobotObservedFaceReport> Faces, IReadOnlyList<RobotObservedObjectReport> Objects);
+
 /// <summary>What one frame produced.</summary>
 public sealed record VisionFrameResult(uint ImageId, uint Timestamp, VisionPoseData PoseData, IReadOnlyList<ObservedMarker> Markers,
                                        IReadOnlyList<ObjectObservation> Objects, IReadOnlyList<ObservableObject> Forgotten, TimeSpan Elapsed)
@@ -17,6 +22,8 @@ public sealed record VisionFrameResult(uint ImageId, uint Timestamp, VisionPoseD
     /// </summary>
     public OverheadEdgeFrame? OverheadEdges { get; init; }
     public ImageQualityProposal? ImageQuality { get; init; }
+
+    internal ProcessedCameraCapture? CameraCapture { get; init; }
 
     public override string ToString() =>
         $"image {ImageId} t={Timestamp}: {Markers.Count} marker(s) [{string.Join(" ", Markers.Select(m => m.Code))}], " +
@@ -1768,7 +1775,7 @@ public sealed partial class VisionSystem : IDisposable
         cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
         EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
         if(!decoded.Ok)return DecodeReturnedFailure();
-        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine,sourceOwner,ground);
+        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine,sourceOwner,ground,f);
         VisionFrameResult? DecodeReturnedFailure()
         {
             // Reset already ran; the unbuilt native Toc above belongs only to this normal-return tail.
@@ -1802,10 +1809,10 @@ public sealed partial class VisionSystem : IDisposable
         ProcessCapture(cache,imageId,timestamp,Volatile.Read(ref _removals),data,true,owner,ground);
     }
 
-    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null,NativeGroundFrame? ground=null)
+    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null,NativeGroundFrame? ground=null, CameraFrame? sourceFrame=null)
     {
         if(queueForEngine && !Monitor.IsEntered(_busy))
-        {lock(_busy)return ProcessCapture(cache,imageId,cameraTimestamp,removal,capturedPose,true,sourceOwner,ground);}
+        {lock(_busy)return ProcessCapture(cache,imageId,cameraTimestamp,removal,capturedPose,true,sourceOwner,ground,sourceFrame);}
         if(queueForEngine && !NativeDecodedAdmission(sourceOwner,removal))return null;
         if(queueForEngine && Calibration is null){WarnNoCalibration(removal);return null;}
         NativeVisionInitialization? nativeState=null;int nativeFaceEpoch=0;
@@ -1835,10 +1842,10 @@ public sealed partial class VisionSystem : IDisposable
         GrayImage gray;
         try { gray = cache.GetGray(); }
         catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }
-        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner,nativeFaceEpoch, cache);
+        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose,queueForEngine,nativeState,sourceOwner,nativeFaceEpoch,cache,sourceFrame);
     }
 
-    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,int nativeFaceEpoch=0, ImageCache? decoded=null)
+    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,int nativeFaceEpoch=0, ImageCache? decoded=null, CameraFrame? sourceFrame=null)
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
@@ -1857,7 +1864,7 @@ public sealed partial class VisionSystem : IDisposable
         var poseData = WithRotatingGate(pd.Value, effective);
         return ProcessImage(gray, imageId, effective, poseData, calibration, removal,
                             effective != cameraTimestamp ? cameraTimestamp : null,queueForEngine:queueForEngine,nativeState:nativeState,sourceOwner:sourceOwner,
-                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround),nativeFaceEpoch:nativeFaceEpoch,decoded:decoded);
+                            edgeGround:edgeGround is null?null:EdgeGroundInput(edgeGround),nativeFaceEpoch:nativeFaceEpoch,decoded:decoded,sourceFrame:sourceFrame);
     }
 
     // fidelity: M11-017 -- VisionPoseData::Set 0x006AF330..0x006AF38A: H at +0x7C, the visible byte at +0x78, the RobotState status at +0x5C.
@@ -1903,7 +1910,7 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
-                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null,int nativeFaceEpoch=0,ImageCache? decoded=null)
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false,bool queueForEngine=false,NativeVisionInitialization? nativeState=null,EngineRobot? sourceOwner=null,OverheadEdgeGroundInput? edgeGround=null,int nativeFaceEpoch=0,ImageCache? decoded=null, CameraFrame? sourceFrame=null)
     {
         var sw = Stopwatch.StartNew();
         var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
@@ -2196,6 +2203,15 @@ public sealed partial class VisionSystem : IDisposable
                 IReadOnlyList<ObservableObject> forgotten;
                 VisionFrameResult result;
                 List<Action>? markerDeferredLogs=null;
+                var cameraFaces = sourceFrame is null ? null : new Dictionary<int, RobotObservedFaceReport>();
+                var cameraObjects = sourceFrame is null ? null : new Dictionary<uint, RobotObservedObjectReport>();
+
+                void ReportObject(ObservableObject obj, NativeObservedObject prefix)
+                {
+                    var report = PublishObservedObject(sourceOwner!, obj, prefix, () => !StaleFrame());
+                    if (cameraObjects is not null && report?.Timestamp == timestamp)
+                        cameraObjects[report.ObjectId] = report;
+                }
                 void MarkerSourceLog(EngineLogLevel level,string? channel,string key,string text)
                     =>(markerDeferredLogs??=new()).Add(()=>_robot.Engine.EmitSourceLog(level,channel,key,text));
                 void MarkerPublicLog(string text)
@@ -2324,7 +2340,7 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? (obj,prefix)=>PublishObservedObject(sourceOwner,obj,prefix,()=>!StaleFrame()) : null,queueForEngine && sourceOwner is not null ? sourceOwner.PoseHistory.GetComputedNativePoseAt : null):null;
+            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? ReportObject : null,queueForEngine && sourceOwner is not null ? sourceOwner.PoseHistory.GetComputedNativePoseAt : null):null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if(queueForEngine && StaleFrame())return null;
             if (worldFrame is not null)
@@ -2459,7 +2475,12 @@ public sealed partial class VisionSystem : IDisposable
                         }
                         if(StaleFrame())return null;
                         if(report is null) Behavior.SteppedBehavior.ReportMissing("M14-008 RobotObservedFace complete stock pose, parts, name or optional-mode input unavailable; delivering local ID/timestamp only");
-                        else _robot.Engine.PublishRobotObservedFace(report);
+                        else
+                        {
+                            _robot.Engine.PublishRobotObservedFace(report);
+                            if (cameraFaces is not null && report.Timestamp == timestamp)
+                                cameraFaces[report.FaceId] = report;
+                        }
                         if(StaleFrame())return null;
                         _robot.Engine.AnimationMessages.Deliver(0x46,true,new NativeObservedFace(snapshot.Id,snapshot.Timestamp));
                         if(queueForEngine && StaleFrame())return null;
@@ -2545,6 +2566,9 @@ public sealed partial class VisionSystem : IDisposable
             {
                 OverheadEdges = overheadEdges,
                 ImageQuality = quality,
+                CameraCapture = sourceFrame is not null && sourceOwner is not null
+                    ? new(sourceOwner, sourceFrame, cameraFaces!.Values.ToArray(), cameraObjects!.Values.ToArray())
+                    : null,
             };
             if (rawTimestamp is { } raw) LastRawFrameTimestamp = raw;
             FramesProcessed++;
