@@ -80,12 +80,22 @@ public sealed record AiAnimationActionResult(bool Admitted, uint? EngineResult, 
 }
 
 /// <summary>The native terminal result and signed face ID retained by the tracking action.</summary>
-public sealed record AiTrackFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, int? FaceId = null);
+public sealed record AiTrackFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false, int? FaceId = null)
+{
+    public int? RequestedFaceId { get; init; }
+    public string? EndReason { get; init; }
+    public bool CallerCancellationRequested { get; init; }
+}
 
 /// <summary>The terminal native result of a turn toward a face.</summary>
 public sealed record AiTurnToFaceActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false)
 {
     public bool? FacePoseAvailable { get; init; }
+    /// <summary>Host observation of the native selected/verified ID; the native variant-6 completion has no ID.</summary>
+    public int? FaceId { get; init; }
+    public int? RequestedFaceId { get; init; }
+    public string? EndReason { get; init; }
+    public bool CallerCancellationRequested { get; init; }
 }
 /// <summary>The result of a queued turn toward an object.</summary>
 public sealed record AiTurnToObjectActionResult(bool Admitted, uint? EngineResult, string Detail,
@@ -142,46 +152,65 @@ public sealed class CozmoMotion
     /// <summary>Queues face tracking after existing actions. The tracker follows fresh observations until the action ends; cancellation targets this runner.</summary>
     public async Task<AiTrackFaceActionResult> QueueAiTrackFaceAsync(int faceId, bool headOnly, CancellationToken cancellationToken = default)
     {
-        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        AiTrackFaceActionResult Reject(string message) => new(false, null, message)
+        {
+            RequestedFaceId = faceId,
+            EndReason = cancellationToken.IsCancellationRequested ? "cancelled-before-admission" : "not-admitted",
+            CallerCancellationRequested = cancellationToken.IsCancellationRequested,
+        };
+        if(cancellationToken.IsCancellationRequested)return Reject("Request cancelled before admission");
         var engine=_robot.Engine;var owner=engine.Robot;
         Task<AiHeadActionResult> task;
         Vision.NativeTrackFaceRunner action;
         using(engine.EnterSynchronousOwner())
         {
-            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
-            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for face tracking");
+            if(cancellationToken.IsCancellationRequested)return Reject("Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return Reject("Robot is not ready for face tracking");
             var runtime=owner.NativeBehaviorRuntime;
             if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation)
-                return new(false,null,"MISSING: original face-tracking owner unavailable");
+                return Reject("MISSING: original face-tracking owner unavailable");
             uint tag=AllocateAiTag();
-            if(tag==0)return new(false,null,"No external action tag is available");
+            if(tag==0)return Reject("No external action tag is available");
             action=new Vision.NativeTrackFaceRunner(manipulation,owner,faceId,headOnly,
                 BitConverter.UInt32BitsToSingle(0x3D0EFA35),false,-1,-1,0);
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native face tracking ended",true,
                 ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime));
         }
         var result=await task.ConfigureAwait(false);
-        return new(result.Admitted,result.EngineResult,result.Detail,result.OwnerRetired,
-            result.Admitted ? unchecked((int)action.PreparedCompletionUnion) : null);
+        string reason = FaceActionEndReason(result, cancellationToken);
+        string detail = result.Admitted ? $"Native face tracking ended: {reason}" : result.Detail;
+        if (cancellationToken.IsCancellationRequested) detail += "; caller cancellation was requested";
+        return new(result.Admitted,result.EngineResult,detail,result.OwnerRetired,
+            result.Admitted ? unchecked((int)action.PreparedCompletionUnion) : null)
+        {
+            RequestedFaceId = faceId, EndReason = reason,
+            CallerCancellationRequested = cancellationToken.IsCancellationRequested,
+        };
     }
 
     /// <summary>Queues a turn toward a face after existing actions; ID zero uses the native cached last-face pose.</summary>
     public async Task<AiTurnToFaceActionResult> QueueAiTurnToFaceAsync(int faceId, float maximumTurnRadians, CancellationToken cancellationToken = default)
     {
-        if(!float.IsFinite(maximumTurnRadians))return new(false,null,"Maximum turn angle must be finite");
-        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        AiTurnToFaceActionResult Reject(string message) => new(false, null, message)
+        {
+            RequestedFaceId = faceId,
+            EndReason = cancellationToken.IsCancellationRequested ? "cancelled-before-admission" : "not-admitted",
+            CallerCancellationRequested = cancellationToken.IsCancellationRequested,
+        };
+        if(!float.IsFinite(maximumTurnRadians))return Reject("Maximum turn angle must be finite");
+        if(cancellationToken.IsCancellationRequested)return Reject("Request cancelled before admission");
         var engine=_robot.Engine;var owner=engine.Robot;
         Task<AiHeadActionResult> task;
         Vision.NativeLastFaceRunner action;
         using(engine.EnterSynchronousOwner())
         {
-            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
-            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready to turn toward a face");
+            if(cancellationToken.IsCancellationRequested)return Reject("Request cancelled before admission");
+            if(owner is null || !AiOwnerReady(engine,owner))return Reject("Robot is not ready to turn toward a face");
             var runtime=owner.NativeBehaviorRuntime;
             if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation)
-                return new(false,null,"MISSING: original face-turn owner unavailable");
+                return Reject("MISSING: original face-turn owner unavailable");
             uint tag=AllocateAiTag();
-            if(tag==0)return new(false,null,"No external action tag is available");
+            if(tag==0)return Reject("No external action tag is available");
             float maximum=MathF.Abs(new Radians(maximumTurnRadians).Value);
             action=new Vision.NativeLastFaceRunner(manipulation,owner,faceId,maximum);
             action.ConfigurePublicRequest();
@@ -191,8 +220,29 @@ public sealed class CozmoMotion
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,
             action.FacePoseAvailable == false ? "Native face turn ended without a face pose; no turn target was available" : result.Detail,
-            result.OwnerRetired) { FacePoseAvailable = action.FacePoseAvailable };
+            result.OwnerRetired)
+        {
+            FacePoseAvailable = action.FacePoseAvailable,
+            FaceId = result.Admitted ? action.CompletedFaceId : null,
+            RequestedFaceId = faceId,
+            EndReason = action.FacePoseAvailable == false && result.EngineResult == 0
+                ? "face-pose-unavailable" : FaceActionEndReason(result, cancellationToken),
+            CallerCancellationRequested = cancellationToken.IsCancellationRequested,
+        };
     }
+
+    // Host diagnostics, not a fabricated native completion variant. Result values are the shipped
+    // Anki.Cozmo/ActionResult.cs (SUCCESS, CANCELLED_WHILE_RUNNING and NOT_STARTED).
+    private static string FaceActionEndReason(AiHeadActionResult result, CancellationToken token) =>
+        !result.Admitted ? (token.IsCancellationRequested ? "cancelled-before-admission" : "not-admitted")
+        : result.OwnerRetired ? "owner-retired"
+        : result.EngineResult switch
+        {
+            0 => "completed",
+            0x02000000 => "cancelled-while-running",
+            0x02000001 => "not-started",
+            _ => "native-failure",
+        };
 
     /// <summary>Queues a turn toward an observed object; cancellation targets this action.</summary>
     public async Task<AiTurnToObjectActionResult> QueueAiTurnToObjectAsync(uint objectId, float maximumTurnRadians, CancellationToken cancellationToken = default)

@@ -92,6 +92,10 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     internal ActionRunner? ChildForTest=>_child;
     internal int RequestedId=>_requested.Id;
     internal bool? FacePoseAvailable { get; private set; }
+    private int? _poseFaceId;
+    // Read-only host report: 0x0054BD7C selects the explicit face; verification uses
+    // the retained SmartFaceID. Snapshot before dtor/WatcherEnding releases those references.
+    internal int? CompletedFaceId { get; private set; }
     internal void ConfigurePublicRequest()
     {
         _aiPublic=true;
@@ -132,11 +136,13 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         if (!ScopedCurrent) return unchecked((int)EngineActionResult.Cancelled);
         using var cached=new Pose3d("");using var relative=new Pose3d("");
         bool found;
+        _poseFaceId = null;
         if(_requested.IsValid)
         {
             // 0x0054BD7C..0x0054BD94: GetFace(SmartFaceID) (in-origin gate 0x004F59B6..0x004F59C2), then entry+0xF4.
             var face=M.Vision.Faces.GetNativeFace(owner,_requested.Id);
             found=face is not null && CopyFacePose(face, cached);
+            if (found) _poseFaceId = face!.Id;
         }
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
         FacePoseAvailable = found && cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative);
@@ -308,6 +314,7 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     }
     public override void WatcherEnding()
     {
+        CompletedFaceId = FacePoseAvailable == true ? (_verified.Id != 0 ? _verified.Id : _poseFaceId) : null;
         SetChild(null);Unlock();foreach(var handle in _observed)handle.Dispose();_observed.Clear();_verified.Dispose();_requested.Dispose();
         base.WatcherEnding();
         if(AiNativeEnded is {} ended && _actualOwner is {} owner)
