@@ -30,9 +30,9 @@ All native addresses refer to libcozmoEngine.so SHA256 02263c07f6bb60f4d7f351a36
 
 ## Measurements
 
-Windows, Intel Core i5-11400 @ 2.60 GHz (6 cores / 12 logical processors), .NET 9.0.3, 2026-11-19. Same host, sequential sessions, actual native Acapela and Wwise. A paced silent sink replaces the PC speaker, no robot. InitScene is ready before calls. Timing begins immediately before the in-process MCP client's Send call and ends at the timestamp of the **successful** AudioSample send-gate observation.
+Windows, Intel Core i5-11400 @ 2.60 GHz (6 cores / 12 logical processors), .NET 9.0.3, 2026-11-19. Same host, sequential sessions, actual native Acapela and Wwise. A paced silent sink replaces the PC speaker, no robot. InitScene is ready before calls. Timing begins at the per-call client measurement setup (probe subscription / hash preparation followed by the in-process client's Send). It ends at the budget-gate entry timestamp, retained only after AudioSample send succeeds. Small client profiling setup is included in the dispatch interval; this measures host send admission, not network or firmware arrival.
 
-Controlled before = current speech route plus **exact ArmMachine.cs from a3625bba = c6c3067d^**, blob 9da8ed354bcd32a423a3384e92e24bf1bf0963d8. Watchdog = blob 780389b29682357b0dbcb8ba8e0be320f83dcf26. Route/probes are held fixed to isolate the deadline change. SpeechOwner, SayTextAction, SpeechProvider and TextToSpeechComponent production behavior had no intervening changes since that parent. Final adds initialization fix. The old file was restored after its build/test exited and is not in the diff.
+Controlled before = current speech route plus **exact ArmMachine.cs from a3625bba = c6c3067d^**, blob 9da8ed354bcd32a423a3384e92e24bf1bf0963d8. Watchdog = blob 780389b29682357b0dbcb8ba8e0be320f83dcf26. Route/probes are held fixed to isolate the deadline change. Before this job, SpeechOwner, SayTextAction, SpeechProvider, TextToSpeechComponent, NativeWwiseVoiceHost, NativeWwiseVoiceSession and CannedSpeechOwner production behavior had no intervening changes since that parent. Final adds initialization fix. The old file was restored after its build/test exited and is not in the diff.
 
 Single runs, not percentiles or promises. First row before/watchdog has a cold provider; later calls are warm. All final calls use the initialized provider.
 
@@ -82,5 +82,6 @@ Enable COZMO_SPEECH_TIMING_REPORT=<absolute writable json path> and run the clas
 
 - Before, watchdog-only and final profiling runs: PASS (5 successful utterances each); normal builds: 0 errors.
 - Fidelity check: PASS, 764 records. **No manifest status/evidence change**, no SCOPE/PROJECT_STATE settlement. Current M14-006 stays BLOCKED_EXTERNAL; M14-013 / M6-024 stay IMPLEMENTATION_GAP. Broad records are not promoted by a timing run.
-- Full suite / final gate key: pending handoff-commit run.
+- **full clean: 8750/8750 PASS, 0 failures / skipped, 56.7357 min**, on handoff code commit f791f206 after merging origin/main. All 17 private replay cases plus the new speech profiling case enabled; MCP server closed. Gate key: b6ae39f78c588355ea7f8f88bedc632954c9510e. Normal handoff build: 0 errors. Log: .scratch/m13-speech-full-f791f206.log.
+- Full suite also completed the five-utterance speech regression (all results 0, identical PCM / wire hashes), captured-pixel teach/rename/erase (43 s), both private LLM-session cases, and the full 16 m 49 s event replay (all 94,048 packets, no replay faults). Speech first-send in this additional run was 10.994 s; the controlled comparison above is retained rather than mixing runs.
 - Robot / audible result: operator has not rerun; output identity is measured offline only.

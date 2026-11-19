@@ -16,7 +16,7 @@
     "acapelaPitch": 100,
     "sampleRate": 22050
   },
-  "method": "MCP client Send invocation to successful AudioSample 0x8E gate timestamp. Wwise InitScene ready before calls. First original sentence cold provider in before/watchdog, all later calls reuse provider. Final provider loads at robot initialization. Fifth sentence is a warm repeat. Platform sink consumes 48kHz stereo s16 at real-time pace without a robot or audible output.",
+  "method": "Per-call client measurement setup (probe subscription / hash preparation then MCP Send) to AudioSample 0x8E budget-gate entry timestamp, retained only after send succeeds. Small profiling setup is included in dispatch. Network/firmware arrival is not measured. Wwise InitScene ready before calls; first original sentence cold provider in before/watchdog, later calls reuse provider. Final provider loads at Robot initialization. Fifth sentence is a warm repeat. Platform sink consumes 48kHz stereo s16 at real-time pace without a robot or audible output.",
   "limits": "Single sequential measurements, not percentiles or speed guarantees. Render aggregate covers explicit NativeWwiseVoiceHost.Render calls only, not ServiceOutput; use offer-ready -> hijack-frame as full Wwise configuration/post/render wall interval. Native rendering/streaming continues during playback. PCM hash is native Acapela s16 little endian; wire hash concatenates every 744-byte AudioSample body through MCP completion.",
   "runs": {
     "before": [
