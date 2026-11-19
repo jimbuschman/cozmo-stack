@@ -9,6 +9,9 @@ namespace Cozmo.Bridge;
 internal sealed record CommandResult(string Status, bool? Admitted, uint? EngineResult, string? EngineResultName,
     string? Detail = null, bool? OwnerRetired = null, object? Report = null)
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public object? FaceOperation { get; init; }
+
     internal static CommandResult Action(bool admitted, uint? code, string detail, bool retired, object? report = null) =>
         new(!admitted ? "not-admitted" : retired ? "owner-retired" : "completed", admitted, code,
             code is { } result ? Enum.GetName((NativeActionResultName)result) : null, detail, retired, report);
@@ -86,15 +89,19 @@ public sealed partial class CozmoBridge : IDisposable
         new("mount-charger", "Drive to the located charger and mount it.",
             [Integer("chargerId", "Engine world ID of the located charger.", 0, int.MaxValue)],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiMountChargerAsync(a.UInt("chargerId"), ct))),
-        new("teach-face", "Select Meet and enroll a face under a name.",
+        new("teach-face", "Enroll a face and wait for completion. Returns enrolled or an engine failure with face ID/name.",
             [Text("name", "Enrollment name, at most 255 UTF-8 bytes.", 255),
              Integer("saveId", "Album ID to update, or zero for enrollment.", 0, int.MaxValue, 0)],
             (b, a, ct) => b.TeachFace(a.Text("name"), a.Int("saveId"), ct)),
-        new("rename-face", "Rename an enrolled face.",
+        new("enroll-face", "Alias of teach-face. Waits for completion and returns enrolled or an engine failure with face ID/name.",
+            [Text("name", "Enrollment name, at most 255 UTF-8 bytes.", 255),
+             Integer("saveId", "Album ID to update, or zero for enrollment.", 0, int.MaxValue, 0)],
+            (b, a, ct) => b.TeachFace(a.Text("name"), a.Int("saveId"), ct)),
+        new("rename-face", "Rename a face. Returns renamed with ID/name on engine confirmation; no-report means it was not confirmed.",
             [EnrolledFaceId, Text("oldName", "Existing name, at most 255 UTF-8 bytes.", 255, allowEmpty: true),
              Text("newName", "New name, at most 255 UTF-8 bytes.", 255, allowEmpty: true)],
             (b, a, ct) => b.RenameFace(a.Int("faceId"), a.Text("oldName"), a.Text("newName"), ct)),
-        new("erase-face", "Erase an enrolled face.", [EnrolledFaceId],
+        new("erase-face", "Erase face enrollment. Returns erased with ID/last known name on confirmation, or no-report. Continued sightings can register an unnamed guest.", [EnrolledFaceId],
             (b, a, ct) => b.EraseFace(a.Int("faceId"), ct)),
         new("freeplay", "Enable or disable Freeplay.", [Boolean("enabled", "True enables Freeplay.")],
             (b, a, ct) => b.SetFreeplay(a.Flag("enabled"), ct)),

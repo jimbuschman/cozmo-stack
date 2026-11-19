@@ -20,7 +20,14 @@ public sealed partial class CozmoBridge
                 Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
                 Robot.SetFaceToEnroll(name, saveId);
             },
-            report => new("completed", null, report.Result, Enum.GetName((FaceEnrollmentResultName)report.Result), Report: report),
+            report => new CommandResult("completed", null, report.Result, Enum.GetName((FaceEnrollmentResultName)report.Result),
+                Detail: report.Result == 0 ? "Face enrolled." : $"Enrollment ended: {Enum.GetName((FaceEnrollmentResultName)report.Result) ?? report.Result.ToString()}.", Report: report)
+            {
+                // Host wording follows the unchanged E2G 0x56 result, ID and name
+                // (0x005FE520..0x005FE528); it never promotes a failure to success.
+                FaceOperation = new { operation = "enroll", outcome = report.Result == 0 ? "enrolled" : "failed",
+                    faceId = report.Id, name = report.Name, requestedName = name },
+            },
             TimeSpan.FromMinutes(2), token, Robot.CancelFaceEnrollment);
 
     private Task<CommandResult> RenameFace(int id, string oldName, string newName, CancellationToken token) =>
@@ -28,14 +35,31 @@ public sealed partial class CozmoBridge
             handler => Robot.Engine.FaceRenamed += handler,
             handler => Robot.Engine.FaceRenamed -= handler,
             report => report.Id == id && report.Name == newName,
-            () => Robot.UpdateEnrolledFaceById(id, oldName, newName), CommandResult.Confirmed, TimeSpan.FromSeconds(10), token);
+            () => Robot.UpdateEnrolledFaceById(id, oldName, newName), report => CommandResult.Confirmed(report) with
+            {
+                Detail = "Face renamed.",
+                FaceOperation = new { operation = "rename", outcome = "renamed", faceId = report.Id, name = report.Name },
+            }, TimeSpan.FromSeconds(10), token);
 
-    private Task<CommandResult> EraseFace(int id, CancellationToken token) =>
-        RequestFaceReport<FaceErasedReport>(
+    private Task<CommandResult> EraseFace(int id, CancellationToken token)
+    {
+        string? lastKnownName = null;
+        return RequestFaceReport<FaceErasedReport>(
             handler => Robot.Engine.FaceErased += handler,
             handler => Robot.Engine.FaceErased -= handler,
             report => report.Id == id,
-            () => Robot.EraseEnrolledFaceById(id), CommandResult.Confirmed, TimeSpan.FromSeconds(10), token);
+            () =>
+            {
+                lastKnownName = Robot.Vision.Recognizer.EnrolledFaces.FirstOrDefault(face => face.FaceID == id)?.Name;
+                Robot.EraseEnrolledFaceById(id);
+            }, report => CommandResult.Confirmed(report) with
+            {
+                Detail = "Face enrollment erased; continued sightings can register an unnamed guest, possibly reusing the ID.",
+                // EraseFace builds an empty report name at 0x00657A98..0x00657ABE.
+                // Keep that native report intact; label this pre-request album snapshot.
+                FaceOperation = new { operation = "erase", outcome = "erased", faceId = report.Id, lastKnownName },
+            }, TimeSpan.FromSeconds(10), token);
+    }
 
     private async Task<CommandResult> RequestFaceReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
         Predicate<T> matches, Action request, Func<T, CommandResult> result, TimeSpan timeout, CancellationToken token,
