@@ -174,6 +174,7 @@ public sealed class BridgeCommandTests
         Assert.Equal(3u, enrollment.GetProperty("engineResult").GetUInt32());
         Assert.Equal("TimedOut", enrollment.GetProperty("engineResultName").GetString());
         Assert.Equal(7, enrollment.GetProperty("report").GetProperty("id").GetInt32());
+        Assert.Equal("failed", enrollment.GetProperty("faceOperation").GetProperty("outcome").GetString());
 
         var renaming = Invoke(bridge, "rename-face", """{"faceId":7,"oldName":"Ada","newName":"Grace"}""", cancel.Token);
         f.Rig.Tick();
@@ -187,6 +188,7 @@ public sealed class BridgeCommandTests
         Assert.Equal("confirmed", renamed.GetProperty("status").GetString());
         Assert.Equal(JsonValueKind.Null, renamed.GetProperty("engineResult").ValueKind);
         Assert.Equal("Grace", renamed.GetProperty("report").GetProperty("name").GetString());
+        Assert.Equal("renamed", renamed.GetProperty("faceOperation").GetProperty("outcome").GetString());
 
         var erasing = Invoke(bridge, "erase-face", """{"faceId":7}""", cancel.Token);
         f.Rig.Tick();
@@ -199,6 +201,9 @@ public sealed class BridgeCommandTests
         Assert.Equal(7, erased.GetProperty("report").GetProperty("id").GetInt32());
         Assert.Equal("confirmed", erased.GetProperty("status").GetString());
         Assert.Null(erased.GetProperty("engineResultName").GetString());
+        Assert.Equal("erased", erased.GetProperty("faceOperation").GetProperty("outcome").GetString());
+        Assert.Equal("", erased.GetProperty("report").GetProperty("name").GetString());
+        Assert.Equal(JsonValueKind.Null, erased.GetProperty("faceOperation").GetProperty("lastKnownName").ValueKind);
 
         var wrongFace = Invoke(bridge, "teach-face", """{"name":"Ada"}""", cancel.Token);
         f.Rig.Tick();
@@ -236,7 +241,7 @@ public sealed class BridgeCommandTests
         {
             "head", "lift", "drive-straight", "turn-in-place", "turn-to-face", "turn-to-cube", "track-face",
             "animation", "say-text", "pickup", "put-down", "roll", "stack", "flip", "wheelie", "go-to-pose",
-            "mount-charger", "teach-face", "rename-face", "erase-face", "freeplay", "set_needs_mode", "set_needs",
+            "mount-charger", "teach-face", "enroll-face", "rename-face", "erase-face", "freeplay", "set_needs_mode", "set_needs",
         }, entries.Select(entry => entry.GetProperty("name").GetString()));
         Assert.All(entries, entry =>
         {
