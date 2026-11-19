@@ -58,6 +58,13 @@ records that key as passed (`echo <key> >> .scratch/pre-push-passed`), runs only
 itself, and pushes. A run with any failure, or a key that differs (main moved with code), gets the full suite here as
 before.
 
+**The original is the baseline, not the ceiling (operator, 2026-11-19).** Once sections A and B of SCOPE.md are
+finished, Cozmo's abilities may be improved beyond the original (SCOPE.md C2; first candidate: the world map forgets
+the charger once it is out of sight). An improvement is a named, switchable extension on top of the engine's
+behaviour, never a silent change to it: the engine path stays reproduced and selectable, the extension is labelled in
+code and in the run log, and the baseline's tests keep passing. Until then, the evidence rules above apply to
+everything.
+
 The fidelity manifest, the inventories and the research files stay as reference material. `fidelity.py --check` and
 the push gate still run, so nothing in them may be left inconsistent.
 

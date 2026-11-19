@@ -32,7 +32,9 @@ Robot script: `m15-cube-hw --commands` (built 2026-11-16) runs every command bel
 | Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
 | Charger seen report (operator 2026-11-15) | sim (E2G 0x44 for the charger built 2026-11-16; shown in the --skills charger round) |
 | Freeplay on/off, and returning to Freeplay after a command | sim (SetEnableFreeplayActivity built 2026-11-15; `m15-cube-hw --freeplay-control`) |
-| The connection for an LLM (bridge) | none |
+| The connection for an LLM (bridge) | robot (MCP server; LLM sessions 2026-11-18 and 2026-11-19, operator present) |
+| Colour camera (operator 2026-11-19: "why wouldn't we want color?") | none (engine EnableColorImages handler 0x0065835C; COLOR-CAMERA-1) |
+| Reaction locks while the LLM does a task, and "wait until accepted" (operator 2026-11-19, F16) | none (app's DisableReactionsWithLock, Robot.cs:1999; REACTION-LOCK-LLM-1) |
 
 ## B. Personality (required)
 
@@ -52,6 +54,15 @@ Robot script: `m15-cube-hw --personality` (built 2026-11-15) walks through every
 Commands QueueAiFlipCubeAsync and QueueAiPopAWheelieAsync: sim (built 2026-11-15; rounds in `m15-cube-hw --skills`).
 Behaviours PopAWheelie, KnockOverCubes, FistBump, Singing, Dance, CubeLiftWorkout, FireTruckAlarm, BringCubeToBeacon,
 RamIntoBlock, Bouncer: sim. PeekABoo, TrackLaser, GuardDog: none or partial.
+
+## C2. Improvements beyond the original (operator 2026-11-19; after A and B)
+
+Operator: "use him as a baseline and then we can improve on some of cozmos abilities/functions rather than staying
+locked into what he could do when he was originally written". Each improvement is built on top of the finished
+baseline, named, switchable back to the engine's behaviour, and recorded here; the baseline's own tests keep passing.
+Candidates so far:
+- World map memory: he forgets the charger once it is out of sight or after he is picked up (2026-11-19 session:
+  charger dropped from knownChargers after leaving it; objects deleted from old origins at re-localisation).
 
 ## D. Deferred (not worked unless the operator moves them)
 
