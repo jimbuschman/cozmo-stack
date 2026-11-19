@@ -1742,8 +1742,7 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M11-033 — VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68: the EncodedImage's
     // IsColor (0x006B4B7C, the encoding byte) chooses DecodeImageRGB (0x006B4B90) or DecodeImageGray
     // (0x006B4C02), the ImageCache is reset with that result, then Update(PoseData, ImageCache) 0x006B4C78
-    // runs. The shipped camera is grey, so only the grey member is populated and the colour branch is
-    // inert (C2.2).
+    // runs. GetGray derives the detector input from the RGB entry on colour frames (C2.2).
     // fidelity: M11-058 — synchronous host entry. Native direct calibration/dot-test entry remains unbuilt.
     private VisionFrameResult? ProcessFrame(CameraFrame f, int removal)
     {

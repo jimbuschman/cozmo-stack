@@ -89,6 +89,23 @@ public sealed partial class CozmoBridge
     private void CaptureObject(RobotObservedObjectReport report)
     { lock (cameraGate) Reports(report.Timestamp).Objects[report.ObjectId] = report; }
 
+    private Task<CommandResult> SetCameraColor(bool enabled, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        // G2E handler 0x0065835C..0x00658378 uses the same byte store and reliable
+        // EnableColorImages robot message as 0x006582CC..0x00658314.
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        if (engine.ConnectionState != 2 || !engine.IsReadyDelivered || engine.RobotValidated != true ||
+            owner is null || owner.Lifetime.Destroying || !owner.FirstFullStateHandled)
+            return Task.FromResult(CommandResult.NotReady());
+
+        Robot.CameraSettings.EnableColorImages(enabled);
+        if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
+            return Task.FromResult(CommandResult.Action(false, null, "Robot owner retired during the camera request", true));
+        return Task.FromResult(CommandResult.Confirmed(new { enabled }));
+    }
+
     /// <summary>Decodes a snapshot without requesting frames or changing vision modes.</summary>
     public BridgeCameraImage GetCameraImage(bool annotate = false)
     {
@@ -120,6 +137,7 @@ public sealed partial class CozmoBridge
         var metadata = JsonSerializer.SerializeToElement(new
         {
             frame.ImageId, robotTimestamp = frame.Timestamp, frame.ReceivedUtc, width, height,
+            frame.IsColor, frame.Encoding,
             headAngleRad = head, annotated = annotate,
             faces = faces.Select(f => new { f.FaceId, f.Name, f.Rect }),
             objects = objects.Select(o => new { worldObjectId = o.ObjectId, type = ((ObjectType)o.Type).ToString(),

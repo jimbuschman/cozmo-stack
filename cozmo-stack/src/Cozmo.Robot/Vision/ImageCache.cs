@@ -8,9 +8,8 @@ namespace Cozmo.Robot.Vision;
 /// otherwise. <c>GetGray</c> returns the grey member, converting an RGB entry through
 /// <c>ImageRGB::FillGray</c>.
 ///
-/// The shipped camera is grey (M3: 320x240), so <see cref="IsColor"/> is false, only the grey member is
-/// populated, <see cref="RgbValid"/> stays false and <see cref="FillGray"/> is never called. The colour
-/// branch exists for fidelity, not for the shipped path.
+/// The default 320x240 stream has a grey entry. When a colour frame arrives, its RGB entry also
+/// remains available for consumers that need colour, including laser-point detection.
 /// </summary>
 // fidelity: M11-033
 public sealed class ImageCache

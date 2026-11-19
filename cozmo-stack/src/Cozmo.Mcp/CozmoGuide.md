@@ -58,7 +58,9 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 
 `relative` has `xMm`, `yMm`, `zMm` in robot MAIN axes, planar `distanceMm`, and `bearingDeg` positive to the robot's left. Null means the pose could not be expressed relative to the robot, or no observed pose is available. `go-to-pose` instead takes an established target in the current world origin [senses].
 
-`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. Exposure head angle can be null. Its timestamp matching prevents older boxes from being moved onto a new image [senses].
+Use `set_camera_color` with `enabled: true` to request colour on the camera's current stream. Use `enabled: false` to request greyscale again. The tool confirms the requested setting. Check `isColor` on a newer frame to see what the robot sent. The same vision modes keep supplying face and marker detections from the grey image derived from each colour frame.
+
+`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, `isColor`, `encoding` (effective image encoding after parsing the first chunk), exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. Exposure head angle can be null. Its timestamp matching prevents older boxes from being moved onto a new image [senses].
 
 `list_animations` returns `loaded`, case-sensitive `triggers`, and `clips`; it reads the catalogue without selecting/playing a clip.
 
