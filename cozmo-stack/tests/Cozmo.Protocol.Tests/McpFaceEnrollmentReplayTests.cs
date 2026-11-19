@@ -102,7 +102,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         f.Rig.Engine.StackLogLine += s => { if (s.Contains("MISSING", StringComparison.Ordinal)) missing.Enqueue(s); };
         f.Rig.Engine.EngineToGameMessage += (tag, body) =>
         {
-            if (tag is 0x46 or 0x47 or 0x56 or 0x57 or 0x1D)
+            if (tag is 0x46 or 0x47 or 0x56 or 0x57 or 0x1D or 0x8B)
                 emissions.Add(new(tag, Convert.ToHexString(body.Span), f.Rig.Engine.Timer.TimeStampMs, f.Rig.Engine.NvStorage!.IsIdle));
         };
         int sent = f.Rig.Mark(); uint imageId = 60000; int imageIndex = 0;
@@ -198,6 +198,11 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
             return Convert.ToHexString(bytes.ToArray());
         }
         Assert.Equal(ExpectedBody("Robin", 0), Assert.Single(emissions, e => e.Tag == 0x56).Body);
+        // 5FE462..468: objective EnrolledFaceWithName=5, broadcast=true,
+        // before 56. 7285FE -> tag8B; 71BEAE..B6 packs the four-byte enum.
+        Assert.Single(emissions, e => e.Tag == 0x8B && e.Body == "05000000");
+        Assert.True(emissions.FindIndex(e => e.Tag == 0x8B && e.Body == "05000000") <
+            emissions.FindIndex(e => e.Tag == 0x56));
         var taught = await client.Receive(teach);
         var taughtData = taught.GetProperty("result").GetProperty("structuredContent");
         output.WriteLine("teach=" + taughtData.GetProperty("report").GetRawText());
@@ -206,7 +211,15 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         Assert.Equal(completion.Id, taughtData.GetProperty("faceOperation").GetProperty("faceId").GetInt32());
         Assert.Equal("Robin", taughtData.GetProperty("faceOperation").GetProperty("name").GetString());
         Assert.Contains(3, phases); Assert.Contains(4, phases); Assert.True(audioChunks > 0);
-        Assert.Contains(seenFaces, face => face.FaceId == completion.Id && face.Name == "Robin");
+        // 0x005FE314 resets enrollment before the separate 0x56 publisher.
+        // Named 0x46 comes from a later processed frame (0x00655274 ->
+        // 0x004F4B7A/82), not from the save/completion callback. Keep feeding
+        // actual pixels until that observation arrives. This 30-second guard
+        // is harness liveness, not a claimed engine report-order deadline.
+        int beforePostEnrollmentObservation = seenFaces.Count;
+        await PumpUntil(() => seenFaces.Skip(beforePostEnrollmentObservation).Any(face => face.FaceId == completion.Id && face.Name == "Robin"), 30);
+        output.WriteLine("post-enroll seen names=" + string.Join(',', seenFaces.Select(face => face.Name).Distinct()));
+        Assert.Contains(seenFaces.Skip(beforePostEnrollmentObservation), face => face.FaceId == completion.Id && face.Name == "Robin");
         Assert.True(Assert.Single(emissions, e => e.Tag == 0x56).NvIdle);
         Assert.Contains(emissions, e => e.Tag == 0x47);
         Assert.DoesNotContain(missing, line => line.Contains("M14-006", StringComparison.Ordinal));
@@ -223,7 +236,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         Assert.Equal("Riley", renameData.GetProperty("faceOperation").GetProperty("name").GetString());
         Assert.False(Assert.Single(emissions, e => e.Tag == 0x1D).NvIdle);
         Assert.Equal(ExpectedBody("Riley"), Assert.Single(emissions, e => e.Tag == 0x1D).Body);
-        await PumpUntil(() => seenFaces.Any(face => face.FaceId == completion.Id && face.Name == "Riley"), 5);
+        await PumpUntil(() => seenFaces.Any(face => face.FaceId == completion.Id && face.Name == "Riley"), 30);
         Assert.Contains(seenFaces, face => face.FaceId == completion.Id && face.Name == "Riley");
         // E2G 0x1D acknowledges the mutation, independently of Meet's
         // response-speech admission. An existing reaction can retain the turn

@@ -31,11 +31,26 @@ MCP flow. Existing status/result/report fields and engine traffic stay unchanged
 
 The enrollment update at 0x005FD9AE tests FaceWorld's completed flag;
 0x005FDA8A assigns the selected name and 0x005FDA92 transitions to saying it.
-The shipped MessageEngineToGame enum has no separate `EnrolledNamedFace` tag: the
-named identity is carried by RobotObservedFace 0x46, exposed as `face-recognised`
-by the bridge, followed by the terminal FaceEnrollmentCompleted 0x56 report.
+On success StopInternal calls BehaviorObjectiveAchieved(5,true) at 0x005FE462..468
+before constructing/broadcasting FaceEnrollmentCompleted at 0x005FE520/528.
+The shipped objective name is `EnrolledFaceWithName` (Anki.Cozmo/BehaviorObjective.cs).
+IBehavior's helper 0x005BE228..246 calls adapter 0x005BE3A8..3CE; the union ctor
+0x007285FE sets tag 0x8B and copies the uint, and pack 0x0071BEAE..B6 writes four
+bytes. Its exact body is `05000000` and its emission precedes 0x56.
+
+There is no separate E2G tag named `EnrolledNamedFace`. A named face sighting is
+RobotObservedFace 0x46 (`face-recognised` in the bridge), produced by a processed
+vision frame via 0x00655274 -> 0x004F4B7A/82. It can follow 0x56: StopInternal
+resets enrollment at 0x005FE314 but does not force a vision frame before the
+completion report. Enrollment completion and subsequent named sightings therefore
+have separate waits in the corrected replay, just as in the operator recipe.
 
 ## Replay boundary
+
+This executes the stack's source-backed C# behavior/action ports and shipped
+OKAO/Acapela components. It is not an independent execution of the complete
+libcozmoEngine.so. The addresses above are the source comparison; historical
+face/enrollment reports are not injected as expected outputs.
 
 Private input: local copy of 20261117-052405-AI-COMMANDS-HW-1-bdcbda.
 `messages.jsonl` SHA256:
@@ -63,9 +78,10 @@ M14-010/M14-011 IMPLEMENTATION_GAP; M14-006 BLOCKED_EXTERNAL (current title
 shared-runtime name path; it does not settle those broader records. Existing
 non-name-path/ownership/profiler MISSING diagnostics remain visible in the run log.
 
-Validation so far: affected face/MCP groups **107/107**, including the recorded-pixel
-flow and the separately configured spoken-rename behavior. Exact wire-body/order
-assertions were then added; final build/full suite and gate key pending.
+Validation so far: initial affected face/MCP groups **107/107**; source-backed
+calibration correction **255/255**; corrected face/rename/identity/bridge group
+**62/62**. The strengthened fresh-post-enrollment observation case also passes
+on its own (43.05 seconds). Final clean full suite and gate key pending.
 
 ## Full-suite calibration regression
 
@@ -98,6 +114,23 @@ be sent. No replay allowlist was widened. Current records M7-015/M7-019/M7-021
 and M8-008 remain IMPLEMENTATION_GAP; M4-012 remains EXACT_SOURCE. Their broad
 claims are not settled by this call-site repair. Affected pickup/calibration/framework/state and recorded-reaction groups pass **255/255**,
 including all seven physical windows. Final clean full run/key pending.
+
+## Observation-order regression
+
+The second full run on da026c59 was **8,745/8,746** (56.1911 minutes), all 17
+private cases enabled. All calibration cases and the recorded cliff window passed.
+Enrollment returned native success and persisted Robin, but the new test assumed
+a named 0x46 had already arrived by the 0x56 completion. That ordering is not
+required by the binary: 0x005FE314 resets enrollment and 0x005FE528 reports
+completion without forcing VisionComponent::UpdateFaces (0x00655274).
+
+The test now keeps supplying actual captured pixels and requires a **fresh** named
+observation received after the enrollment result before sending rename. It also
+waits separately for the renamed observation; 30-second guards are test liveness
+limits, not engine deadlines. The expected names/IDs and exact bodies stay checked.
+It additionally verifies objective 5's exact 0x8B body and its order before 0x56.
+No production vision behavior, source gate, recognition result or report is changed
+or supplied by these checks.
 
 ## Next operator LLM session — about two minutes
 
