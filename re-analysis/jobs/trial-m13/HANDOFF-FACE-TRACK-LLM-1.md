@@ -24,3 +24,5 @@ Operator check, about two minutes
 The focused run passed 68/68. In its replay, the turn sent head targets of 0.60594 and 0.71134 rad. Tracking moved to 0.75494 rad and then issued no angle commands across eight fresh centered frames. The later sequence produced a body correction of 0.16368 rad. The refreshed lateral target's first body command was 0.38281274 rad against the source-derived bearing of 0.38281277 rad. The active tracking request retained the native remap from -1 to 1 and returned CANCELLED_WHILE_RUNNING after caller cancellation.
 
 The 2026-11-19 session notes added to main report that the existing robot turn succeeded and the existing track was cancelled near a MeetCozmo behavior transition. The operator observed possible following. The new MCP report fields are verified offline, with the robot check above available for a follow-up.
+
+**Full clean 8751/8751**, 52.4714 Minutes, commit 374ba727 after merging origin/main. All private cases enabled, including the face-control and speech probes. Cozmo MCP closed. Gate key 1f1fc00fbd4d067a9b328ba1ce44a6b64a5e1f78. Fidelity and diff checks passed.
