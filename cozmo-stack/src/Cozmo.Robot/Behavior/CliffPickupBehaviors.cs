@@ -521,6 +521,18 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
         string das = $"info: DAS BehaviorReactToPickup.CalibratingHead: {raw}";
         Log(das);
         if(!Current())return;
+        if (_nativeOwner is { } owner && _nativeManipulation is { } manipulation)
+        {
+            // 0x00607C58..0x00607C64: sEvent(key, empty fields, "%d", raw).
+            owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToPickup.CalibratingHead",
+                raw.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            if (!Current()) return;
+            // 0x00607C92..0x00607CA8: CalibrateMotorAction(robot, true, false),
+            // then StartActing with an empty completion callback. Reuse the real
+            // head-start latch, calibrated flag, timeout and result/report path.
+            StartActing(new NativeHeadCalibrationRunner(manipulation, owner) { ScopedParentCurrent = Current }, null, Current);
+            return;
+        }
         Context.Robot.Engine.Log(das);
         if(!Current())return;
         Context.Robot.Engine.Log("MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred");

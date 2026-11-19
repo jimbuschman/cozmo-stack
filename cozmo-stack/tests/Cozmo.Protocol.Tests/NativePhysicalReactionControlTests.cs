@@ -23,6 +23,74 @@ public sealed class NativePhysicalReactionControlTests
     }
     private static void Start(Fixture f,SteppedBehavior behavior)=>behavior.StartAsync(f.Runtime.Context,new BehaviorScope(),default).GetAwaiter().GetResult();
 
+    // 607C46..607CA8: raw>>4 >24 queues a head-only CalibrateMotorAction
+    // with no result branch. Exercise the actual C0 latch and IAction timeout,
+    // not a host WaitUntil completion or a weakened replay MISSING allowlist.
+    [Theory] [InlineData(false, false)] [InlineData(true, false)] [InlineData(false, true)]
+    public void PickupRetryOwnsNativeHeadCalibrationAndItsResult(bool timeout, bool stopOnEvent)
+    {
+        using var f=NewFixture();
+        var manager=f.Robot.BehaviorManagerOwner!;
+        var b=Assert.IsType<ReactToPickupBehavior>(Assert.Single(manager.Reactions,
+            r=>r.Strategy.Trigger==ReactionTrigger.RobotPickedUp).Behavior);
+        Assert.True(b.NativeBound);
+        for(int i=0;i<10;i++)f.Motors(RobotStatusFlag.IsPickedUp);
+        Assert.Equal(OffTreadsState.InAir,f.Rig.Robot.Sensors.OffTreadsState);
+        Start(f,b);
+        // Explicit cancellation boundary: initial Wait callback ignores its result;
+        // cancel the resulting uninitialized animation to reach the next retry.
+        f.Robot.ActionList.Cancel(b.OwnedRunner!.Tag);
+        var first=Assert.IsAssignableFrom<TriggerAnimationAction>(b.OwnedRunner);
+        f.Robot.ActionList.Cancel(first.Tag);
+        f.Rig.Tick(7000); // beyond the source 3..6-second first retry deadline
+        var state=f.Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|RobotStatusFlag.IsPickedUp,
+            origin:f.Robot.CurrentOriginId,frame:f.Robot.PoseFrameId);
+        state.CliffDataRaw[0]=649; // actual high-raw sample in the recorded cliff window
+        f.Rig.Data(state);f.Rig.Tick(); // CliffSensorComponent adopts the new raw sample on its update.
+        var events=new List<EngineLogEntry>();var gaps=new List<string>();var reports=new List<RobotCompletedAction>();
+        f.Robot.ActionList.RegisterActionEndedCallback(reports.Add);
+        SteppedBehavior.ResetMissingForTests();
+        f.Rig.Engine.StackLogLine+=line=>{if(line.Contains("MISSING",StringComparison.Ordinal))gaps.Add(line);};
+        f.Rig.Engine.LogEntry+=entry=>
+        {
+            if(entry.Name!="BehaviorReactToPickup.CalibratingHead")return;
+            events.Add(entry);
+            if(stopOnEvent)b.Stop(BehaviorStopReason.Interrupted);
+        };
+        int mark=f.Rig.Mark();
+        b.Update(f.Runtime.Context,f.Rig.Engine.Timer.TimeStampMs);
+        Assert.Equal("649",Assert.Single(events).Text);
+        Assert.Equal(EngineLogLevel.Event,events[0].Level);
+        if(stopOnEvent)
+        {
+            Assert.Null(b.OwnedRunner);f.Rig.Tick();
+            Assert.Empty(f.Rig.SentSince(mark).OfType<StartMotorCalibration>());
+            return;
+        }
+        try
+        {
+            var runner=Assert.IsType<NativeHeadCalibrationRunner>(b.OwnedRunner);
+            Assert.Same(runner,f.Robot.ActionList.GetCurrentAction());
+            f.Rig.Tick();
+            var request=Assert.Single(f.Rig.SentSince(mark).OfType<StartMotorCalibration>());
+            Assert.True(request.Head);Assert.False(request.Lift);
+            f.Rig.Data(new MotorCalibration{MotorID=MotorID.MOTOR_HEAD,CalibStarted=false});f.Rig.Tick();
+            Assert.Same(runner,b.OwnedRunner); // done without a start report is insufficient
+            if(timeout)f.Rig.Tick(30001);
+            else
+            {
+                f.Rig.Data(new MotorCalibration{MotorID=MotorID.MOTOR_HEAD,CalibStarted=true});f.Rig.Tick();
+                Assert.Same(runner,b.OwnedRunner);
+                f.Rig.Data(new MotorCalibration{MotorID=MotorID.MOTOR_HEAD,CalibStarted=false});f.Rig.Tick();
+            }
+            f.Rig.Tick();f.Rig.Engine.DrainAppDelivery();
+            Assert.Contains(reports,r=>r.Tag==runner.Tag && r.Result==(timeout?EngineActionResult.Timeout:0));
+            Assert.DoesNotContain(gaps,g=>g.Contains("CalibratingHead engine event fields",StringComparison.Ordinal) ||
+                g.StartsWith("MISSING: M8-015 host action producer",StringComparison.Ordinal));
+        }
+        finally{b.Stop(BehaviorStopReason.Interrupted);}
+    }
+
     [Fact]
     public void AllFiveReactionRowsUseTheirConfiguredConstructorInstances()
     {

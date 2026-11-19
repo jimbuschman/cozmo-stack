@@ -29,6 +29,12 @@ MCP flow. Existing status/result/report fields and engine traffic stay unchanged
 | After erase | GetNextFaceID 0x0086561C..0x00865654 returns a free current ID without advancing it; the increment only occurs on an occupied ID. Continued images can register an unnamed guest with the same numeric ID. The sourced expectation is that the named enrollment is gone, not that the person disappears or the number can never recur. |
 | MCP result | Existing immutable engine report FIFO -> matching face request -> unchanged native report plus host `faceOperation` -> MCP text/structuredContent/isError. Engine failure codes/names remain the cause; a no-report result says no matching confirmation was received. The return does not claim rename/erase NV completion or that a spoken response already finished. |
 
+The enrollment update at 0x005FD9AE tests FaceWorld's completed flag;
+0x005FDA8A assigns the selected name and 0x005FDA92 transitions to saying it.
+The shipped MessageEngineToGame enum has no separate `EnrolledNamedFace` tag: the
+named identity is carried by RobotObservedFace 0x46, exposed as `face-recognised`
+by the bridge, followed by the terminal FaceEnrollmentCompleted 0x56 report.
+
 ## Replay boundary
 
 Private input: local copy of 20261117-052405-AI-COMMANDS-HW-1-bdcbda.
@@ -60,6 +66,38 @@ non-name-path/ownership/profiler MISSING diagnostics remain visible in the run l
 Validation so far: affected face/MCP groups **107/107**, including the recorded-pixel
 flow and the separately configured spoken-rename behavior. Exact wire-body/order
 assertions were then added; final build/full suite and gate key pending.
+
+## Full-suite calibration regression
+
+The first full run on fc1363ff was **8,742/8,743** (49.9207 minutes), including
+all 17 private cases. The new MCP flow passed in 37 seconds: phases 2/3/4/5/1,
+596 outgoing audio chunks, and exact terminal bodies
+`56:000100000005526F62696E`, `1D:010000000552696C6579`,
+`57:0100000000`. The 56 publisher had NV idle; 1D/57 preceded NV completion.
+Spoken rename was not admitted in this particular run and remains an observation.
+
+The one failure was the recorded `cliff` window's **later pickup**, after both
+cliff animation assertions passed. At 130660 ms, raw cliff[0]=649 reached a legacy
+`CalibrateHead` host handle and two visible MISSING diagnostics. This was a real
+unbuilt call site, not a reason to loosen the replay's MISSING assertion.
+
+The complete failing branch is BehaviorReactToPickup::UpdateInternal
+0x00607BA8..0x00607CC4: action-in-flight, InAir, charger and strict retry-time gates;
+raw[0]>>4 >0x18 at 0x00607C46..0x00607C4C; sEvent with an empty field vector and
+`%d` raw at 0x00607C58..0x00607C64; CalibrateMotorAction(robot,true,false) at
+0x00607C92..0x00607C9A; StartActing with an empty callback at 0x00607C9E..0x00607CA8.
+The native-bound pickup now emits that event and reuses NativeHeadCalibrationRunner,
+as the existing slope/returned-to-treads paths do. Its 0x58 send, C0 head-start
+latch, HeadCalibrated check, 30-second IAction timeout and result delivery remain
+the existing source-backed implementation. Retry gates, random choices and
+captured inputs are unchanged; the ownerless legacy path still marks its gap.
+
+Three new regression cases check real start/done reports and success, native
+0x03000018 timeout, and stop during the event callback before a calibration can
+be sent. No replay allowlist was widened. Current records M7-015/M7-019/M7-021
+and M8-008 remain IMPLEMENTATION_GAP; M4-012 remains EXACT_SOURCE. Their broad
+claims are not settled by this call-site repair. Affected pickup/calibration/framework/state and recorded-reaction groups pass **255/255**,
+including all seven physical windows. Final clean full run/key pending.
 
 ## Next operator LLM session — about two minutes
 
