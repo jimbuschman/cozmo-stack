@@ -15,6 +15,73 @@ namespace Cozmo.Protocol.Tests;
 public sealed class McpServerTests
 {
     [Fact]
+    public async Task ClientDiscoversEmbeddedGuideAndItsStateFieldReference()
+    {
+        using var f = new Fixture();
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        var init = await client.Request("initialize", new { protocolVersion = "2025-11-25", capabilities = new { },
+            clientInfo = new { name = "guide-reader", version = "1" } });
+        var capabilities = init.GetProperty("result").GetProperty("capabilities");
+        Assert.Empty(capabilities.GetProperty("resources").EnumerateObject());
+        Assert.Contains("cozmo://guide", init.GetProperty("result").GetProperty("instructions").GetString());
+        await client.Notify("notifications/initialized", new { });
+        var resources = (await client.Request("resources/list", new { })).GetProperty("result").GetProperty("resources");
+        var guide = Assert.Single(resources.EnumerateArray());
+        Assert.Equal("cozmo-guide", guide.GetProperty("name").GetString());
+        Assert.Equal("cozmo://guide", guide.GetProperty("uri").GetString());
+        Assert.Equal("text/markdown", guide.GetProperty("mimeType").GetString());
+        var contents = (await client.Request("resources/read", new { uri = guide.GetProperty("uri").GetString() }))
+            .GetProperty("result").GetProperty("contents");
+        var content = Assert.Single(contents.EnumerateArray());
+        Assert.Equal("cozmo://guide", content.GetProperty("uri").GetString());
+        Assert.Equal("text/markdown", content.GetProperty("mimeType").GetString());
+        string text = content.GetProperty("text").GetString()!;
+        var state = Data(await client.Tool("get_state", new { }));
+        foreach (var field in state.EnumerateObject()) Assert.Contains("`" + field.Name + "`", text);
+        foreach (string term in new[] { "get_camera_image", "waitMs", "truncatedByRobot", "during", "why",
+            "facePoseAvailable=false", "7.5", "21 mm", "geometry", "HANDOFF-MOUNT-CHARGER-LLM-1.md" })
+            Assert.Contains(term, text);
+        Assert.Empty((await client.Request("resources/templates/list", new { })).GetProperty("result")
+            .GetProperty("resourceTemplates").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task GuideRequestsRespectInitializationAndRejectUnknownResources()
+    {
+        using var f = new Fixture();
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        Assert.Equal(-32600, (await client.Request("resources/read", new { uri = "cozmo://guide" }))
+            .GetProperty("error").GetProperty("code").GetInt32());
+        await client.Initialize();
+        Assert.Equal(-32002, (await client.Request("resources/read", new { uri = "file:///unregistered" }))
+            .GetProperty("error").GetProperty("code").GetInt32());
+        Assert.Equal(-32602, (await client.Request("resources/read", new { }))
+            .GetProperty("error").GetProperty("code").GetInt32());
+        Assert.Equal(-32602, (await client.Request("resources/list", new { cursor = "next" }))
+            .GetProperty("error").GetProperty("code").GetInt32());
+    }
+
+    [Fact]
+    public async Task EveryAdvertisedToolExplainsItsSuccessAndFailureResult()
+    {
+        using var f = new Fixture();
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
+        Assert.NotEmpty(tools.EnumerateArray());
+        foreach (var tool in tools.EnumerateArray())
+        {
+            string name = tool.GetProperty("name").GetString()!;
+            string description = tool.GetProperty("description").GetString() ?? "";
+            Assert.True(description.Contains("Success:", StringComparison.Ordinal), name + " lacks success result meaning");
+            Assert.True(description.Contains("Failure:", StringComparison.Ordinal), name + " lacks failure result meaning");
+        }
+    }
+
+    [Fact]
     public async Task ClientListsSchemasRunsThreeToolsAndReadsRealReports()
     {
         using var f = new Fixture();

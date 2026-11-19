@@ -107,10 +107,10 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                         result = new
                         {
                             protocolVersion = Versions.Contains(version.GetString(), StringComparer.Ordinal) ? version.GetString() : Versions[0],
-                            capabilities = new { tools = new { listChanged = false } },
+                            capabilities = new { tools = new { listChanged = false }, resources = new { } },
                             serverInfo = new { name = "cozmo-mcp", version = "1.0.0" },
-                            instructions = "Read get_state before moving. Object IDs are engine world IDs. Use list_animations for trigger names. " +
-                                "Action results include during events. Use get_camera_image to see; read_events supports waitMs up to 30000. Track-face runs until completion or cancellation.",
+                            instructions = "Read the cozmo-guide resource at cozmo://guide. Check get_state readiness and get_camera_image before acting. " +
+                                "Use world object IDs, inspect during/why and animation truncatedByRobot, and wait with read_events since/waitMs. Tracking can remain pending until cancelled.",
                         };
                         break;
                     case "ping":
@@ -124,8 +124,27 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                     case "tools/call" when ready:
                         result = await CallTool(parameters, cancellation.Token).ConfigureAwait(false);
                         break;
-                    case "tools/list" or "tools/call":
-                        throw new ProtocolException(-32600, "Complete MCP initialization before requesting tools.");
+                    case "resources/list" when ready:
+                        ResourceListParameters(parameters);
+                        result = new { resources = new[] { new { uri = CozmoOperatingGuide.ResourceUri,
+                            name = "cozmo-guide", title = "Operating Cozmo", mimeType = "text/markdown",
+                            description = "Operating steps, state fields, native result meanings and charger approach evidence." } } };
+                        break;
+                    case "resources/templates/list" when ready:
+                        ResourceListParameters(parameters);
+                        result = new { resourceTemplates = Array.Empty<object>() };
+                        break;
+                    case "resources/read" when ready:
+                        if (parameters.ValueKind != JsonValueKind.Object ||
+                            !parameters.TryGetProperty("uri", out var resourceUri) || resourceUri.ValueKind != JsonValueKind.String)
+                            throw new ProtocolException(-32602, "resources/read requires a URI string.");
+                        if (!string.Equals(resourceUri.GetString(), CozmoOperatingGuide.ResourceUri, StringComparison.Ordinal))
+                            throw new ProtocolException(-32002, "Resource not found.");
+                        result = new { contents = new[] { new { uri = CozmoOperatingGuide.ResourceUri,
+                            mimeType = "text/markdown", text = CozmoOperatingGuide.Markdown } } };
+                        break;
+                    case "tools/list" or "tools/call" or "resources/list" or "resources/read" or "resources/templates/list":
+                        throw new ProtocolException(-32600, "Complete MCP initialization before requesting tools or resources.");
                     default:
                         throw new ProtocolException(-32601, $"Unknown method '{name}'.");
                 }
@@ -148,6 +167,17 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         }
     }
 
+    // Static, read-only guide: no subscriptions, templates, arbitrary file paths or further pages.
+    // MCP resources contract: https://modelcontextprotocol.io/specification/2025-11-25/server/resources
+    private static void ResourceListParameters(JsonElement parameters)
+    {
+        if (parameters.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null) return;
+        if (parameters.ValueKind != JsonValueKind.Object)
+            throw new ProtocolException(-32602, "Resource list parameters must be an object.");
+        if (parameters.TryGetProperty("cursor", out _))
+            throw new ProtocolException(-32602, "This resource list has no further pages.");
+    }
+
     private object[] Tools()
     {
         var catalogue = bridge.GetCommandCatalogue().EnumerateArray().Select(entry => (object)new
@@ -158,12 +188,12 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         });
         return catalogue.Concat(
         [
-            Tool("get_state", "Read connection, battery, carrying, charger, activity, faces and cubes.", """{"type":"object","properties":{},"additionalProperties":false}"""),
-            Tool("get_camera_image", "Read the latest camera image with matching observation boxes and exposure-time head angle.",
+            Tool("get_state", "Read timestampUtc, connection (connected/ready/link), batteryVolts, isCarrying/carriedObjectId, isOnCharger/isCharging, activity/highLevelActivity/behavior/reaction, needs and knownFaces/knownCubes/knownChargers. Success: a latest-state snapshot; cozmo-guide defines fields and units. Failure: disconnected or not-ready flags and null/empty observations mean unavailable data; tool errors set isError. This read does not imply action success.", """{"type":"object","properties":{},"additionalProperties":false}"""),
+            Tool("get_camera_image", "See the latest PNG; annotate draws exact-timestamp face/object boxes. Success: image plus structuredContent metadata and exposure-time headAngleRad. Failure: isError when no frame exists or decode fails. Empty boxes/observationReportsAvailable=false mean no matching reports; headAngleRad can be null. This read does not enable a vision mode.",
                 """{"type":"object","properties":{"annotate":{"type":"boolean","default":false}},"additionalProperties":false}"""),
-            Tool("read_events", "Read buffered events since a cursor; waitMs waits for the next event, up to 30 seconds. A gap means older events were evicted.",
+            Tool("read_events", "Read events strictly after since; reuse the returned cursor. waitMs waits for an event up to 30000 ms. Success: cursor/oldestCursor/gap/events; an empty page after waiting is a timeout. Failure: isError for invalid arguments or a cursor from another/newer feed; gap=true means older events were evicted. Pending actions and other waits can continue.",
                 """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0},"waitMs":{"type":"integer","minimum":0,"maximum":30000,"default":0}},"additionalProperties":false}"""),
-            Tool("list_animations", "List loaded authored animation trigger names and clip names.", """{"type":"object","properties":{},"additionalProperties":false}"""),
+            Tool("list_animations", "Read loaded, triggers and clips without playing an animation. Success: the loaded catalogue; use case-sensitive trigger names with animation. Failure: loaded=false/empty lists mean the library is unavailable; invalid arguments or a read error set isError.", """{"type":"object","properties":{},"additionalProperties":false}"""),
         ]).ToArray();
     }
 

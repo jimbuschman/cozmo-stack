@@ -1,0 +1,70 @@
+# Cozmo operating guide
+
+## Working with him
+
+- Read `get_state` and check `connection.connected` and `connection.ready` before an action.
+- Look with `get_camera_image` before moving or manipulating an object. `annotate` adds matching face/object boxes. This reads the existing camera stream; it does not enable a different vision mode. Empty boxes mean no reports matching that image timestamp are available.
+- Use the current `worldObjectId` from `knownCubes` or `knownChargers` for object actions. `factoryId` and `radioObjectId` identify different things. Face actions use the signed `faceId` from state/events; follow `face-id-changed` updates.
+- Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
+- While a call is pending, other state/camera/event calls remain available. Wait with `read_events`: set `since` to the last returned `cursor`, and use `waitMs` up to 30000 milliseconds [senses]. Reuse its new cursor. An empty page after waiting is a timeout; `gap=true` means some older events were evicted. Events are observed independently by each reader.
+- Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` may remain pending until native completion or caller cancellation.
+
+## Reading results
+
+`isError` is the MCP tool error flag. `structuredContent` contains the same JSON as the text content block.
+
+For motion, animation and speech, `admitted` reports whether the action was accepted; `status=completed` means its attempt ended. `engineResult=0` / `SUCCESS` is the native success code [why]. Nonzero codes retain their native names. `owner-retired` means the original robot owner went away; `not-admitted` means no action was accepted. Check the specific tool's `report` and subsequent observations to interpret success.
+
+**Turn to a face:** an unknown ID can return native SUCCESS and turn nowhere. `report.facePoseAvailable=false` and `detail` identify that case [findings]. An enrolled name alone does not establish a current visible pose.
+
+**Animation:** inspect `report.animationName`, `report.playbackTag`, `truncatedByRobot` and `playbackIssues`. A robot buffer cutoff can leave native SUCCESS while MCP `isError=true`. The issues report observed early ending/BufferFull evidence; tag/name may be null when association is unknown. A selected clip does not establish that the robot played its whole stream. Use the playback observations and what was seen/heard [budget].
+
+`why.engineResultName` preserves the native result name. `why.snapshot` contains captured per-command comparisons/observations; `why.hint` explains them. `why.checkAvailable=false` means no applicable native failure check was captured. Earlier comparisons may have been superseded by later steps. Untagged docking observations do not by themselves establish a failure cause [why].
+
+`during` is a bounded event page collected from invocation through completion. Its `cursor`, `oldestCursor`, `gap` and `events` have the same meaning as `read_events`. Poll during long calls if a complete local history matters [senses].
+
+**Faces:** `teach-face` and `enroll-face` are aliases. Native success returns `faceOperation.outcome=enrolled`, face ID/name and engineResult=0. Failure returns the native reason or `no-report`; a failed save can leave a partial named record. Rename and erase return `confirmed`, with `renamed` or `erased` and the ID/name information. Their confirmations acknowledge the mutation before NV persistence or optional spoken-response completion. Erase's native report name is empty; `lastKnownName` is a labeled host snapshot. Continued sightings can register an unnamed guest, even with the same ID. After enrollment/rename, wait for a fresh named observation separately [faces].
+
+**Settings:** `freeplay` returns `submitted` when its message is posted; observe activity/events for the effect. Needs settings return their confirmed status, including `loaded`/`applied`; they have no native action result. `set_needs` requires real mode and loaded stored needs. Full needs mode refills and pauses the native needs; real mode resumes native changes.
+
+## Approaching the charger
+
+Look at the charger marker, use its current world ID, and line up square before `mount-charger`. The final approach rechecks its current generated predock goal after visual verification.
+
+The recorded poses required absolute yaw error strictly below approximately 7.5 degrees and a Y offset within approximately 21 mm [charger]. The translation thresholds depend on the generated geometry; these are the recorded examples' bounds, not a universal fixed box. The comparisons in `why` use robot MAIN-parent axes. Use the captured live bounds when available and the current camera/state to plan a correction. Seeing the charger or completing a preceding turn does not establish that the final approach passed.
+
+On completion, check fresh `isOnCharger` and `isCharging`. A native failure's `why` may describe the final pose comparison, backup pitch, planner state, or an unavailable check [charger, why].
+
+## `get_state` fields
+
+This is a snapshot of the latest available data. `timestampUtc` is the host read time; observation timestamps belong to the robot clock. A null/unavailable pose or reading is not a zero measurement.
+
+| Field | Meaning |
+| --- | --- |
+| `timestampUtc` | Host UTC time of this snapshot. |
+| `connection` | `connected`, engine `ready`, and transport `link`; readiness comes from delivered engine readiness. |
+| `batteryVolts` | Latest robot battery reading, or null without a connected state. |
+| `isCarrying`, `carriedObjectId` | Carrying state and engine object ID, or unavailable/null. |
+| `isOnCharger`, `isCharging` | Latest native contact/charging state, or null when unavailable. |
+| `activity`, `highLevelActivity`, `behavior`, `reaction` | Latest activity and reaction observations; null when unavailable. |
+| `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. The flags distinguish requested mode from applied native needs. |
+| `knownFaces` | Signed `faceId`, `name`, `lastObservedTimestamp`, `enrolled`, `relative`. Enrolled names can remain without a current sighting. |
+| `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A located cube need not have a current radio connection. |
+| `knownChargers` | Command `worldObjectId`, `poseState`, `lastObservedTimestamp`, `relative`, in the current origin. |
+
+`relative` has `xMm`, `yMm`, `zMm` in robot MAIN axes, planar `distanceMm`, and `bearingDeg` positive to the robot's left. Null means the pose could not be expressed relative to the robot, or no observed pose is available. `go-to-pose` instead takes an established target in the current world origin [senses].
+
+`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. Exposure head angle can be null. Its timestamp matching prevents older boxes from being moved onto a new image [senses].
+
+`list_animations` returns `loaded`, case-sensitive `triggers`, and `clips`; it reads the catalogue without selecting/playing a clip.
+
+## Sources for the operating details
+
+These are repository handoffs for the behavior already built; hardware acceptance stays with the operator.
+
+- [charger] `re-analysis/jobs/trial-m13/HANDOFF-MOUNT-CHARGER-LLM-1.md`: geometry-dependent bounds and strict heading comparison. Recorded Y threshold 21.423 mm, heading limit 7.499427 degrees; rounded above for operating guidance.
+- [why] `re-analysis/jobs/trial-m13/HANDOFF-MCP-ACTION-WHY-1.md`: unchanged native result, captured comparisons, MAIN-parent axes and unknown checks.
+- [findings] `re-analysis/jobs/trial-m13/HANDOFF-LLM-SESSION-FINDINGS-1.md`: unknown-face SUCCESS with no turn and `FacePoseAvailable`.
+- [budget] `re-analysis/jobs/trial-m13/HANDOFF-ANIM-BUDGET-FIRMWARE-1.md`: robot cutoff reporting while preserving native SUCCESS.
+- [senses] `re-analysis/jobs/trial-m13/HANDOFF-LLM-SENSES-1.md`: camera metadata, coordinates, `during`, cursors and waitMs bounds. State field names follow `CozmoBridge.GetState` / `HostNeedsStatus`.
+- [faces] `re-analysis/jobs/trial-m13/HANDOFF-LLM-TEACH-FACE-1.md`: enrolled/renamed/erased outcomes and separate persistence/observation timing.
