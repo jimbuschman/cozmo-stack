@@ -763,7 +763,8 @@ public static class ShippedBehaviors
         Func<ReactionMapEntry, BehaviorManager.ReactionRegistration?>? nativeFistBump = null,
         ReactToReturnedToTreadsBehavior? nativeReturnedToTreads = null,
         ReactToCliffBehavior? nativeCliff = null,ReactToImpactBehavior? nativeImpact = null,
-        ReactToPlacedOnSlopeBehavior? nativeSlope = null,ReactToUnexpectedMovementBehavior? nativeUnexpected = null)
+        ReactToPlacedOnSlopeBehavior? nativeSlope = null,ReactToUnexpectedMovementBehavior? nativeUnexpected = null,
+        ReactToOnChargerBehavior? nativeOnCharger = null)
     {
         if (map.Count == 0) return Array.Empty<BehaviorManager.ReactionRegistration>();
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
@@ -797,7 +798,7 @@ public static class ShippedBehaviors
             ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(m), strategies[ReactionTrigger.MotorCalibration]),
             ("ReactToFrustrationMinor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Minor(frustration), frustration),
             ("ReactToImpact", ReactionTrigger.RobotFalling, nativeImpact??new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),
-            ("ReactToOnCharger", ReactionTrigger.PlacedOnCharger, new ReactToOnChargerBehavior(), strategies[ReactionTrigger.PlacedOnCharger]),
+            ("ReactToOnCharger", ReactionTrigger.PlacedOnCharger, nativeOnCharger ?? new ReactToOnChargerBehavior(), strategies[ReactionTrigger.PlacedOnCharger]),
         };
         if (m is not null)
         {

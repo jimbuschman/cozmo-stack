@@ -35,6 +35,9 @@ public sealed partial class CozmoBridge
         engine.ObjectPoseUnknown += OnObjectPoseLost;
         engine.BehaviorTransition += OnBehavior;
         engine.ReactionTransition += OnReaction;
+        engine.GoingToSleep += OnGoingToSleep;
+        engine.ChargerSleepCancelled += OnChargerSleepCancelled;
+        engine.RobotDisconnected += OnRobotDisconnected;
         engine.ActionCompleted += OnActionCompleted;
         AttachSenses();
     }
@@ -196,6 +199,10 @@ public sealed partial class CozmoBridge
     private void OnObjectPoseLost(ObjectPoseUnknownReport report) => Add("object-pose-lost", report);
     private void OnBehavior(BehaviorTransitionReport report) => Add("behavior-changed", report);
     private void OnReaction(ReactionTransitionReport report) => Add("reaction-changed", report);
+    private void OnGoingToSleep(GoingToSleepReport report) => Add("going-to-sleep", report);
+    private void OnChargerSleepCancelled(ChargerSleepCancelledReport report) => Add("sleep-cancelled", report);
+    private void OnRobotDisconnected(RobotDisconnectedMessage report) =>
+        Add("robot-disconnected", new { report.TimeSinceLastMsgSec, reason = report.Reason.ToString(), reasonCode = (byte)report.Reason });
     private void OnActionCompleted(ActionCompletionReport report) =>
         Add("action-completed", new { completion = report, resultName = Enum.GetName((NativeActionResultName)report.Result) });
 
@@ -239,6 +246,9 @@ public sealed partial class CozmoBridge
         engine.ObjectPoseUnknown -= OnObjectPoseLost;
         engine.BehaviorTransition -= OnBehavior;
         engine.ReactionTransition -= OnReaction;
+        engine.GoingToSleep -= OnGoingToSleep;
+        engine.ChargerSleepCancelled -= OnChargerSleepCancelled;
+        engine.RobotDisconnected -= OnRobotDisconnected;
         engine.ActionCompleted -= OnActionCompleted;
     }
 }

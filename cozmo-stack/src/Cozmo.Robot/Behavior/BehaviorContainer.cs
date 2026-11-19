@@ -314,6 +314,8 @@ public sealed class BehaviorFactory
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.Wait] = (ctx,json)=>new NativeWaitBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
+        // 0x0059D1B2..0x0059D1CC constructs with Robot and the shipped configuration.
+        [BehaviorClass.ReactToOnCharger] = (_, json) => ReactToOnChargerBehavior.FromConfig(json),
         [BehaviorClass.KnockOverCubes] = (ctx,json)=>new NativeKnockOverCubesBehavior(ctx,json),
         [BehaviorClass.CantHandleTallStack] = (ctx,json)=>new NativeCantHandleTallStackBehavior(ctx,json),
         [BehaviorClass.CubeLiftWorkout] = (ctx,json)=>new NativeCubeLiftWorkoutBehavior(ctx,json),
