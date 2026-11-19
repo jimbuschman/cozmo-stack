@@ -41,11 +41,12 @@ public sealed class BridgeEventTests
         uint id = seen.GetProperty("payload").GetProperty("objectId").GetUInt32();
         Assert.NotEqual(slot, id);
         Assert.Equal(seen.GetProperty("robotTimestamp").GetUInt32(), seen.GetProperty("payload").GetProperty("timestamp").GetUInt32());
-        f.Rig.Data(new ObjectMoved { ObjectID = slot, Timestamp = 9001 });
+        f.Rig.Data(new ObjectMoved { ObjectID = slot, Timestamp = 9001, AxisOfAccel = (UpAxis)5 });
         f.Rig.Tick();
         var move = Single(bridge, "cube-moved", 9001).GetProperty("cube");
         Assert.Equal(id, move.GetProperty("worldObjectId").GetUInt32());
         Assert.Equal(slot, move.GetProperty("objectId").GetUInt32());
+        Assert.Equal((byte)5, Single(bridge, "cube-moved", 9001).GetProperty("axisOfAccel").GetByte());
         f.Rig.Data(new ObjectTapped { ObjectID = slot, Timestamp = 9002, NumTaps = 1, TapTime = 7, TapNeg = -25, TapPos = 45 });
         f.Rig.Tick();
         var tap = Single(bridge, "cube-tapped", 9002).GetProperty("cube");
