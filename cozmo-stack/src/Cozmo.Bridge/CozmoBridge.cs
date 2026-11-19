@@ -130,6 +130,7 @@ public sealed partial class CozmoBridge
             highLevelActivity = activity?.HighLevelActivity,
             behavior = activity?.Behavior,
             reaction = activity?.Reaction,
+            reactionLocks = connected ? Robot.Engine.Robot?.BehaviorManagerOwner?.GetReactionLocks() ?? [] : [],
             needs = Robot.Engine.GetNeedsStatus(),
             knownFaces = faces.Values.OrderBy(f => f.FaceId),
             knownCubes = cubes,

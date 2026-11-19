@@ -25,6 +25,18 @@ internal sealed record Argument(string Name, string Type, string Description, do
 
     internal JsonObject Describe()
     {
+        if (Type == "reaction-selection")
+            return new JsonObject
+            {
+                ["description"] = Description,
+                ["oneOf"] = new JsonArray(
+                    new JsonObject { ["type"] = "string", ["const"] = "all" },
+                    new JsonObject
+                    {
+                        ["type"] = "array", ["minItems"] = 1, ["uniqueItems"] = true,
+                        ["items"] = new JsonObject { ["type"] = "string", ["enum"] = JsonSerializer.SerializeToNode(Choices) },
+                    }),
+            };
         var schema = new JsonObject { ["type"] = Type, ["description"] = Description };
         if (Minimum is { } min) schema["minimum"] = min;
         if (Maximum is { } max) schema["maximum"] = max;
@@ -35,6 +47,9 @@ internal sealed record Argument(string Name, string Type, string Description, do
         return schema;
     }
 
+    internal static Argument ReactionSelection(string[] choices) => new("triggers", "reaction-selection",
+        "Use 'all' or an array of engine reaction trigger names.", Choices: choices);
+
     internal bool Accepts(JsonElement value) => Type switch
     {
         "number" => value.ValueKind == JsonValueKind.Number && value.TryGetSingle(out float number) && float.IsFinite(number)
@@ -42,6 +57,11 @@ internal sealed record Argument(string Name, string Type, string Description, do
         "integer" => value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out decimal integer)
             && integer == decimal.Truncate(integer) && integer >= (decimal)Minimum!.Value && integer <= (decimal)Maximum!.Value,
         "boolean" => value.ValueKind is JsonValueKind.True or JsonValueKind.False,
+        "reaction-selection" => value.ValueKind == JsonValueKind.String && value.GetString() == "all" ||
+            value.ValueKind == JsonValueKind.Array && value.GetArrayLength() > 0 &&
+            value.GetArrayLength() <= Choices!.Length && value.EnumerateArray().All(item =>
+                item.ValueKind == JsonValueKind.String && Choices.Contains(item.GetString(), StringComparer.Ordinal)) &&
+            value.EnumerateArray().Select(item => item.GetString()).Distinct(StringComparer.Ordinal).Count() == value.GetArrayLength(),
         "string" => value.ValueKind == JsonValueKind.String && value.GetString() is { } text
             && (AllowEmpty || text.Length > 0)
             && (Choices is null || Array.IndexOf(Choices, text) >= 0)
@@ -96,6 +116,7 @@ internal sealed record BridgeCommand(string Name, string Description, Argument[]
 
 internal sealed class BridgeArguments(Dictionary<string, JsonElement> values)
 {
+    internal JsonElement Value(string name) => values[name];
     internal float Number(string name) => values[name].GetSingle();
     internal int Int(string name) => (int)values[name].GetDecimal();
     internal uint UInt(string name) => (uint)values[name].GetDecimal();

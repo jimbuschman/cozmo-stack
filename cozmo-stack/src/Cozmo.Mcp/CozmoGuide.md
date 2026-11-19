@@ -8,12 +8,15 @@
 - Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
 - While a call is pending, other state/camera/event calls remain available. Wait with `read_events`: set `since` to the last returned `cursor`, and use `waitMs` up to 30000 milliseconds [senses]. Reuse its new cursor. An empty page after waiting is a timeout; `gap=true` means some older events were evicted. Events are observed independently by each reader.
 - Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` may remain pending until native completion or caller cancellation.
+- Before a multi-step task like stacking or enrolling a face, use `lock-reactions` with a task-specific ID and the reaction triggers you need to suppress. For example, lock `["CubeMoved","ObjectPositionUpdated"]` while stacking. Trigger names are case-sensitive. `"all"` disables every mapped trigger while the lock is held. Use `unlock-reactions` with the same ID when the task ends. Other IDs continue to hold their locks.
 
 ## Reading results
 
 `isError` is the MCP tool error flag. `structuredContent` contains the same JSON as the text content block.
 
 For motion, animation and speech, `admitted` reports whether the action was accepted; `status=completed` means its attempt ended. `engineResult=0` / `SUCCESS` is the native success code [why]. Nonzero codes retain their native names. `owner-retired` means the original robot owner went away; `not-admitted` means no action was accepted. Check the specific tool's `report` and subsequent observations to interpret success.
+
+Action tools accept optional `waitAdmittedMs` from 0 to 30000. The default of 0 makes one admission attempt. A positive value lets a reaction finish before resubmitting a refused action. An action already admitted keeps its original result, including an interruption. `admissionWait` reports `waitedMs`, the blocking `reactions`, and whether the wait `timedOut`.
 
 **Turn to a face:** an unknown ID can return native SUCCESS and turn nowhere. `report.facePoseAvailable=false` and `detail` identify that case [findings]. An enrolled name alone does not establish a current visible pose.
 
@@ -47,6 +50,7 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `isCarrying`, `carriedObjectId` | Carrying state and engine object ID, or unavailable/null. |
 | `isOnCharger`, `isCharging` | Latest native contact/charging state, or null when unavailable. |
 | `activity`, `highLevelActivity`, `behavior`, `reaction` | Latest activity and reaction observations; null when unavailable. |
+| `reactionLocks` | Current named locks, each with its `id` and mapped `triggers`. Cozmo and the caller can both hold locks. |
 | `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. The flags distinguish requested mode from applied native needs. |
 | `knownFaces` | Signed `faceId`, `name`, `lastObservedTimestamp`, `enrolled`, `relative`. Enrolled names can remain without a current sighting. |
 | `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A located cube need not have a current radio connection. |

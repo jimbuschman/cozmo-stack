@@ -103,6 +103,11 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => b.RenameFace(a.Int("faceId"), a.Text("oldName"), a.Text("newName"), ct)),
         new("erase-face", "Erase face enrollment by ID. Success: confirmed with faceOperation.outcome=erased and lastKnownName; the native report name is empty. Failure: not-admitted, no-report or an error; inspect why and during. Confirmation does not wait for NV persistence; continued sightings can register an unnamed guest using the same ID.", [EnrolledFaceId],
             (b, a, ct) => b.EraseFace(a.Int("faceId"), ct)),
+        new("lock-reactions", "Disable selected engine reaction triggers under a named lock. Success: confirmed shows the active locks. Failure: invalid arguments or not-admitted when the robot is unavailable.",
+            [Text("id", "Lock ID to pass to unlock-reactions.", 255), Argument.ReactionSelection(Enum.GetNames<ReactionTrigger>())],
+            (b, a, ct) => b.ChangeReactionLock(a.Text("id"), a.Value("triggers"), ct)),
+        new("unlock-reactions", "Remove one named engine reaction lock. Success: confirmed shows the active locks. Failure: invalid arguments or not-admitted when the robot is unavailable.",
+            [Text("id", "Lock ID to remove.", 255)], (b, a, ct) => b.ChangeReactionLock(a.Text("id"), null, ct)),
         new("freeplay", "Enable or disable Freeplay. Success: submitted means the app message was posted; observe activity/events for its effect. Failure: not-admitted when the robot is not ready, or an error; inspect why. There is no native action result for this setting.", [Boolean("enabled", "True enables Freeplay.")],
             (b, a, ct) => b.SetFreeplay(a.Flag("enabled"), ct)),
         new("set_needs_mode", "Choose full needs (refill/pause) or real native needs. Success: confirmed returns keepFull/loaded/applied/paused and levels; applied shows whether the input reached loaded needs. Failure: an error result; inspect why. This setting has no native action result.",
@@ -115,9 +120,10 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => b.SetNeeds(a.Number("repair"), a.Number("energy"), a.Number("play"), ct)),
     ];
 
+    private static readonly BridgeCommand[] PublishedCommands = Commands.Select(AddAdmissionWaitParameter).ToArray();
     private static readonly FrozenDictionary<string, BridgeCommand> ByName =
-        Commands.ToFrozenDictionary(c => c.Name, StringComparer.Ordinal);
-    private static readonly JsonElement Catalogue = JsonSerializer.SerializeToElement(Commands.Select(c => c.Describe()), Json);
+        PublishedCommands.ToFrozenDictionary(c => c.Name, StringComparer.Ordinal);
+    private static readonly JsonElement Catalogue = JsonSerializer.SerializeToElement(PublishedCommands.Select(c => c.Describe()), Json);
 
     /// <summary>The supported command names and the JSON Schema for each arguments object.</summary>
     public JsonElement GetCommandCatalogue() => Catalogue;
@@ -141,15 +147,9 @@ public sealed partial class CozmoBridge : IDisposable
         try
         {
             using var capture = new ActionWhyCapture(this);
-            Task<CommandResult> pending;
-            using (Robot.Engine.EnterSynchronousOwner())
-            {
-                capture.BeforeAdmission();
-                pending = entry.Execute(this, parsed, cancellationToken);
-                capture.AfterAdmission();
-            }
-            var result = await pending.ConfigureAwait(false);
+            var (result, admissionWait) = await ExecuteWithAdmissionWait(entry, parsed, capture, cancellationToken).ConfigureAwait(false);
             var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
+            if (admissionWait is not null) response["admissionWait"] = JsonSerializer.SerializeToNode(admissionWait, Json);
             if (command == "animation")
             {
                 var details = JsonSerializer.SerializeToElement(result.Report, Json);

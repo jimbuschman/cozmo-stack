@@ -89,7 +89,7 @@ public sealed class McpServerTests
         await using var client = new Client(bridge);
         await client.Initialize();
         var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
-        Assert.Equal(28, tools.GetArrayLength());
+        Assert.Equal(30, tools.GetArrayLength());
         foreach (var entry in bridge.GetCommandCatalogue().EnumerateArray())
         {
             var tool = Assert.Single(tools.EnumerateArray(), t => t.GetProperty("name").GetString() == entry.GetProperty("name").GetString());
