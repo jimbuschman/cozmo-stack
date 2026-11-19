@@ -1,4 +1,4 @@
-# LLM-TEACH-FACE-1 — build; full validation pending
+# LLM-TEACH-FACE-1 — READY FOR CLAUDE
 
 SCOPE A: teach, rename and erase a face. The recorded-pixel integration reaches
 native enrollment success, rename confirmation and erase confirmation through the
@@ -78,10 +78,24 @@ M14-010/M14-011 IMPLEMENTATION_GAP; M14-006 BLOCKED_EXTERNAL (current title
 shared-runtime name path; it does not settle those broader records. Existing
 non-name-path/ownership/profiler MISSING diagnostics remain visible in the run log.
 
-Validation so far: initial affected face/MCP groups **107/107**; source-backed
-calibration correction **255/255**; corrected face/rename/identity/bridge group
-**62/62**. The strengthened fresh-post-enrollment observation case also passes
-on its own (43.05 seconds). Final clean full suite and gate key pending.
+Validation: **full clean — 8,746/8,746**, all 17 private cases enabled, Cozmo
+MCP server closed, 55.7997 minutes on **ebca0303**. Normal build: zero errors.
+Gate key: `2334944a3a51eae09b58c926740e4c229c8e0080`.
+The manager can reuse this full run only if its merge has the same key, per AGENTS.md.
+
+Affected groups also pass: initial face/MCP **107/107**, pickup/calibration and
+recorded reaction classes **255/255**, corrected face/rename/identity/bridge
+**62/62**. The strengthened fresh-observation case passes alone and in the final
+full run (40 seconds). Final recorded flow: objective 5 then 0x56 at 39043 ms,
+fresh Robin observation at 39147, rename confirmation at 39274 and erase at 39384;
+613 outgoing audio chunks. Rename speech was not admitted in this run and remains
+an observation. The cliff window and whole-session replay both pass in this run.
+
+Local evidence: `.scratch/m13-teach-observation-full-ebca0303.log`,
+`.scratch/teach-observation-full-face.json`, and
+`.scratch/teach-observation-full-llm-events.json`. These diagnostic artifacts and
+all hardware bundles remain uncommitted. Fidelity validation passes; record statuses
+and SCOPE.md remain unchanged. Hardware/manager acceptance is still required.
 
 ## Full-suite calibration regression
 
@@ -113,7 +127,7 @@ Three new regression cases check real start/done reports and success, native
 be sent. No replay allowlist was widened. Current records M7-015/M7-019/M7-021
 and M8-008 remain IMPLEMENTATION_GAP; M4-012 remains EXACT_SOURCE. Their broad
 claims are not settled by this call-site repair. Affected pickup/calibration/framework/state and recorded-reaction groups pass **255/255**,
-including all seven physical windows. Final clean full run/key pending.
+including all seven physical windows. The final clean suite above includes this correction.
 
 ## Observation-order regression
 
