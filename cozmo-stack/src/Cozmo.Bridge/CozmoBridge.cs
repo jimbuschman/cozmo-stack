@@ -180,6 +180,9 @@ public sealed partial class CozmoBridge
         Add(type, new
         {
             report.Timestamp,
+            // ObjectMoved caller stores the input axis at 0x005341A0;
+            // Pack writes that byte at 0x007B01F2..0x007B0200. Stop has no axis.
+            AxisOfAccel = type == "cube-moved" && cube.Moving ? cube.UpAxis : null,
             Cube = new
             {
                 cube.FactoryId, cube.ObjectId, cube.WorldObjectId, cube.Type, cube.Connected,
