@@ -333,7 +333,7 @@ public sealed class McpServerTests
         // Feed the engine's public-delivery seam before retiring the action.
         f.Rig.Engine.PublicRoute!(new AnimationStarted{AnimId=ticket.Tag});
         f.Rig.Engine.PublicRoute!(new AnimationEnded{AnimId=ticket.Tag});
-        f.Rig.Engine.DeliverAnimationReportToApp(0x5F,new Cozmo.Protocol.CladWriter().U32(ticket.Tag).ToArray());
+        f.Rig.Robot.Animations.Stop();
         f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnTreads,OffTreadsState.InAir);
         f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.InAir,OffTreadsState.OnTreads);
         f.Rig.Engine.DrainAppDelivery();

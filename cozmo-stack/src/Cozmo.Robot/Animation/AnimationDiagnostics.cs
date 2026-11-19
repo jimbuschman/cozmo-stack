@@ -28,6 +28,9 @@ public sealed record AnimationClipInitializedObservation(long Timestamp, byte Ta
 public sealed record KeepFaceAliveObservation(long Timestamp, long CallNumber, int BlinkTimerBeforeMs,
     int BlinkTimerAfterMs, bool BlinkGenerated, int? DrawMinMs, int? DrawMaxMs) : AnimationDiagnostic(Timestamp);
 
+/// <summary>Identity of the clip at the successful StartOfAnimation send. CA still reports playback.</summary>
+public sealed record AnimationStartSentObservation(long Timestamp, byte Tag, string? Name) : AnimationDiagnostic(Timestamp);
+
 // fidelity: M5-029
 /// <summary>
 /// One <c>StreamLayers</c> frame (A36/Q1.8). <see cref="FaceFlag"/> is the layered face flag ApplyLayersToAnim(null)

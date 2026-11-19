@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Text.Json;
 using Cozmo.Protocol;
 using Cozmo.Robot;
@@ -23,6 +22,7 @@ public sealed partial class CozmoBridge
     private readonly Dictionary<uint, FrameReports> frameReports = new();
     private readonly Queue<uint> reportOrder = new();
     private readonly Dictionary<byte, string> clipNames = new();
+    private readonly Dictionary<byte, string?> sentClipNames = new();
     private readonly Dictionary<byte, string?> playingNames = new();
     private readonly Dictionary<byte, string?> lastPlayingNames = new();
     private AnimationPlaybackMonitor? playbackMonitor;
@@ -49,7 +49,7 @@ public sealed partial class CozmoBridge
         Robot.Vision.FrameProcessed += VisionProcessed;
         Robot.Animations.Scheduler.Diagnostic += AnimationDiagnostic;
         Robot.Message += RobotMessage;
-        Robot.Engine.EngineToGameMessage += GameMessage;
+        Robot.Engine.AnimationAbortObserved += AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged += OffTreads;
     }
     private void DetachSenses()
@@ -59,7 +59,7 @@ public sealed partial class CozmoBridge
         Robot.Vision.FrameProcessed -= VisionProcessed;
         Robot.Animations.Scheduler.Diagnostic -= AnimationDiagnostic;
         Robot.Message -= RobotMessage;
-        Robot.Engine.EngineToGameMessage -= GameMessage;
+        Robot.Engine.AnimationAbortObserved -= AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged -= OffTreads;
         lock (cameraGate) { cameraFrame = null; frameReports.Clear(); reportOrder.Clear(); }
     }
@@ -163,22 +163,29 @@ public sealed partial class CozmoBridge
     private void AnimationDiagnostic(AnimationDiagnostic diagnostic)
     {
         // InitStream identity 0x0057B674 is selection, not robot playback.
-        if (diagnostic is AnimationClipInitializedObservation clip)
-            lock(eventGate) clipNames[clip.Tag] = clip.Name;
+        if (diagnostic is not (AnimationClipInitializedObservation or AnimationStartSentObservation)) return;
+        lock (eventGate)
+        {
+            if (diagnostic is AnimationClipInitializedObservation clip)
+                clipNames[clip.Tag] = clip.Name;
+            else if (diagnostic is AnimationStartSentObservation start)
+                sentClipNames[start.Tag] = start.Name;
+        }
     }
-    private void AnimationEvent(string type, byte tag)
+    private void AnimationEvent(string type, byte tag, string? observedName = null)
     {
         lock(eventGate)
         {
             string? name;
             if (type == "animation-started")
-                playingNames[tag] = lastPlayingNames[tag] = name = clipNames.GetValueOrDefault(tag);
+                playingNames[tag] = lastPlayingNames[tag] = name = sentClipNames.TryGetValue(tag, out var sent)
+                    ? sent : clipNames.GetValueOrDefault(tag);
             else if (playingNames.Remove(tag, out var playing))
                 name = playing;
             else if (lastPlayingNames.TryGetValue(tag, out var previous))
                 name = previous;
             else name = clipNames.GetValueOrDefault(tag);
-            Append(type,null,JsonSerializer.SerializeToElement(new { tag, name },Json));
+            Append(type, null, JsonSerializer.SerializeToElement(new { tag, name = observedName ?? name }, Json));
         }
     }
 
@@ -188,15 +195,8 @@ public sealed partial class CozmoBridge
         if (message is AnimationStarted start) AnimationEvent("animation-started",start.AnimId);
         else if (message is AnimationEnded end) AnimationEvent("animation-ended",end.AnimId);
     }
-    private void GameMessage(ushort tag, ReadOnlyMemory<byte> body)
-    {
-        // Existing AnimationAborted E2G 0x5F, also consumed by LiveNarration.
-        if (tag == 0x5F && body.Length == 4)
-        {
-            uint id = BinaryPrimitives.ReadUInt32LittleEndian(body.Span);
-            if (id <= byte.MaxValue) AnimationEvent("animation-aborted",(byte)id);
-        }
-    }
+    private void AnimationAbort((byte Tag, string? Name) observation) =>
+        AnimationEvent("animation-aborted", observation.Tag, observation.Name);
     private void OffTreads(OffTreadsState from, OffTreadsState to) =>
         Add("off-treads-changed", new { from = from.ToString(), to = to.ToString(),
             pickedUp = to == OffTreadsState.InAir, putDown = from == OffTreadsState.InAir && to == OffTreadsState.OnTreads });

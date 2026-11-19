@@ -692,6 +692,13 @@ public sealed class AnimationScheduler
 
     /// <summary>The animation currently streaming (+0x38), or null.</summary>
     public string? Playing { get { lock (_gate) return _streamingClip?.Name; } }
+
+    // Read-only identity for the native abort broadcast under the scheduler owner.
+    internal string? ClipNameForActiveTag(byte tag)
+    {
+        lock (_gate)
+            return tag != _tag ? null : _streamingClip?.Name ?? (tag == LiveAnimationTag ? _idleAnim?.Name : null);
+    }
     public bool IsPlaying { get { lock (_gate) return _streaming is not null; } }
 
     /// <summary>
@@ -1842,6 +1849,7 @@ public sealed class AnimationScheduler
     private void SendStartOfAnimationLocked()
     {
         byte tag = _tag;
+        string? name = _streamingClip?.Name ?? (tag == LiveAnimationTag ? _idleAnim?.Name : null);
         StartWireObservation? identity=CaptureStartWireForTest
             ? new(++_startWireSequenceForTest,_generation,tag,_streamingClip?.Name) : null;
         Buffer(StreamSizes.StartOfAnimation, false, () =>
@@ -1849,7 +1857,12 @@ public sealed class AnimationScheduler
             var prior=_currentStartWireForTest;
             try { _currentStartWireForTest=identity; _sink.AnimationStarted(tag); }
             finally { _currentStartWireForTest=prior; }
-        }, onSent: () => { if(identity is { } sent)_sentStartWireForTest.Enqueue(sent); }, tagName: "animStartOfAnimation");
+        }, onSent: () =>
+        {
+            if (identity is { } sent) _sentStartWireForTest.Enqueue(sent);
+            _diagnosticObserver?.Invoke(new AnimationStartSentObservation(
+                System.Diagnostics.Stopwatch.GetTimestamp(), tag, name));
+        }, tagName: "animStartOfAnimation");
         _startSent = true;
         _endSent = false;
     }

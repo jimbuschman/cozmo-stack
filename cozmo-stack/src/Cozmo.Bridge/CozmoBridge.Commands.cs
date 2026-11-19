@@ -11,6 +11,8 @@ internal sealed record CommandResult(string Status, bool? Admitted, uint? Engine
 {
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public object? FaceOperation { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    internal uint? OwnedCompletionTag { get; init; }
 
     internal static CommandResult Action(bool admitted, uint? code, string detail, bool retired, object? report = null) =>
         new(!admitted ? "not-admitted" : retired ? "owner-retired" : "completed", admitted, code,
@@ -70,11 +72,11 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiAnimationAsync(Enum.Parse<AnimationTrigger>(a.Text("trigger")),
                 a.UInt("loops"), a.Flag("useSafeLiftMotion"), a.Flag("ignoreBodyTrack"), a.Flag("ignoreHeadTrack"), a.Flag("ignoreLiftTrack"), ct))),
         new("say-text", "Say English text in Cozmo's voice and wait for the native action. Success: engineResult=0. Failure: nonzero engineResult, not-admitted, owner-retired or an unavailable audio path; inspect detail, why and during. Completion alone does not establish what was heard.", [Text("text", "English text to say.")],
-            (b, a, ct) => FromAction(b.Robot.SayEnglishSentenceAsync(a.Text("text"), ct))),
+            (b, a, ct) => b.SayText(a.Text("text"), ct)),
         new("pickup", "Pick up a cube by world object ID, optionally driving to it. Success: native engineResult=0; check fresh isCarrying/carriedObjectId. Failure: nonzero engineResult, not-admitted or owner-retired; inspect why and during, including reaction interruptions.", [WorldObjectId, Boolean("driveToObject", "Drive to the cube before pickup.", true)],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiPickupCubeAsync(a.UInt("objectId"), a.Flag("driveToObject"), ct))),
         new("put-down", "Place the carried object on the ground. Success: native engineResult=0; check fresh carrying state. Failure: nonzero engineResult or an error result; inspect why and during for the actual outcome.", NoArguments,
-            (b, _, ct) => FromAction(b.Robot.PlaceObjectOnGroundAsync(ct))),
+            (b, _, ct) => b.PutDown(ct)),
         new("roll", "Drive to a cube world ID and roll it. Success: native engineResult=0. Failure: nonzero engineResult, not-admitted or owner-retired; inspect why and during. Earlier approach checks can be superseded by later native steps.", [WorldObjectId],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiRollCubeAsync(a.UInt("objectId"), ct))),
         new("stack", "Stack the carried cube on the target world cube ID. Success: native engineResult=0; check fresh object/carrying state. Failure: nonzero engineResult, not-admitted or owner-retired; inspect why and during.", [WorldObjectId],
@@ -123,7 +125,12 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => b.SetNeeds(a.Number("repair"), a.Number("energy"), a.Number("play"), ct)),
     ];
 
-    private static readonly BridgeCommand[] PublishedCommands = Commands.Select(AddAdmissionWaitParameter).ToArray();
+    private static readonly BridgeCommand[] PublishedCommands = Commands.Select(AddAdmissionWaitParameter)
+        .Select(command => command with
+        {
+            Parameters = [..command.Parameters, Text("duringDetail", "Compact sightings or every available event in full.",
+                choices: ["compact", "full"]) with { Default = JsonSerializer.SerializeToElement("compact") }],
+        }).ToArray();
     private static readonly FrozenDictionary<string, BridgeCommand> ByName =
         PublishedCommands.ToFrozenDictionary(c => c.Name, StringComparer.Ordinal);
     private static readonly JsonElement Catalogue = JsonSerializer.SerializeToElement(PublishedCommands.Select(c => c.Describe()), Json);
@@ -146,7 +153,7 @@ public sealed partial class CozmoBridge : IDisposable
         }
 
         long callStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
-        long startCursor = ReadEvents().GetProperty("cursor").GetInt64();
+        long startCursor = CurrentEventCursor();
         try
         {
             using var capture = new ActionWhyCapture(this);
@@ -166,7 +173,7 @@ public sealed partial class CozmoBridge : IDisposable
             if (result.Admitted == false || result.EngineResult is > 0 || result.Status is "owner-retired" or "no-report" ||
                 response["truncatedByRobot"]?.GetValue<bool>() == true)
                 response["why"] = capture.Describe(result, response["truncatedByRobot"]?.GetValue<bool>() == true);
-            response["during"] = System.Text.Json.Nodes.JsonNode.Parse(ReadEvents(startCursor).GetRawText());
+            AttachDuring(response, startCursor, parsed.Text("duringDetail") == "full", result.OwnedCompletionTag);
             return JsonSerializer.SerializeToElement(response, Json);
         }
         catch (InvalidOperationException error) when (error.Message.StartsWith("MISSING:", StringComparison.Ordinal))
@@ -206,9 +213,7 @@ public sealed partial class CozmoBridge : IDisposable
             AiTurnToObjectActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
             AiTrackFaceActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.FaceId, r.RequestedFaceId, r.EndReason, r.CallerCancellationRequested }),
             AiAnimationActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.AnimationName, r.PlaybackTag }),
-            AiSpeechActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
             AiPickupActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
-            Cozmo.Robot.Manipulation.ActionResult r => new("completed", null, (uint)r, Enum.GetName((NativeActionResultName)r)),
             _ => throw new InvalidOperationException("Unexpected result from a Cozmo command."),
         };
     }

@@ -8,6 +8,10 @@ public sealed partial class CozmoEngine
 {
     /// <summary>Animation event app view, dispatched after the synchronous local engine work.</summary>
     public event Action<AnimationEventReport>? AnimationEvent;
+    internal event Action<(byte Tag, string? Name)>? AnimationAbortObserved;
+
+    internal Action? CaptureAnimationAbortObservation((byte Tag, string? Name) observation) =>
+        CaptureAppEvent(AnimationAbortObserved, observation);
     // fidelity: M8-020 — 0x00545750..0x00545792 -> UI rvalue Broadcast 0x006625B0.
     internal void BroadcastAnimationEvent(AnimationEventReport report)
     {

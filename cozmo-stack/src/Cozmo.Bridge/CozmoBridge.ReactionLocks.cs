@@ -89,10 +89,8 @@ public sealed partial class CozmoBridge
             }
 
             var result = await pending.ConfigureAwait(false);
-            // Speech has a generic queue-refusal string. The engine-owned reaction gate
-            // sampled at submission distinguishes that refusal from unrelated speech failure.
             bool refusedByReaction = result is { Admitted: false, EngineResult: null, OwnerRetired: not true } &&
-                result.Detail is "External actions are disabled by a reaction" or "Speech action was not admitted";
+                result.Detail == "External actions are disabled by a reaction";
             if (budget == 0 || !refusedByReaction || blockingReaction is not { } trigger || owner is null)
                 return (result, budget == 0 ? null : new(clock.Elapsed.TotalMilliseconds, reactions.ToArray(), false));
 

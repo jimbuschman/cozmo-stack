@@ -179,7 +179,7 @@ public sealed class LlmEventsReplayTests(ITestOutputHelper output) : IDisposable
             rig.Tick(tick - previousTick);
             previousTick = tick;
             rig.Engine.DrainAppDelivery();
-            var reply = await client.Tool("read_events", new { since = cursor });
+            var reply = await client.Tool("read_events", new { since = cursor, detail = "full", limit = 1024 });
             var page = reply.GetProperty("result").GetProperty("structuredContent");
             Assert.False(page.GetProperty("gap").GetBoolean());
             cursor = page.GetProperty("cursor").GetInt64();
@@ -194,7 +194,7 @@ public sealed class LlmEventsReplayTests(ITestOutputHelper output) : IDisposable
         rig.Robot.Vision.WaitForProcessorIdle();
         rig.Tick(0);
         rig.Engine.DrainAppDelivery();
-        var finalReply = await client.Tool("read_events", new { since = cursor });
+        var finalReply = await client.Tool("read_events", new { since = cursor, detail = "full", limit = 1024 });
         var finalPage = finalReply.GetProperty("result").GetProperty("structuredContent");
         Assert.False(finalPage.GetProperty("gap").GetBoolean());
         foreach (var e in finalPage.GetProperty("events").EnumerateArray())
