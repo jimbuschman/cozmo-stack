@@ -1,4 +1,4 @@
-# LLM-SESSION-2-READY-1 — build; full validation pending
+# LLM-SESSION-2-READY-1 — READY FOR CLAUDE
 
 SCOPE.md A: The connection for an LLM. Host wording and a static MCP resource;
 no controller, action admission, native result, geometry or robot traffic changes.
@@ -44,6 +44,13 @@ tool omits explicit Success/Failure result meaning. Existing argument schemas,
 real motor command/ack/result, cancellation, camera, event polling, native failure
 snapshots and robot-cutoff tests continue to pass.
 
-Normal build, final full suite/key and READY status pending. No fidelity record,
+Normal build: zero errors. **Full clean: 8,749/8,749**, all 17 private cases
+enabled, MCP server closed, 56.4277 minutes on **2e67f1b2**.
+Gate key: `4b9e7064921b5109f31161db72cb2d2766454d84`.
+The manager can reuse this full run only for the same merge key, per AGENTS.md.
+Log: `.scratch/m13-guide-full-2e67f1b2.log`; local replay diagnostics:
+`.scratch/guide-full-face.json` and `.scratch/guide-full-llm-events.json`.
+
+No fidelity record,
 inventory, SCOPE.md or PROJECT_STATE.md is changed. No hardware script/run/bundle
 is created or committed. Actual client/robot use stays with the operator.
