@@ -156,6 +156,8 @@ public sealed partial class BehaviorManager : IDisposable
             nativeImpact: bound is not null&&bound.TryGetValue("ReactToImpact",out var impact)?impact as ReactToImpactBehavior:null,
             nativeSlope: bound is not null&&bound.TryGetValue("ReactToPlacedOnSlope",out var slope)?slope as ReactToPlacedOnSlopeBehavior:null,
             nativeUnexpected: bound is not null&&bound.TryGetValue("ReactToUnexpectedMovement",out var unexpected)?unexpected as ReactToUnexpectedMovementBehavior:null,
+            nativeOnCharger: bound is not null && bound.TryGetValue("ReactToOnCharger", out var onCharger)
+                ? onCharger as ReactToOnChargerBehavior : null,
             nativeFistBump: row =>
             {
                 if (nativeOwner is null || row.BehaviorId != "FistBump" || bound is null ||
@@ -463,6 +465,18 @@ public sealed partial class BehaviorManager : IDisposable
         lock (_gate) return _map.TryGetValue(trigger, out var info) && info.Locks.Contains(lockName);
     }
 
+    internal sealed record ReactionLockObservation(string Id, string[] Triggers);
+
+    internal ReactionLockObservation[] GetReactionLocks()
+    {
+        lock (_gate)
+            return _map.SelectMany(entry => entry.Value.Locks.Select(id => (id, entry.Key)))
+                .GroupBy(entry => entry.id, StringComparer.Ordinal)
+                .OrderBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => new ReactionLockObservation(group.Key, group.Select(entry => entry.Key.ToString()).ToArray()))
+                .ToArray();
+    }
+
     // fidelity: M10-004
     /// <summary>
     /// DisableReactionsWithLock(lock, bool[21], stopCurrent) (gap1 4b, 0x5A27F6..0x5A2960). For each map node in ascending
@@ -492,7 +506,7 @@ public sealed partial class BehaviorManager : IDisposable
             if (stop)
             {
                 Log?.Invoke("BehaviorManager.DisableReactionsWithLock: Disabling reaction triggers - stopping currently running one");
-                lock (_gate) StopCurrentLocked(BehaviorStopReason.Interrupted, NowSec(_startedSec));
+                SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), NowSec(_startedSec), BehaviorStopReason.Interrupted);
             }
         }
     }
@@ -539,7 +553,7 @@ public sealed partial class BehaviorManager : IDisposable
             {
                 Log?.Invoke("BehaviorManager.DisableReactionsWithLock: Disabling reaction triggers - stopping currently running one");
                 if(!Current())return false;
-                lock(_gate)StopCurrentLocked(BehaviorStopReason.Interrupted,NowSec(_startedSec));
+                SwitchToBehaviorBaseCore(new RunningInfo(null, null, null), NowSec(_startedSec), BehaviorStopReason.Interrupted);
                 if(!Current())return false;
             }
         }

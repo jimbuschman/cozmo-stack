@@ -198,7 +198,9 @@ public sealed class CozmoAnimations : IDisposable
             // A22/A23: app enqueue precedes the earlier RobotEventHandler and action's local E2G 5F callback.
             byte[] payload = new byte[4];
             System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(payload, tag);
-            robot.Engine.DeliverAnimationReportToApp(0x5F, payload);
+            var observation = (Tag: tag, Name: _scheduler.ClipNameForActiveTag(tag));
+            robot.Engine.DeliverAnimationReportToApp(0x5F, payload,
+                robot.Engine.CaptureAnimationAbortObservation(observation));
             if (robot.Engine.Robot is null) robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "RobotEventHandler.HandleAnimationAborted.InvalidRobotID", "Failed to find robot.");
             else { robot.SendMessage(new AbortAnimation()); robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotEventHandler.HandleAnimationAborted.SendingRobotAbortAnimation", ""); }
             robot.Engine.AnimationMessages.Deliver(0x5F, true, (uint)tag);

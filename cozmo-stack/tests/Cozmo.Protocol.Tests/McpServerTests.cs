@@ -89,7 +89,7 @@ public sealed class McpServerTests
         await using var client = new Client(bridge);
         await client.Initialize();
         var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
-        Assert.Equal(28, tools.GetArrayLength());
+        Assert.Equal(31, tools.GetArrayLength());
         foreach (var entry in bridge.GetCommandCatalogue().EnumerateArray())
         {
             var tool = Assert.Single(tools.EnumerateArray(), t => t.GetProperty("name").GetString() == entry.GetProperty("name").GetString());
@@ -333,7 +333,7 @@ public sealed class McpServerTests
         // Feed the engine's public-delivery seam before retiring the action.
         f.Rig.Engine.PublicRoute!(new AnimationStarted{AnimId=ticket.Tag});
         f.Rig.Engine.PublicRoute!(new AnimationEnded{AnimId=ticket.Tag});
-        f.Rig.Engine.DeliverAnimationReportToApp(0x5F,new Cozmo.Protocol.CladWriter().U32(ticket.Tag).ToArray());
+        f.Rig.Robot.Animations.Stop();
         f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnTreads,OffTreadsState.InAir);
         f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.InAir,OffTreadsState.OnTreads);
         f.Rig.Engine.DrainAppDelivery();

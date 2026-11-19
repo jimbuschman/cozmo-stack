@@ -188,10 +188,8 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
 /// robot is on the charger (the reaction table maps <c>PlacedOnCharger</c> to it), or when the voice command
 /// requests it. <c>InitInternal</c> pushes the idle animation 0x23F (none) and plays 0x189
 /// <see cref="AnimationTrigger.PlacedOnCharger"/> with <c>TriggerLiftSafeAnimationAction</c>; then it stays until
-/// the robot leaves the charger, broadcasting <c>GoingToSleep</c> to the app at the sleep time and
-/// <c>StartIdleTimeout</c> (the app disconnects) at the disconnection time. Those two are engine-to-app
-/// messages; this stack has no app, so they are logged (the robot-side sleep animation is the app's to
-/// request). Objective <c>ReactedToOnCharger</c>.
+/// receipt of CancelIdleTimeout. Init broadcasts GoingToSleep and arms the Robot idle deadlines.
+/// The host replacement for PauseManager sends cancel when a qualifying reaction takes over.
 /// </summary>
 public sealed class ReactToOnChargerBehavior : SteppedBehavior
 {
@@ -211,6 +209,16 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
         TimeTilSleepSec = timeTilSleepAnimationSec; TimeTilDisconnectionSec = timeTilDisconnectionSec; TriggeredFromVoiceCommand = triggeredFromVoiceCommand;
     }
 
+    internal static ReactToOnChargerBehavior FromConfig(System.Text.Json.JsonElement json)
+    {
+        // 0x00606A2A..0x00606A44 defaults, then the three optional reads at
+        // 0x00606A80, 0x00606AFE, and 0x00606B7E.
+        return new(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(),
+            json.TryGetProperty("timeTilSleepAnimation_s", out var sleep) ? sleep.GetSingle() : -1f,
+            json.TryGetProperty("timeTilDisconnection_s", out var disconnect) ? disconnect.GetSingle() : 0f,
+            json.TryGetProperty("triggeredFromVoiceCommand", out var voice) && voice.GetBoolean());
+    }
+
     public double TimeTilSleepSec { get; }
     public double TimeTilDisconnectionSec { get; }
     public bool TriggeredFromVoiceCommand { get; }
@@ -224,6 +232,13 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
 
     protected override bool KeepsRunningWithoutAction => true;
 
+    // Native vtable address point 0x0102C0B0: +0x20/+0x24/+0x28 point
+    // to 0x00606E8C/0x00606E90/0x00606E94. Each returns true.
+    protected override bool RunnableGate20(BehaviorContext context) => true;
+    protected override bool RunnableGate24(BehaviorContext context) => true;
+    protected override bool RunnableGate28(BehaviorContext context) => true;
+
+    // BehaviorReactToOnCharger::IsRunnableInternal (0x00606C90) returns true.
     protected override bool IsRunnableInternal(BehaviorContext context) => true;
 
     protected override void OnStart()
@@ -244,13 +259,17 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
         };
         if (_messageOwner is { } owner) owner.CancelIdleTimeoutDelivered += _cancelHandler;
         CurrentPhase = Phase.PlayingReaction;
-        ReportMissing("M7-019 GoingToSleep E2G 0x2D typed host recipient is not bound; bool payload is not delivered");
+        // 0x00606CB4..0x00606CBE broadcasts the configured bool before the idle push,
+        // animation admission, disconnect reason and StartIdleTimeout.
+        if (_messageOwner is { HasExternalInterface: true } sleepOwner)
+            sleepOwner.Engine.BroadcastGoingToSleep(sleepOwner, Context.Robot, TriggeredFromVoiceCommand);
         if (!Current()) return;
         var scheduler = Context.Robot.Animations.Scheduler;
-        ReportMissing("M7-019 SmartPushIdleAnimation native owner prefix at 0x005BE44C remains unknown; existing scope owner is used");
-        if (!Current()) return;
-        if (!Scope.SmartPushIdleAnimationGuarded(() => scheduler.PushIdleAnimation((AnimationTrigger)0x23F, Id),
-            () => scheduler.RemoveIdleAnimation(Id, Context.Robot.Engine.Timer.TimeStampMs), Current)) return;
+        // 0x004D75D4..0x004D7606 initializes "Behavior_". 0x005BE44C..0x005BE464
+        // prepends it to the behavior name, and 0x005BE478 records idle ownership.
+        string idleOwner = "Behavior_" + Id;
+        if (!Scope.SmartPushIdleAnimationGuarded(() => scheduler.PushIdleAnimation((AnimationTrigger)0x23F, idleOwner),
+            () => scheduler.RemoveIdleAnimation(idleOwner, Context.Robot.Engine.Timer.TimeStampMs), Current)) return;
         _completionLease = AcquireActionCompletionOwner(Context.Robot);
         StartActing(new Animation.TriggerLiftSafeAnimationAction(Context.Robot, new(AnimationTrigger.PlacedOnCharger, 1, true, 0, 60f, false)), _ => { }, Current);
         if (!Current()) return;

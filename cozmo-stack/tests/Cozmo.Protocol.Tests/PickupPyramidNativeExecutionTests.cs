@@ -114,7 +114,7 @@ public sealed class PickupPyramidNativeExecutionTests
             }
             var state=Rig.MakeState(RobotStatusFlag.HeadInPos|RobotStatusFlag.LiftInPos|extra,origin:Robot.CurrentOriginId,frame:Robot.PoseFrameId,x:X,y:Y,head:Head,liftAngle:Lift);state.Pose.Angle=Yaw;Rig.Data(state);WaitCompletedAnimationCallbacks();Rig.Tick();
         }
-        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1,float imuHead=0,float imuBody=0,bool imuBracket=true,ObjectType markerObjectType=ObjectType.Block_LIGHTCUBE1)
+        internal void Image(uint id,bool cube=false,float cubeX=150,int modes=1<<1,float imuHead=0,float imuBody=0,bool imuBracket=true,ObjectType markerObjectType=ObjectType.Block_LIGHTCUBE1,bool color=false)
         {
             // Rendered-marker unit input uses the native nonphysical branch; physical correction remains M11-033.
             if(cube)
@@ -140,16 +140,32 @@ public sealed class PickupPyramidNativeExecutionTests
             // Capture the vision system before the frame is queued: a worker callback may replace the Robot
             // (NativeMotionIntegrationTests does), and M resolves through the current Robot's runtime.
             var visionForWait=M.Vision;
-            Rig.CameraGrayFrame(id,stamp,image.Pixels);
+            if (color)
+            {
+                Rig.CameraImageFrame(id, stamp, 2, Tint(image.Pixels));
+            }
+            else Rig.CameraGrayFrame(id, stamp, image.Pixels);
             visionForWait.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
+        }
+        internal static byte[] Tint(byte[] gray)
+        {
+            var rgb = new byte[gray.Length * 3];
+            for (int i = 0; i < gray.Length; i++)
+            {
+                int shade = gray[i], dst = i * 3;
+                rgb[dst] = (byte)Math.Min(shade + 50, 255);
+                rgb[dst + 1] = rgb[dst + 2] = (byte)shade;
+            }
+            return rgb;
         }
         // Supplied changing camera/IMU input; does not change the selected activity or vision modes.
         internal void NativeCameraFrame(uint id,byte value)=>NativeCameraFrame(id,Enumerable.Repeat(value,320*240).ToArray());
-        internal void NativeCameraFrame(uint id,byte[] pixels)
+        internal void NativeCameraFrame(uint id,byte[] pixels, bool color = false)
         {
             uint timestamp=Robot.StoredState!.Timestamp;
             Rig.Data(new ImageImuData{ImageId=id,RateX=0,RateY=0,RateZ=0,Line2Number=0});Rig.Tick();
-            Rig.CameraGrayFrame(id,timestamp,pixels);
+            if (color) Rig.CameraImageFrame(id, timestamp, 2, Tint(pixels));
+            else Rig.CameraGrayFrame(id,timestamp,pixels);
             M.Vision.WaitForProcessorIdle();
         }
         public void Dispose()=>Rig.Dispose();

@@ -40,7 +40,11 @@ public sealed record RobotConnectionResponse(RobotConnectionResult Result, uint 
 
 // fidelity: M1-015
 /// <summary>The game message RobotDisconnected{timeSinceLastMsg_sec 0.0} (CB33).</summary>
-public sealed record RobotDisconnectedMessage(float TimeSinceLastMsgSec);
+public sealed record RobotDisconnectedMessage(float TimeSinceLastMsgSec)
+{
+    /// <summary>Host observation captured before the connection manager resets its reason.</summary>
+    public RobotDisconnectReason Reason { get; init; }
+}
 
 // fidelity: M1-027
 /// <summary>The game message RobotErrorPassThrough{code} for a non-fatal robotError (CC16).</summary>
@@ -508,10 +512,11 @@ internal sealed class RobotConnectionManager
     {
         int state = Rcd.State;
         if (_t.TimedOut) Reason = RobotDisconnectReason.WifiTimeout;
-        _engine.EmitStackLog($"info: disconnect_reason {Reason}");
+        var reportedReason = Reason;
+        _engine.EmitStackLog($"info: disconnect_reason {reportedReason}");
         Reason = RobotDisconnectReason.Unknown;
         Rcd.Clear();
-        if (_engine.Robots.RobotExists(CozmoEngine.RobotId)) _engine.Robots.RemoveRobot(CozmoEngine.RobotId, wasConnecting: state == 1);
+        if (_engine.Robots.RobotExists(CozmoEngine.RobotId)) _engine.Robots.RemoveRobot(CozmoEngine.RobotId, wasConnecting: state == 1, reportedReason);
     }
 }
 
@@ -1841,7 +1846,9 @@ internal sealed partial class RobotManager
     /// their higher-layer recipients remain explicit gaps in the cited ownership split.
     /// </summary>
     // fidelity: M1-044
-    public void RemoveRobot(uint id, bool wasConnecting)
+    public void RemoveRobot(uint id, bool wasConnecting) => RemoveRobot(id, wasConnecting, RobotDisconnectReason.Unknown);
+
+    internal void RemoveRobot(uint id, bool wasConnecting, RobotDisconnectReason reason)
     {
         EngineRobot? robot;
         RobotInitialConnection? ric;
@@ -1861,7 +1868,7 @@ internal sealed partial class RobotManager
         {
             // fidelity: M1-050
             _engine.NotifyExternalRobotDisconnected(id);
-            _engine.RaiseRobotDisconnected(new RobotDisconnectedMessage(BitConverter.Int32BitsToSingle(0x00000000)));
+            _engine.RaiseRobotDisconnected(new RobotDisconnectedMessage(BitConverter.Int32BitsToSingle(0x00000000)) { Reason = reason });
             _engine.ClearGlobal("$session_id");
         }
         _engine.NotifyDisconnectServices();

@@ -137,7 +137,7 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
         finally { SpeechTiming.Observer = null; }
     }
 
-    private sealed class SilentSink : IPlatformPcmSink
+    internal sealed class SilentSink : IPlatformPcmSink
     {
         private readonly object gate = new();
         private readonly AutoResetEvent ready = new(false);

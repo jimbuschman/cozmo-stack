@@ -274,7 +274,7 @@ public sealed class ReactionBehaviorsFixTests
         };
         behavior.StartAsync(context, scope, default).GetAwaiter().GetResult();
         Assert.True(stopped);
-        Assert.DoesNotContain(rig.Robot.Animations.Scheduler.IdleStack, e => e.Lock == behavior.Id);
+        Assert.DoesNotContain(rig.Robot.Animations.Scheduler.IdleStack, e => e.Lock == "Behavior_" + behavior.Id);
         Assert.Null(behavior.OwnedRunner);
     }
 

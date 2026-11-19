@@ -6,8 +6,9 @@
 - Look with `get_camera_image` before moving or manipulating an object. `annotate` adds matching face/object boxes. This reads the existing camera stream; it does not enable a different vision mode. Empty boxes mean no reports matching that image timestamp are available.
 - Use the current `worldObjectId` from `knownCubes` or `knownChargers` for object actions. `factoryId` and `radioObjectId` identify different things. Face actions use the signed `faceId` from state/events; follow `face-id-changed` updates.
 - Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
-- While a call is pending, other state/camera/event calls remain available. Wait with `read_events`: set `since` to the last returned `cursor`, and use `waitMs` up to 30000 milliseconds [senses]. Reuse its new cursor. An empty page after waiting is a timeout; `gap=true` means some older events were evicted. Events are observed independently by each reader.
+- While a call is pending, other state, camera and event calls remain available. Use `read_events` with the last returned `cursor` as `since`. Set `waitMs` up to 30000 to wait for matching events. Choose `types` to include or `excludeTypes` to exclude named event types. `limit` counts matching events before compaction and defaults to 100. Reuse the new cursor even if a page has fewer than 100 events. An empty page after waiting is a timeout. `gap=true` means older events were evicted [senses].
 - Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` may remain pending until native completion or caller cancellation.
+- Before a multi-step task like stacking or enrolling a face, use `lock-reactions` with a task-specific ID and the reaction triggers you need to suppress. For example, lock `["CubeMoved","ObjectPositionUpdated"]` while stacking. Trigger names are case-sensitive. `"all"` disables every mapped trigger while the lock is held. Use `unlock-reactions` with the same ID when the task ends. Other IDs continue to hold their locks.
 
 ## Reading results
 
@@ -15,13 +16,17 @@
 
 For motion, animation and speech, `admitted` reports whether the action was accepted; `status=completed` means its attempt ended. `engineResult=0` / `SUCCESS` is the native success code [why]. Nonzero codes retain their native names. `owner-retired` means the original robot owner went away; `not-admitted` means no action was accepted. Check the specific tool's `report` and subsequent observations to interpret success.
 
+Action tools accept optional `waitAdmittedMs` from 0 to 30000. The default of 0 makes one admission attempt. A positive value lets a reaction finish before resubmitting a refused action. An action already admitted keeps its original result, including an interruption. `admissionWait` reports `waitedMs`, the blocking `reactions`, and whether the wait `timedOut`.
+
 **Turn to a face:** an unknown ID can return native SUCCESS and turn nowhere. `report.facePoseAvailable=false` and `detail` identify that case [findings]. An enrolled name alone does not establish a current visible pose.
 
 **Animation:** inspect `report.animationName`, `report.playbackTag`, `truncatedByRobot` and `playbackIssues`. A robot buffer cutoff can leave native SUCCESS while MCP `isError=true`. The issues report observed early ending/BufferFull evidence; tag/name may be null when association is unknown. A selected clip does not establish that the robot played its whole stream. Use the playback observations and what was seen/heard [budget].
 
 `why.engineResultName` preserves the native result name. `why.snapshot` contains captured per-command comparisons/observations; `why.hint` explains them. `why.checkAvailable=false` means no applicable native failure check was captured. Earlier comparisons may have been superseded by later steps. Untagged docking observations do not by themselves establish a failure cause [why].
 
-`during` is a bounded event page collected from invocation through completion. Its `cursor`, `oldestCursor`, `gap` and `events` have the same meaning as `read_events`. Poll during long calls if a complete local history matters [senses].
+`during` covers the event window from invocation through completion. Compact replies keep single sightings and other events in `events`. Repeated `face-seen`, `cube-seen`, `charger-seen`, and `robot-state` observations are grouped in `sightings`, with counts, first and last timestamps, and the last payload. An oversized `during` page includes a `continuation`. Pass its `since` and `excludeTypes` to `read_events` and keep paging through `through`. Use event cursors to deduplicate any completion already in the action reply. The action's own `cursor` still marks the end of its window.
+
+Use `duringDetail: "full"` for the complete retained action window at once. On `read_events`, `detail: "full"` keeps all matching event payloads within the chosen limit. Both full options can produce large replies. Poll during long calls when you need a complete history before the feed evicts it [senses].
 
 **Faces:** `teach-face` and `enroll-face` are aliases. Native success returns `faceOperation.outcome=enrolled`, face ID/name and engineResult=0. Failure returns the native reason or `no-report`; a failed save can leave a partial named record. Rename and erase return `confirmed`, with `renamed` or `erased` and the ID/name information. Their confirmations acknowledge the mutation before NV persistence or optional spoken-response completion. Erase's native report name is empty; `lastKnownName` is a labeled host snapshot. Continued sightings can register an unnamed guest, even with the same ID. After enrollment/rename, wait for a fresh named observation separately [faces].
 
@@ -47,6 +52,7 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `isCarrying`, `carriedObjectId` | Carrying state and engine object ID, or unavailable/null. |
 | `isOnCharger`, `isCharging` | Latest native contact/charging state, or null when unavailable. |
 | `activity`, `highLevelActivity`, `behavior`, `reaction` | Latest activity and reaction observations; null when unavailable. |
+| `reactionLocks` | Current named locks, each with its `id` and mapped `triggers`. Cozmo and the caller can both hold locks. |
 | `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. The flags distinguish requested mode from applied native needs. |
 | `knownFaces` | Signed `faceId`, `name`, `lastObservedTimestamp`, `enrolled`, `relative`. Enrolled names can remain without a current sighting. |
 | `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A located cube need not have a current radio connection. |
@@ -54,7 +60,9 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 
 `relative` has `xMm`, `yMm`, `zMm` in robot MAIN axes, planar `distanceMm`, and `bearingDeg` positive to the robot's left. Null means the pose could not be expressed relative to the robot, or no observed pose is available. `go-to-pose` instead takes an established target in the current world origin [senses].
 
-`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. Exposure head angle can be null. Its timestamp matching prevents older boxes from being moved onto a new image [senses].
+Use `set_camera_color` with `enabled: true` to request colour on the camera's current stream. Use `enabled: false` to request greyscale again. The tool confirms the requested setting. Check `isColor` on a newer frame to see what the robot sent. The same vision modes keep supplying face and marker detections from the grey image derived from each colour frame.
+
+`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, `isColor`, `encoding` (effective image encoding after parsing the first chunk), exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. Exposure head angle can be null. Its timestamp matching prevents older boxes from being moved onto a new image [senses].
 
 `list_animations` returns `loaded`, case-sensitive `triggers`, and `clips`; it reads the catalogue without selecting/playing a clip.
 

@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Text.Json;
 using Cozmo.Protocol;
 using Cozmo.Robot;
@@ -23,6 +22,7 @@ public sealed partial class CozmoBridge
     private readonly Dictionary<uint, FrameReports> frameReports = new();
     private readonly Queue<uint> reportOrder = new();
     private readonly Dictionary<byte, string> clipNames = new();
+    private readonly Dictionary<byte, string?> sentClipNames = new();
     private readonly Dictionary<byte, string?> playingNames = new();
     private readonly Dictionary<byte, string?> lastPlayingNames = new();
     private AnimationPlaybackMonitor? playbackMonitor;
@@ -49,7 +49,7 @@ public sealed partial class CozmoBridge
         Robot.Vision.FrameProcessed += VisionProcessed;
         Robot.Animations.Scheduler.Diagnostic += AnimationDiagnostic;
         Robot.Message += RobotMessage;
-        Robot.Engine.EngineToGameMessage += GameMessage;
+        Robot.Engine.AnimationAbortObserved += AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged += OffTreads;
     }
     private void DetachSenses()
@@ -59,7 +59,7 @@ public sealed partial class CozmoBridge
         Robot.Vision.FrameProcessed -= VisionProcessed;
         Robot.Animations.Scheduler.Diagnostic -= AnimationDiagnostic;
         Robot.Message -= RobotMessage;
-        Robot.Engine.EngineToGameMessage -= GameMessage;
+        Robot.Engine.AnimationAbortObserved -= AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged -= OffTreads;
         lock (cameraGate) { cameraFrame = null; frameReports.Clear(); reportOrder.Clear(); }
     }
@@ -88,6 +88,23 @@ public sealed partial class CozmoBridge
     { lock (cameraGate) Reports(report.Timestamp).Faces[report.FaceId] = report; }
     private void CaptureObject(RobotObservedObjectReport report)
     { lock (cameraGate) Reports(report.Timestamp).Objects[report.ObjectId] = report; }
+
+    private Task<CommandResult> SetCameraColor(bool enabled, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        // G2E handler 0x0065835C..0x00658378 uses the same byte store and reliable
+        // EnableColorImages robot message as 0x006582CC..0x00658314.
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        if (engine.ConnectionState != 2 || !engine.IsReadyDelivered || engine.RobotValidated != true ||
+            owner is null || owner.Lifetime.Destroying || !owner.FirstFullStateHandled)
+            return Task.FromResult(CommandResult.NotReady());
+
+        Robot.CameraSettings.EnableColorImages(enabled);
+        if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
+            return Task.FromResult(CommandResult.Action(false, null, "Robot owner retired during the camera request", true));
+        return Task.FromResult(CommandResult.Confirmed(new { enabled }));
+    }
 
     /// <summary>Decodes a snapshot without requesting frames or changing vision modes.</summary>
     public BridgeCameraImage GetCameraImage(bool annotate = false)
@@ -120,6 +137,7 @@ public sealed partial class CozmoBridge
         var metadata = JsonSerializer.SerializeToElement(new
         {
             frame.ImageId, robotTimestamp = frame.Timestamp, frame.ReceivedUtc, width, height,
+            frame.IsColor, frame.Encoding,
             headAngleRad = head, annotated = annotate,
             faces = faces.Select(f => new { f.FaceId, f.Name, f.Rect }),
             objects = objects.Select(o => new { worldObjectId = o.ObjectId, type = ((ObjectType)o.Type).ToString(),
@@ -145,22 +163,29 @@ public sealed partial class CozmoBridge
     private void AnimationDiagnostic(AnimationDiagnostic diagnostic)
     {
         // InitStream identity 0x0057B674 is selection, not robot playback.
-        if (diagnostic is AnimationClipInitializedObservation clip)
-            lock(eventGate) clipNames[clip.Tag] = clip.Name;
+        if (diagnostic is not (AnimationClipInitializedObservation or AnimationStartSentObservation)) return;
+        lock (eventGate)
+        {
+            if (diagnostic is AnimationClipInitializedObservation clip)
+                clipNames[clip.Tag] = clip.Name;
+            else if (diagnostic is AnimationStartSentObservation start)
+                sentClipNames[start.Tag] = start.Name;
+        }
     }
-    private void AnimationEvent(string type, byte tag)
+    private void AnimationEvent(string type, byte tag, string? observedName = null)
     {
         lock(eventGate)
         {
             string? name;
             if (type == "animation-started")
-                playingNames[tag] = lastPlayingNames[tag] = name = clipNames.GetValueOrDefault(tag);
+                playingNames[tag] = lastPlayingNames[tag] = name = sentClipNames.TryGetValue(tag, out var sent)
+                    ? sent : clipNames.GetValueOrDefault(tag);
             else if (playingNames.Remove(tag, out var playing))
                 name = playing;
             else if (lastPlayingNames.TryGetValue(tag, out var previous))
                 name = previous;
             else name = clipNames.GetValueOrDefault(tag);
-            Append(type,null,JsonSerializer.SerializeToElement(new { tag, name },Json));
+            Append(type, null, JsonSerializer.SerializeToElement(new { tag, name = observedName ?? name }, Json));
         }
     }
 
@@ -170,15 +195,8 @@ public sealed partial class CozmoBridge
         if (message is AnimationStarted start) AnimationEvent("animation-started",start.AnimId);
         else if (message is AnimationEnded end) AnimationEvent("animation-ended",end.AnimId);
     }
-    private void GameMessage(ushort tag, ReadOnlyMemory<byte> body)
-    {
-        // Existing AnimationAborted E2G 0x5F, also consumed by LiveNarration.
-        if (tag == 0x5F && body.Length == 4)
-        {
-            uint id = BinaryPrimitives.ReadUInt32LittleEndian(body.Span);
-            if (id <= byte.MaxValue) AnimationEvent("animation-aborted",(byte)id);
-        }
-    }
+    private void AnimationAbort((byte Tag, string? Name) observation) =>
+        AnimationEvent("animation-aborted", observation.Tag, observation.Name);
     private void OffTreads(OffTreadsState from, OffTreadsState to) =>
         Add("off-treads-changed", new { from = from.ToString(), to = to.ToString(),
             pickedUp = to == OffTreadsState.InAir, putDown = from == OffTreadsState.InAir && to == OffTreadsState.OnTreads });

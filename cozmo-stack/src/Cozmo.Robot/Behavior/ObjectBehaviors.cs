@@ -94,7 +94,7 @@ public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDi
     private uint LastImageTs() => LastImageTimestamp?.Invoke() ?? 0;
 
     /// <summary>The event handler (4j) and the object-observed handler (4k).</summary>
-    private void OnObserved(ObjectObservation o)
+    internal void OnObserved(ObjectObservation o)
     {
         var current = Manager?.Current;
         if (current is null || current.Class == _behavior.Class) return;                          // 4j

@@ -188,11 +188,11 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         });
         return catalogue.Concat(
         [
-            Tool("get_state", "Read timestampUtc, connection (connected/ready/link), batteryVolts, isCarrying/carriedObjectId, isOnCharger/isCharging, activity/highLevelActivity/behavior/reaction, needs and knownFaces/knownCubes/knownChargers. Success: a latest-state snapshot; cozmo-guide defines fields and units. Failure: disconnected or not-ready flags and null/empty observations mean unavailable data; tool errors set isError. This read does not imply action success.", """{"type":"object","properties":{},"additionalProperties":false}"""),
-            Tool("get_camera_image", "See the latest PNG; annotate draws exact-timestamp face/object boxes. Success: image plus structuredContent metadata and exposure-time headAngleRad. Failure: isError when no frame exists or decode fails. Empty boxes/observationReportsAvailable=false mean no matching reports; headAngleRad can be null. This read does not enable a vision mode.",
+            Tool("get_state", "Read timestampUtc, connection (connected/ready/link), batteryVolts, isCarrying/carriedObjectId, isOnCharger/isCharging, activity/highLevelActivity/behavior/reaction, reactionLocks, needs and knownFaces/knownCubes/knownChargers. Success: a latest-state snapshot; cozmo-guide defines fields and units. Failure: disconnected or not-ready flags and null/empty observations mean unavailable data; tool errors set isError. This read does not imply action success.", """{"type":"object","properties":{},"additionalProperties":false}"""),
+            Tool("get_camera_image", "See the latest PNG in the frame's received colour or greyscale format; annotate draws exact-timestamp face/object boxes. Success: image, isColor, effective encoding, and exposure-time headAngleRad in structuredContent. Failure: isError when no frame exists or decode fails. Empty boxes/observationReportsAvailable=false mean no matching reports; headAngleRad can be null. This read does not enable a vision mode.",
                 """{"type":"object","properties":{"annotate":{"type":"boolean","default":false}},"additionalProperties":false}"""),
-            Tool("read_events", "Read events strictly after since; reuse the returned cursor. waitMs waits for an event up to 30000 ms. Success: cursor/oldestCursor/gap/events; an empty page after waiting is a timeout. Failure: isError for invalid arguments or a cursor from another/newer feed; gap=true means older events were evicted. Pending actions and other waits can continue.",
-                """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0},"waitMs":{"type":"integer","minimum":0,"maximum":30000,"default":0}},"additionalProperties":false}"""),
+            Tool("read_events", "Read a page after since and reuse its cursor. types and excludeTypes filter event names. limit counts matching events before compaction. Success: a page, with gap=true if older events were evicted. An empty page after waiting is a timeout. Failure: isError for invalid arguments or a cursor from another feed.",
+                """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0},"waitMs":{"type":"integer","minimum":0,"maximum":30000,"default":0},"types":{"type":"array","items":{"type":"string","minLength":1}},"excludeTypes":{"type":"array","items":{"type":"string","minLength":1}},"limit":{"type":"integer","minimum":1,"default":100},"detail":{"type":"string","enum":["compact","full"],"default":"compact"}},"additionalProperties":false}"""),
             Tool("list_animations", "Read loaded, triggers and clips without playing an animation. Success: the loaded catalogue; use case-sensitive trigger names with animation. Failure: loaded=false/empty lists mean the library is unavailable; invalid arguments or a read error set isError.", """{"type":"object","properties":{},"additionalProperties":false}"""),
         ]).ToArray();
     }
@@ -241,9 +241,8 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                     result = bridge.ListAnimations();
                     break;
                 case "read_events":
-                    var keys = args.EnumerateObject().ToArray();
-                    if (keys.Any(key => key.Name is not ("since" or "waitMs")))
-                        throw new ArgumentException("read_events accepts only 'since' and 'waitMs'.");
+                    if (args.EnumerateObject().Any(key => key.Name is not ("since" or "waitMs" or "types" or "excludeTypes" or "limit" or "detail")))
+                        throw new ArgumentException("Unknown read_events argument.");
                     long since = 0;
                     if (args.TryGetProperty("since", out var cursor) &&
                         (cursor.ValueKind != JsonValueKind.Number || !cursor.TryGetInt64(out since) || since < 0))
@@ -252,7 +251,19 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                     if (args.TryGetProperty("waitMs", out var wait) &&
                         (wait.ValueKind != JsonValueKind.Number || !wait.TryGetInt32(out waitMs) || waitMs < 0 || waitMs > 30000))
                         throw new ArgumentException("'waitMs' must be an integer between 0 and 30000.");
-                    result = await bridge.ReadEventsAsync(since, waitMs, token).ConfigureAwait(false);
+                    int limit = 100;
+                    if (args.TryGetProperty("limit", out var size) &&
+                        (size.ValueKind != JsonValueKind.Number || !size.TryGetInt32(out limit) || limit <= 0))
+                        throw new ArgumentException("'limit' must be a positive integer.");
+                    bool full = false;
+                    if (args.TryGetProperty("detail", out var detail))
+                    {
+                        if (detail.ValueKind != JsonValueKind.String || detail.GetString() is not ("compact" or "full"))
+                            throw new ArgumentException("'detail' must be 'compact' or 'full'.");
+                        full = detail.GetString() == "full";
+                    }
+                    result = await bridge.ReadEventPageAsync(since, waitMs, limit,
+                        EventTypes(args, "types"), EventTypes(args, "excludeTypes"), full, token).ConfigureAwait(false);
                     break;
                 default:
                     result = await bridge.ExecuteAsync(tool, args, token).ConfigureAwait(false);
@@ -273,6 +284,15 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
             diagnostic?.Invoke(error.ToString());
             return ToolResult(JsonSerializer.SerializeToElement(new { error = error.Message }), true);
         }
+    }
+
+    private static string[]? EventTypes(JsonElement args, string name)
+    {
+        if (!args.TryGetProperty(name, out var list)) return null;
+        if (list.ValueKind != JsonValueKind.Array || list.EnumerateArray().Any(item =>
+                item.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(item.GetString())))
+            throw new ArgumentException($"'{name}' must be an array of nonempty event names.");
+        return list.EnumerateArray().Select(item => item.GetString()!).ToArray();
     }
 
     private static void NoArguments(JsonElement arguments)
