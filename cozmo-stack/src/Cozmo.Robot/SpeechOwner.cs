@@ -15,11 +15,7 @@ public sealed partial class EngineRobot
     {
         SpeechComponent = new TextToSpeechComponent((text, style, scalar) =>
         {
-            string resources = Engine.Options.ResourcesPath ?? throw new InvalidOperationException("M14-006 speech resources are unavailable");
-            string language = Engine.Options.LabLocaleLanguage ?? throw new InvalidOperationException("M14-006 speech locale input is unavailable");
-            string libDir = ShippedLibraries.FindLibDir() ?? throw new InvalidOperationException("M14-006 shipped ARM libraries are unavailable");
-            _speechProvider ??= new SpeechProvider(resources, libDir, language);
-            return _speechProvider.Synthesize(text, style, scalar);
+            return GetSpeechProvider().Synthesize(text, style, scalar);
         });
         Lifetime.Bind(0x268, address =>
         {
@@ -27,6 +23,23 @@ public sealed partial class EngineRobot
             SpeechComponent.Retire(() => { _speechProvider?.Dispose(); _speechProvider = null; });
             Lifetime.Missing(address, 0x268);
         });
+        // Robot ctor 0x0050FDB4 -> component ctor 0x0069E3FC -> provider ctor 0x0069F7FE.
+        // The impl loads the voice synchronously at 0x0069FDCE, before any CreateSpeech.
+        // Production audio is initialized before Robot construction. Keep asset-free offline
+        // fixtures lazy, but do not charge a real robot's first utterance for loading its voice.
+        if (Engine.RuntimeWwiseAudio?.Ready.IsCompletedSuccessfully == true)
+        {
+            try { GetSpeechProvider(); }
+            catch (Exception error) { Engine.EmitStackLog("MISSING M14-006 speech voice initialization failed: " + error.Message); }
+        }
+    }
+
+    private SpeechProvider GetSpeechProvider()
+    {
+        string resources = Engine.Options.ResourcesPath ?? throw new InvalidOperationException("M14-006 speech resources are unavailable");
+        string language = Engine.Options.LabLocaleLanguage ?? throw new InvalidOperationException("M14-006 speech locale input is unavailable");
+        string libDir = ShippedLibraries.FindLibDir() ?? throw new InvalidOperationException("M14-006 shipped ARM libraries are unavailable");
+        return _speechProvider ??= new SpeechProvider(resources, libDir, language);
     }
 
     private CannedSpeechOwner? GetBehaviorAudioOwner()

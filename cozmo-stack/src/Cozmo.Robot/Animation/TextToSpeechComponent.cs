@@ -37,6 +37,7 @@ internal sealed class TextToSpeechComponent
                 _errors.Enqueue($"TextToSpeechComponent.CreateSpeech duplicate operation id {id}");
                 return 0;
             }
+            Cozmo.Robot.Emulation.SpeechTiming.Mark("queued");
             _operations.Add(id, new Bundle());
             _tail = _tail.ContinueWith(_ => Synthesize(id, text, style, scalar), CancellationToken.None,
                 TaskContinuationOptions.None, TaskScheduler.Default);
@@ -47,6 +48,7 @@ internal sealed class TextToSpeechComponent
     private void Synthesize(byte id, string text, byte style, float scalar)
     {
         lock (_gate) if (_retired || !_operations.ContainsKey(id)) return;
+        Cozmo.Robot.Emulation.SpeechTiming.Mark("worker-start");
         float[]? samples = null;
         try { samples = _synthesize(text, style, scalar); }
         catch (Exception ex) { _errors.Enqueue($"M14-006 speech synthesis failed: {ex.Message}"); }
