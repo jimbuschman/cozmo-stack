@@ -13,6 +13,7 @@ internal sealed class SpeechProvider : IDisposable
 
     internal SpeechProvider(string resources, string libDir, string language)
     {
+        SpeechTiming.Mark("provider-start");
         string voice = "Ryan", cozmo = "Cozmo";
         int speed = 100, shaping = 100;
         string path = Path.Combine(resources, "config", "engine", "tts_config.json");
@@ -32,6 +33,7 @@ internal sealed class SpeechProvider : IDisposable
         _tts = new AcapelaTts(libDir, javaGlue: true, unixTime: () => DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         try { _tts.LoadVoice(Path.Combine(resources, "tts"), voice); }
         catch { _tts.Dispose(); throw; }
+        SpeechTiming.Mark("provider-ready");
     }
 
     internal static int SpeechRate(int speed, float scalar)
@@ -47,11 +49,14 @@ internal sealed class SpeechProvider : IDisposable
 
     internal float[] Synthesize(string text, byte style, float scalar)
     {
+        SpeechTiming.Mark("text-start");
         if (style == 2) text += "?";
         text = text.Replace("Cozmo", _cozmo, StringComparison.Ordinal);
+        SpeechTiming.Mark("text-ready");
         short[] pcm = _tts.Synthesize(text, SpeechRate(_speed, scalar), _shaping, 100);
         var samples = new float[pcm.Length];
         for (int i = 0; i < pcm.Length; i++) samples[i] = pcm[i] * 3.0518509e-05f;
+        SpeechTiming.Mark("float-ready");
         return samples;
     }
 

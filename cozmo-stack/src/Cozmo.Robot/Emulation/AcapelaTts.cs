@@ -90,6 +90,7 @@ public sealed class AcapelaTts : IDisposable
     public short[] Synthesize(string text, int rate, int shaping, int pitch)
     {
         if (VoiceFrequency == 0) throw new InvalidOperationException("no voice loaded");
+        SpeechTiming.Mark("settings-start");
         int e1 = _n.SetSpeechRate(rate);
         if (e1 != 0) throw new AcapelaTtsException("nSetSpeechRate", e1);
         int e2 = _n.SetTtsSetting("VOICESHAPE", shaping);
@@ -103,7 +104,9 @@ public sealed class AcapelaTts : IDisposable
             _n.Events.Clear();
         }
         _n.Samples.Clear();
+        SpeechTiming.Mark("speak-start");
         LastSpeakResult = _n.Speak(text);
+        SpeechTiming.Mark("speak-ready");
         if (_javaGlue)
         {
             bool ended = _n.Events.Any(e => e.Method == "eventsCallback" && e.Args.Length > 0 && e.Args[0] == 1);
@@ -111,7 +114,9 @@ public sealed class AcapelaTts : IDisposable
             Thread.Sleep(100);
             if (!ended) throw new EmulationAbort("M1-034 M14-006: speech did not produce the Java text-end callback; skipped the indefinite isSpeaking wait");
         }
-        return _n.Samples.ToArray();
+        var result = _n.Samples.ToArray();
+        SpeechTiming.Mark("pcm-ready", result);
+        return result;
     }
 
     public void Dispose() => _n.Dispose();

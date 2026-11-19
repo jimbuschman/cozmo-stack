@@ -111,6 +111,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     /// <summary>Transfers the provider data to the native pending WavePortal slot.</summary>
     public void Offer(float[] samples, int sampleRate)
     {
+        SpeechTiming.Mark("offer-start");
         RequireOwner();
         ArgumentNullException.ThrowIfNull(samples);
         if (_offered) throw new InvalidOperationException("native voice data is already pending");
@@ -124,6 +125,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         _m.W32(data, (uint)sampleRate); _m.W16(data + 4, 1); _m.W16(data + 6, 0);
         _m.W32(data + 8, (uint)samples.Length); _m.W32(data + 12, audio);
         Run(0x8DC1B9, new[] { _interface, data });
+        SpeechTiming.Mark("offer-ready");
     }
 
     /// <summary>Posts the authored Sentence event after its provider data has been offered.</summary>
@@ -208,10 +210,12 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     /// <summary>Advances the supplied Wwise clock and renders once; no real-time pacing is implied.</summary>
     public void Render(uint elapsedMicroseconds)
     {
+        SpeechTiming.Mark("render-start");
         RequireOwner();
         _clock = _shared ? unchecked(_clock + elapsedMicroseconds) : checked(_clock + elapsedMicroseconds);
         Run(0x99F130, new uint[] { 1 });
         DrainSharedCallbacks();
+        SpeechTiming.Mark("render-ready");
     }
 
     internal void AdvanceClock(uint elapsedMicroseconds)
@@ -461,6 +465,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         byte[] bytes = m.Read(ptr, checked(n * 4));
         var frame = new float[n];
         for (int i = 0; i < frame.Length; i++) frame[i] = V(BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(i * 4, 4)));
+        SpeechTiming.Mark("hijack-frame");
         if (HijackFrame is null) _frames.Add(frame);
         else HijackFrame(frame);
         return 0;
