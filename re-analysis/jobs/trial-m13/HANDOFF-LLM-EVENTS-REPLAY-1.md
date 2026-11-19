@@ -101,3 +101,14 @@ Private validation files (not committed): `.scratch/llm-events-whole-1.json`,
 `.scratch/llm-events-final-full.json`, and `.scratch/m13-llm-events-full-90ded15a.log`.
 The full run uses an immutable output snapshot, with a 25-minute hang threshold
 for the 16.8-minute replay. Commit: this handoff's containing commit.
+
+## Clean full-suite gate key
+
+`full clean`, 8742/8742, all 16 private cases enabled. Gate key:
+`187281f4ca4539ae8b4aac3e57947104bb1bfa8f`.
+The actual `scripts/hooks/gate-key.sh` function produces this same key for the
+handoff code commit dd300e14 and the subsequent origin/main merge 20f4819b.
+Main added AGENTS/queue updates only; all tested code, tools and fidelity inputs
+are identical. The manager can reuse this clean full run under the new
+2026-11-18 one-suite-per-handoff rule if its merge has this key. The separate
+whole-path/oracle qualification above still applies to acceptance.
