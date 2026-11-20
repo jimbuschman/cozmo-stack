@@ -45,15 +45,23 @@ Use `duringDetail: "full"` for the complete retained action window at once. On `
 
 Use `set-backpack-lights` or `set-cube-lights` with RGB hex colours and millisecond periods and transitions. Omit `ledMask` for all LEDs, or add the bits shown in the tool schema. Use a connected cube's `worldObjectId` as `objectId`. `report.leds` lists the requested pattern for every LED. `submitted` means the engine accepted the backpack pattern or queued the cube pattern for the robot. Charging and other light sources can take priority on the backpack. Freeplay can replace cube output on its next light update.
 
+## Camera and short moves
+
+`get_camera_image` reports `liftInView` for the returned image. When true, `liftRegion` gives the estimated pixel bounds of Cozmo’s own lift. Use the region to identify lift pixels before deciding what to approach. Null means calibration or the matching pose history was unavailable. An empty detection list only describes what the detector could report from that view.
+
+`drive-straight` accepts `shouldPlayAnimation: false` to skip the driving animation. The shipped default is true. `turn-in-place` uses the native turn action, whose request takes angle, speed, acceleration, tolerance and absolute heading.
+
 ## Approaching the charger
 
 Look at the charger marker, use its current world ID, and line up square before `mount-charger`. The final approach rechecks its current generated predock goal after visual verification.
+
+A charger can be present while its marker is still too small or partial to detect. In the November 20 session it first registered at roughly 15 cm. The cube markers were visible farther away in that setup. The 27 × 20 mm charger marker has 86% of the area of a cube’s 25 × 25 mm marker. The detector applies the same 19-pixel component-area and 25-pixel quad cross-product gates. In the November 19 stationary replay, a partial 26 × 13 px charger contour failed corner extraction and a clearer 31 × 20 px contour passed. Range varies with pose and lighting [dock-arrival].
 
 The recorded poses required absolute yaw error strictly below approximately 7.5 degrees and a Y offset within approximately 21 mm [charger]. The translation thresholds depend on the generated geometry; these are the recorded examples' bounds, not a universal fixed box. The comparisons in `why` use robot MAIN-parent axes. Use the captured live bounds when available and the current camera/state to plan a correction. Seeing the charger or completing a preceding turn does not establish that the final approach passed.
 
 A `why.snapshot.pathArrival` comparison comes from DriveToPose after the firmware path completes. This earlier check compares the full goal rotation within 10 degrees and applies its XYZ tolerances. The snapshot gives the selected goal, arrival pose, and rotation error when the comparison reached it [dock-arrival].
 
-A charger mount can be cancelled by a cliff stop or unexpected movement during the approach, reverse, or forward retry. The robot's stop packet can cancel the action before the detailed `cliff-detected` report arrives. `sensors` is a bitmask. A value of 3 means both front sensors reported a cliff, and `stoppedForCliff` records whether firmware stopped. Check later events and the current state before deciding what happened. The report alone cannot distinguish a real edge from another surface or obstruction [charger-interruptions].
+A charger mount can be cancelled by a cliff stop or unexpected movement during the approach, reverse, or forward retry. The robot's stop packet can cancel the action before the detailed `cliff-detected` report arrives. `sensors` is a bitmask. Values 1 and 2 identify front left and front right, and 4 and 8 identify back left and back right. A value of 3 means both front sensors reported a cliff, and `stoppedForCliff` records whether firmware stopped. Check later events and the current state before deciding what happened. The report alone cannot distinguish a real edge from another surface or obstruction [charger-interruptions].
 
 On completion, check fresh `isOnCharger` and `isCharging`. A native failure's `why` may describe the final pose comparison, backup pitch, planner state, or an unavailable check [charger, why].
 

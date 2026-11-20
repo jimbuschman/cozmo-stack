@@ -753,6 +753,51 @@ public sealed partial class VisionSystem : IDisposable
             return ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
                 ReferenceEquals(_robot.Engine.Robot, owner) ? _groundOuterCalibration : null;
     }
+    // MCP image metadata uses the same frame-time lift occluder as marker visibility.
+    // AddLiftOccluder 0x006564D8 reads raw history with interpolation disabled
+    // (0x006564EE–0x006564F8), then projects the physical or simulated lift.
+    internal (bool? InView, FaceRect? Region) GetLiftImageCoverage(EngineRobot? owner, uint imageTime)
+    {
+        using var lease = _robot.Engine.EnterSynchronousOwner();
+        if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(owner, _robot.Engine.Robot) ||
+            NativeOuterCalibrationFor(owner) is not { } calibration || World.LiftOccluderPoints.Count == 0)
+            return (null, null);
+
+        using var state = new HistRobotState();
+        uint resolved = 0;
+        if (owner.PoseHistory.GetRawStateAt(imageTime, ref resolved, state, interpolate: false) != 0)
+            return (null, null);
+
+        // The camera and lift both hang from MAIN. Their shared parent transform
+        // cancels in Robot::GetLiftTransformWrtCamera (call at 0x0065652A).
+        using var cameraPose = HeadGeometry.CameraPoseInRobot(state.State.HeadAngle);
+        using var inverseCamera = cameraPose.Inverse();
+        using var liftPose = Manipulation.LiftGeometry.LiftPoseInRobotFrame(state.State.LiftAngle);
+        using var liftInCamera = inverseCamera.Compose(liftPose);
+        if (calibration.Columns != EncodedImageDecoder.Columns || calibration.Rows != EncodedImageDecoder.Rows)
+            calibration = calibration.Scaled(EncodedImageDecoder.Columns, EncodedImageDecoder.Rows);
+        var camera = new CameraModel(calibration, cameraPose);
+        var points = World.LiftOccluderPoints;
+        var pixels = new Vec2[points.Count];
+        for (int i = 0; i < points.Count; i++)
+        {
+            // 0x0065653E/0x00656550 apply the camera-relative transform
+            // before projecting. ProjectCameraPoint already expects this space.
+            var projected = camera.ProjectCameraPoint(liftInCamera.Apply(points[i]));
+            if (projected is not { } pixel) return (false, null);
+            if (!double.IsFinite(pixel.X) || !double.IsFinite(pixel.Y)) return (null, null);
+            pixels[i] = pixel;
+        }
+
+        // Clip the bounding rectangle to the returned image, in the same
+        // pixel coordinates as the other MCP image rectangles.
+        double minX = Math.Max(0, pixels.Min(p => p.X)), maxX = Math.Min(calibration.Columns, pixels.Max(p => p.X));
+        double minY = Math.Max(0, pixels.Min(p => p.Y)), maxY = Math.Min(calibration.Rows, pixels.Max(p => p.Y));
+        return maxX > minX && maxY > minY
+            ? (true, new FaceRect(minX, minY, maxX - minX, maxY - minY))
+            : (false, null);
+    }
+
     public MarkerDetector Detector { get; }
     public BlockWorld World { get; }
     // fidelity: M11-069, M11-070

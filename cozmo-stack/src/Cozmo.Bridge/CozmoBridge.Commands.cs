@@ -45,10 +45,12 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiHeadAngleAsync(a.Number("radians"), ct))),
         new("lift", "Set lift height in millimetres. Success: completed with engineResult=0. Failure: isError, a nonzero engineResult, not-admitted or owner-retired; read detail, why and during.", [Number("heightMm", "Lift height in millimetres.")],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiLiftHeightAsync(a.Number("heightMm"), ct))),
+        // DriveStraight.cs defaults the trailing bool to true. The factory at 0x00529EF6–0x00529F1A forwards it.
         new("drive-straight", "Drive a signed relative distance in millimetres. Success: native engineResult=0. Failure: nonzero engineResult, not-admitted or owner-retired; read why and during before choosing another move.",
             [Number("distanceMm", "Signed distance in millimetres."), Number("speedMmps", "Speed in millimetres per second."),
-             Boolean("shouldPlayAnimation", "Use the native driving animation.", true)],
+             Boolean("shouldPlayAnimation", "Play the native driving animation. Set false for a quick drive without it.", true)],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiDriveStraightAsync(a.Number("distanceMm"), a.Number("speedMmps"), a.Flag("shouldPlayAnimation"), ct))),
+        // TurnInPlace.cs packs four floats and isAbsolute. The factory at 0x0052AE74–0x0052AEBA consumes those five fields.
         new("turn-in-place", "Turn the body using radians. Success: native engineResult=0; report.relocalizationCount records relocalizations. Failure: nonzero engineResult, not-admitted or owner-retired; inspect why and during.",
             [Angle, Number("speedRadPerSec", "Speed in radians per second."),
              Number("accelRadPerSec2", "Acceleration in radians per second squared."),

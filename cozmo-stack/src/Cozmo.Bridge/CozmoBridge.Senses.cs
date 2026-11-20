@@ -115,12 +115,13 @@ public sealed partial class CozmoBridge
     {
         ThrowIfDisposed();
         CameraFrame frame;
+        EngineRobot? owner;
         double? head;
         CameraFrame newest;
         ProcessedCameraCapture? reports;
         lock (cameraGate)
         {
-            var owner = Robot.Engine.Robot;
+            owner = Robot.Engine.Robot;
             if (receivedCamera is not { } received || !ReferenceEquals(owner, received.Owner) ||
                 owner?.Lifetime.Destroying == true)
                 throw new InvalidOperationException("No camera frame has arrived.");
@@ -131,6 +132,7 @@ public sealed partial class CozmoBridge
             frame = reports?.Frame ?? newest;
             head = reports is null ? received.Head : processedCameraHead;
         }
+        var (liftInView, liftRegion) = Robot.Vision.GetLiftImageCoverage(owner, frame.Timestamp);
         var faces = reports?.Faces ?? [];
         var objects = reports?.Objects.Where(o => o.Family == (uint)ObjectFamily.LightCube ||
             o.Type == (uint)ObjectType.Charger_Basic).ToArray() ?? [];
@@ -155,6 +157,7 @@ public sealed partial class CozmoBridge
             objects = objects.Select(o => new { worldObjectId = o.ObjectId, type = ((ObjectType)o.Type).ToString(),
                 rect = new FaceRect(o.ImageX,o.ImageY,o.ImageWidth,o.ImageHeight) }),
             observationReportsAvailable = faces.Count != 0 || objects.Length != 0,
+            liftInView, liftRegion,
         }, Json);
         return new(output.ToArray(), metadata);
 
