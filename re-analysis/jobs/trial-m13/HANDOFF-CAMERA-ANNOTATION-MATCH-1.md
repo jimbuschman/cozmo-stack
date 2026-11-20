@@ -1,0 +1,13 @@
+# CAMERA-ANNOTATION-MATCH-1 handoff
+
+`get_camera_image {"annotate":true}` returns the latest consumed vision frame and draws its own faces, cubes and charger. Compare `imageId` with `latestReceivedImageId` when the raw stream is ahead. Before the first result, the tool returns the latest raw image with `visionProcessed: false`. A plain call returns the latest raw image.
+
+- **Frame identity** → `SetNextImage` `0x00652B04` queues the encoded frame. `0x00652C22–0x00652C44` clamps only the pose-history query. The worker at `0x00651F08` calls `0x00653D30` and the decode/update at `0x006B4B68`. `0x006B4E1C–0x006B4E20` copies the grey image timestamp into the result. The marker and face handlers consume that result at `0x006544A2` and `0x00654510`. The tail publishes the same timestamp in 0x43 at `0x006549A2–0x00654A1C`.
+- **Observation ownership** → markers pass to BlockWorld at `0x00654DF4`. The located object's last observation timestamp is written at `0x00621146`; `0x006211DC` calls the 0x44 projection/broadcast at `0x0061FED8`. Faces pass from `0x00655274` to FaceWorld. `0x004F4B0E–0x004F4B82` packs the tracked face timestamp into 0x46. The bridge carries the original capture and the typed reports produced by that result together. A replacement image, even one with the same timestamp, cannot acquire those reports.
+- **Landmarks** → `DetectFaceParts` calls the point copy at `0x0086CDFC/0x0086CE52/0x0086CEA8/0x0086CEFC`. FaceWorld forwards slots 0, 1, 7, 4 at `0x004F4A7C–0x004F4AF8` and packs them in Unity `Anki.Cozmo.ExternalInterface/RobotObservedFace.cs` field order. LeftEye uses OKAO indices [4,0,3], rightEye [5,1,6], nose [9,10], mouth [7,11,8,2,7], read from tables at `0x00C98068/74/80/88`. `0x0086D130–0x0086D164` copies X then Y without swapping or rotating axes.
+
+The `094833` replay fed the original image packets and the recorded 0x43 commits with their 0x44/0x46 reports. At request time it selected 19526, 24058, 27623, 32782 and 34090. After each exact image's vision commit it drew one box on 19527, 24059, 27624, 32783 and 34091. The captured results arrived 0.6–53.4 ms after those requests. Real detector tests exercise frame ownership and pixels separately. The replay uses the recorded world and tracker outputs. In `093050`, image 15304 at t=809385 had a processed result and an unnamed tracked face in state, but no matching 0x46 broadcast. The tool draws published observations for the selected image.
+
+Fidelity classifications stand. Existing M11/M14 gaps still apply. Live robot acceptance remains with the operator.
+
+Full suite passed **8780/8780** on `0a5863ec` in 47.52 minutes with local replays enabled. Push gate `71b7905c063986e58b62574bb28a635ac9e11029`. Fidelity and diff checks passed.

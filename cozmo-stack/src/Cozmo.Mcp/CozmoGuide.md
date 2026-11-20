@@ -3,7 +3,7 @@
 ## Working with him
 
 - Read `get_state` and check `connection.connected` and `connection.ready` before an action.
-- Look with `get_camera_image` before moving or manipulating an object. `annotate` adds matching face/object boxes. This reads the existing camera stream; it does not enable a different vision mode. Empty boxes mean no reports matching that image timestamp are available.
+- Look with `get_camera_image` before moving or manipulating an object. `annotate` adds matching face/object boxes. This reads the existing camera stream; it does not enable a different vision mode. With `annotate`, the returned image can be older than the newest received frame. Empty boxes mean there were no matching reports for the returned image.
 - Use the current `worldObjectId` from `knownCubes` or `knownChargers` for object actions. `factoryId` and `radioObjectId` identify different things. Face actions use the signed `faceId` from state/events; follow `face-id-changed` updates.
 - Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
 - While a call is pending, other state, camera and event calls remain available. Use `read_events` with the last returned `cursor` as `since`. Set `waitMs` up to 30000 to wait for matching events. Choose `types` to include or `excludeTypes` to exclude named event types. `limit` counts matching events before compaction and defaults to 100. Reuse the new cursor even if a page has fewer than 100 events. An empty page after waiting is a timeout. `gap=true` means older events were evicted [senses].
@@ -62,7 +62,7 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 
 Use `set_camera_color` with `enabled: true` to request colour on the camera's current stream. Use `enabled: false` to request greyscale again. The tool confirms the requested setting. Check `isColor` on a newer frame to see what the robot sent. The same vision modes keep supplying face and marker detections from the grey image derived from each colour frame.
 
-`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, `isColor`, `encoding` (effective image encoding after parsing the first chunk), exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. Exposure head angle can be null. Its timestamp matching prevents older boxes from being moved onto a new image [senses].
+`get_camera_image` returns PNG image content and metadata: `imageId`, `robotTimestamp`, `receivedUtc`, dimensions, `isColor`, `encoding` (effective image encoding after parsing the first chunk), exposure-time `headAngleRad`, `annotated`, matching `faces`/`objects`, and `observationReportsAvailable`. `visionProcessed` tells whether vision consumed the returned frame. `latestReceivedImageId` lets you see when annotation selected an earlier processed frame. Exposure head angle can be null [senses].
 
 `list_animations` returns `loaded`, case-sensitive `triggers`, and `clips`; it reads the catalogue without selecting/playing a clip.
 

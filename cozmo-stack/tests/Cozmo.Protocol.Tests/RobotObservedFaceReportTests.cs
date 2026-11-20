@@ -12,10 +12,10 @@ public sealed class RobotObservedFaceReportTests
         var points=Enumerable.Range(0,12).Select(i=>(X:i,Y:i+20)).ToArray();
         points[6]=(-1,26);
         var f=NativeFaceFeatures.FromPoints(points);
-        Assert.Empty(f.LeftEye);
-        Assert.Equal(new[]{9d,10d},f.RightEye.Select(p=>p.X));
-        Assert.Equal(new[]{7d,11d,8d,2d,7d},f.Nose.Select(p=>p.X));
-        Assert.Equal(new[]{4d,0d,3d},f.Mouth.Select(p=>p.X));
+        Assert.Equal(new[]{new Vec2(4,24),new Vec2(0,20),new Vec2(3,23)},f.LeftEye);
+        Assert.Empty(f.RightEye);
+        Assert.Equal(new[]{new Vec2(9,29),new Vec2(10,30)},f.Nose);
+        Assert.Equal(new[]{new Vec2(7,27),new Vec2(11,31),new Vec2(8,28),new Vec2(2,22),new Vec2(7,27)},f.Mouth);
     }
 
     [Fact]
@@ -31,10 +31,13 @@ public sealed class RobotObservedFaceReportTests
         Assert.Equal(1,r.ReadByte());Assert.Equal((byte)'A',r.ReadByte());Assert.Equal(0,r.ReadSByte());
         for(int i=0;i<3;i++){Assert.Equal(0,r.ReadByte());Assert.Equal(0,r.ReadSingle());Assert.Equal(0,r.ReadSingle());}
         Assert.Equal(new byte[5],r.ReadBytes(5));
-        foreach(var group in new[]{f.LeftEye,f.RightEye,f.Nose,f.Mouth})
+        // FaceWorld 0x004F4A7C..0x004F4AF8 forwards slots 0,1,7,4; the four
+        // DetectFaceParts tables at 0x00C98068..0x00C9809B provide these indices.
+        int[][] slots = [[4,0,3], [5,1,6], [9,10], [7,11,8,2,7]];
+        foreach(var indices in slots)
         {
-            Assert.Equal(group.Count,r.ReadByte());
-            foreach(var point in group){Assert.Equal((float)point.X,r.ReadSingle());Assert.Equal((float)point.Y,r.ReadSingle());}
+            Assert.Equal(indices.Length,r.ReadByte());
+            foreach(int index in indices){Assert.Equal((float)index,r.ReadSingle());Assert.Equal(index+20f,r.ReadSingle());}
         }
         Assert.Equal(r.BaseStream.Length,r.BaseStream.Position);
     }
