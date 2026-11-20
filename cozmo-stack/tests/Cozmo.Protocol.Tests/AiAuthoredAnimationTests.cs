@@ -1,6 +1,7 @@
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Animation.Wwise;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Emulation;
 using Xunit;
@@ -86,6 +87,158 @@ public sealed class AiAuthoredAnimationTests
             }
             Assert.Fail($"{expectedClip} did not stream an audible AudioSample from InitScene");
         }
+    }
+
+    [Fact]
+    public void MamboBackingLoopUsesThePhoneBusAndIsSeparateFromTheAuthoredEvents()
+    {
+        var assets = Assert.IsType<WwiseSoundLibrary>(WwiseAssets.Library);
+        var path = Path.Combine(PickupPyramidNativeExecutionTests.Resources(), "assets", "animations", "anim_dancing_mambo_02.bin");
+        var clip = Assert.Single(AnimationLibrary.ParseFile(path), clip => clip.Name == "anim_dancing_mambo_01");
+        var refs = clip.Keyframes.OfType<AudioKeyframe>().SelectMany(k => k.EventIds).Select(id => (uint)id).Distinct();
+        Assert.All(refs, id =>
+        {
+            var audio = assets.Resolve(id);
+            Assert.Equal("Cozmo.bnk", audio.Bank);
+            var action = Assert.Single(audio.Actions);
+            Assert.Equal(WwiseBank.PlayAction, action.ActionType);
+            WwiseNode node = Assert.IsType<WwiseRandomSequenceNode>(assets.Node(action.Target));
+            while (node.Params.BusId == 0)
+                node = Assert.IsType<WwiseActorMixerNode>(assets.Node(node.Params.ParentId));
+            Assert.Equal(1723505802u, node.Params.BusId); // Cozmo_Robot, remapped to Robot_Bus_1 for object 7
+        });
+
+        var play = Assert.Single(assets.Resolve(1905159696).Actions); // Unity CodeLab Mambo Play
+        var stop = Assert.Single(assets.Resolve(1709157641).Actions);
+        Assert.DoesNotContain(1905159696u, refs);
+        Assert.Equal(play.Target, stop.Target);
+        Assert.True(WwiseBank.IsStopAction(stop.ActionType));
+        var segment = Assert.IsType<WwiseMusicSegmentNode>(assets.Node(play.Target));
+        var track = Assert.IsType<WwiseMusicTrackNode>(assets.Node(Assert.Single(segment.Children)));
+        Assert.Equal(633958781u, Assert.Single(track.Sources).SourceId);
+        var container = Assert.IsType<WwiseMusicSwitchNode>(assets.Node(segment.Params.ParentId));
+        Assert.Equal(3829101743u, container.Params.BusId);
+        for (uint bus = container.Params.BusId; bus != 0;)
+        {
+            var node = Assert.IsType<WwiseBusNode>(assets.Node(bus));
+            Assert.DoesNotContain(node.Effects, effect =>
+                (assets.Node(effect.EffectId) as WwiseEffectNode)?.PluginId == WwiseEffectNode.AnkiHijackPlugin);
+            bus = node.ParentBusId;
+        }
+    }
+
+    [Fact]
+    public async Task CapturedMamboCountersReplayTheAuthoredRobotSoundsAndBodyStops()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_MAMBO_REPLAY_BUNDLE");
+        if (string.IsNullOrWhiteSpace(bundle)) return;
+        Assert.True(OperatingSystem.IsWindows() && ShippedLibraries.FindLibDir() is not null);
+        var options = new CozmoEngineOptions
+        {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), LabLocaleLanguage = "en", BlockPoolPath = ""
+        };
+        var sink = new Sink();
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+            sourceNvEmpty: true, engineOptions: options, engineCreated: engine => engine.RuntimeAudioSinkForTest = () => sink);
+        var scheduler = f.Rig.Robot.Animations.Scheduler;
+        var library = f.Rig.Robot.Animations.Library!;
+        var clip = library.GetClip("anim_dancing_mambo_01");
+        Assert.Equal(15444u, clip.DurationMs);
+        Assert.Equal(8, clip.Keyframes.OfType<AudioKeyframe>().Count());
+
+        const double capturedStart = 727118.0822;
+        // Rebase the captured F1 budget counters onto this offline robot. Wwise
+        // variant lengths can differ, so the robot can acknowledge only emitted bytes.
+        var captured = RecordedRobotInput.ReadInbound(bundle, at => at >= capturedStart - 100, 745570, [0xF1])
+            .Select(row => (row.At, State: (AnimationState)row.Message)).ToArray();
+        var baseline = captured.Last(row => row.At < capturedStart).State;
+        var baselineFrame = scheduler.Stream.FramesStreamed;
+        var baselineBytes = scheduler.Stream.BytesStreamed;
+        int capturedIndex = Array.FindIndex(captured, row => row.At >= capturedStart);
+        Assert.True(capturedIndex > 0);
+        int mark = f.Rig.Mark(), seen = 0, frames = 0, audible = 0, faces = 0;
+        var bodyPackets = new List<(int Frame, short Speed, short Radius)>();
+        bool beforeStartAudio = false;
+        byte? playing = null;
+        using var cancel = new CancellationTokenSource();
+        var request = f.Rig.Robot.Motion.QueueAiAnimationAsync(AnimationTrigger.CodeLabDancingMambo, cancellationToken: cancel.Token);
+        f.Rig.DefaultTickMs = 0;
+        long startNs = f.Rig.NowNs;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (clock.Elapsed < TimeSpan.FromSeconds(28) && !request.IsCompleted)
+        {
+            f.Rig.NowNs = startNs + (long)(clock.Elapsed.TotalMilliseconds * 1_000_000);
+            sink.CompleteOne();
+            while (capturedIndex < captured.Length && captured[capturedIndex].At <= capturedStart + clock.Elapsed.TotalMilliseconds)
+            {
+                var state = captured[capturedIndex++].State;
+                f.Rig.Data(new AnimationState
+                {
+                    Tag = state.Tag,
+                    EnabledAnimTracks = state.EnabledAnimTracks,
+                    ClientDropCount = state.ClientDropCount,
+                    Timestamp = state.Timestamp,
+                    NumAudioFramesPlayed = Math.Min(scheduler.Stream.FramesStreamed, baselineFrame + state.NumAudioFramesPlayed - baseline.NumAudioFramesPlayed),
+                    NumAnimBytesPlayed = Math.Min(scheduler.Stream.BytesStreamed, baselineBytes + state.NumAnimBytesPlayed - baseline.NumAnimBytesPlayed),
+                });
+            }
+            f.Motors(RobotStatusFlag.IsBodyAccMode);
+            var sent = f.Rig.SentSince(mark);
+            for (; seen < sent.Count; seen++)
+                switch (sent[seen])
+                {
+                    case StartOfAnimation start when scheduler.Playing == clip.Name:
+                        Assert.True(beforeStartAudio); // the native builder sends audio before 0x9B
+                        playing = start.AnimId;
+                        frames = 1;
+                        f.Rig.Data(new AnimationStarted { AnimId = start.AnimId });
+                        break;
+                    case EndOfAnimation when playing is { } tag:
+                        playing = null;
+                        f.Rig.Data(new AnimationEnded { AnimId = tag });
+                        break;
+                    case AudioSilence or AudioSample when playing is null:
+                        beforeStartAudio = true;
+                        break;
+                    case AudioSilence when playing.HasValue:
+                        frames++;
+                        break;
+                    case AudioSample sample when playing.HasValue:
+                        frames++;
+                        if (sample.Samples.Any(b => (b & 0x7F) != 0)) audible++;
+                        break;
+                    case BodyMotion body when playing.HasValue:
+                        bodyPackets.Add((frames - 1, body.Speed, body.RadiusMm));
+                        break;
+                    case FaceImage when playing.HasValue:
+                        faces++;
+                        break;
+                }
+            await Task.Delay(10);
+        }
+
+        if (!request.IsCompleted) { cancel.Cancel(); f.Rig.Tick(); }
+        var result = await request.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(0u, result.EngineResult);
+        Assert.True(audible > 0);
+        Assert.Equal(469, faces);
+
+        // 0x0057CCAA..0x0057CE5A visits only the current body keyframe each tick.
+        // 0x004FBA8C..0x004FBB0E emits a stop at the first tick at or past duration.
+        // The next move can begin one tick after that stop, even if its trigger is past.
+        var expectedBody = new List<(int Frame, short Speed, short Radius)>();
+        int lastStop = -1;
+        foreach (var move in clip.Keyframes.OfType<BodyKeyframe>())
+        {
+            int begin = Math.Max(lastStop + 1, (int)((move.TriggerTimeMs + 32) / 33));
+            lastStop = begin + (int)((move.DurationTimeMs + 32) / 33);
+            expectedBody.Add((begin, move.Speed, move.EncodedRadius!.Value));
+            expectedBody.Add((lastStop, 0, short.MaxValue));
+        }
+        Assert.Equal(180, expectedBody.Count);
+        Assert.Equal(expectedBody, bodyPackets);
+        Assert.Equal(538, lastStop + 1); // frame 537 (zero-based) is the last 0x99 in the capture
+        Assert.Equal(lastStop + 1, frames);
     }
 
     [Fact]

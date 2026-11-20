@@ -3,7 +3,7 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **764 records** over 16 subsystems.
+Manifest of **765 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
@@ -11,7 +11,7 @@ Manifest of **764 records** over 16 subsystems.
 | EQUIVALENT_IMPLEMENTATION | 17 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 21 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 345 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 76 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 77 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -24,7 +24,7 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 63 | 0 | 0 | 0 | 1 | yes | yes |
+| M1-transport — UDP transport and reliability | 64 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 24 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 64 | 0 | 0 | 0 | 4 | yes | yes |
 | M4-control — Motion, sensors, lights and cubes | 53 | 0 | 0 | 0 | 3 | yes | yes |
@@ -4001,6 +4001,7 @@ Boundary (re-analysis/research/overnight/20261018-ov128-check.md): whether the f
 | M1-060 | M1-transport | COMPATIBILITY_POLICY | App input: the engine configuration JSON the app passes to CozmoEngine::Init | CozmoEngine::Init config reads 0x004EC898..0x004EC962 (B-M1-3 check B1) |
 | M1-062 | M1-transport | COMPATIBILITY_POLICY | App input: SetGameBeingPaused (G2E tag 85), supplied by a C# API call, default not paused | CozmoEngine::HandleMessage<SetGameBeingPaused> 0x004EDF84..0x004EDF9E: ldrb 0x004EDF86, strb engine+0x60 0x004EDF88, tail-call AppIsInFocus(!paused) via veneer 0x008CAA5C |
 | M1-063 | M1-transport | COMPATIBILITY_POLICY | Firmware-2457 animation byte budget and honest host cutoff reporting | Operator decision 2026-11-18 in re-analysis/jobs/trial-m13/QUEUE.md ANIM-BUDGET-FIRMWARE-1: measure and supply a smaller firmware-2457 animation budget; preserve native SUCCESS and report cutoffs separately in host outputs. The empirical budget is not recovered firmware capacity. |
+| M1-064 | M1-transport | COMPATIBILITY_POLICY | Standalone enrolment exit supplies the app music cleanup | Operator's app-boundary scope in AGENTS.md (2026-10-09) and the MUSIC-AUDIO-1 queue requirement to leave no enrolment music running. |
 | M3-039 | M3-device | COMPATIBILITY_POLICY | SDK cube-sleep recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M3-042 | M3-device | COMPATIBILITY_POLICY | Host persistent directory and stat mapping for the IMU diagnostic logger | libcozmoEngine.so 3.4.0-1204 IMU handlers (M3-041 rows L5/L6) and FileUtils (rows F8.1/F8.2). |
 | M3-044 | M3-device | COMPATIBILITY_POLICY | CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends | libcozmoEngine.so 3.4.0-1204 camera start path. |

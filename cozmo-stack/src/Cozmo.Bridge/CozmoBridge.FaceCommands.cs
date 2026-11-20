@@ -6,8 +6,11 @@ public sealed partial class CozmoBridge
 {
     private readonly SemaphoreSlim faceRequests = new(1);
 
-    private Task<CommandResult> TeachFace(string name, int saveId, CancellationToken token) =>
-        RequestFaceReport<FaceEnrollmentCompletedReport>(
+    // fidelity: M1-064 — app exit supplies the enrolment music cleanup.
+    private Task<CommandResult> TeachFace(string name, int saveId, CancellationToken token)
+    {
+        var music = new EnrollmentMusicScope();
+        return RequestFaceReport<FaceEnrollmentCompletedReport>(
             handler => Robot.Engine.FaceEnrollmentCompleted += handler,
             handler => Robot.Engine.FaceEnrollmentCompleted -= handler,
             // Wrong-face completion uses the other face's ID and name (StopInternal at 0x005FE2F4).
@@ -18,7 +21,7 @@ public sealed partial class CozmoBridge
                 // The app stages a named enrollment request and selects the Meet activity.
                 // G2E 0x87 (0x00737CEE..0x00737D3A), E2G 0x56 (0x005FE520..0x005FE528).
                 Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
-                Robot.SetFaceToEnroll(name, saveId);
+                Robot.SetFaceToEnroll(name, saveId, music);
             },
             report => new CommandResult("completed", null, report.Result, Enum.GetName((FaceEnrollmentResultName)report.Result),
                 Detail: report.Result == 0 ? "Face enrolled." : $"Enrollment ended: {Enum.GetName((FaceEnrollmentResultName)report.Result) ?? report.Result.ToString()}.", Report: report)
@@ -28,7 +31,8 @@ public sealed partial class CozmoBridge
                 FaceOperation = new { operation = "enroll", outcome = report.Result == 0 ? "enrolled" : "failed",
                     faceId = report.Id, name = report.Name, requestedName = name },
             },
-            TimeSpan.FromMinutes(2), token, Robot.CancelFaceEnrollment);
+            TimeSpan.FromMinutes(2), token, Robot.CancelFaceEnrollment, () => Robot.Engine.PostGameMessage(music.Close));
+    }
 
     private Task<CommandResult> RenameFace(int id, string oldName, string newName, CancellationToken token) =>
         RequestFaceReport<FaceRenamedReport>(
@@ -63,7 +67,7 @@ public sealed partial class CozmoBridge
 
     private async Task<CommandResult> RequestFaceReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
         Predicate<T> matches, Action request, Func<T, CommandResult> result, TimeSpan timeout, CancellationToken token,
-        Action? cancel = null)
+        Action? cancel = null, Action? onExit = null)
     {
         await faceRequests.WaitAsync(token).ConfigureAwait(false);
         try
@@ -96,7 +100,11 @@ public sealed partial class CozmoBridge
                 if (ReferenceEquals(Robot.Engine.Robot, owner)) cancel?.Invoke();
                 throw;
             }
-            finally { unsubscribe(Receive); }
+            finally
+            {
+                unsubscribe(Receive);
+                onExit?.Invoke();
+            }
         }
         finally { faceRequests.Release(); }
     }

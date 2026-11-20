@@ -1,10 +1,35 @@
 using System.Buffers.Binary;
 using System.Text;
+using Cozmo.Robot.Animation;
 
 namespace Cozmo.Robot;
 
 // G2E 0x87, 0x00737CEE..0x00737D3A. The app supplies observed ID zero.
-internal sealed record NativeEnrollmentRequest(string Name, int ObservedId, int SaveId, bool Save, bool SayName, bool UseMusic);
+internal sealed record NativeEnrollmentRequest(string Name, int ObservedId, int SaveId, bool Save, bool SayName, bool UseMusic,
+    EnrollmentMusicScope? MusicScope = null);
+
+// Standalone app lifetime, independent of the stock behavior's Stop/resume lifecycle.
+// Start and Close run on the engine owner. The Wwise worker checks the same scope on exit.
+internal sealed class EnrollmentMusicScope
+{
+    internal const uint SayNameMusic = 0x99EA6572;
+    private CannedSpeechOwner? _audio;
+    private bool _closed;
+
+    internal Task Start(CannedSpeechOwner audio, Func<bool> current)
+    {
+        if (_closed) return Task.CompletedTask;
+        _audio = audio;
+        return audio.RequestMusicState(SayNameMusic, false, 0, current, this);
+    }
+
+    internal void Close()
+    {
+        _closed = true;
+        _audio?.StopMusicState(SayNameMusic, this);
+        _audio = null;
+    }
+}
 internal sealed record NativeRenameFaceRequest(int Id, string OldName, string NewName);
 internal sealed record NativeEraseFaceRequest(int Id, EngineRobot Owner);
 
@@ -43,13 +68,15 @@ public sealed partial class CozmoRobot
         });
     }
     /// <summary>Requests named enrollment for the current robot. Activity admission is separate.</summary>
-    public void SetFaceToEnroll(string name, int saveId = 0)
+    public void SetFaceToEnroll(string name, int saveId = 0) => SetFaceToEnroll(name, saveId, null);
+
+    internal void SetFaceToEnroll(string name, int saveId, EnrollmentMusicScope? musicScope)
     {
         ArgumentNullException.ThrowIfNull(name);
         if (Encoding.UTF8.GetByteCount(name) > byte.MaxValue)
             throw new ArgumentException("The UTF-8 name exceeds the CLAD string length.", nameof(name));
         var owner = Engine.Robot;
-        var request = new NativeEnrollmentRequest(name, 0, saveId, true, true, true);
+        var request = new NativeEnrollmentRequest(name, 0, saveId, true, true, true, musicScope);
         Engine.PostGameMessage(() =>
         {
             if (owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot, owner))

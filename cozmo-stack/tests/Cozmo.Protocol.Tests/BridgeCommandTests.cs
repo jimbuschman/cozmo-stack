@@ -163,7 +163,9 @@ public sealed class BridgeCommandTests
 
         var teaching = Invoke(bridge, "teach-face", """{"name":"Ada","saveId":7}""", cancel.Token);
         f.Rig.Tick();
-        Assert.Equal(new NativeEnrollmentRequest("Ada", 0, 7, true, true, true), Assert.Single(requests));
+        var enrollRequest = Assert.IsType<NativeEnrollmentRequest>(Assert.Single(requests));
+        Assert.NotNull(enrollRequest.MusicScope);
+        Assert.Equal(new NativeEnrollmentRequest("Ada", 0, 7, true, true, true), enrollRequest with { MusicScope = null });
         Assert.Equal("MeetCozmo", bridge.GetState().GetProperty("activity").GetString());
         f.Robot.PublishEnrollmentResult(0, 8, "Unrelated");
         engine.DrainAppDelivery();

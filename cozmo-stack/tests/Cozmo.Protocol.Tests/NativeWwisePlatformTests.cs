@@ -113,6 +113,59 @@ public sealed class NativeWwisePlatformTests
     }
 
     [Fact]
+    public async Task MusicExitCancelsPendingCueAndOnlyFadesTheCurrentScope()
+    {
+        string lib = ShippedLibraries.FindLibDir() ?? throw new InvalidOperationException("shipped ARM library missing");
+        string meta = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped bank metadata missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
+        byte[] music = CannedSpeechOwner.ReadMusicBank(archive) ?? throw new InvalidOperationException("Music.bnk missing");
+        var sink = new FakeSink();
+        var session = await NativeWwiseVoiceSession.OpenSharedAsync(lib, GraphRig.ReadBank(meta, "Init.bnk"),
+            GraphRig.ReadBank(meta, "English(US)/Cozmo.bnk"), archive, new SpeechRobotAudioBuffer(),
+            () => Environment.TickCount64, () => sink, music);
+        int consumed = 0;
+        const uint state = EnrollmentMusicScope.SayNameMusic;
+        try
+        {
+            var cancelled = new EnrollmentMusicScope();
+            await session.RequestMusicStateAsync(state, false, 0, scope: cancelled);
+            await session.StopMusicStateAsync(state, cancelled);
+            session.UpdateMusic(Environment.TickCount64);
+            await CompleteBlocks(32);
+            Assert.All(sink.Submitted, block => Assert.False(Audible(block.Pcm)));
+
+            var prior = new EnrollmentMusicScope();
+            var current = new EnrollmentMusicScope();
+            await session.RequestMusicStateAsync(state, false, 0, scope: prior);
+            await session.RequestMusicStateAsync(state, false, 0, scope: current);
+            await session.StopMusicStateAsync(state, prior);
+            session.UpdateMusic(Environment.TickCount64);
+            await CompleteBlocks(130);
+            Assert.Contains(sink.Submitted.Skip(32), block => Audible(block.Pcm));
+
+            await session.StopMusicStateAsync(state, current);
+            await CompleteBlocks(200);
+            Assert.All(sink.Submitted.TakeLast(10), block => Assert.False(Audible(block.Pcm)));
+            Assert.Null(session.Failure);
+        }
+        finally { await session.CloseAsync().WaitAsync(TimeSpan.FromSeconds(10)); }
+
+        async Task CompleteBlocks(int total)
+        {
+            var until = DateTime.UtcNow.AddSeconds(15);
+            while (consumed < total && DateTime.UtcNow < until && session.Failure is null)
+            {
+                var submitted = sink.Submitted;
+                if (consumed < submitted.Length) sink.Complete(submitted[consumed++].Token);
+                await Task.Delay(4);
+            }
+            Assert.Equal(total, consumed);
+        }
+
+        static bool Audible(byte[] pcm) => pcm.Any(value => value != 0);
+    }
+
+    [Fact]
     public void SerialDispatchStopWaitsForDetachedActionWithoutBlockingCaller()
     {
         var queue = new SerialAudioDispatchFactory().Create(2);

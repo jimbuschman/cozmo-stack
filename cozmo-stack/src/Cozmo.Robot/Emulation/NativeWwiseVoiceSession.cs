@@ -40,6 +40,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
     private bool _generationOpen;
     private bool _musicPending, _musicTickQueued, _behaviorAudioPendingRender;
     private long _musicRequestVersion;
+    private EnrollmentMusicScope? _musicScope; // owned by the serialized Wwise worker
     private uint _nextCookie;
     private readonly Dictionary<uint, (long Generation, IWwiseRobotAudioCallback Callback)> _sharedCallbacks = new();
 
@@ -76,7 +77,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         return session;
     }
 
-    internal Task RequestMusicStateAsync(uint state, bool interrupt, uint minimumMilliseconds, Func<bool>? current = null)
+    internal Task RequestMusicStateAsync(uint state, bool interrupt, uint minimumMilliseconds, Func<bool>? current = null, EnrollmentMusicScope? scope = null)
     {
         lock (_gate)
         {
@@ -92,6 +93,22 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
                     throw new RetiredGenerationException();
                 }
                 host.RequestMusicState(state, interrupt, minimumMilliseconds);
+                _musicScope = scope;
+            });
+        }
+    }
+
+    internal Task StopMusicStateAsync(uint state, EnrollmentMusicScope scope)
+    {
+        lock (_gate)
+        {
+            if (_closing || _musicBank is null) return Task.CompletedTask;
+            if (_failure is { } failure) return Task.FromException(failure);
+            return Enqueue(host =>
+            {
+                if (!ReferenceEquals(_musicScope, scope)) return;
+                _musicScope = null;
+                if (host.CancelMusicState(state)) host.Render(0);
             });
         }
     }

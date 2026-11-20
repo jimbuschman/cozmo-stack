@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "4fe01a1510d26d82969f888e8c5b00b81832c3eca60835805538a1f03c0bc9e5",
+  "inventory_sha256": "690292076ff87ac20bf078d833ff07275fefcabd18c902805ea40f74fe823f9e",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -780,6 +780,18 @@
         "re-analysis/obb/assets/cozmo_resources/config/engine/AnkiLogStringTables.json nameTable[379] AnimationController.BufferKeyFrame.BufferFull; raw trace argument meanings remain unknown",
         "cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/animation_budget_firmware.json: 28 available bundle copies, 26 raw captures, 12 BufferFull traces; all counters start at zero, unique reliable sends deduplicated; two older bundles lack frames",
         "re-analysis/tools/measure_anim_budget.py: lowest 100/500/1000-ms pre-error peak 8125; highest clean observed value below that floor 8117, at 20261117-053040-M15-CUBE-HW-b22d48 frames line 16053, 138853.7051 ms (349618 streamed - 341501 played). Default = 8117 - (745+2) = 7370."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-064": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Standalone enrolment exit supplies the app music cleanup",
+      "authority": "Operator's app-boundary scope in AGENTS.md (2026-10-09) and the MUSIC-AUDIO-1 queue requirement to leave no enrolment music running.",
+      "evidence": [
+        "FaceEnrollment/FaceEnrollInstructionState.cs:87-104 restores GameBase.cs:161-164 default music when Unity leaves the instructions state; GameBase.cs:1124-1126 requests Freeplay music when its result view closes.",
+        "0x005FD2F6..0x005FD310 stages state 0x99EA6572 under the fresh enrolment useMusic flag. 0x008D7500 stages, 0x008D757C commits, 0x008D75B4 posts the play event, and 0x008D7758..0x008D777E supplies the stop event.",
+        "Music.bnk event 148746486/action 650118968 stops switch 797713379 with a 500 ms fade. The authored cue 0x99EA6572 selects playlist 5859510."
       ],
       "live_path": true,
       "hardware_required": false
