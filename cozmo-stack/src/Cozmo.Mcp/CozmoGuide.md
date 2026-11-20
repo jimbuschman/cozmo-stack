@@ -53,7 +53,11 @@ The recorded poses required absolute yaw error strictly below approximately 7.5 
 
 A `why.snapshot.pathArrival` comparison comes from DriveToPose after the firmware path completes. This earlier check compares the full goal rotation within 10 degrees and applies its XYZ tolerances. The snapshot gives the selected goal, arrival pose, and rotation error when the comparison reached it [dock-arrival].
 
+A charger mount can be cancelled by a cliff stop or unexpected movement during the approach, reverse, or forward retry. The robot's stop packet can cancel the action before the detailed `cliff-detected` report arrives. `sensors` is a bitmask. A value of 3 means both front sensors reported a cliff, and `stoppedForCliff` records whether firmware stopped. Check later events and the current state before deciding what happened. The report alone cannot distinguish a real edge from another surface or obstruction [charger-interruptions].
+
 On completion, check fresh `isOnCharger` and `isCharging`. A native failure's `why` may describe the final pose comparison, backup pitch, planner state, or an unavailable check [charger, why].
+
+`going-to-sleep` is a notice that the charger reaction armed the idle timers. The shipped defaults queue the sleep animation after 300 seconds and request disconnect after 330 seconds. A separate `robot-disconnected` with reason `WifiTimeout` means the engine stopped receiving datagrams for about five seconds. It can happen while the robot is already on the charger and the sleep timers are still pending [charger-interruptions].
 
 ## `get_state` fields
 
@@ -87,6 +91,7 @@ These are repository handoffs for the behavior already built; hardware acceptanc
 
 - [charger] `re-analysis/jobs/trial-m13/HANDOFF-MOUNT-CHARGER-LLM-1.md`: geometry-dependent bounds and strict heading comparison. Recorded Y threshold 21.423 mm, heading limit 7.499427 degrees; rounded above for operating guidance.
 - [dock-arrival] `re-analysis/jobs/trial-m13/HANDOFF-DOCK-CHARGER-POSE-1.md` covers the captured charger pose and the native DriveToPose verdict.
+- [charger-interruptions] `re-analysis/jobs/trial-m13/HANDOFF-CHARGER-MOUNT-CLIFF-1.md` covers the two firmware stops, the motion reaction, and the separate Wi-Fi timeout.
 - [why] `re-analysis/jobs/trial-m13/HANDOFF-MCP-ACTION-WHY-1.md`: unchanged native result, captured comparisons, MAIN-parent axes and unknown checks.
 - [findings] `re-analysis/jobs/trial-m13/HANDOFF-LLM-SESSION-FINDINGS-1.md`: unknown-face SUCCESS with no turn and `FacePoseAvailable`.
 - [budget] `re-analysis/jobs/trial-m13/HANDOFF-ANIM-BUDGET-FIRMWARE-1.md`: robot cutoff reporting while preserving native SUCCESS.
