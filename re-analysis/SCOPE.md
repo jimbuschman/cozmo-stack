@@ -63,6 +63,8 @@ baseline, named, switchable back to the engine's behaviour, and recorded here; t
 Candidates so far:
 - World map memory: he forgets the charger once it is out of sight or after he is picked up (2026-11-19 session:
   charger dropped from knownChargers after leaving it; objects deleted from old origins at re-localisation).
+- Drive on and off the charger by command, including a wake-and-drive-off request during `ReactToOnCharger`
+  (operator, 2026-11-19 evening session, F8/F21).
 
 ## D. Deferred (not worked unless the operator moves them)
 

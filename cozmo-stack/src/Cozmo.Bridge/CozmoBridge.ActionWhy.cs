@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Bridge;
@@ -19,6 +20,7 @@ public sealed partial class CozmoBridge
         private readonly object gate = new();
         private EngineRobot? owner;
         private IActionRunner? root;
+        private (ReactionTrigger Trigger, string? Behavior)? blockedBy;
         private HashSet<IActionRunner> previous = [];
         private NativeDriveToMountChargerRunner? mount;
         private string? poseCheck;
@@ -50,6 +52,7 @@ public sealed partial class CozmoBridge
         internal void BeforeAdmission()
         {
             owner = Robot.Engine.Robot;
+            blockedBy = ReactionBlockingAdmission();
             previous = new HashSet<IActionRunner>(Runners(), ReferenceEqualityComparer.Instance);
         }
 
@@ -59,7 +62,19 @@ public sealed partial class CozmoBridge
             // APIs append their requested runner after that synchronous handoff.
             root = Runners().LastOrDefault(r => !previous.Contains(r));
             mount = root as NativeDriveToMountChargerRunner;
+            blockedBy ??= ReactionBlockingAdmission();
             previous.Clear();
+        }
+
+        private (ReactionTrigger Trigger, string? Behavior)? ReactionBlockingAdmission()
+        {
+            // The engine sets this gate at the reaction transition (0x005A2106..0x005A2110).
+            // Capture it under the same engine owner as this admission attempt.
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(Robot.Engine.Robot, owner) ||
+                !owner.ActionList.ExternalActionsDisabled ||
+                owner.BehaviorManagerOwner is not { CurrentReactionTrigger: { } trigger } manager)
+                return null;
+            return (trigger, manager.Current?.Id);
         }
 
         // These callbacks are synchronous native action/path logs and ingress, on
@@ -160,6 +175,18 @@ public sealed partial class CozmoBridge
                 }
                 if (docking is not null) snapshot["docking"] = JsonSerializer.SerializeToNode(docking, Json);
                 if (path.Count != 0) snapshot["pathPlanner"] = JsonSerializer.SerializeToNode(path, Json);
+                if (blockedBy is { } reaction && IsReactionRefusal(result))
+                {
+                    snapshot["reaction"] = new JsonObject
+                    {
+                        ["trigger"] = reaction.Trigger.ToString(),
+                        ["behavior"] = reaction.Behavior,
+                        ["source"] = "ActionQueue.QueueAction.ExternalActionsDisabled 0x0053D94C..0x0053D9A2",
+                    };
+                    hint = reaction is { Trigger: ReactionTrigger.PlacedOnCharger, Behavior: "ReactToOnCharger" }
+                        ? "ReactToOnCharger is holding action admission. Pick Cozmo up and set him back on his treads, then retry once the reaction clears. Sliding him off the charger leaves the reaction active."
+                        : $"The {reaction.Trigger} reaction is holding action admission. Retry after it clears.";
+                }
                 if (truncated) hint = "Animation was cut off by robot buffer; see playbackIssues for the captured evidence.";
                 return new JsonObject
                 {

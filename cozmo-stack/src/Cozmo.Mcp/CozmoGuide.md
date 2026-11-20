@@ -18,6 +18,8 @@ For motion, animation and speech, `admitted` reports whether the action was acce
 
 Action tools accept optional `waitAdmittedMs` from 0 to 30000. The default of 0 makes one admission attempt. A positive value lets a reaction finish before resubmitting a refused action. An action already admitted keeps its original result, including an interruption. `admissionWait` reports `waitedMs`, the blocking `reactions`, and whether the wait `timedOut`.
 
+For a reaction refusal, `why.snapshot.reaction` names the trigger and behavior at admission. If `ReactToOnCharger` is holding the action, pick Cozmo up and set him back on his treads, then retry after the reaction clears. Sliding him off the charger leaves the reaction active.
+
 **Turn to a face:** an unknown ID can return native SUCCESS and turn nowhere. `report.facePoseAvailable=false` and `detail` identify that case [findings]. An enrolled name alone does not establish a current visible pose.
 
 **Animation:** inspect `report.animationName`, `report.playbackTag`, `truncatedByRobot` and `playbackIssues`. A robot buffer cutoff can leave native SUCCESS while MCP `isError=true`. The issues report observed early ending/BufferFull evidence; tag/name may be null when association is unknown. A selected clip does not establish that the robot played its whole stream. Use the playback observations and what was seen/heard [budget].

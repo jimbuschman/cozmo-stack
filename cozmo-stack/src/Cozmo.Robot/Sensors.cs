@@ -768,7 +768,9 @@ public sealed class CozmoSensors
     // fidelity: M13-040 -- every true input observes before the old-contact gate (0x005119AA..0x00511BB0).
     private void SetOnCharger(bool onContacts)
     {
-        if (onContacts && _robot.Engine.Robot is { } robot)
+        var engine = _robot.Engine;
+        var robot = engine.Robot;
+        if (onContacts && robot is not null)
         {
             using var source = Vision.Pose3d.UseSourceLog((l,c,k,t) => _robot.Engine.EmitSourceLog(l,c,k,t), _robot.Engine.Das.ForceFlushNow);
             LogCallbackDeferral.RunGated(robot.PoseTreeGate,
@@ -777,9 +779,17 @@ public sealed class CozmoSensors
         bool rising, falling;
         lock (_gate) { rising = onContacts && !_onChargerContacts; falling = !onContacts && _onChargerContacts; }
         if (rising) SetOnChargerPlatform(true);
-        // ChargerEvent{1} on the rising edge (0x00511BF4..0x00511C0A), {0} on the falling edge (0x00511AAE..0x00511AC4)
-        if(rising||falling)
-        { _robot.Engine.QueueAppBroadcast(ChargerEvent,rising);ChargerEventInternal?.Invoke(rising); }
+        if (rising || falling)
+        {
+            // Engine contact event then E2G 0x39, before the contact write at 0x00511C14.
+            // Rising 0x00511BCA..0x00511C0A, falling 0x00511A84..0x00511AC4. Pack at 0x007121EC.
+            engine.EmitSourceLog(EngineLogLevel.Event, null, rising ? "robot.on_charger" : "robot.off_charger", "");
+            if (robot is { HasExternalInterface: true } && !robot.Lifetime.Destroying && ReferenceEquals(engine.Robot, robot))
+                engine.DeliverAnimationReportToApp(0x39, new[] { rising ? (byte)1 : (byte)0 }, engine.CaptureAppEvent(ChargerEvent, rising));
+            else
+                engine.QueueAppBroadcast(ChargerEvent, rising);
+            ChargerEventInternal?.Invoke(rising);
+        }
         lock (_gate) _onChargerContacts = onContacts;
     }
 
