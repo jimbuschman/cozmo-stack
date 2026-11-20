@@ -52,6 +52,18 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
         using var bridge = new CozmoBridge(f.Rig.Robot);
         await using var client = new McpServerTests.Client(bridge);
         await client.Initialize();
+        var completed = new ConcurrentQueue<(uint Tag, uint Result, byte Union)>();
+        f.Rig.Engine.EngineToGameMessage += (tag, payload) =>
+        {
+            if (tag != 0x5A) return;
+            var reader = new CladReader(payload);
+            uint actionTag = reader.U32();
+            if (reader.I32() != 0x20 || actionTag is 0 or > 1_000_000) return;
+            uint result = reader.U32();
+            byte count = reader.U8();
+            for (int i = 0; i < count; i++) reader.U32();
+            completed.Enqueue((actionTag, result, reader.U8()));
+        };
         var results = new List<object>();
         f.Rig.DefaultTickMs = 0;
         var wall = Stopwatch.StartNew(); long start = f.Rig.NowNs;
@@ -110,6 +122,11 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
                 var reply = await response!;
                 f.Rig.Robot.Animations.Scheduler.Diagnostic -= diagnostic;
                 Assert.False(reply.GetProperty("result").GetProperty("isError").GetBoolean(), reply.ToString());
+                Assert.True(completed.TryDequeue(out var completion));
+                Assert.Equal((uint)results.Count + 1, completion.Tag);
+                Assert.Equal(0u, completion.Result);
+                Assert.Equal((byte)6, completion.Union);
+                Assert.Empty(completed);
                 string resultsWireHash = Convert.ToHexString(wireHash.GetHashAndReset());
                 var expected = text switch
                 {

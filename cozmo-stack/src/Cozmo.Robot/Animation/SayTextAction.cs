@@ -53,6 +53,11 @@ internal sealed class SayTextAction : ActionRunner
 
     protected override string ActionName => "SayText";
     protected override float EngineClockSeconds => _robot.Engine.Timer.SecondsF;
+    // IActionRunner constructor's type 0x20 entry (0x0053FEFA) selects
+    // Set_defaultCompleted at 0x0053FF0E–0x0053FF14. SayText's vtable slot
+    // +0x0C at 0x01022DB0 copies the cached union (0x0052B0A6).
+    public override byte? GetCompletionVariant() => 6;
+
     // SayTextAction vtable slot +0x14 resolves to 0x0052B0B2, which returns zero.
     public override bool CanInterrupt() => false;
     internal override bool RetireNeverAdmittedTree()
