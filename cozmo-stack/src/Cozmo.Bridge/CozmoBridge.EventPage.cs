@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Cozmo.Bridge;
 
@@ -12,7 +13,10 @@ public sealed partial class CozmoBridge
     private sealed record EventPage(long Cursor, long OldestCursor, bool Gap, FeedEvent[] Events);
     private sealed record Sightings(string Type, int Count, long FirstCursor, long LastCursor,
         DateTimeOffset FirstTimestampUtc, DateTimeOffset LastTimestampUtc,
-        uint? FirstRobotTimestamp, uint? LastRobotTimestamp, JsonElement LastPayload);
+        uint? FirstRobotTimestamp, uint? LastRobotTimestamp, JsonElement LastPayload,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? FaceId,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Name);
+    private readonly record struct SightingKey(string Type, int? FaceId = null, string? Name = null);
 
     private long CurrentEventCursor()
     {
@@ -89,24 +93,78 @@ public sealed partial class CozmoBridge
 
     private static (FeedEvent[] Remaining, Sightings[] Sightings) Collapse(FeedEvent[] events)
     {
-        var sightings = events.Where(e => IsSighting(e.Type))
-            .GroupBy(e => e.Type, StringComparer.Ordinal)
-            .Where(group => group.Count() > 1)
-            .Select(group =>
+        var candidates = new Dictionary<SightingKey, List<FeedEvent>>();
+        var previousName = new Dictionary<int, string>();
+        foreach (var item in events)
+        {
+            SightingKey key = new(item.Type);
+            if (item.Type == "face-recognised")
             {
-                var first = group.First();
-                var last = group.Last();
-                return new Sightings(group.Key, group.Count(), first.Cursor, last.Cursor,
-                    first.TimestampUtc, last.TimestampUtc, first.RobotTimestamp, last.RobotTimestamp, last.Payload);
-            }).ToArray();
-        var collapsed = sightings.Select(sighting => sighting.Type).ToHashSet(StringComparer.Ordinal);
-        return (events.Where(e => !collapsed.Contains(e.Type)).ToArray(), sightings);
+                if (item.Payload.ValueKind != JsonValueKind.Object ||
+                    !item.Payload.TryGetProperty("faceId", out var id) || id.ValueKind != JsonValueKind.Number ||
+                    !id.TryGetInt32(out int faceId) ||
+                    !item.Payload.TryGetProperty("name", out var field) || field.ValueKind != JsonValueKind.String ||
+                    field.GetString() is not { Length: > 0 } name)
+                    continue;
+
+                // A first recognition or any name change stays in events, even if
+                // the same face/name pair appeared earlier in the window.
+                string? before = previousName.GetValueOrDefault(faceId);
+                previousName[faceId] = name;
+                if (!string.Equals(before, name, StringComparison.Ordinal)) continue;
+                key = new(item.Type, faceId, name);
+            }
+            else if (!IsSighting(item.Type)) continue;
+
+            if (!candidates.TryGetValue(key, out var group)) candidates.Add(key, group = []);
+            group.Add(item);
+        }
+
+        var collapsed = new HashSet<long>();
+        var sightings = new List<Sightings>();
+        foreach (var (key, group) in candidates)
+        {
+            if (group.Count == 1 && key.FaceId is null) continue;
+            var first = group[0];
+            var last = group[^1];
+            sightings.Add(new(key.Type, group.Count, first.Cursor, last.Cursor,
+                first.TimestampUtc, last.TimestampUtc, first.RobotTimestamp, last.RobotTimestamp,
+                last.Payload, key.FaceId, key.Name));
+            foreach (var item in group) collapsed.Add(item.Cursor);
+        }
+        return (events.Where(e => !collapsed.Contains(e.Cursor)).ToArray(), sightings.ToArray());
     }
 
-    private static int EchoPayloadCost(JsonElement data)
+    private static int EchoPayloadCost(JsonElement data, JsonElement? text = null) =>
+        Encoding.UTF8.GetByteCount(data.GetRawText()) +
+        JsonEncodedText.Encode((text ?? data).GetRawText()).EncodedUtf8Bytes.Length;
+
+    private static bool HasRecognitionSummaries(JsonElement during) =>
+        during.TryGetProperty("sightings", out var sightings) &&
+        sightings.EnumerateArray().Any(row => row.GetProperty("type").GetString() == "face-recognised");
+
+    private static JsonElement RecognitionWindowText(JsonElement during) => JsonSerializer.SerializeToElement(new
     {
-        string json = data.GetRawText();
-        return Encoding.UTF8.GetByteCount(json) + JsonEncodedText.Encode(json).EncodedUtf8Bytes.Length;
+        cursor = during.GetProperty("cursor"),
+        oldestCursor = during.GetProperty("oldestCursor"),
+        gap = during.GetProperty("gap"),
+        events = during.GetProperty("events").EnumerateArray()
+            .Where(e => e.GetProperty("type").GetString()!.StartsWith("face-", StringComparison.Ordinal)).ToArray(),
+        sightings = during.GetProperty("sightings"),
+        detailsInStructuredContent = true,
+    }, Json);
+
+    // Keep the full compact window in structuredContent. For a large recognition
+    // window, the text echo still carries the action result and identity changes.
+    internal static string ToolResultText(JsonElement result)
+    {
+        if (!result.TryGetProperty("during", out var during) || during.TryGetProperty("continuation", out _) ||
+            !HasRecognitionSummaries(during) || EchoPayloadCost(result) <= CompactToolReplyBytes)
+            return result.GetRawText();
+
+        var text = JsonNode.Parse(result.GetRawText())!.AsObject();
+        text["during"] = JsonNode.Parse(RecognitionWindowText(during).GetRawText());
+        return text.ToJsonString(Json);
     }
 
     private static JsonElement SerializeReadPage(EventPage page, bool full)
@@ -136,7 +194,9 @@ public sealed partial class CozmoBridge
         {
             page.Cursor, page.OldestCursor, page.Gap, events = remaining, sightings,
         }, Json);
-        if (keep == 0 || EchoPayloadCost(complete) <= budget) return complete;
+        if (keep == 0 || EchoPayloadCost(complete) <= budget ||
+            HasRecognitionSummaries(complete) && EchoPayloadCost(complete, RecognitionWindowText(complete)) <= budget)
+            return complete;
 
         var completion = completionTag is { } tag ? remaining.LastOrDefault(e => e.Type == "action-completed" &&
             e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag) : null;
@@ -144,7 +204,9 @@ public sealed partial class CozmoBridge
         // The first reply covers the full action window for sighting counts. Other
         // events stay in their original shape and can be paged from the same feed.
         // Keep the requested put-down's completion in the reply even after slicing.
-        string[] excludeTypes = sightings.Select(sighting => sighting.Type).ToArray();
+        // Recognition groups summarize individual repeats. Excluding that whole type
+        // would hide identity changes in the continuation.
+        string[] excludeTypes = sightings.Where(sighting => IsSighting(sighting.Type)).Select(sighting => sighting.Type).ToArray();
         while (true)
         {
             keep /= 2;

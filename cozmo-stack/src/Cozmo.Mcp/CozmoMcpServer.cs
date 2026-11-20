@@ -316,7 +316,7 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         }
         return new
         {
-            content = new[] { new { type = "text", text = result.GetRawText() } },
+            content = new[] { new { type = "text", text = CozmoBridge.ToolResultText(result) } },
             structuredContent = result,
             isError = error,
         };

@@ -49,6 +49,48 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task CompactReadGroupsOnlyRepeatedRecognitionsOfTheSameIdentity()
+    {
+        using var rig = new M4ControlTests.Rig();
+        using var bridge = new CozmoBridge(rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        void See(int id, string name, uint stamp) =>
+            Append(bridge, "face-recognised", JsonSerializer.SerializeToElement(new { faceId = id, name, stamp }), stamp);
+
+        See(1, "Jim", 10);
+        See(1, "Jim", 20);
+        See(2, "Jim", 30);
+        See(2, "Jim", 40);
+        See(1, "James", 50);
+        See(1, "James", 60);
+        See(1, "Jim", 70);
+        See(1, "Jim", 80);
+        foreach (string type in new[] { "face-id-changed", "face-lost", "face-enrollment-completed", "face-renamed", "face-erased" })
+            Append(bridge, type, JsonSerializer.SerializeToElement(new { faceId = 1 }));
+
+        var reply = Data(await client.Tool("read_events", new { }));
+        Assert.Equal(new long[] { 1, 3, 5, 7, 9, 10, 11, 12, 13 },
+            reply.GetProperty("events").EnumerateArray().Select(e => e.GetProperty("cursor").GetInt64()));
+        var rows = reply.GetProperty("sightings").EnumerateArray().ToArray();
+        Assert.Equal(3, rows.Length);
+        Check(rows[0], 1, "Jim", 2, 20, 80);
+        Check(rows[1], 2, "Jim", 1, 40, 40);
+        Check(rows[2], 1, "James", 1, 60, 60);
+
+        static void Check(JsonElement row, int id, string name, int count, uint first, uint last)
+        {
+            Assert.Equal("face-recognised", row.GetProperty("type").GetString());
+            Assert.Equal(id, row.GetProperty("faceId").GetInt32());
+            Assert.Equal(name, row.GetProperty("name").GetString());
+            Assert.Equal(count, row.GetProperty("count").GetInt32());
+            Assert.Equal(first, row.GetProperty("firstRobotTimestamp").GetUInt32());
+            Assert.Equal(last, row.GetProperty("lastRobotTimestamp").GetUInt32());
+            Assert.Equal(last, row.GetProperty("lastPayload").GetProperty("stamp").GetUInt32());
+        }
+    }
+
+    [Fact]
     public async Task FilteredWaitOnlyWakesForMatchingEventsAndRespectsItsCursor()
     {
         using var rig = new M4ControlTests.Rig();
@@ -83,8 +125,10 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
         {
             if (kind == 0x5A) rawCompletionTags.Add(new CladReader(body.ToArray()).U32());
         };
-        for (int i = 0; i < 40; i++)
-            Append(bridge, "face-recognised", JsonSerializer.SerializeToElement(new { faceId = i, points = new string('x', 1200) }));
+        Append(bridge, "face-recognised", JsonSerializer.SerializeToElement(new { faceId = 0, name = "Jim" }));
+        Append(bridge, "face-recognised", JsonSerializer.SerializeToElement(new { faceId = 0, name = "Jim" }));
+        for (int i = 1; i <= 40; i++)
+            Append(bridge, "face-recognised", JsonSerializer.SerializeToElement(new { faceId = i, name = $"Name {i}", points = new string('x', 1200) }));
         f.Rig.Tick();
         var result = await client.Receive(call);
         Assert.True(WireBytes(result) < 20000, WireBytes(result).ToString());
@@ -97,7 +141,15 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
         Assert.Contains(during.GetProperty("events").EnumerateArray(),
             e => e.GetProperty("type").GetString() == "action-completed" &&
                 e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == tag);
-        Assert.True(during.TryGetProperty("continuation", out _));
+        var continuation = during.GetProperty("continuation");
+        Assert.DoesNotContain(continuation.GetProperty("excludeTypes").EnumerateArray(),
+            type => type.GetString() == "face-recognised");
+        var sighting = Assert.Single(during.GetProperty("sightings").EnumerateArray());
+        Assert.Equal(1, sighting.GetProperty("count").GetInt32());
+        var later = Data(await client.Tool("read_events", new { since = continuation.GetProperty("since"),
+            excludeTypes = continuation.GetProperty("excludeTypes"), detail = "full" }));
+        Assert.Contains(later.GetProperty("events").EnumerateArray(), e => e.GetProperty("type").GetString() == "face-recognised" &&
+            e.GetProperty("payload").GetProperty("faceId").GetInt32() == 40);
         Assert.DoesNotContain(tag, rawCompletionTags);
         Assert.DoesNotContain(tag, publicCompletionTags);
     }
@@ -187,27 +239,34 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
         {
             int size = WireBytes(reply);
             Assert.True(size < 20000, size.ToString());
-            var sightings = Assert.Single(during.GetProperty("sightings").EnumerateArray());
-            Assert.Equal(185, sightings.GetProperty("count").GetInt32());
-            var continuation = during.GetProperty("continuation");
-            long since = continuation.GetProperty("since").GetInt64(), through = continuation.GetProperty("through").GetInt64();
-            while (since < through)
-            {
-                var next = await client.Tool("read_events", new { since, excludeTypes = continuation.GetProperty("excludeTypes") });
-                Assert.True(WireBytes(next) < 20000);
-                var page = Data(next);
-                all.AddRange(page.GetProperty("events").EnumerateArray().Where(e => e.GetProperty("cursor").GetInt64() <= through));
-                long cursor = page.GetProperty("cursor").GetInt64();
-                Assert.True(cursor > since);
-                since = cursor;
-            }
-            output.WriteLine($"Captured enrollment first compact response {size} bytes.");
+            Assert.False(during.TryGetProperty("continuation", out _));
+            var text = JsonSerializer.Deserialize<JsonElement>(reply.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString()!);
+            var textWindow = text.GetProperty("during");
+            Assert.True(textWindow.GetProperty("detailsInStructuredContent").GetBoolean());
+            Assert.Equal(during.GetProperty("events").EnumerateArray().Where(e => e.GetProperty("type").GetString()!.StartsWith("face-", StringComparison.Ordinal))
+                    .Select(e => e.GetRawText()),
+                textWindow.GetProperty("events").EnumerateArray().Select(e => e.GetRawText()));
+            Assert.Equal(Data(reply).GetProperty("report").GetRawText(), text.GetProperty("report").GetRawText());
+            var groups = during.GetProperty("sightings").EnumerateArray().ToArray();
+            Assert.Equal(185, Assert.Single(groups, e => e.GetProperty("type").GetString() == "face-seen").GetProperty("count").GetInt32());
+            var repeats = Assert.Single(groups, e => e.GetProperty("type").GetString() == "face-recognised");
+            Assert.Equal(1, repeats.GetProperty("faceId").GetInt32());
+            Assert.Equal("Jim", repeats.GetProperty("name").GetString());
+            Assert.Equal(70, repeats.GetProperty("count").GetInt32());
+            Assert.Equal(100595u, repeats.GetProperty("firstRobotTimestamp").GetUInt32());
+            Assert.Equal(113485u, repeats.GetProperty("lastRobotTimestamp").GetUInt32());
+            Assert.Equal(113485u, repeats.GetProperty("lastPayload").GetProperty("timestamp").GetUInt32());
+            Assert.Equal(captured.Where(e => !MayCollapse(e.GetProperty("type").GetString()))
+                    .Select(e => (e.GetProperty("type").GetString(), e.GetProperty("payload").GetRawText())),
+                all.Where(e => !MayCollapse(e.GetProperty("type").GetString()))
+                    .Select(e => (e.GetProperty("type").GetString(), e.GetProperty("payload").GetRawText())));
+            output.WriteLine($"Captured enrollment compact response {size} bytes, without a continuation.");
         }
 
         var expected = captured.Where(e => e.GetProperty("type").GetString() == "face-recognised").ToArray();
         var recognitions = all.Where(e => e.GetProperty("type").GetString() == "face-recognised").ToArray();
-        Assert.Equal(71, recognitions.Length);
-        Assert.Equal(expected.Select(e => e.GetProperty("payload").GetRawText()),
+        Assert.Equal(full ? 71 : 1, recognitions.Length);
+        Assert.Equal((full ? expected : expected[..1]).Select(e => e.GetProperty("payload").GetRawText()),
             recognitions.Select(e => e.GetProperty("payload").GetRawText()));
     }
 
@@ -273,6 +332,7 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
             var originals = tape.Where(e => !MayCollapse(e.GetProperty("type").GetString())).ToArray();
             var actual = delivered.Where(e => !MayCollapse(e.GetProperty("type").GetString())).ToArray();
             Assert.Equal(originals.Select(e => e.GetProperty("payload").GetRawText()), actual.Select(e => e.GetProperty("payload").GetRawText()));
+            AssertRequiredRecognitions(tape, delivered);
             pages++;
         }
         Assert.True(pages > 0);
@@ -283,6 +343,23 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
     private static readonly MethodInfo AttachDuring = typeof(CozmoBridge).GetMethod("AttachDuring", BindingFlags.NonPublic | BindingFlags.Instance)!;
     private static readonly MethodInfo ToolResult = typeof(CozmoMcpServer).GetMethod("ToolResult", BindingFlags.NonPublic | BindingFlags.Static)!;
 
+    private static void AssertRequiredRecognitions(JsonElement[] tape, List<JsonElement> delivered)
+    {
+        var visible = delivered.ToDictionary(e => e.GetProperty("cursor").GetInt64());
+        var previous = new Dictionary<int, string>();
+        for (int i = 0; i < tape.Length; i++)
+        {
+            var item = tape[i];
+            if (item.GetProperty("type").GetString() != "face-recognised") continue;
+            var payload = item.GetProperty("payload");
+            int id = payload.GetProperty("faceId").GetInt32();
+            string name = payload.GetProperty("name").GetString()!;
+            if (previous.GetValueOrDefault(id) != name)
+                Assert.Equal(payload.GetRawText(), visible[i + 1].GetProperty("payload").GetRawText());
+            previous[id] = name;
+        }
+    }
+
     private static bool MayCollapse(string? type) =>
-        type is "face-seen" or "cube-seen" or "charger-seen" or "robot-state";
+        type is "face-seen" or "cube-seen" or "charger-seen" or "robot-state" or "face-recognised";
 }
