@@ -20,21 +20,21 @@ Robot script: `m15-cube-hw --commands` (built 2026-11-16) runs every command bel
 | Item | State |
 | --- | --- |
 | Head, lift, drive straight, turn in place | robot (2026-11-16, runs 20261116-110735 / -111516: engine success and operator yes) |
-| Turn to a face, turn to a cube, track a face | turn to a cube: robot (2026-11-16); face turn and track: not shown (head was down, face out of view; COMMANDS-FACE-SETUP-1) |
-| Play an authored animation | engine success on the robot 2026-11-16, but silent (sound banks not loaded; fixed in the scripts b486fe42, ENGINE-AUDIO-STARTUP-1); re-run |
-| Say a sentence in his voice | robot (2026-11-09; maybe slightly slow) |
+| Turn to a face, turn to a cube, track a face | turn to a cube: robot (2026-11-16); face turn and track: seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (turn-to-face SUCCESS with facePoseAvailable; operator saw tracking); scripted check still to run (session_check.py, SESSION-CHECK-1) |
+| Play an authored animation | seen with sound in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (MajorWin, CodeLabHappy, lift-effort sound heard; the mambo's backing music is the app's CodeLab block, not the animation: MUSIC-AUDIO-1); session_check.py check still to run (SESSION-CHECK-1) |
+| Say a sentence in his voice | robot (2026-11-09; heard again in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass)); first sound now ~3 s offline (SPEECH-EMU-SPEED-1, was 9-17 s on the robot), robot check of the faster speech pending |
 | Pick up a cube, put it down | robot (2026-11-09; again 2026-11-15, run 20261115-162141) |
-| Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | sim |
-| Teach, rename and erase a face | failed on the robot 2026-11-16: enrollment aborted on the M14-006 audio-device gate (scripts fixed b486fe42; ENGINE-AUDIO-STARTUP-1); re-run |
+| Events: face seen / recognised / lost, cube seen / moved / tapped, object pose lost | every kind seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass), pushed live on 2026-11-20 (EVENT-PUSH-1); session_check.py check still to run (SESSION-CHECK-1) |
+| Teach, rename and erase a face | teach: worked in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (enrolled Jim, then recognised); rename and erase not yet shown on the robot; session_check.py check still to run (SESSION-CHECK-1) |
 | Go to a place (QueueAiGotoPoseAsync) | robot (2026-11-16, runs 20261116-110735 / -111516: success in both runs, operator yes) |
-| Return to and mount the charger (QueueAiMountChargerAsync) | failed on the robot 2026-11-16: 0x04000003, robot result 6 (too long without block pose) after docking signals stopped at 84 mm; MOUNT-DOCK-SIGNALS-1 |
+| Return to and mount the charger (QueueAiMountChargerAsync) | not passed on the robot: 2026-11-16 docking signals stopped (MOUNT-DOCK-SIGNALS-1); 2026-11-19 four failures matching the engine on a tilted first charger estimate (DOCK-CHARGER-POSE-1, WHEELIE-CHARGER-PATH-1); 2026-11-20 cable snag, 8.7 mm approach miss, two cliff stops (CHARGER-MOUNT-CLIFF-1 reads the engine's docking reaction handling before any further attempt). Docking by plain drives worked twice |
 | Roll a cube (QueueAiRollCubeAsync) | robot (2026-11-15, run 20261115-162141: drove to the cube and rolled it) |
-| Stack a cube (QueueAiStackOnCubeAsync) | sim (built 2026-11-15; robot run needs a second live cube) |
-| Charger seen report (operator 2026-11-15) | sim (E2G 0x44 for the charger built 2026-11-16; shown in the --skills charger round) |
-| Freeplay on/off, and returning to Freeplay after a command | sim (SetEnableFreeplayActivity built 2026-11-15; `m15-cube-hw --freeplay-control`) |
+| Stack a cube (QueueAiStackOnCubeAsync) | seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (onto an unpowered cube, success on the second try after the target's pose shifted 32 mm); session_check.py check still to run (SESSION-CHECK-1) |
+| Charger seen report (operator 2026-11-15) | seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (charger-seen events and boxes; detection range ~15-25 cm, DOCK-CHARGER-POSE-1) |
+| Freeplay on/off, and returning to Freeplay after a command | on/off seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass); return after a command not yet shown (FREEPLAY-LLM-1); `m15-cube-hw --freeplay-control` |
 | The connection for an LLM (bridge) | robot (MCP server; LLM sessions 2026-11-18 and 2026-11-19, operator present) |
-| Colour camera (operator 2026-11-19: "why wouldn't we want color?") | none (engine EnableColorImages handler 0x0065835C; COLOR-CAMERA-1) |
-| Reaction locks while the LLM does a task, and "wait until accepted" (operator 2026-11-19, F16) | none (app's DisableReactionsWithLock, Robot.cs:1999; REACTION-LOCK-LLM-1) |
+| Colour camera (operator 2026-11-19: "why wouldn't we want color?") | seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (encoding 9 colour frames with boxes; COLOR-CAMERA-1) |
+| Reaction locks while the LLM does a task, and "wait until accepted" (operator 2026-11-19, F16) | seen in LLM sessions 2026-11-19/20 (re-analysis/research/20261119-llm-session-2-notes.md, 20261120-llm-session-3/4-notes.md; operator present, observations, not a scripted pass) (locks stopped cube interruptions during docking; waitAdmittedMs waited out a pet reaction; REACTION-LOCK-LLM-1) |
 
 ## B. Personality (required)
 
