@@ -140,6 +140,9 @@ public sealed class AiAuthoredAnimationTests
         var sink = new Sink();
         using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
             sourceNvEmpty: true, engineOptions: options, engineCreated: engine => engine.RuntimeAudioSinkForTest = () => sink);
+        await Assert.IsType<CannedSpeechOwner>(f.Rig.Engine.RuntimeWwiseAudio).Ready.WaitAsync(TimeSpan.FromSeconds(25));
+        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        f.Rig.Tick();
         var scheduler = f.Rig.Robot.Animations.Scheduler;
         var library = f.Rig.Robot.Animations.Library!;
         var clip = library.GetClip("anim_dancing_mambo_01");
@@ -147,13 +150,14 @@ public sealed class AiAuthoredAnimationTests
         Assert.Equal(8, clip.Keyframes.OfType<AudioKeyframe>().Count());
 
         const double capturedStart = 727118.0822;
-        // Rebase the captured F1 budget counters onto this offline robot. Wwise
-        // variant lengths can differ, so the robot can acknowledge only emitted bytes.
+        // Rebase the captured F1 frame consumption onto this offline robot.
+        // Wwise variants can change the size of emitted packets, so the byte
+        // acknowledgements follow the offline stream's actual emitted bytes.
         var captured = RecordedRobotInput.ReadInbound(bundle, at => at >= capturedStart - 100, 745570, [0xF1])
             .Select(row => (row.At, State: (AnimationState)row.Message)).ToArray();
         var baseline = captured.Last(row => row.At < capturedStart).State;
         var baselineFrame = scheduler.Stream.FramesStreamed;
-        var baselineBytes = scheduler.Stream.BytesStreamed;
+        var feedback = baseline;
         int capturedIndex = Array.FindIndex(captured, row => row.At >= capturedStart);
         Assert.True(capturedIndex > 0);
         int mark = f.Rig.Mark(), seen = 0, frames = 0, audible = 0, faces = 0;
@@ -170,18 +174,17 @@ public sealed class AiAuthoredAnimationTests
             f.Rig.NowNs = startNs + (long)(clock.Elapsed.TotalMilliseconds * 1_000_000);
             sink.CompleteOne();
             while (capturedIndex < captured.Length && captured[capturedIndex].At <= capturedStart + clock.Elapsed.TotalMilliseconds)
+                feedback = captured[capturedIndex++].State;
+            f.Rig.Data(new AnimationState
             {
-                var state = captured[capturedIndex++].State;
-                f.Rig.Data(new AnimationState
-                {
-                    Tag = state.Tag,
-                    EnabledAnimTracks = state.EnabledAnimTracks,
-                    ClientDropCount = state.ClientDropCount,
-                    Timestamp = state.Timestamp,
-                    NumAudioFramesPlayed = Math.Min(scheduler.Stream.FramesStreamed, baselineFrame + state.NumAudioFramesPlayed - baseline.NumAudioFramesPlayed),
-                    NumAnimBytesPlayed = Math.Min(scheduler.Stream.BytesStreamed, baselineBytes + state.NumAnimBytesPlayed - baseline.NumAnimBytesPlayed),
-                });
-            }
+                Tag = feedback.Tag,
+                EnabledAnimTracks = feedback.EnabledAnimTracks,
+                ClientDropCount = feedback.ClientDropCount,
+                Timestamp = feedback.Timestamp,
+                NumAudioFramesPlayed = Math.Min(scheduler.Stream.FramesStreamed,
+                    baselineFrame + feedback.NumAudioFramesPlayed - baseline.NumAudioFramesPlayed),
+                NumAnimBytesPlayed = scheduler.Stream.BytesStreamed,
+            });
             f.Motors(RobotStatusFlag.IsBodyAccMode);
             var sent = f.Rig.SentSince(mark);
             for (; seen < sent.Count; seen++)
@@ -219,7 +222,8 @@ public sealed class AiAuthoredAnimationTests
 
         if (!request.IsCompleted) { cancel.Cancel(); f.Rig.Tick(); }
         var result = await request.WaitAsync(TimeSpan.FromSeconds(2));
-        Assert.Equal(0u, result.EngineResult);
+        Assert.True(result.EngineResult == 0u,
+            $"Mambo ended with {result.EngineResult:X8}; emitted {frames} frames and {faces} faces, replayed F1 {capturedIndex}/{captured.Length}.");
         Assert.True(audible > 0);
         Assert.Equal(469, faces);
 

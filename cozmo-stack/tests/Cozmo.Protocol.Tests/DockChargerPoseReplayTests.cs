@@ -133,7 +133,14 @@ public sealed class DockChargerPoseReplayTests(ITestOutputHelper output)
                 if (imageId == 18459)
                     Assert.InRange((pose.Translation - new Vec3(349.29752, 13.788105, -7.534779)).Length, 0, .05);
             }
-            if (imageId == 18332) await ReplayMount(fixture, input, charger.ObjectId);
+            if (imageId == 18332)
+            {
+                var check = await ReplayMount(fixture, input.States.Single(state => state.Timestamp == 1175930),
+                    input.States.Single(state => state.Timestamp == 1179440), input.Paths, charger.ObjectId);
+                Assert.InRange(check.GetProperty("rotationRad").GetSingle(), .3054f, .3060f);
+                Assert.InRange(check.GetProperty("actualMm").GetProperty("x").GetDouble(), 195.426, 195.430);
+                Assert.InRange(check.GetProperty("goalMm").GetProperty("z").GetDouble(), 62.72, 62.82);
+            }
         }
         Assert.NotNull(charger);
 
@@ -145,11 +152,83 @@ public sealed class DockChargerPoseReplayTests(ITestOutputHelper output)
         }
     }
 
-    private static async Task ReplayMount(Fixture f, Capture input, uint chargerId)
+    [Fact]
+    public async Task MorningMountUsesTheTiltedObservationAndExplainsTheArrivalFailure()
     {
-        var start = input.States.Single(state => state.Timestamp == 1175930);
-        var arrival = input.States.Single(state => state.Timestamp == 1179440);
-        var recordedEnds = input.Paths.Where(e => e.EventId == 15).DistinctBy(e => e.EventType).ToArray();
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_WHEELIE_CHARGER_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        // The last point turn identifies the charger sample used when copying the
+        // native goal. Compare both neighboring sightings as well as the tilt.
+        var turns = RecordedRobotInput.ReadOutbound(bundle, at => at >= 1009410, 1009460, [0x3F])
+            .Select(row => Assert.IsType<AppendPathSegmentPointTurn>(row.Message)).ToArray();
+        Assert.Equal(3, turns.Length);
+        Assert.InRange(turns[^1].TargetAngleRad, -2.0814f, -2.0811f);
+        var observations = new Dictionary<uint, (Rotation3d Rotation, Vec3 Position)>();
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+        {
+            using var doc = JsonDocument.Parse(line);
+            var row = doc.RootElement;
+            double at = row.GetProperty("atMs").GetDouble();
+            if (at > 1009420) break;
+            if (at < 1009290 || row.GetProperty("kind").GetString() != "engine-to-game" ||
+                row.GetProperty("tag").GetString() != "0x44") continue;
+            var r = new CladReader(Convert.FromHexString(row.GetProperty("bodyHex").GetString()!));
+            uint timestamp = r.U32();
+            Assert.Equal(4u, r.U32());  // charger family
+            Assert.Equal((uint)ObjectType.Charger_Basic, r.U32());
+            Assert.Equal(0u, r.U32());  // captured world ID
+            for (int i = 0; i < 4; i++) r.F32(); // rectangle, 0x007131E2
+            var translation = new Vec3(r.F32(), r.F32(), r.F32());
+            var rotation = new Rotation3d(r.F32(), r.F32(), r.F32(), r.F32());
+            Assert.Equal(7u, r.U32());  // captured pose origin
+            observations.Add(timestamp, (rotation, translation));
+        }
+
+        using var f = new Fixture(sourceNvEmpty: true, preloadAnimations: true, pumpAnimations: true);
+        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        f.Motors();
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        foreach (var (timestamp, pose) in observations)
+        {
+            using var sample = new Pose3d(pose.Rotation, pose.Position, parent: origin);
+            using var goal = ChargerGeometry.PreDockPose(sample);
+            double turnError = Math.Abs(goal.AngleAroundZ - turns[^1].TargetAngleRad);
+            if (timestamp == 1013145)
+            {
+                Assert.InRange(turnError, 0, .003);
+                Assert.InRange(goal.Translation.Z, 60.5, 60.8);
+            }
+            else
+            {
+                Assert.InRange(turnError, .15, .18);
+                Assert.InRange(goal.Translation.Z, -4, -3);
+            }
+        }
+        Assert.Equal(new uint[] { 1013075, 1013145, 1013210 }, observations.Keys);
+        var selected = observations[1013145];
+        var charger = new ObservableObject(0, ObjectType.Charger_Basic, ChargerGeometry.Markers)
+        {
+            Pose = new Pose3d(selected.Rotation, selected.Position, parent: origin),
+            PoseState = PoseState.Known,
+            OriginId = f.Robot.CurrentOriginId,
+            LastObservedTimestamp = 1013145,
+        };
+        f.M.World.AddLocatedObject(charger);
+
+        var input = RecordedRobotInput.ReadInbound(bundle, at => at >= 1009300, 1013950, [0xC6, 0xF0]).ToArray();
+        var states = input.Select(row => row.Message).OfType<RobotState>().ToArray();
+        var paths = input.Select(row => row.Message).OfType<PathFollowingEvent>();
+        var result = await ReplayMount(f, states.Single(s => s.Timestamp == 1013275),
+            states.Single(s => s.Timestamp == 1017865), paths, charger.ObjectId);
+        Assert.InRange(result.GetProperty("rotationRad").GetSingle(), .256f, .264f);
+        Assert.InRange(result.GetProperty("actualMm").GetProperty("x").GetDouble(), 13.43, 13.44);
+        Assert.InRange(result.GetProperty("goalMm").GetProperty("z").GetDouble(), 60.5, 60.8);
+    }
+
+    private static async Task<JsonElement> ReplayMount(Fixture f, RobotState start, RobotState arrival,
+        IEnumerable<PathFollowingEvent> pathEvents, uint chargerId)
+    {
+        var recordedEnds = pathEvents.Where(e => e.EventId == 15).DistinctBy(e => e.EventType).ToArray();
         Assert.Equal(new[] { PathEventType.Started, PathEventType.Completed }, recordedEnds.Select(e => (PathEventType)e.EventType));
         f.Robot.PoseHistory.Clear();
         Place(start);
@@ -201,12 +280,10 @@ public sealed class DockChargerPoseReplayTests(ITestOutputHelper output)
             var why = result.GetProperty("why");
             var check = why.GetProperty("snapshot").GetProperty("pathArrival");
             Assert.Equal(pathId, check.GetProperty("pathId").GetUInt16());
-            Assert.InRange(check.GetProperty("rotationRad").GetSingle(), .3054f, .3060f);
             Assert.Equal(DriveToPoseAction.GoalAngleToleranceRad, check.GetProperty("rotationLimitRad").GetDouble(), 7);
-            Assert.InRange(check.GetProperty("actualMm").GetProperty("x").GetDouble(), 195.426, 195.430);
-            Assert.InRange(check.GetProperty("goalMm").GetProperty("z").GetDouble(), 62.72, 62.82);
             Assert.Contains("rejected the arrival rotation", why.GetProperty("hint").GetString());
             Assert.Contains(trace, line => line.Contains("DoneNotInPlace"));
+            return check;
         }
         finally { f.Rig.Engine.LogEntry -= Log; }
 
