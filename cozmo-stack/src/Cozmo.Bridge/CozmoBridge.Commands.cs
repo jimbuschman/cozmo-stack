@@ -119,7 +119,7 @@ public sealed partial class CozmoBridge : IDisposable
             (b, a, ct) => b.ChangeReactionLock(a.Text("id"), a.Value("triggers"), ct)),
         new("unlock-reactions", "Remove one named engine reaction lock. Success: confirmed shows the active locks. Failure: invalid arguments or not-admitted when the robot is unavailable.",
             [Text("id", "Lock ID to remove.", 255)], (b, a, ct) => b.ChangeReactionLock(a.Text("id"), null, ct)),
-        new("freeplay", "Enable or disable Freeplay. Success: submitted means the app message was posted; observe activity/events for its effect. Failure: not-admitted when the robot is not ready, or an error; inspect why. There is no native action result for this setting.", [Boolean("enabled", "True enables Freeplay.")],
+        new("freeplay", "Enable or disable Freeplay. Success: submitted means the app message was posted. The reply includes the requested setting and the currently observed Freeplay state. Failure: not-admitted when the robot is not ready, or an error; inspect why. There is no native action result for this setting.", [Boolean("enabled", "True enables Freeplay.")],
             (b, a, ct) => b.SetFreeplay(a.Flag("enabled"), ct)),
         new("set_needs_mode", "Choose full needs (refill/pause) or real native needs. Success: confirmed returns keepFull/loaded/applied/paused and levels; applied shows whether the input reached loaded needs. Failure: an error result; inspect why. This setting has no native action result.",
             [Text("mode", "Needs mode.", choices: ["full", "real"])],
@@ -168,6 +168,9 @@ public sealed partial class CozmoBridge : IDisposable
             var (result, admissionWait) = await ExecuteWithAdmissionWait(entry, parsed, capture, cancellationToken).ConfigureAwait(false);
             var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
             if (admissionWait is not null) response["admissionWait"] = JsonSerializer.SerializeToNode(admissionWait, Json);
+            if (command is "freeplay" or "turn-in-place" or "animation")
+                response["freeplay"] = JsonSerializer.SerializeToNode(Robot.GetFreeplayObservation(), Json);
+            if (command == "freeplay") response["requestedEnabled"] = parsed.Flag("enabled");
             if (command == "animation")
             {
                 var details = JsonSerializer.SerializeToElement(result.Report, Json);
