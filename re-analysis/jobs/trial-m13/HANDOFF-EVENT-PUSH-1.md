@@ -37,3 +37,7 @@ stays outside Git.
 Build `061e1970` passed the full Debug suite (8,791 of 8,791 in 57.13 minutes) and
 `fidelity.py --check`. The CLI also accepted the new options under `--validate` with no
 connection and rejected port 65536.
+
+Follow-up from DOCK-CHARGER-POSE-1. The derived message export ends at 300 seconds. The replay now reads
+contact, power and cliff inputs from the full datagram capture. The three deliveries agreed on all
+151 significant records and included the charger contact at the end of the manual mount.
