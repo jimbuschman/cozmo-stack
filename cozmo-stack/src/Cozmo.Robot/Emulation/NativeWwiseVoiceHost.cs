@@ -414,6 +414,22 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         Run(0x8D7511, new[] { _musicConductor });
     }
 
+    internal bool CancelMusicState(uint state)
+    {
+        RequireOwner();
+        if (_musicConductor == 0) return false;
+        // Native Request stores pending at +0x18 (0x008D7500). Promotion stores
+        // current at +8, and the post at 0x008D75B4 sets the playing byte at +4.
+        if (_m.R32(_musicConductor + 8) == state && _m.R8(_musicConductor + 4) != 0)
+        {
+            StopMusic();
+            return true;
+        }
+        if (_m.R32(_musicConductor + 0x18) == state)
+            RequestMusicState(0, false, 0); // discard a staged cue before it replaces current music
+        return false;
+    }
+
     internal void StopMusic()
     {
         RequireOwner();

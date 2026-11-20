@@ -849,3 +849,11 @@ Statistics and limitations are in Fixtures/animation_budget_firmware.json under
 Cozmo.Protocol.Tests and the M1-063 record. This single operator-authorized policy
 addition extends the frozen snapshot; it does not reapprove or settle other records
 or change the subsystem's existing acceptance state/commit.
+
+## Standalone enrolment app exit (2026-11-20)
+
+| Record | Classification | App input |
+| --- | --- | --- |
+| M1-064 | COMPATIBILITY_POLICY | MUSIC-AUDIO-1 supplies the missing Unity music exit at the end of the MCP enrolment request. It uses the native conductor stop for the owned active cue (0x008D7758–0x008D777E) or cancels its pending state (0x008D7500). The original say-name cue plays during enrolment. |
+
+The approved baseline and acceptance remain current for the existing records.

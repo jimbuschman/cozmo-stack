@@ -20,6 +20,7 @@ internal sealed class NativeEnrollFaceBehavior : SteppedBehavior, IDisposable
     private bool _stagedWrite, _stagedSay, _stagedMusic, _write, _say, _music, _initialSelected;
     private float _started, _window, _reverse, _previousPan;
     private uint _albumResult = EngineActionResult.NotStarted, _enrollmentResult = EngineActionResult.NotStarted;
+    private EnrollmentMusicScope? _stagedMusicScope, _musicScope;
     private Task? _musicRequest;
     private CannedSpeechOwner? _musicOwner;
     private long _generation;
@@ -42,6 +43,7 @@ internal sealed class NativeEnrollFaceBehavior : SteppedBehavior, IDisposable
                 if (value is not NativeEnrollmentRequest request || !OwnerCurrent || EngineRunning || request.Name.Length == 0) return;
                 _stagedName = request.Name; _stagedObserved = request.ObservedId; _stagedSave = request.SaveId;
                 _stagedWrite = request.Save; _stagedSay = request.SayName; _stagedMusic = request.UseMusic;
+                _stagedMusicScope = request.MusicScope;
             });
             _cancel = _owner.Engine.AnimationMessages.SubscribeMessage(0x88, false, _ =>
             { if (OwnerCurrent && EngineRunning) Phase = 11; });
@@ -94,6 +96,7 @@ internal sealed class NativeEnrollFaceBehavior : SteppedBehavior, IDisposable
         }
         Phase = 1;
         _name = _stagedName; _save = _stagedSave; _write = _stagedWrite; _say = _stagedSay; _music = _stagedMusic;
+        _musicScope = _stagedMusicScope;
         if (_save != 0 && _m.Vision.Faces.GetNativeFace(_owner, _save) is { HasName: false })
         {
             _stagedName = "";
@@ -311,7 +314,9 @@ internal sealed class NativeEnrollFaceBehavior : SteppedBehavior, IDisposable
         if (!audio.MusicAvailable) { ReportMissing("M14-006 enrollment Music.bnk unavailable"); return; }
         // Once accepted, the state belongs to the persistent audio owner even
         // if this behavior is cancelled during its eager child constructors.
-        Task stage = audio.RequestMusicState(0x99EA6572, false, 0, () => OwnerCurrent);
+        Task stage = _musicScope is { } scope
+            ? scope.Start(audio, () => OwnerCurrent)
+            : audio.RequestMusicState(EnrollmentMusicScope.SayNameMusic, false, 0, () => OwnerCurrent);
         try
         {
             if (!stage.Wait(TimeSpan.FromSeconds(2)))

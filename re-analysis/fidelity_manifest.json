@@ -10887,6 +10887,25 @@
       "test": "AnimationFirmwareBudgetTests; McpServerTests.EarlyRobotAnimationEndKeepsNativeSuccessButReportsCutoffToClientAndNarration"
     },
     {
+      "id": "M1-064",
+      "subsystem": "M1-transport",
+      "title": "Standalone enrolment exit supplies the app music cleanup",
+      "location": "cozmo-stack/src/Cozmo.Bridge/CozmoBridge.FaceCommands.cs",
+      "effect": "The MCP enrolment command closes its music scope on result, cancellation or timeout. The shared Wwise worker discards that scope's pending cue or posts the native music stop for its active cue.",
+      "provenance": "app-boundary compatibility policy, MUSIC-AUDIO-1 queue requirement, 2026-11-20",
+      "authority": "Operator's app-boundary scope in AGENTS.md (2026-10-09) and the MUSIC-AUDIO-1 queue requirement to leave no enrolment music running.",
+      "evidence": [
+        "FaceEnrollment/FaceEnrollInstructionState.cs:87-104 restores GameBase.cs:161-164 default music when Unity leaves the instructions state; GameBase.cs:1124-1126 requests Freeplay music when its result view closes.",
+        "0x005FD2F6..0x005FD310 stages state 0x99EA6572 under the fresh enrolment useMusic flag. 0x008D7500 stages, 0x008D757C commits, 0x008D75B4 posts the play event, and 0x008D7758..0x008D777E supplies the stop event.",
+        "Music.bnk event 148746486/action 650118968 stops switch 797713379 with a 500 ms fade. The authored cue 0x99EA6572 selects playlist 5859510."
+      ],
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "The standalone command has no Unity instructions/result view and supplies the native conductor stop at app exit. The cue remains audible before exit, and the native 500 ms fade is preserved. Cleanup is matched to the originating host request in Wwise FIFO order. A later music request owns its own state. The native enrolment behavior and the unscoped C# SetFaceToEnroll input retain the original defaults.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "McpFaceEnrollmentReplayTests.CapturedPixelsCompleteTeachRenameAndEraseThroughMcp"
+    },
+    {
       "id": "M3-039",
       "subsystem": "M3-device",
       "title": "SDK cube-sleep recipient",

@@ -20,39 +20,64 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
 {
     private sealed record Emission(ushort Tag, string Body, uint At, bool NvIdle);
 
-    [Fact]
-    public async Task CapturedPixelsCompleteTeachRenameAndEraseThroughMcp()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CapturedPixelsCompleteTeachRenameAndEraseThroughMcp(bool musicWindow)
     {
-        string? bundle = Environment.GetEnvironmentVariable("COZMO_FACE_REPLAY_BUNDLE");
+        string? bundle = Environment.GetEnvironmentVariable(musicWindow ? "COZMO_MAMBO_REPLAY_BUNDLE" : "COZMO_FACE_REPLAY_BUNDLE");
         if (string.IsNullOrEmpty(bundle)) return;
-        string messagesPath = Path.Combine(bundle, "messages.jsonl");
-        using var captureStream = File.OpenRead(messagesPath);
-        string messagesSha256 = Convert.ToHexString(SHA256.HashData(captureStream)).ToLowerInvariant();
-        Assert.Equal("c67ba13dec4eae4538958e12cad294883f7eb0c441a8a829e4dcd29bdb33ad63", messagesSha256);
+        string? messagesSha256 = null;
         var pictures = new List<byte[]>();
         byte[]? calibration = null;
         var camera = new CozmoCamera();
         camera.FrameReceived += frame =>
         {
-            // Recorded face-seen reports span timestamps 230005..231510;
-            // the earlier 247000-ms frames have no face in view.
-            if (frame.Timestamp is >= 230005 and <= 231510 &&
-                frame.TryDecodeGray(out var image, out _) && image is not null)
-                pictures.Add(image.Pixels.ToArray());
-        };
-        foreach (string line in File.ReadLines(messagesPath))
-        {
-            using var doc = JsonDocument.Parse(line); var row = doc.RootElement;
-            if (row.GetProperty("outbound").GetBoolean()) continue;
-            double at = row.GetProperty("atMs").GetDouble();
-            string? tag = row.GetProperty("tag").GetString();
-            if (tag == "0xCD" && at < 30000)
+            // 0x46 confirms a tracked face throughout each selected camera interval.
+            bool inView = musicWindow ? frame.Timestamp is >= 92825 and <= 94040
+                : frame.Timestamp is >= 230005 and <= 231510;
+            if (!inView) return;
+            var cache = new ImageCache();
+            if (frame.IsColor && frame.TryDecodeRgb(out var rgb, out _) && rgb is not null)
             {
-                var nv = (NVOpResult)RobotMessage.Parse(Convert.FromHexString(row.GetProperty("payloadHex").GetString()!));
-                if (nv.Tag == CameraCalibration.NvEntryTag && nv.Result == 0) calibration = nv.Data;
+                cache.Reset(rgb, frame.Width, frame.Height);
+                pictures.Add(cache.GetGray().Pixels.ToArray());
             }
-            if (tag == "0xF2" && at is >= 247000 and <= 255800)
-                camera.Handle(RobotMessage.Parse(Convert.FromHexString(row.GetProperty("payloadHex").GetString()!)));
+            else if (frame.TryDecodeGray(out var gray, out _) && gray is not null)
+                pictures.Add(gray.Pixels.ToArray());
+        };
+        foreach (var message in ReadCameraInputs())
+        {
+            if (message is NVOpResult { Tag: CameraCalibration.NvEntryTag, Result: 0 } nv)
+                calibration = nv.Data;
+            if (message is ImageChunk chunk) camera.Handle(chunk);
+        }
+
+        IEnumerable<RobotMessage> ReadCameraInputs()
+        {
+            // F15 uses the raw capture from the same session as F18. Its
+            // messages.jsonl export is empty, so read packets from frames.jsonl.
+            if (musicWindow)
+            {
+                foreach (var row in RecordedRobotInput.ReadInbound(bundle,
+                    at => at <= 30000 || at >= 93000, 95600, [0xCD, 0xF2]))
+                    yield return row.Message;
+                yield break;
+            }
+            string path = Path.Combine(bundle, "messages.jsonl");
+            using (var capture = File.OpenRead(path))
+                messagesSha256 = Convert.ToHexString(SHA256.HashData(capture));
+            Assert.Equal("C67BA13DEC4EAE4538958E12CAD294883F7EB0C441A8A829E4DCD29BDB33AD63", messagesSha256);
+            foreach (string line in File.ReadLines(path))
+            {
+                using var doc = JsonDocument.Parse(line);
+                var row = doc.RootElement;
+                if (row.GetProperty("outbound").GetBoolean()) continue;
+                double at = row.GetProperty("atMs").GetDouble();
+                string? tag = row.GetProperty("tag").GetString();
+                if (tag == "0xCD" && at < 30000 || tag == "0xF2" && at is >= 247000 and <= 255800)
+                    yield return RobotMessage.Parse(Convert.FromHexString(row.GetProperty("payloadHex").GetString()!));
+            }
         }
         Assert.NotNull(calibration); Assert.NotEmpty(pictures);
         output.WriteLine("Captured pixels: " + string.Join(',', pictures.Select(p => Convert.ToHexString(SHA256.HashData(p)))));
@@ -211,6 +236,14 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         Assert.Equal(completion.Id, taughtData.GetProperty("faceOperation").GetProperty("faceId").GetInt32());
         Assert.Equal("Robin", taughtData.GetProperty("faceOperation").GetProperty("name").GetString());
         Assert.Contains(3, phases); Assert.Contains(4, phases); Assert.True(audioChunks > 0);
+        // The native say-name music reached the platform. The MCP command's
+        // app exit then supplies the bank's Stop event with its 500 ms fade.
+        Assert.True(sink.LastAudibleFrame > 0);
+        long framesAtExit = sink.SubmittedFrames;
+        await PumpUntil(() => sink.SubmittedFrames >= framesAtExit + 48000, 4);
+        Assert.True(sink.SubmittedFrames >= framesAtExit + 48000);
+        Assert.True(sink.SubmittedFrames - sink.LastAudibleFrame >= 10240,
+            "The platform music should fall silent after the native fade and queued output.");
         // 0x005FE314 resets enrollment before the separate 0x56 publisher.
         // Named 0x46 comes from a later processed frame (0x00655274 ->
         // 0x004F4B7A/82), not from the save/completion callback. Keep feeding
@@ -224,6 +257,12 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         Assert.Contains(emissions, e => e.Tag == 0x47);
         Assert.DoesNotContain(missing, line => line.Contains("M14-006", StringComparison.Ordinal));
         Assert.Equal("Robin", Assert.Single(vision.Recognizer.EnrolledFaces).Name);
+        if (musicWindow)
+        {
+            Assert.Empty(faults);
+            Assert.DoesNotContain(missing, line => line.Contains("M1-064", StringComparison.Ordinal));
+            return;
+        }
         var renamed = new ConcurrentQueue<FaceRenamedReport>();
         f.Rig.Engine.FaceRenamed += renamed.Enqueue;
         int rename = await client.Send("tools/call", new { name = "rename-face", arguments = new { faceId = completion.Id, oldName = "Robin", newName = "Riley" } });
@@ -287,6 +326,9 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private readonly Timer timer;
         private double tail;
+        private long submittedFrames, lastAudibleFrame;
+        internal long SubmittedFrames { get { lock (gate) return submittedFrames; } }
+        internal long LastAudibleFrame { get { lock (gate) return lastAudibleFrame; } }
         private bool disposed;
         internal SilentSink() => timer = new Timer(_ => Complete(), null, 1, 1);
         public WaitHandle CompletionReady => ready;
@@ -295,6 +337,8 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
             lock (gate)
             {
                 if (disposed) return;
+                submittedFrames += pcm.Length / 4; // 48 kHz stereo, signed 16-bit interleaved
+                if (pcm.Any(sample => sample != 0)) lastAudibleFrame = submittedFrames;
                 tail = Math.Max(tail, clock.Elapsed.TotalMilliseconds) + pcm.Length / 192.0;
                 pending.Enqueue((token, tail));
             }

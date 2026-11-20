@@ -64,7 +64,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     internal Task<CannedSpeechLease> AcquireOrdinaryIfAvailable(Func<bool> current) => AcquireCore(null,current, true);
     internal Task Ready => _opening;
     internal bool MusicAvailable => _opening.IsCompletedSuccessfully && _opening.Result.HasMusic;
-    internal Task RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds, Func<bool> current)
+    internal Task RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds, Func<bool> current, EnrollmentMusicScope? scope = null)
     {
         if (!_opening.IsCompletedSuccessfully) return Task.FromException(new InvalidOperationException("shared music owner is not ready"));
         var native = _opening.Result;
@@ -73,8 +73,17 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
             if (_retired) throw new ObjectDisposedException(nameof(CannedSpeechOwner));
             if (!current()) return Task.FromException(new OperationCanceledException("music request owner retired"));
             DrainBehaviorAudio();
-            return native.RequestMusicStateAsync(state, interrupt, minimumMilliseconds, current);
+            return native.RequestMusicStateAsync(state, interrupt, minimumMilliseconds, current, scope);
         }
+    }
+
+    internal void StopMusicState(uint state, EnrollmentMusicScope scope)
+    {
+        if (!_opening.IsCompletedSuccessfully) return;
+        var stop = _opening.Result.StopMusicStateAsync(state, scope);
+        _ = stop.ContinueWith(failed => _report("MISSING M1-064 enrollment music cleanup failed: " +
+            failed.Exception!.GetBaseException().Message), CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     internal void SubmitBehaviorAudio(BehaviorAudioRequest request, Action<BehaviorAudioRequest, uint>? applied)
