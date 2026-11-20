@@ -156,6 +156,18 @@ public sealed partial class VisionSystem : IDisposable
         return MathF.Abs(before.RateZ)>body || MathF.Abs(after.RateZ)>body;
     }
     // M11-004: 0x621C9A queries this original owner's LIVE VC+B0 history in the world handler.
+    // MovementComponent::WasCameraMoving 0x00641C3C -> 0x00641898:
+    // interpolate in raw history at the original observation timestamp, with no newest-time clamp.
+    internal static bool NativeWasCameraMoving(EngineRobot owner, uint timestamp, SourceLogSink log)
+    {
+        using var state = new HistRobotState();
+        uint resolved = 0;
+        if (owner.PoseHistory.GetRawStateAt(timestamp, ref resolved, state, true) == 0)
+            return (state.State.Status & 0x8200) != 0x200; // 0x00642802..0x00642810
+        log(EngineLogLevel.Warning, null, "MovementComponent.WasCameraMoving.GetHistoricalPoseFailed", $"t={timestamp}");
+        return true; // 0x0064194E
+    }
+
     internal bool NativeWorldRotatingTooFast(EngineRobot owner,uint timestamp)
     {
         NativeImageImu[]? history=null;
@@ -2340,7 +2352,12 @@ public sealed partial class VisionSystem : IDisposable
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            worldFrame=stateComputed?World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,queueForEngine && sourceOwner is not null ? t=>NativeWorldRotatingTooFast(sourceOwner,t) : null,queueForEngine && sourceOwner is not null ? ReportObject : null,queueForEngine && sourceOwner is not null ? sourceOwner.PoseHistory.GetComputedNativePoseAt : null):null;
+            var nativeOwner = queueForEngine ? sourceOwner : null;
+            worldFrame = stateComputed ? World.UpdateObservedMarkers(keptMarkers, markerCamera, timestamp, processingPose,
+                nativeOwner is null ? null : t => NativeWorldRotatingTooFast(nativeOwner, t),
+                nativeOwner is null ? null : ReportObject,
+                nativeOwner is null ? null : nativeOwner.PoseHistory.GetComputedNativePoseAt,
+                nativeOwner is null ? null : t => NativeWasCameraMoving(nativeOwner, t, MarkerSourceLog)) : null;
             } // Dispose marker-only pose owners and drain world events/logs BEFORE caller docking/faces.
             if(queueForEngine && StaleFrame())return null;
             if (worldFrame is not null)

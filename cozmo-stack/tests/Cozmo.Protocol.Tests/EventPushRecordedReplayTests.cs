@@ -46,6 +46,8 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
             "on-charger", "off-charger" })
             Assert.Contains(Events(bridge.ReadEvents()), e => Type(e) == type && e.GetProperty("significant").GetBoolean());
 
+        Assert.Contains(expected, entry => Type(entry) == "on-charger" &&
+            entry.GetProperty("robotTimestamp").GetUInt32() > 1180000);
         var polled = new List<JsonElement>();
         var pushed = new List<JsonElement>();
         var notifications = new List<JsonElement>();
@@ -134,14 +136,10 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
                     break;
             }
         }
-        foreach (var line in File.ReadLines(Path.Combine(bundle, "messages.jsonl")))
+        // The derived messages.jsonl stops at 300 s in this bundle. Read the
+        // full datagram capture for contact, battery and cliff inputs.
+        foreach (var (at, message) in RecordedRobotInput.ReadInbound(bundle, _ => true, double.PositiveInfinity, [0xF0, 0xC0]))
         {
-            using var document = JsonDocument.Parse(line);
-            var row = document.RootElement;
-            if (row.GetProperty("outbound").GetBoolean() || row.GetProperty("tag").GetString() is not ("0xF0" or "0xC0"))
-                continue;
-            double at = row.GetProperty("atMs").GetDouble();
-            var message = RobotMessage.Parse(Convert.FromHexString(row.GetProperty("payloadHex").GetString()!));
             if (message is RobotState state) events.Add((at, () => robot.State.Handle(state)));
             else if (message is CliffEvent c) events.Add((at, () => cliff(new(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff))));
         }

@@ -1870,11 +1870,11 @@ public sealed partial class BlockWorld
     {
         return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null,null);
     }
-    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose=null)
+    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose=null, Func<uint,bool>? nativeCameraMovingAt=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeObjectReport,nativeComputedPose);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeObjectReport,nativeComputedPose,nativeCameraMovingAt);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose, Func<uint,bool>? nativeCameraMovingAt)
     {
         _missingPoseChangedReported = false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
@@ -1909,7 +1909,7 @@ public sealed partial class BlockWorld
             AddLiftOccluder(camera, pd);                                           // 0x00624FA4
             _didObjectsChange = false;                                             // 0x00624FAC
             var instances = CreateObjectsFromMarkers(markers, camera);             // 0x00624FC4 (always succeeds, 0x00625616)
-            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeObjectReport,nativeComputedPose);   // 0x0062505A
+            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeObjectReport,nativeComputedPose,nativeCameraMovingAt);   // 0x0062505A
             if (status != 0)
             {
                 Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
@@ -2078,10 +2078,10 @@ public sealed partial class BlockWorld
     /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) are built.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
-    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose, Func<uint,bool>? nativeCameraMovingAt)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
-        var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose); // 0x00620B0C
+        var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose,nativeCameraMovingAt); // 0x00620B0C
         foreach (var instance in instances)
         {
             float dx = (float)(instance.Pose.Translation.X - robotPos.X);
@@ -2099,7 +2099,9 @@ public sealed partial class BlockWorld
             if (!confirmed)
             {
                 var existing = before;                                             // GetLocatedObjectByIdHelper(id, -1)
-                if (!AddVisualObservation(instance, existing, pd.CameraMoving, dist))
+                // 0x00620C7E queries raw history at this observation's time while the result is committed.
+                bool wasMoving = nativeCameraMovingAt?.Invoke(instance.LastObservedTimestamp) ?? pd.CameraMoving;
+                if (!AddVisualObservation(instance, existing, wasMoving, dist))
                 {
                     EmitPublicLog($"BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for {(int)instance.ObjectId}");
                     continue;
@@ -3979,12 +3981,14 @@ internal sealed class PotentialObjectsForLocalizingTo
 
     private readonly BlockWorld _w;
     private readonly Func<uint,Pose3d?>? _computedPose;
+    private readonly Func<uint,bool>? _cameraMovingAt;
     private readonly SortedDictionary<uint, Pair> _map = new();
 
-    public PotentialObjectsForLocalizingTo(BlockWorld world,Func<uint,Pose3d?>? computedPose=null)
+    public PotentialObjectsForLocalizingTo(BlockWorld world,Func<uint,Pose3d?>? computedPose=null, Func<uint,bool>? cameraMovingAt=null)
     {
         _w = world;
         _computedPose = computedPose;
+        _cameraMovingAt = cameraMovingAt;
         bool localized = _w.LocalizedToObjectId is not null;
         Gate = localized ? _w.RobotMovedSinceLocalized : true;
     }
@@ -4018,11 +4022,11 @@ internal sealed class PotentialObjectsForLocalizingTo
         float threshold = (float)BlockWorld.MaxLocalizationDistanceMm + 1e-5f;
         if (threshold < dist || !Gate || !could)
         {
-            if (inWorldOrigin) UseDiscardedObservation(pair, wasCameraMoving);   // 0x0050CFE2
+            if (inWorldOrigin) UseDiscardedObservation(pair, _cameraMovingAt?.Invoke(ts) ?? wasCameraMoving);   // 0x0050CFE2
             return 0;
         }
         var mc = _w.MovementBytes?.Invoke() ?? (false, false);
-        if (mc.HeadNotInPosition || mc.WheelsMoving || wasCameraMoving) return 0;
+        if (mc.HeadNotInPosition || mc.WheelsMoving || (_cameraMovingAt?.Invoke(ts) ?? wasCameraMoving)) return 0;
         if (inWorldOrigin)
         {
             uint lastUpdated = _w.EntryFor(matched.ObjectId)?.LastPoseUpdatedTime ?? 0;   // GetLastPoseUpdatedTime 0x0050780C

@@ -146,6 +146,18 @@ public sealed partial class CozmoBridge
                             hint = FormattableString.Invariant($"Backup pitch was {pitch * 180 / Math.PI:F1} degrees, below the {cutoff * 180 / Math.PI:F1} degree cutoff; the check requires pitch at or above that cutoff.");
                     }
                 }
+                var drive = mount?.Drive.Drive ?? root as DriveToPoseAction;
+                if (result.EngineResult == (uint)ActionResult.FailedTraversingPath && drive?.LastFailedArrival is { } arrival &&
+                    double.IsFinite(arrival.ToleranceMm.X) && double.IsFinite(arrival.ToleranceMm.Y) &&
+                    double.IsFinite(arrival.ToleranceMm.Z) && float.IsFinite(arrival.RotationLimitRad) &&
+                    double.IsFinite(arrival.GoalMm.X + arrival.GoalMm.Y + arrival.GoalMm.Z + arrival.ActualMm.X +
+                        arrival.ActualMm.Y + arrival.ActualMm.Z + arrival.OffsetMm.X + arrival.OffsetMm.Y + arrival.OffsetMm.Z))
+                {
+                    snapshot["pathArrival"] = JsonSerializer.SerializeToNode(arrival, Json);
+                    hint = arrival.RotationRad is { } angle && angle > arrival.RotationLimitRad
+                        ? FormattableString.Invariant($"DriveToPose completed path {arrival.PathId}, then rejected the arrival rotation ({angle * 180 / Math.PI:F1} degrees against {arrival.RotationLimitRad * 180 / Math.PI:F1} degrees).")
+                        : FormattableString.Invariant($"DriveToPose rejected the arrival pose after path {arrival.PathId} completed.");
+                }
                 if (docking is not null) snapshot["docking"] = JsonSerializer.SerializeToNode(docking, Json);
                 if (path.Count != 0) snapshot["pathPlanner"] = JsonSerializer.SerializeToNode(path, Json);
                 if (truncated) hint = "Animation was cut off by robot buffer; see playbackIssues for the captured evidence.";

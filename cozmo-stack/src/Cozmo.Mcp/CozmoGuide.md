@@ -45,6 +45,8 @@ Look at the charger marker, use its current world ID, and line up square before 
 
 The recorded poses required absolute yaw error strictly below approximately 7.5 degrees and a Y offset within approximately 21 mm [charger]. The translation thresholds depend on the generated geometry; these are the recorded examples' bounds, not a universal fixed box. The comparisons in `why` use robot MAIN-parent axes. Use the captured live bounds when available and the current camera/state to plan a correction. Seeing the charger or completing a preceding turn does not establish that the final approach passed.
 
+A `why.snapshot.pathArrival` comparison comes from DriveToPose after the firmware path completes. This earlier check compares the full goal rotation within 10 degrees and applies its XYZ tolerances. The snapshot gives the selected goal, arrival pose, and rotation error when the comparison reached it [dock-arrival].
+
 On completion, check fresh `isOnCharger` and `isCharging`. A native failure's `why` may describe the final pose comparison, backup pitch, planner state, or an unavailable check [charger, why].
 
 ## `get_state` fields
@@ -78,6 +80,7 @@ Use `set_camera_color` with `enabled: true` to request colour on the camera's cu
 These are repository handoffs for the behavior already built; hardware acceptance stays with the operator.
 
 - [charger] `re-analysis/jobs/trial-m13/HANDOFF-MOUNT-CHARGER-LLM-1.md`: geometry-dependent bounds and strict heading comparison. Recorded Y threshold 21.423 mm, heading limit 7.499427 degrees; rounded above for operating guidance.
+- [dock-arrival] `re-analysis/jobs/trial-m13/HANDOFF-DOCK-CHARGER-POSE-1.md` covers the captured charger pose and the native DriveToPose verdict.
 - [why] `re-analysis/jobs/trial-m13/HANDOFF-MCP-ACTION-WHY-1.md`: unchanged native result, captured comparisons, MAIN-parent axes and unknown checks.
 - [findings] `re-analysis/jobs/trial-m13/HANDOFF-LLM-SESSION-FINDINGS-1.md`: unknown-face SUCCESS with no turn and `FacePoseAvailable`.
 - [budget] `re-analysis/jobs/trial-m13/HANDOFF-ANIM-BUDGET-FIRMWARE-1.md`: robot cutoff reporting while preserving native SUCCESS.
