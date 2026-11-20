@@ -94,6 +94,40 @@ class SessionCheckTests(unittest.TestCase):
         self.assertIn("M1 (startup)", report)
         self.assertIn("M2 (head)", report)
 
+    def test_resolved_queue_and_ground_markers_keep_capture_lines_without_blocking(self):
+        running = ("MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and "
+                   "CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; "
+                   "normal queue path is not classified SDK-only")
+        terminal = ("MISSING: M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / "
+                    "CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound")
+        ground = ("MISSING: M1-034 M12-052 Ground completion 0x00554AE0..00554AFA: four uninitialized "
+                  "objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false "
+                  "and scalar result retained; PlaceRel normalization policy does not apply")
+        other_queue_gap = "MISSING: M8-015 QueueNow Debug0x0053E2A6: native action names not supplied"
+        self.request(100, 1, "head")
+        self.completion(108, 1, 0x12)
+        self.reply(110, 1, engineResult=0, admitted=True)
+        self.request(200, 2, "put-down")
+        self.reply(220, 2, engineResult=0, admitted=True, during={"events": [{
+            "type": "action-completed",
+            "payload": {"completion": {"tag": 3_000_384, "actionType": 0x18, "result": 0}},
+        }]})
+        self.request(300, 3, "lift")
+        self.completion(308, 3, 0x13)
+        self.reply(310, 3, engineResult=0, admitted=True)
+        lines = (running, terminal, ground, other_queue_gap)
+        for at, line in zip((102, 105, 204, 305), lines):
+            self.event(at, "stack-log", line=line)
+
+        checks, report = self.check(lines)
+        self.assertEqual(PASSED, checks["head"].status)
+        self.assertEqual(PASSED, checks["put-down"].status)
+        self.assertEqual(SEEN, checks["lift"].status)
+        self.assertEqual([4], checks["lift"].missing)
+        self.assertIn("M4 (lift)", report)
+        for marker in ("M1 (M8-015", "M2 (M8-015", "M3 (M12-052"):
+            self.assertIn(marker, report)
+
     def test_recognition_requires_the_taught_identity_name_and_window(self):
         self.request(100, 1, "teach-face", name="Guest")
         self.raw(200, 0x56, struct.pack("<BiB", 0, 21, 5) + b"Guest")

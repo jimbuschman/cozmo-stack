@@ -5,6 +5,8 @@ namespace Cozmo.Robot.Manipulation;
 // fidelity: M15-022, M12-015 — P8 actual IAction/ActionList ground recipient, not the async public adapter.
 internal class NativePlaceGroundRunner:NativeVisionRunner
 {
+    internal const int NativeActionType = 0x18;
+    private int _reportedCompletionPolicy;
     private bool _latched;
     private bool _ending;
     private uint _saved=uint.MaxValue;
@@ -24,7 +26,7 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     internal bool StatusLatched => _latched;
     internal NativeTurnTowardsObjectRunner? VerifyChild=>_verify;
     internal NativePlaceGroundRunner(ManipulationSystem m):this(m,m.Robot.Engine.Robot ?? throw new NativeActionUnavailable("Ground Robot owner unavailable")){}
-    internal NativePlaceGroundRunner(ManipulationSystem m,EngineRobot owner):base(m,0x18,7)
+    internal NativePlaceGroundRunner(ManipulationSystem m,EngineRobot owner):base(m,NativeActionType,7)
     {
         _owner=owner;
         ScopedOwner=owner;
@@ -38,7 +40,8 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     {
         // 00554AE0..4AFA: the other four native stack words were never initialized.
         // M1-034 withholds only the full undefined publication; saved ID/count1/false and scalar callbacks survive.
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M1-034 M12-052 Ground completion 0x00554AE0..00554AFA: four uninitialized objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false and scalar result retained; PlaceRel normalization policy does not apply");
+        if (Interlocked.Exchange(ref _reportedCompletionPolicy, 1) == 0)
+            StackDiagnostics.Write("M1-034 M12-052 Ground completion 0x00554AE0..0x00554AFA: withheld full public 0x5A payload because four objectInteractionCompleted ID words are uninitialized. Retained local saved ID, count 1, flag false and scalar result.");
         return new(_saved,0,0,0,0,1,false,false);
     }
     internal override ActionWatcher? Watcher{get=>base.Watcher;set{base.Watcher=value;if(_verify is not null)_verify.Watcher=value;}}

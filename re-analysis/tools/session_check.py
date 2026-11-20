@@ -156,6 +156,7 @@ class Session:
         self.reports = defaultdict(list)
         self.public = defaultdict(dict)
         self.missing = []
+        self.resolved_markers = []
         self.end = 0.0
         self.startup = None
         self.offset = None
@@ -241,9 +242,25 @@ class Session:
             self.public[event["type"]].setdefault(key, (event_at, event))
 
     def read_missing(self):
+        # Keep the original line numbers for review. Match the exact old diagnostics
+        # so a different M8-015 or M12-052 gap still blocks a verdict.
+        resolved = {
+            "MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and "
+            "CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; "
+            "normal queue path is not classified SDK-only": "M8-015 Viz label discarded, external SDK mode excluded",
+            "MISSING: M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / "
+            "CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound":
+                "M8-015 Viz label discarded, external SDK mode excluded",
+            "MISSING: M1-034 M12-052 Ground completion 0x00554AE0..00554AFA: four uninitialized "
+            "objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false "
+            "and scalar result retained; PlaceRel normalization policy does not apply":
+                "M12-052 existing M1-034 policy for undefined ID words",
+        }
         counts = Counter()
         for index, line in enumerate(source(self.path / "stack-log.txt").splitlines(), 1):
-            if MISSING.search(line):
+            if line in resolved:
+                self.resolved_markers.append((index, line, resolved[line]))
+            elif MISSING.search(line):
                 occurrences = self.timed_missing[line]
                 occurrence = counts[line]
                 counts[line] += 1
@@ -812,7 +829,7 @@ def render(session, entries):
         for marker in verdict.missing + verdict.other_missing:
             by_marker[marker].append(name)
     if not session.missing:
-        rows.append("No MISSING lines in stack-log.txt.")
+        rows.append("No unresolved MISSING lines in stack-log.txt.")
     lines = defaultdict(list)
     for marker, at, line in session.missing:
         # Keep every line number and compress repeated messages from the same path.
@@ -821,6 +838,10 @@ def render(session, entries):
         lines[line, owner].append(marker)
     for (line, owner), markers in lines.items():
         rows.append(f"- {', '.join(f'M{i}' for i in markers)} ({owner}) — {markdown_cell(line)}")
+    if session.resolved_markers:
+        rows.extend(("", "## Resolved markers in the original capture", ""))
+        for index, line, resolution in session.resolved_markers:
+            rows.append(f"- M{index} ({resolution}) — {markdown_cell(line)}")
     return "\n".join(rows) + "\n"
 
 
