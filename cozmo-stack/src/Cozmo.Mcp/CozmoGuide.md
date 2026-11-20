@@ -41,6 +41,10 @@ Use `duringDetail: "full"` for the complete retained action window at once. On `
 
 **Settings:** `freeplay` returns `submitted` when its message is posted; observe activity/events for the effect. Needs settings return their confirmed status, including `loaded`/`applied`; they have no native action result. `set_needs` requires real mode and loaded stored needs. Full needs mode refills and pauses the native needs; real mode resumes native changes.
 
+**Lights**
+
+Use `set-backpack-lights` or `set-cube-lights` with RGB hex colours and millisecond periods and transitions. Omit `ledMask` for all LEDs, or add the bits shown in the tool schema. Use a connected cube's `worldObjectId` as `objectId`. `report.leds` lists the requested pattern for every LED. `submitted` means the engine accepted the backpack pattern or queued the cube pattern for the robot. Charging and other light sources can take priority on the backpack. Freeplay can replace cube output on its next light update.
+
 ## Approaching the charger
 
 Look at the charger marker, use its current world ID, and line up square before `mount-charger`. The final approach rechecks its current generated predock goal after visual verification.
