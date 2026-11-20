@@ -238,7 +238,8 @@ internal sealed class ActionWatcher
         var subs = new List<uint>();
         GetSubActionResults(runner.Tag, subs);                               // D3: subresults first
         uint union = runner.GetCompletionUnion();                            // D3: then the virtual union
-        return new RobotCompletedAction(runner.Tag, runner.Type, runner.State, subs, union,runner.GetAnimationCompletionName(),runner.GetCompletionVariant(),runner.GetObjectInteractionCompletion());
+        return new RobotCompletedAction(runner.Tag, runner.Type, runner.State, subs, union,runner.GetAnimationCompletionName(),runner.GetCompletionVariant(),runner.GetObjectInteractionCompletion())
+            { HostCaller = (runner as ActionRunner)?.HostCaller };
     }
 
     /// <summary>

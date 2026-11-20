@@ -193,7 +193,7 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
     private static void Append(CozmoBridge bridge, string type, JsonElement payload, uint? timestamp = null)
     {
         lock (FeedGate.GetValue(bridge)!)
-            AppendFeed.Invoke(bridge, [type, timestamp, payload]);
+            AppendFeed.Invoke(bridge, [type, timestamp, payload, false]);
     }
 
     [Theory]

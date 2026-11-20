@@ -44,6 +44,9 @@ public sealed partial class CozmoBridge
         Robot.Message += RobotMessage;
         Robot.Engine.AnimationAbortObserved += AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged += OffTreads;
+        Robot.Sensors.CliffDetected += CliffDetected;
+        Robot.Sensors.UnexpectedMovementDetected += UnexpectedMovement;
+        Robot.State.StateUpdated += PowerState;
     }
     private void DetachSenses()
     {
@@ -54,6 +57,9 @@ public sealed partial class CozmoBridge
         Robot.Message -= RobotMessage;
         Robot.Engine.AnimationAbortObserved -= AnimationAbort;
         Robot.Sensors.OffTreadsStateChanged -= OffTreads;
+        Robot.Sensors.CliffDetected -= CliffDetected;
+        Robot.Sensors.UnexpectedMovementDetected -= UnexpectedMovement;
+        Robot.State.StateUpdated -= PowerState;
         lock (cameraGate) { receivedCamera = null; processedCamera = null; }
     }
     private void CameraReceived(CameraFrame frame)
@@ -203,7 +209,11 @@ public sealed partial class CozmoBridge
     }
     private void AnimationAbort((byte Tag, string? Name) observation) =>
         AnimationEvent("animation-aborted", observation.Tag, observation.Name);
-    private void OffTreads(OffTreadsState from, OffTreadsState to) =>
-        Add("off-treads-changed", new { from = from.ToString(), to = to.ToString(),
-            pickedUp = to == OffTreadsState.InAir, putDown = from == OffTreadsState.InAir && to == OffTreadsState.OnTreads });
+    private void OffTreads(OffTreadsState from, OffTreadsState to)
+    {
+        bool pickedUp = to == OffTreadsState.InAir;
+        bool putDown = from == OffTreadsState.InAir && to == OffTreadsState.OnTreads;
+        Add("off-treads-changed", new { from = from.ToString(), to = to.ToString(), pickedUp, putDown },
+            eligible: pickedUp || putDown || to == OffTreadsState.OnBack);
+    }
 }

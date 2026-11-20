@@ -10,7 +10,6 @@ public sealed partial class CozmoBridge
 {
     // Leave room for the JSON-RPC wrapper, tool text echo, and the "during" member.
     private const int CompactToolReplyBytes = 19750;
-    private sealed record EventPage(long Cursor, long OldestCursor, bool Gap, FeedEvent[] Events);
     private sealed record Sightings(string Type, int Count, long FirstCursor, long LastCursor,
         DateTimeOffset FirstTimestampUtc, DateTimeOffset LastTimestampUtc,
         uint? FirstRobotTimestamp, uint? LastRobotTimestamp, JsonElement LastPayload,
@@ -18,7 +17,7 @@ public sealed partial class CozmoBridge
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Name);
     private readonly record struct SightingKey(string Type, int? FaceId = null, string? Name = null);
 
-    private long CurrentEventCursor()
+    internal long CurrentEventCursor()
     {
         lock (eventGate)
         {
@@ -29,18 +28,19 @@ public sealed partial class CozmoBridge
 
     // Caller holds eventGate. A nonmatching event can advance the cursor but never
     // costs a slot in the requested page. Stop before a matching event beyond limit.
-    private EventPage CaptureEventPage(long since, int limit, HashSet<string>? include, HashSet<string>? exclude)
+    private BridgeEventPage CaptureEventPage(long since, int limit, HashSet<string>? include, HashSet<string>? exclude, bool significantOnly = false)
     {
         ThrowIfDisposed();
         if (since > lastCursor)
             throw new ArgumentOutOfRangeException(nameof(since), "Cursor belongs to a different or newer event feed.");
 
-        var selected = new List<FeedEvent>();
+        var selected = new List<BridgeEvent>();
         long next = since;
         foreach (var item in events)
         {
             if (item.Cursor <= since) continue;
-            if ((include is null || include.Contains(item.Type)) && exclude?.Contains(item.Type) != true)
+            if ((!significantOnly || item.Significant) &&
+                (include is null || include.Contains(item.Type)) && exclude?.Contains(item.Type) != true)
             {
                 if (selected.Count == limit) break;
                 selected.Add(item);
@@ -54,7 +54,7 @@ public sealed partial class CozmoBridge
     /// <summary>Reads a filtered, paginated event feed for MCP. Waiting observes the same filter.</summary>
     public async Task<JsonElement> ReadEventPageAsync(long since, int waitMs, int limit,
         IReadOnlyCollection<string>? types, IReadOnlyCollection<string>? excludeTypes, bool full,
-        CancellationToken token = default)
+        CancellationToken token = default, bool significantOnly = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(since);
         ArgumentOutOfRangeException.ThrowIfNegative(waitMs);
@@ -62,19 +62,26 @@ public sealed partial class CozmoBridge
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
         var include = types?.ToHashSet(StringComparer.Ordinal);
         var exclude = excludeTypes?.ToHashSet(StringComparer.Ordinal);
+        var page = await WaitEventPageAsync(since, waitMs, limit, include, exclude, significantOnly, token).ConfigureAwait(false);
+        return SerializeReadPage(page, full, significantOnly);
+    }
+
+    private async Task<BridgeEventPage> WaitEventPageAsync(long since, int waitMs, int limit,
+        HashSet<string>? include, HashSet<string>? exclude, bool significantOnly, CancellationToken token)
+    {
         var clock = Stopwatch.StartNew();
         while (true)
         {
-            EventPage page;
+            BridgeEventPage page;
             Task signal;
             lock (eventGate)
             {
-                page = CaptureEventPage(since, limit, include, exclude);
+                page = CaptureEventPage(since, limit, include, exclude, significantOnly);
                 signal = eventAvailable.Task;
             }
             var remaining = TimeSpan.FromMilliseconds(waitMs) - clock.Elapsed;
-            if (page.Gap || page.Events.Length > 0 || remaining <= TimeSpan.Zero)
-                return SerializeReadPage(page, full);
+            if (page.Gap || page.Events.Count > 0 || remaining <= TimeSpan.Zero) return page;
+            since = page.Cursor;
             try { await signal.WaitAsync(remaining, token).ConfigureAwait(false); }
             catch (TimeoutException) { }
         }
@@ -82,7 +89,7 @@ public sealed partial class CozmoBridge
 
     private void AttachDuring(JsonObject response, long since, bool full, uint? completionTag)
     {
-        EventPage page;
+        BridgeEventPage page;
         lock (eventGate) page = CaptureEventPage(since, int.MaxValue, null, null);
         int budget = full ? int.MaxValue : CompactToolReplyBytes - EchoPayloadCost(JsonSerializer.SerializeToElement(response, Json));
         response["during"] = JsonNode.Parse(FormatDuring(page, since, full, budget, completionTag).GetRawText());
@@ -91,9 +98,9 @@ public sealed partial class CozmoBridge
     private static bool IsSighting(string type) =>
         type is "face-seen" or "cube-seen" or "charger-seen" or "robot-state";
 
-    private static (FeedEvent[] Remaining, Sightings[] Sightings) Collapse(FeedEvent[] events)
+    private static (BridgeEvent[] Remaining, Sightings[] Sightings) Collapse(BridgeEvent[] events)
     {
-        var candidates = new Dictionary<SightingKey, List<FeedEvent>>();
+        var candidates = new Dictionary<SightingKey, List<BridgeEvent>>();
         var previousName = new Dictionary<int, string>();
         foreach (var item in events)
         {
@@ -167,14 +174,16 @@ public sealed partial class CozmoBridge
         return text.ToJsonString(Json);
     }
 
-    private static JsonElement SerializeReadPage(EventPage page, bool full)
+    private static JsonElement SerializeReadPage(BridgeEventPage page, bool full, bool significantOnly)
     {
         if (full) return JsonSerializer.SerializeToElement(page, Json);
-        int keep = page.Events.Length;
+        var events = page.Events.ToArray();
+        int keep = events.Length;
         while (true)
         {
-            bool all = keep == page.Events.Length;
-            var (remaining, sightings) = Collapse(all ? page.Events : page.Events[..keep]);
+            bool all = keep == events.Length;
+            var prefix = all ? events : events[..keep];
+            var (remaining, sightings) = significantOnly ? (prefix, Array.Empty<Sightings>()) : Collapse(prefix);
             long cursor = all ? page.Cursor : page.Events[keep - 1].Cursor;
             var result = JsonSerializer.SerializeToElement(new
             {
@@ -185,10 +194,10 @@ public sealed partial class CozmoBridge
         }
     }
 
-    private static JsonElement FormatDuring(EventPage page, long since, bool full, int budget, uint? completionTag)
+    private static JsonElement FormatDuring(BridgeEventPage page, long since, bool full, int budget, uint? completionTag)
     {
         if (full) return JsonSerializer.SerializeToElement(page, Json);
-        var (remaining, sightings) = Collapse(page.Events);
+        var (remaining, sightings) = Collapse(page.Events.ToArray());
         int keep = remaining.Length;
         var complete = JsonSerializer.SerializeToElement(new
         {

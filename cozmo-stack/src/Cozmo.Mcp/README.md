@@ -158,7 +158,10 @@ retain the full history.
 `read_events({"since":cursor,"waitMs":30000})` waits until an event arrives or the
 timeout expires. The range is 0–30000 ms; the default 0 returns immediately.
 Concurrent waits do not consume one another's events. MCP cancellation cancels the
-wait. A regular tool call can run while another call waits.
+wait. A regular tool call can run while another call waits. Use
+`{"since":cursor,"waitMs":30000,"significantOnly":true}` to wait only for
+significant events. The `significant` flag is on each event record.
+The default remains all event types. Reuse the returned cursor after a timeout too.
 
 `get_state` includes `isCharging`, `knownChargers` (world ID and pose state), and
 `relative` coordinates for located cubes, chargers and observed faces. Coordinates
@@ -167,6 +170,78 @@ are in millimetres, in MAIN robot axes; `distanceMm` is planar distance and
 the object and robot have no common pose root or no robot owner is available.
 Enrolled faces that are not currently observed retain their name but have no
 invented distance.
+
+## Push events to a local host
+
+Start `cozmo-mcp` with `--event-stream-port 8765` to open a read-only IPv4
+loopback TCP stream at `127.0.0.1:8765`. Use a trusted local machine because
+local clients can read the active feed. Send one UTF-8 JSON subscription line
+terminated by LF within five seconds. A filtered subscription looks like this.
+
+```json
+{"since":0,"types":["face-seen","face-recognised","reaction-changed"],"significantOnly":true}
+```
+
+All fields are optional. An empty object starts at the live edge with all event
+types. `since: 0` asks for all retained records. Each output line has the same
+`cursor`, `oldestCursor`, `gap` and ordered `events` as a full MCP page, with up
+to 64 records. A quiet subscription waits without sending empty pages. Resume
+with the last page cursor after reconnecting to the same process. On `gap: true`,
+refresh state because the feed evicted events. A malformed subscription or a
+future cursor receives one `error` line before the connection closes.
+
+A C# host with an existing `CozmoRobot` can reference `Cozmo.Bridge` and follow
+the same feed in-process. This example starts at the live edge and stops on
+cancellation. The host retains ownership of `robot`.
+
+```csharp
+using Cozmo.Bridge;
+using Cozmo.Robot;
+
+static async Task WatchCozmo(CozmoRobot robot, CancellationToken stop)
+{
+    using var bridge = new CozmoBridge(robot);
+    try
+    {
+        await foreach (var page in bridge.StreamEventsAsync(
+            significantOnly: true, token: stop))
+        {
+            if (page.Gap)
+                Console.WriteLine(bridge.GetState().GetRawText());
+
+            foreach (var item in page.Events)
+                Console.WriteLine($"{item.Cursor} {item.Type} {item.Payload}");
+        }
+    }
+    catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
+}
+```
+
+## Claude Code channel
+
+Add `--channel` to the Cozmo server arguments in Claude Code's MCP
+configuration. For a custom server named `cozmo`, start an interactive session
+with `claude --dangerously-load-development-channels server:cozmo`. Channels are
+a research preview for interactive sessions. Use `read_events` or the local
+stream in print (`-p`) and SDK sessions.
+[Claude Code channels reference](https://code.claude.com/docs/en/channels-reference)
+
+The channel starts after MCP initialization. Its notifications carry a JSON
+event page in `content`, with up to one notification per second. Bursts share
+a page in cursor order. A single event can carry `event_type`, `face_id`,
+`object_id` and `reason` string metadata. The local listener and channel are
+independent and both start disabled.
+
+The default significance list covers newly seen faces, cubes, chargers and
+other located objects, face recognition once per face per minute, object pose
+loss, cube taps and movement, pickup, return to treads from pickup, on-back,
+cliff detection, unexpected movement, reaction transitions, the bridge's own
+action completions, sleep and cancellation, robot disconnect, low battery, and
+charger contact changes. Face deletion and object pose loss let a later sighting
+count as new. Ordinary repeat sightings stay in the full feed.
+Use `--significant-events face-recognised,reaction-changed` to replace the
+list at startup, or pass `significantEventTypes` when constructing a bridge.
+The setting applies to all readers in that process.
 
 ## Firmware animation guard
 

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -55,6 +56,7 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true,keepNeedsFull:true,
             engineOptions:options,engineCreated:e=>e.RuntimeAudioSinkForTest=()=>sink,bodyHwVersion:4);
         var rig=f.Rig;var manager=f.Robot.BehaviorManagerOwner!;
+        using var bridge=label=="unexpected"?new CozmoBridge(rig.Robot):null;
         rig.Robot.SetEnableFreeplayActivity(false);rig.Tick(4000);manager.Activity=null;
         f.Robot.ActionList.QueueAction(QueueActionPosition.Now,new Gate());
         manager.CheckReactions(rig.Engine.Timer.Seconds);f.Robot.ActionList.Clear();
@@ -204,6 +206,9 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
                 // Inspect the response before that independent captured event, not at window end.
                 Assert.Contains(responseSnapshots,s=>s.Obstacles>0&&s.LocalizationPending!=0);
                 Assert.Contains(rig.SentSince(replayStart),m=>m is AbsoluteLocalizationUpdate);
+                Assert.Contains(bridge!.ReadEvents().GetProperty("events").EnumerateArray(), entry =>
+                    entry.GetProperty("type").GetString()=="unexpected-movement" &&
+                    entry.GetProperty("significant").GetBoolean());
                 break;
         }
         Assert.DoesNotContain(gaps,g=>!RemainingSharedMarkers.Any(prefix=>g.StartsWith(prefix,StringComparison.Ordinal))&&!rightingMarkers.Contains(g));

@@ -20,16 +20,18 @@ public static class Program
         Console.SetOut(Console.Error);
         try
         {
-            var flags = new HashSet<string>(["--resources", "--banks", "--robot-ip", "--out", "--needs", "--animation-budget-bytes"], StringComparer.Ordinal);
+            var flags = new HashSet<string>(["--resources", "--banks", "--robot-ip", "--out", "--needs", "--animation-budget-bytes", "--event-stream-port", "--significant-events"], StringComparer.Ordinal);
             var values = new Dictionary<string, string>(StringComparer.Ordinal);
             bool validate = false;
+            bool channel = false;
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] is "--help" or "-h")
                 {
-                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--animation-budget-bytes <1..30000>] [--validate]");
+                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--animation-budget-bytes <1..30000>] [--event-stream-port <port>] [--significant-events <type,type,...>] [--channel] [--validate]");
                     return 0;
                 }
+                if (args[i] == "--channel") { channel = true; continue; }
                 if (args[i] == "--validate") { validate = true; continue; }
                 string flag = args[i];
                 if (!flags.Contains(flag) || i + 1 == args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal))
@@ -46,6 +48,16 @@ public static class Program
                 ? HardwareEngineOptions.ParseAnimationBudget(budgetValue) : new CozmoEngineOptions().AnimationStreamBudgetBytes;
             string directory = values.GetValueOrDefault("--out") ?? Path.Combine(FindRepository(), "re-analysis", "acceptance", "hardware",
                 DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-LLM-SESSION");
+            int? streamPort = null;
+            if (values.TryGetValue("--event-stream-port", out var portValue))
+            {
+                if (!int.TryParse(portValue, out var port) || port is < 1 or > 65535)
+                    throw new ArgumentException("--event-stream-port requires an integer from 1 to 65535.");
+                streamPort = port;
+            }
+            string[]? significantTypes = values.GetValueOrDefault("--significant-events")?.Split(',', StringSplitOptions.TrimEntries);
+            if (significantTypes?.Any(string.IsNullOrWhiteSpace) == true)
+                throw new ArgumentException("--significant-events requires nonempty comma-separated event types.");
             if (validate)
             {
                 Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Needs: {needsMode}. Animation budget: {animationBudget} bytes. Evidence: {Path.GetFullPath(directory)}. No connection requested.");
@@ -71,7 +83,10 @@ public static class Program
                 narration.AttachRobot(robot);
                 robot.Transport.FrameTrace += evidence.Frame;
                 robot.HandlerFaulted += error => { Log(error.ToString()); evidence.Record("handler-fault", JsonSerializer.SerializeToElement(new { exception = error.ToString() })); };
-                using var bridge = new CozmoBridge(robot);
+                using var bridge = new CozmoBridge(robot, significantEventTypes: significantTypes);
+                await using var localEvents = streamPort is { } listenPort
+                    ? new BridgeEventStream(bridge, listenPort, cancel.Token) : null;
+                if (localEvents is not null) Log($"Local events at 127.0.0.1:{localEvents.Port}");
                 // Serve initialization immediately while the real engine loads its resources.
                 // The bridge exposes native readiness and admission, including not-ready results.
                 var startup = Task.Run(() =>
@@ -86,7 +101,7 @@ public static class Program
                 });
                 try
                 {
-                    await new CozmoMcpServer(bridge, Log, evidence.Record).RunAsync(Console.In, protocolOutput, cancel.Token);
+                    await new CozmoMcpServer(bridge, Log, evidence.Record, channel).RunAsync(Console.In, protocolOutput, cancel.Token);
                     evidence.Finish("closed", bridge.GetState());
                 }
                 catch (Exception error)

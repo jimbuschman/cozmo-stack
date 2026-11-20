@@ -7,7 +7,7 @@ namespace Cozmo.Mcp;
 
 /// <summary>The MCP stdio protocol over the transport-neutral Cozmo bridge.</summary>
 public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnostic = null,
-    Action<string, JsonElement>? record = null)
+    Action<string, JsonElement>? record = null, bool channel = false)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly string[] Versions = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -15,12 +15,14 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
     private readonly ConcurrentDictionary<string, CancellationTokenSource> requests = new();
     private bool initialized;
     private bool ready;
+    private readonly TaskCompletionSource<long> channelReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>Reads newline-delimited UTF-8 JSON-RPC. EOF cancels outstanding calls.</summary>
     public async Task RunAsync(TextReader input, TextWriter output, CancellationToken token = default)
     {
         using var session = CancellationTokenSource.CreateLinkedTokenSource(token);
         var pending = new List<Task>();
+        if (channel) pending.Add(PumpChannelAsync(output, session.Token));
         try
         {
             while (await input.ReadLineAsync(session.Token).ConfigureAwait(false) is { } line)
@@ -75,7 +77,11 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
             var parameters = message.TryGetProperty("params", out var supplied) ? supplied : default;
             if (!hasId)
             {
-                if (name == "notifications/initialized" && initialized) ready = true;
+                if (name == "notifications/initialized" && initialized && !ready)
+                {
+                    ready = true;
+                    if (channel) channelReady.TrySetResult(bridge.CurrentEventCursor());
+                }
                 if (name == "notifications/cancelled" && parameters.ValueKind == JsonValueKind.Object &&
                     parameters.TryGetProperty("requestId", out var cancelledId) &&
                     requests.TryGetValue(cancelledId.GetRawText(), out var cancelled))
@@ -107,10 +113,11 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                         result = new
                         {
                             protocolVersion = Versions.Contains(version.GetString(), StringComparer.Ordinal) ? version.GetString() : Versions[0],
-                            capabilities = new { tools = new { listChanged = false }, resources = new { } },
+                            capabilities = Capabilities(),
                             serverInfo = new { name = "cozmo-mcp", version = "1.0.0" },
                             instructions = "Read the cozmo-guide resource at cozmo://guide. Check get_state readiness and get_camera_image before acting. " +
-                                "Use world object IDs, inspect during/why and animation truncatedByRobot, and wait with read_events since/waitMs. Tracking can remain pending until cancelled.",
+                                "Use world object IDs, inspect during/why and animation truncatedByRobot, and wait with read_events since/waitMs. Tracking can remain pending until cancelled." +
+                                (channel ? " Cozmo channel notifications contain significant bridge events in cursor order." : ""),
                         };
                         break;
                     case "ping":
@@ -191,8 +198,8 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
             Tool("get_state", "Read timestampUtc, connection (connected/ready/link), batteryVolts, isCarrying/carriedObjectId, isOnCharger/isCharging, activity/highLevelActivity/behavior/reaction, reactionLocks, needs and knownFaces/knownCubes/knownChargers. Success: a latest-state snapshot; cozmo-guide defines fields and units. Failure: disconnected or not-ready flags and null/empty observations mean unavailable data; tool errors set isError. This read does not imply action success.", """{"type":"object","properties":{},"additionalProperties":false}"""),
             Tool("get_camera_image", "See the latest received PNG. With annotate, select the latest vision-processed image and draw its own face/object boxes. If vision has yet to process an image, return the newest received image with visionProcessed=false. Success: PNG and metadata with imageId, latestReceivedImageId, colour/encoding and exposure-time headAngleRad. A read uses the existing camera and vision settings. Failure: isError when no frame exists or decode fails.",
                 """{"type":"object","properties":{"annotate":{"type":"boolean","default":false}},"additionalProperties":false}"""),
-            Tool("read_events", "Read a page after since and reuse its cursor. types and excludeTypes filter event names. limit counts matching events before compaction. Success: a page, with gap=true if older events were evicted. An empty page after waiting is a timeout. Failure: isError for invalid arguments or a cursor from another feed.",
-                """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0},"waitMs":{"type":"integer","minimum":0,"maximum":30000,"default":0},"types":{"type":"array","items":{"type":"string","minLength":1}},"excludeTypes":{"type":"array","items":{"type":"string","minLength":1}},"limit":{"type":"integer","minimum":1,"default":100},"detail":{"type":"string","enum":["compact","full"],"default":"compact"}},"additionalProperties":false}"""),
+            Tool("read_events", "Read a page after since and reuse its cursor. types and excludeTypes filter event names; significantOnly waits for significant matches. limit counts matching events before compaction. Success: a page, with gap=true if older events were evicted. An empty page after waiting is a timeout. Failure: isError for invalid arguments or a cursor from another feed.",
+                """{"type":"object","properties":{"since":{"type":"integer","minimum":0,"default":0},"waitMs":{"type":"integer","minimum":0,"maximum":30000,"default":0},"significantOnly":{"type":"boolean","default":false},"types":{"type":"array","items":{"type":"string","minLength":1}},"excludeTypes":{"type":"array","items":{"type":"string","minLength":1}},"limit":{"type":"integer","minimum":1,"default":100},"detail":{"type":"string","enum":["compact","full"],"default":"compact"}},"additionalProperties":false}"""),
             Tool("list_animations", "Read loaded, triggers and clips without playing an animation. Success: the loaded catalogue; use case-sensitive trigger names with animation. Failure: loaded=false/empty lists mean the library is unavailable; invalid arguments or a read error set isError.", """{"type":"object","properties":{},"additionalProperties":false}"""),
         ]).ToArray();
     }
@@ -241,7 +248,7 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                     result = bridge.ListAnimations();
                     break;
                 case "read_events":
-                    if (args.EnumerateObject().Any(key => key.Name is not ("since" or "waitMs" or "types" or "excludeTypes" or "limit" or "detail")))
+                    if (args.EnumerateObject().Any(key => key.Name is not ("since" or "waitMs" or "types" or "excludeTypes" or "limit" or "detail" or "significantOnly")))
                         throw new ArgumentException("Unknown read_events argument.");
                     long since = 0;
                     if (args.TryGetProperty("since", out var cursor) &&
@@ -262,8 +269,15 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                             throw new ArgumentException("'detail' must be 'compact' or 'full'.");
                         full = detail.GetString() == "full";
                     }
+                    bool significantOnly = false;
+                    if (args.TryGetProperty("significantOnly", out var significant))
+                    {
+                        if (significant.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                            throw new ArgumentException("'significantOnly' must be a boolean.");
+                        significantOnly = significant.GetBoolean();
+                    }
                     result = await bridge.ReadEventPageAsync(since, waitMs, limit,
-                        EventTypes(args, "types"), EventTypes(args, "excludeTypes"), full, token).ConfigureAwait(false);
+                        EventTypes(args, "types"), EventTypes(args, "excludeTypes"), full, token, significantOnly).ConfigureAwait(false);
                     break;
                 default:
                     result = await bridge.ExecuteAsync(tool, args, token).ConfigureAwait(false);
@@ -327,14 +341,65 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         JsonObject reply = new() { ["jsonrpc"] = "2.0", ["id"] = id is { } key ? JsonNode.Parse(key.GetRawText()) : null };
         if (code is { } error) reply["error"] = new JsonObject { ["code"] = error, ["message"] = message };
         else reply["result"] = JsonSerializer.SerializeToNode(result, Json);
-        record?.Invoke("mcp-output", JsonSerializer.SerializeToElement(reply, Json));
+        await WriteMessageAsync(output, reply, token).ConfigureAwait(false);
+    }
+
+    private async Task WriteMessageAsync(TextWriter output, JsonNode message, CancellationToken token)
+    {
         await outputGate.WaitAsync(token).ConfigureAwait(false);
         try
         {
-            await output.WriteLineAsync(reply.ToJsonString(Json).AsMemory(), token).ConfigureAwait(false);
+            record?.Invoke("mcp-output", JsonSerializer.SerializeToElement(message, Json));
+            await output.WriteLineAsync(message.ToJsonString(Json).AsMemory(), token).ConfigureAwait(false);
             await output.FlushAsync(token).ConfigureAwait(false);
         }
         finally { outputGate.Release(); }
+    }
+
+    private JsonObject Capabilities()
+    {
+        var capabilities = new JsonObject { ["tools"] = new JsonObject { ["listChanged"] = false }, ["resources"] = new JsonObject() };
+        if (channel) capabilities["experimental"] = new JsonObject { ["claude/channel"] = new JsonObject() };
+        return capabilities;
+    }
+
+    private async Task PumpChannelAsync(TextWriter output, CancellationToken token)
+    {
+        try
+        {
+            long start = await channelReady.Task.WaitAsync(token).ConfigureAwait(false);
+            await foreach (var page in bridge.StreamEventsAsync(start, significantOnly: true, token: token).ConfigureAwait(false))
+            {
+                var meta = new Dictionary<string, string>();
+                if (page.Events.Count == 1)
+                {
+                    var entry = page.Events[0];
+                    meta["event_type"] = entry.Type;
+                    AddMeta(entry.Payload, "faceId", "face_id", meta);
+                    AddMeta(entry.Payload, "objectId", "object_id", meta);
+                    if (entry.Payload.TryGetProperty("cube", out var cube)) AddMeta(cube, "worldObjectId", "object_id", meta);
+                    AddMeta(entry.Payload, "reason", "reason", meta);
+                }
+                var message = new JsonObject
+                {
+                    ["jsonrpc"] = "2.0",
+                    ["method"] = "notifications/claude/channel",
+                    ["params"] = JsonSerializer.SerializeToNode(new { content = JsonSerializer.Serialize(page, Json), meta }, Json),
+                };
+                await WriteMessageAsync(output, message, token).ConfigureAwait(false);
+                // During this interval the feed accumulates a batch. The next page
+                // preserves cursor order and excludes repeat sightings.
+                await Task.Delay(TimeSpan.FromSeconds(1), token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (IOException error) { diagnostic?.Invoke("Claude channel output closed: " + error.Message); }
+    }
+
+    private static void AddMeta(JsonElement payload, string property, string key, Dictionary<string, string> meta)
+    {
+        if (payload.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+            meta[key] = value.ToString();
     }
 
     private sealed class ProtocolException(int code, string message) : Exception(message)

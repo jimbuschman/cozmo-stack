@@ -31,6 +31,7 @@ internal readonly record struct RobotCompletedAction(
 {
     /// <summary>The outer <c>MessageEngineToGame</c> union tag for <c>RobotCompletedAction</c>: uint16 0x005A (90, D9/MessageEngineToGame.cs:104).</summary>
     public const ushort UnionTag = 0x005A;
+    internal object? HostCaller { get; init; }
 
     /// <summary>
     /// D8/D9: the packed body — tag4 LE, type4 LE, result4 LE, one-byte count, all result4 elements, then the

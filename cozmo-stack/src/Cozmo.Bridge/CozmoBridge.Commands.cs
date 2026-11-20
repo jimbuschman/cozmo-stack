@@ -154,6 +154,8 @@ public sealed partial class CozmoBridge : IDisposable
 
         long callStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         long startCursor = CurrentEventCursor();
+        object? previousCaller = ActionRunner.CallerContext.Value;
+        ActionRunner.CallerContext.Value = eventCaller;
         try
         {
             using var capture = new ActionWhyCapture(this);
@@ -180,6 +182,7 @@ public sealed partial class CozmoBridge : IDisposable
         {
             return Error("unavailable", error.Message);
         }
+        finally { ActionRunner.CallerContext.Value = previousCaller; }
     }
 
     private static JsonElement Error(string code, string message) =>

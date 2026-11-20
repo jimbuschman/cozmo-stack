@@ -2,6 +2,7 @@ namespace Cozmo.Robot;
 /// <summary>Known action completion fields. NativeCompletionCache exposes the existing runner cache; concrete completion-union recovery remains with the action's owner (for animation, M8-020).</summary>
 public sealed record ActionCompletionReport(uint Tag,int ActionType,uint Result,IReadOnlyList<uint> SubActionResults,uint NativeCompletionCache)
 {
+    internal object? HostCaller { get; init; }
     public string? AnimationName {get;init;}
     public byte? CompletionVariant {get;init;}
     public ObjectInteractionCompletion? ObjectInteraction {get;init;}
@@ -14,7 +15,7 @@ public sealed partial class CozmoEngine
     {
         var typed=new ActionCompletionReport(record.Tag,record.ActionType,record.Result,
             Array.AsReadOnly(record.SubActionResults.ToArray()),record.CompletionUnion)
-            {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant,ObjectInteraction=record.ObjectInteraction};
+            {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant,ObjectInteraction=record.ObjectInteraction,HostCaller=record.HostCaller};
         if(record.ObjectInteraction is {IsPayloadDefined:false})
             Behavior.SteppedBehavior.ReportMissing("Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; no cross-action unused-word policy is applied.");
         else if(record.ObjectInteraction is not null||record.CompletionVariant is 1 or 3 or 5 or 6)

@@ -514,7 +514,7 @@ public sealed class McpServerTests
         private readonly Task server;
         private readonly Dictionary<int, JsonElement> deferred = new();
         private int nextId;
-        internal Client(CozmoBridge bridge) => server = new CozmoMcpServer(bridge).RunAsync(Input, output);
+        internal Client(CozmoBridge bridge, bool channel = false) => server = new CozmoMcpServer(bridge, channel: channel).RunAsync(Input, output);
         internal async Task Initialize()
         {
             var reply = await Request("initialize", new { protocolVersion = "2025-11-25", capabilities = new { }, clientInfo = new { name = "offline-test", version = "1" } });
@@ -537,6 +537,11 @@ public sealed class McpServerTests
         }
         internal async Task<JsonElement> Request(string method, object parameters) => await Receive(await Send(method, parameters));
         internal Task<JsonElement> Tool(string name, object arguments) => Request("tools/call", new { name, arguments });
+        internal async Task<JsonElement> NextAfterRequest(string method, object parameters)
+        {
+            await Send(method, parameters);
+            return await Next();
+        }
         internal async Task<JsonElement> Next() => JsonSerializer.Deserialize<JsonElement>(await output.Lines.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)));
         internal async Task<JsonElement> Receive(int id)
         {
