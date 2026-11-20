@@ -93,6 +93,7 @@ class Verdict:
     aliases: tuple[str, ...] = ()
     missing: list[int] = field(default_factory=list)
     other_missing: list[int] = field(default_factory=list)
+    blocked_by_missing: bool = False
 
 
 def read_jsonl(path):
@@ -271,6 +272,7 @@ class Session:
                 verdict.missing.append(index)
         if verdict.missing and verdict.status == PASSED:
             verdict.status = SEEN
+            verdict.blocked_by_missing = True
             verdict.reason += " A matching MISSING marker is unresolved in this capture."
         return verdict
 
@@ -279,7 +281,9 @@ ACTION_TYPES = {
     "head": (0x12,), "lift": (0x13,), "drive-straight": (8,), "turn-in-place": (0x28,),
     "turn-to-face": (0x29,), "turn-to-cube": (0x2C,), "track-face": (0x23,), "animation": (0x1A,),
     "say-text": (0x20,), "go-to-pose": (12,), "pickup": (0x16, -2), "put-down": (0x18,),
-    "roll": (-2,), "stack": (0x19,), "mount-charger": (-2,),
+    # DriveToRollObjectAction sets the RollObject child's proxy at 0x0055CAA6.
+    # It copies the child type, 0x1F at 0x0055656E, to the compound.
+    "roll": (0x1F,), "stack": (0x19,), "mount-charger": (-2,),
 }
 ACTION_ALIASES = {
     "head": ("SetHeadAngleAction",), "lift": ("SetLiftHeightAction",),
@@ -300,7 +304,7 @@ SKILLS = {
     "mount-charger": ("Ask Cozmo to find and mount his charger.",
                       "M15CubeHw.RunCharger; 0x0054E7F8–0x0054E88A, charger report 0x007131E2", 120),
     "roll": ("Ask Cozmo to roll the visible light cube.",
-             "M15CubeHw.RunSkills; M15-077, 0x0052AA14–0x0052AA52", 120),
+             "M15CubeHw.RunSkills; M15-077, 0x0052AA14–0x0052AA52, completion proxy 0x0055CAA6", 120),
     "stack": ("Ask Cozmo to pick up one cube and stack it on the other.",
               "M15CubeHw.RunSkills; M15-008, 0x0052A5B2–0x0052A5F2, DriveToPlaceOnObjectAction", 90),
 }
@@ -355,7 +359,9 @@ def action_check(session, name, prompt, citation, expected, seconds):
                 reason = f"Native reply matched, with {len(reports)} attributable 0x5A reports in the round window."
             if passed and name == "track-face":
                 elapsed = (call.cancelled_at - call.start) if call.cancelled_at is not None else 0.0
-                if elapsed < TRACK_SECONDS * 1000 or not (call.reply.get("report") or {}).get("callerCancellationRequested"):
+                if call.cancelled_at is None:
+                    passed, reason = False, "The engine cancelled tracking. There is no caller cancellation in the recording."
+                elif elapsed < TRACK_SECONDS * 1000 or not (call.reply.get("report") or {}).get("callerCancellationRequested"):
                     passed, reason = False, "The round requires caller cancellation after 10 s of tracking."
             if passed and name == "animation" and call.reply.get("truncatedByRobot"):
                 passed, reason = False, "The robot cut off the animation."
@@ -374,7 +380,9 @@ def action_check(session, name, prompt, citation, expected, seconds):
 def choose(candidates, citation, prompt):
     if not candidates:
         return Verdict(NOT_EXERCISED, "No matching request or engine report.", citation, prompt)
-    winner = next((v for v in candidates if v.status == PASSED), candidates[0])
+    winner = next((v for v in candidates if v.status == PASSED), None)
+    if winner is None:
+        winner = next((v for v in candidates if v.blocked_by_missing), candidates[0])
     winner.other_missing = sorted({marker for v in candidates if v is not winner for marker in v.missing}
                                   .difference(winner.missing))
     return winner
@@ -480,9 +488,28 @@ def signal_check(session, name, step, enrolled=()):
             v = Verdict(PASSED, f"Matched {report} 0x{tag:02X} to MCP at {raw_at:.0f} ms.",
                         citation, prompt, (start, max(raw_at, public_at)), (name, report.split()[0]))
             candidates.append(session.apply_missing(v))
+    if name == "face-recognised":
+        # In ordinary sessions the caller can read state without draining events.
+        # A named album entry alone does not prove a sighting. Require FaceWorld's
+        # last visual timestamp to match the raw named 0x46 for that same face.
+        for call in session.calls["get_state"]:
+            if call.end is None:
+                continue
+            for face in call.reply.get("knownFaces", []):
+                key = face.get("faceId"), face.get("lastObservedTimestamp"), face.get("name")
+                for identity, label, taught_at in enrolled:
+                    if (identity, label) != (key[0], key[2]) or not taught_at <= call.end <= taught_at + seconds * 1000:
+                        continue
+                    raw_at = next((at for at in raw.get(key, ()) if taught_at <= at <= call.end), None)
+                    if raw_at is None:
+                        continue
+                    v = Verdict(PASSED, f"Named 0x46 at {raw_at:.0f} ms matches the fresh get_state sighting "
+                                f"at {call.end:.0f} ms.", citation, prompt,
+                                (taught_at, call.end), (name, "RobotObservedFace"))
+                    candidates.append(session.apply_missing(v))
     if raw and not candidates:
         times = [at for values in raw.values() for at in values]
-        reason = "Named face seen, with no matching teach followed by recognition within 20 s." if name == "face-recognised" else "Engine report present without a matching public MCP payload."
+        reason = "Named face seen, with no matching public sighting within 20 s of the teach." if name == "face-recognised" else "Engine report present without a matching public MCP payload."
         candidates.append(session.apply_missing(Verdict(SEEN, reason, citation, prompt,
                                                         (min(times), max(times)), (name, report.split()[0]))))
     return choose(candidates, citation, prompt)

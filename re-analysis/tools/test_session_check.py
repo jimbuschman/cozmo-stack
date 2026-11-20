@@ -59,6 +59,17 @@ class SessionCheckTests(unittest.TestCase):
         self.assertEqual(PASSED, checks["lift"].status)
         self.assertEqual(NOT_EXERCISED, checks["roll"].status)
 
+    def test_roll_completion_has_the_proxied_child_type_and_external_tag(self):
+        self.request(100, 1, "roll", objectId=4)
+        self.completion(110, 7, -2)
+        self.completion(112, 3_000_040, 0x1F)
+        self.reply(120, 1, engineResult=0, admitted=True)
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["roll"].status)
+        self.completion(114, 7, 0x1F)
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["roll"].status)
+
     def test_two_unattributed_overlapping_calls_cannot_share_completion(self):
         self.request(100, 1, "head")
         self.request(105, 2, "head")
@@ -101,6 +112,22 @@ class SessionCheckTests(unittest.TestCase):
         self.events = [row for row in self.events if row["atMs"] != 400]
         checks, _ = self.check()
         self.assertEqual(SEEN, checks["face-recognised"].status)
+
+    def test_named_state_requires_matching_fresh_visual_timestamp(self):
+        self.request(100, 1, "teach-face", name="Guest")
+        self.raw(200, 0x56, struct.pack("<BiB", 0, 21, 5) + b"Guest")
+        self.reply(210, 1, engineResult=0, faceOperation={"outcome": "enrolled", "faceId": 21, "name": "Guest"})
+        self.raw(400, 0x46, struct.pack("<iI", 21, 301) + bytes(48) + b"\x05Guest" + bytes(37))
+        self.request(450, 2, "get_state")
+        self.reply(460, 2, knownFaces=[{"faceId": 21, "name": "Guest", "lastObservedTimestamp": None, "enrolled": True}])
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["face-recognised"].status)
+
+        self.request(590, 3, "get_state")
+        self.reply(600, 3, knownFaces=[{"faceId": 21, "name": "Guest", "lastObservedTimestamp": 301, "enrolled": True}])
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["face-recognised"].status)
+        self.assertIn("fresh get_state", checks["face-recognised"].reason)
 
     def test_reaction_requires_entering_the_expected_trigger(self):
         trigger = enum_members("ReactionTrigger")["UnexpectedMovement"]
