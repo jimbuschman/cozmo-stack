@@ -846,8 +846,7 @@ public static class ObjectFootprint
         return points;
     }
 
-    // MarkerlessObject::GetBoundingQuadXY 0x00502C32..0x00502D42. This checked native slot path is
-    // separate from the older BlockWorld helper below, whose other caller semantics remain open.
+    // fidelity: M11-062, M11-091 — MarkerlessObject::GetBoundingQuadXY 0x00502C32..0x00502D42.
     internal static bool TryNativeMarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, out Quadrilateral? quad)
     {
         quad = null;
@@ -859,25 +858,6 @@ public static class ObjectFootprint
         Point2f Translate(Point2f point) => new(x + point.X, y + point.Y);
         quad = new Quadrilateral(Translate(sorted[0]), Translate(sorted[1]), Translate(sorted[2]), Translate(sorted[3]));
         return true;
-    }
-    // fidelity: M11-062 — 0x005025F0 / 0x00502C32; reuse M13-024, never a second minAreaRect.
-    internal static Quadrilateral MarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, Action<string> missing)
-    {
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-091 markerless +0x50 body/caller census 0x00502C32; existing candidate is not a checked override closure");
-        var signs = MarkerlessCanonicalCorners;
-        float sx = (float)size.X + 2f*padding, sy = (float)size.Y + 2f*padding, sz = (float)size.Z + 2f*padding;
-        var r = pose.Rotation; var pts = new List<Point2f>(8);
-        foreach (var s in signs)
-        {
-            float x = s.X*sx, y = s.Y*sy, z = s.Z*sz;
-            pts.Add(new Point2f((x*(float)r[0,0] + y*(float)r[0,1]) + z*(float)r[0,2],
-                (x*(float)r[1,0] + y*(float)r[1,1]) + z*(float)r[1,2]));
-        }
-        var c = MinAreaRectF.Points(MinAreaRectF.ComputeBoundingQuadRectangle(pts));
-        var sorted = SortQuadrilateral(c);
-        float tx = (float)pose.Translation.X, ty = (float)pose.Translation.Y;
-        Point2f T(Point2f p) => new(p.X+tx,p.Y+ty);
-        return new Quadrilateral(T(sorted[0]),T(sorted[1]),T(sorted[2]),T(sorted[3]));
     }
 
     private static bool SignBit(float v) => BitConverter.SingleToInt32Bits(v) < 0;

@@ -226,8 +226,6 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         "MISSING: Robot::Update's behaviour debug string (robot+0x4C",
         "MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete",
         "MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E",
-        "MISSING: M11-062 Robot::GetPose VERIFY root checks 0x004EA398..0x004EA46C",
-        "MISSING: M11-091 markerless +0x50 body/caller census 0x00502C32",
         "MISSING: M15-014 common action device-write input unavailable at 0x0069652E",
         "MISSING: M15-093 daily-star check skipped: the robot/device copies are not resolved",
         "MISSING: M15-093 LocalNotifications: persisted notification determinant unavailable",

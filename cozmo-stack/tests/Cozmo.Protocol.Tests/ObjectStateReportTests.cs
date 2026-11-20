@@ -62,6 +62,8 @@ public sealed class ObjectStateReportTests : IDisposable
         var oldObject=new ObservableObject(77,ObjectType.Block_LIGHTCUBE1,Array.Empty<KnownMarker>()){Pose=oldPose,OriginId=old,PoseState=PoseState.Known};
         world.AddLocatedObject(oldObject);
         Assert.True(owner.AddOriginWithId(99));world.CurrentOriginId=99;
+        using var main = new Pose3d(Rotation3d.Identity, Vec3.Zero, parent:owner.GetNativeOrigin(99));
+        owner.SetPose(main);
         M4ControlTests.ConnectCube(f,0,ObjectType.Block_LIGHTCUBE1);
         uint connectedOnly=Assert.Single(world.ConnectedObjects).ObjectId;
         using var current=new Pose3d(Rotation3d.Identity,new Vec3(100,0,0),parent:owner.GetNativeOrigin(99));
@@ -78,7 +80,7 @@ public sealed class ObjectStateReportTests : IDisposable
         Assert.Equal(new[]{first.ObjectId,second.ObjectId,obstacle.ObjectId},rows.Select(r=>r.ObjectId));
         Assert.All(rows,row=>Assert.False(row.Connected));
         Assert.Equal(99u,rows[0].Pose.OriginId);Assert.Equal(99u,rows[1].Pose.OriginId);
-        Assert.Equal(0u,rows[2].Pose.OriginId); // Existing M11-062 markerless ingress supplies a detached pose, not bucket 99.
+        Assert.Equal(99u,rows[2].Pose.OriginId); // 0x0062240E..0x0062241E gives the obstacle MAIN's parent.
         Assert.DoesNotContain(rows,row=>row.ObjectId==oldObject.ObjectId || row.ObjectId==connectedOnly);
         Assert.NotNull(body);Assert.Equal(151,body!.Length);Assert.Equal(3,body[0]);
         Assert.Equal(103u,BinaryPrimitives.ReadUInt32LittleEndian(body.AsSpan(1)));Assert.Equal(10u,BinaryPrimitives.ReadUInt32LittleEndian(body.AsSpan(5)));Assert.Equal(1u,BinaryPrimitives.ReadUInt32LittleEndian(body.AsSpan(13)));

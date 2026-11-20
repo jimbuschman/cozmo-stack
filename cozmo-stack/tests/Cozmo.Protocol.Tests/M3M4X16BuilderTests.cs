@@ -88,7 +88,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         var a=new ObservableObject(100,ObjectType.CliffDetection,Array.Empty<KnownMarker>()) { OriginId=1,PoseNameNode=new PoseTreeNameNode("a") };
         var b=new ObservableObject(101,ObjectType.CliffDetection,Array.Empty<KnownMarker>()) { OriginId=2,Pose=At(500,0),PoseNameNode=new PoseTreeNameNode("b") };
         var method=typeof(BlockWorld).GetMethod("MarkerlessSameAs",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance)!;
-        bool Same()=> (bool)method.Invoke(w,new object[] {a,b,new Vec3(20,40,50)})!;
+        bool Same()=> (bool)method.Invoke(w,new object[] {a,b,new Vec3(20,40,50),false})!; // standalone world, no owned native pose
         a.PoseNameNode!.Parent=new PoseTreeNameNode("Origin1");Assert.False(Same());Assert.Empty(keys);
         a.PoseNameNode.Parent=null;Assert.False(Same());Assert.Equal("Pose3d.IsSameAs.PosesHaveDifferentOrigins",Assert.Single(keys));
         // The other-as-parent branch precedes frame conversion: temp is identity, not b's 500-mm translation.
