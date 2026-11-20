@@ -94,10 +94,12 @@ engine-sourced round expectations (operator 2026-11-20; combined table
   report fixed 2026-11-20, needs a new session); teach/rename/erase (rename and erase not tried); mount the charger
   (the engine's own results, needs a clear desk); roll; stack.
 - **A, not exercised:** go to a place; Freeplay return after a command.
-- **B, passed with no MISSING on the path:** 20 of 41 classes (Freeplay loop; ReactToCliff, Pickup, RobotOnBack,
-  ReturnedToTreads, Impact, UnexpectedMovement, MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube,
-  PounceOnMotion, ThinkAboutBeacons; AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; AcknowledgeObject,
-  ReactToCubeMoved, RollBlock). The manager's spot-read of each path is still to do before these count as finished.
+- **B, finished (passed in a session, no MISSING on the path, main path spot-read against the binary 2026-11-20):**
+  19 of 41 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
+  MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube, PounceOnMotion, ThinkAboutBeacons;
+  AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; AcknowledgeObject, RollBlock.
+- **B, passed but the spot-read found a difference:** ReactToCubeMoved. Its presence branch plays AcknowledgeObject
+  without the engine's lift-safe action (0x00602526..0x00602546; CUBEMOVED-PRESENCE-1).
 - **B, not exercised:** 21 classes (OnFace, OnSide, Shaken, PlacedOnSlope, Frustration; the four Needs classes;
   PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, VisitInterestingEdge; SearchForFace,
   DriveToFace, RespondToRenameFace; PickUpCube, PutDownBlock, StackBlocks, DriveOffCharger).
