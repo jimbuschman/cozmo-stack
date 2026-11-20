@@ -8,6 +8,7 @@ namespace Cozmo.Robot;
 /// </summary>
 internal sealed class ActionQueue : IDisposable
 {
+    private static int _reportedStatusDiagnostics;
     private IActionRunner? _current;
     private readonly LinkedList<IActionRunner> _pending = new();
     private readonly HashSet<uint> _deletionTags = new();
@@ -91,12 +92,11 @@ internal sealed class ActionQueue : IDisposable
         uint result = updating.Update();
         // A host callback may have destroyed this owner or replaced its current runner during Update.
         if (!ReferenceEquals(_current, updating)) return 0;
-        if (result == EngineActionResult.Running)
-        {
-            Behavior.SteppedBehavior.ReportMissing("M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only");
-            return 0;
-        }
-        Behavior.SteppedBehavior.ReportMissing("M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound");
+        // 0x0053F65C/0x0053F696: SetText constructs and clears a local Viz label at 0x006C038E/0x006C0394.
+        // 0x0053F6F2/0x0053F6B4: the status slot is read only past UpdateSdk's external-mode gate at 0x00662F0A.
+        if (Interlocked.Exchange(ref _reportedStatusDiagnostics, 1) == 0)
+            StackDiagnostics.Write("M8-015 Queue.Update: VizManager.SetText has no effect; action names in external SDK status are not supported (app boundary, operator 2026-10-09).");
+        if (result == EngineActionResult.Running) return 0;
         if (!ReferenceEquals(_current, updating)) return 0;
         DeleteCurrent(updating);
         return result == EngineActionResult.Success || result == EngineActionResult.Cancelled ? 0 : 1;

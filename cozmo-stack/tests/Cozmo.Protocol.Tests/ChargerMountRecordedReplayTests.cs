@@ -208,7 +208,6 @@ public sealed class ChargerMountRecordedReplayTests(ITestOutputHelper output)
         "M13-033 Replanning State/plan text", "M13-033 PrintPlan", "M13-033 Path::PrintPath",
         "M13-034 IPathPlanner.PrintPath", "M12-002 PathSegment.Print", "M12-032 VizManager.DrawPath",
         "M12-024 | EraseAllPlannerObstacles(",
-        "M8-015 Queue.Update RUNNING", "M8-015 Queue.Update terminal",
         "M8-015 ActionCompleted full ActionResult EnumToString", "M8-017 sequential failure full EnumToString",
         "M8-021 trigger DAS", "M8-023/M8-027 ProtoHandle callable",
         "RobotAudioClient::CreateAudioAnimation post-construction check",

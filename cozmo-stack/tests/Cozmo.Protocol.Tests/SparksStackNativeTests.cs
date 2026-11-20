@@ -208,7 +208,11 @@ public sealed class SparksStackNativeTests
         using var scene=new StackFirmwareScene(true){GroundProcessedFramesOnly=suppliedProcessedFramesOnly};var f=scene.F;
         f.X=200;scene.Motors();f.M.World.SelectedObjectId=scene.Top;
         var runner=new NativePlaceGroundRunner(f.M);var local=new List<RobotCompletedAction>();var api=new List<ActionCompletionReport>();var raw=new List<byte[]>();var logs=new List<string>();var deleted=new List<uint>();
+        // This collection owns the process-wide missing-report state.
+        SteppedBehavior.ResetMissingForTests();
+        var completionDiagnostics = new List<string>();
         f.M.World.LocatedObjectDeleted+=deleted.Add;f.Rig.Engine.LogEntry+=e=>logs.Add(e.Name+":"+e.Text);
+        f.Rig.Engine.LogLine += completionDiagnostics.Add;
         using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r&&r.ActionType==0x18)local.Add(r);});
         f.Rig.Engine.ActionCompleted+=r=>{if(r.ActionType==0x18)api.Add(r);};
         f.Rig.Engine.EngineToGameMessage+=(tag,b)=>{if(tag==0x5A&&b.Length>=8&&BinaryPrimitives.ReadInt32LittleEndian(b.Span[4..])==0x18)raw.Add(b.ToArray());};
@@ -218,6 +222,9 @@ public sealed class SparksStackNativeTests
         var completed=Assert.Single(local);Assert.Equal(suppliedProcessedFramesOnly?0x0300001Du:0u,completed.Result);Assert.Equal((byte?)0,completed.CompletionVariant);
         var fields=completed.ObjectInteraction!;Assert.Equal(scene.Top,fields.Word0);Assert.Equal((byte)1,fields.Count);Assert.False(fields.Flag);Assert.False(fields.IsPayloadDefined);
         f.Rig.Engine.DrainAppDelivery();Assert.Empty(api);Assert.Empty(raw);Assert.Empty(deleted);Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(scene.Top));
+        Assert.Single(completionDiagnostics, line => line.StartsWith("M1-034 M12-052 Ground completion 0x00554AE0"));
+        Assert.DoesNotContain(completionDiagnostics, line => line.StartsWith("MISSING:") &&
+            (line.Contains("M12-052 Ground completion") || line.Contains("Concrete object-interaction completion fields unavailable")));
         if(suppliedProcessedFramesOnly)Assert.Contains(logs,l=>l.Contains("BlockWorld.ClearObjectHelper.ClearingSelectedObject"));
     }
     [Fact]
