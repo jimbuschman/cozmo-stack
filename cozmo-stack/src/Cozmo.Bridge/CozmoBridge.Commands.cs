@@ -108,6 +108,12 @@ public sealed partial class CozmoBridge : IDisposable
         new("set_camera_color", "Set the robot's camera colour flag on its existing stream. Success: confirmed reports the requested setting; use the encoding and isColor on a subsequent get_camera_image to see which format the robot sent. Failure: not-admitted when the robot is unavailable.",
             [Boolean("enabled", "True requests colour frames, false requests greyscale.")],
             (b, a, ct) => b.SetCameraColor(a.Flag("enabled"), ct)),
+        new("set-backpack-lights", "Set selected backpack LEDs. Other LEDs retain this client's last requested values. Success: submitted reports the pattern sent to the engine's light layer, where normal animation and charging priorities apply. Failure: invalid arguments or robot unavailable.",
+            [Integer("ledMask", "Sum the selected LED bits: 1 left, 2 front, 4 middle, 8 back, 16 right.", 1, 31, 31), ..LightPatternArguments],
+            (b, a, ct) => b.SetGameLights(a, ct, null)),
+        new("set-cube-lights", "Set selected LEDs on a connected cube. Other LEDs retain this client's last requested values. Success: submitted reports the pattern queued for the robot. Freeplay may replace the output on its next update. Failure: invalid arguments, robot unavailable, or cube disconnected.",
+            [WorldObjectId, Integer("ledMask", "Sum the selected cube LED bits: 1, 2, 4, 8 in wire order.", 1, 15, 15), ..LightPatternArguments],
+            (b, a, ct) => b.SetGameLights(a, ct, a.UInt("objectId"))),
         new("lock-reactions", "Disable selected engine reaction triggers under a named lock. Success: confirmed shows the active locks. Failure: invalid arguments or not-admitted when the robot is unavailable.",
             [Text("id", "Lock ID to pass to unlock-reactions.", 255), Argument.ReactionSelection(Enum.GetNames<ReactionTrigger>())],
             (b, a, ct) => b.ChangeReactionLock(a.Text("id"), a.Value("triggers"), ct)),
@@ -154,6 +160,8 @@ public sealed partial class CozmoBridge : IDisposable
 
         long callStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         long startCursor = CurrentEventCursor();
+        object? previousCaller = ActionRunner.CallerContext.Value;
+        ActionRunner.CallerContext.Value = eventCaller;
         try
         {
             using var capture = new ActionWhyCapture(this);
@@ -180,6 +188,7 @@ public sealed partial class CozmoBridge : IDisposable
         {
             return Error("unavailable", error.Message);
         }
+        finally { ActionRunner.CallerContext.Value = previousCaller; }
     }
 
     private static JsonElement Error(string code, string message) =>

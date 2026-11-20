@@ -51,6 +51,10 @@ public sealed partial class CozmoBridge
 
     private sealed record AdmissionWait(double WaitedMs, string[] Reactions, bool TimedOut);
 
+    private static bool IsReactionRefusal(CommandResult result) =>
+        result is { Admitted: false, EngineResult: null, OwnerRetired: not true } &&
+        result.Detail == "External actions are disabled by a reaction";
+
     private async Task<(CommandResult Result, AdmissionWait? Wait)> ExecuteWithAdmissionWait(
         BridgeCommand command, BridgeArguments args, ActionWhyCapture capture, CancellationToken token)
     {
@@ -89,9 +93,7 @@ public sealed partial class CozmoBridge
             }
 
             var result = await pending.ConfigureAwait(false);
-            bool refusedByReaction = result is { Admitted: false, EngineResult: null, OwnerRetired: not true } &&
-                result.Detail == "External actions are disabled by a reaction";
-            if (budget == 0 || !refusedByReaction || blockingReaction is not { } trigger || owner is null)
+            if (budget == 0 || !IsReactionRefusal(result) || blockingReaction is not { } trigger || owner is null)
                 return (result, budget == 0 ? null : new(clock.Elapsed.TotalMilliseconds, reactions.ToArray(), false));
 
             waitingOwner = owner;

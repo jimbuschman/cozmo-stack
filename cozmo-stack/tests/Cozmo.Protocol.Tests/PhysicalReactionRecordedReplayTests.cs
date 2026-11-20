@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -55,6 +56,7 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true,keepNeedsFull:true,
             engineOptions:options,engineCreated:e=>e.RuntimeAudioSinkForTest=()=>sink,bodyHwVersion:4);
         var rig=f.Rig;var manager=f.Robot.BehaviorManagerOwner!;
+        using var bridge=label=="unexpected"?new CozmoBridge(rig.Robot):null;
         rig.Robot.SetEnableFreeplayActivity(false);rig.Tick(4000);manager.Activity=null;
         f.Robot.ActionList.QueueAction(QueueActionPosition.Now,new Gate());
         manager.CheckReactions(rig.Engine.Timer.Seconds);f.Robot.ActionList.Clear();
@@ -204,6 +206,9 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
                 // Inspect the response before that independent captured event, not at window end.
                 Assert.Contains(responseSnapshots,s=>s.Obstacles>0&&s.LocalizationPending!=0);
                 Assert.Contains(rig.SentSince(replayStart),m=>m is AbsoluteLocalizationUpdate);
+                Assert.Contains(bridge!.ReadEvents().GetProperty("events").EnumerateArray(), entry =>
+                    entry.GetProperty("type").GetString()=="unexpected-movement" &&
+                    entry.GetProperty("significant").GetBoolean());
                 break;
         }
         Assert.DoesNotContain(gaps,g=>!RemainingSharedMarkers.Any(prefix=>g.StartsWith(prefix,StringComparison.Ordinal))&&!rightingMarkers.Contains(g));
@@ -221,8 +226,6 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         "MISSING: Robot::Update's behaviour debug string (robot+0x4C",
         "MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete",
         "MISSING: M8-023/M8-027 ProtoHandle callable destruction0x0066350E",
-        "MISSING: M11-062 Robot::GetPose VERIFY root checks 0x004EA398..0x004EA46C",
-        "MISSING: M11-091 markerless +0x50 body/caller census 0x00502C32",
         "MISSING: M15-014 common action device-write input unavailable at 0x0069652E",
         "MISSING: M15-093 daily-star check skipped: the robot/device copies are not resolved",
         "MISSING: M15-093 LocalNotifications: persisted notification determinant unavailable",

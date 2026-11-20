@@ -480,8 +480,11 @@ public sealed class CozmoLights
     public void SetBackpackPattern(LedPattern top, LedPattern middle, LedPattern bottom)
     {
         var off = BodyLightComponent.OffLights[0];
-        Body.StartLooping(new[] { off, top, middle, bottom, off }, 2);
+        SetGameBackpackLeds([off, top, middle, bottom, off]);
     }
+
+    // fidelity: M4-017 — G2E 0xBA handler 0x006323C4..0x0063244E, including both arrow LEDs.
+    internal void SetGameBackpackLeds(LedPattern[] leds) => Body.StartLooping(leds, 2);
 
     /// <summary>Sets the three backpack LEDs to steady colours (<see cref="SetBackpackPattern"/>).</summary>
     public void SetBackpack(LedColor top, LedColor middle, LedColor bottom)

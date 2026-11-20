@@ -211,6 +211,7 @@ public sealed partial class CozmoRobot
             action.RetireNeverAdmittedTree();
             return Task.FromResult(new AiSpeechActionResult(false, null, "Speech action was not admitted"));
         }
+        action.HostCaller = ActionRunner.CallerContext.Value;
         return AwaitSpeech(action, owner, cancellationToken);
     }
 

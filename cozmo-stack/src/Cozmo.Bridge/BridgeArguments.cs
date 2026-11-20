@@ -20,6 +20,9 @@ internal sealed record Argument(string Name, string Type, string Description, do
         bool allowEmpty = false) =>
         new(name, "string", description, Choices: choices, MaxUtf8Bytes: maxUtf8Bytes, AllowEmpty: allowEmpty);
 
+    internal static Argument Rgb(string name, string description, bool optional = false) =>
+        new(name, "rgb", description, Default: optional ? JsonSerializer.SerializeToElement("") : null, AllowEmpty: optional);
+
     private static JsonElement? DefaultOf<T>(T? value) where T : struct =>
         value.HasValue ? JsonSerializer.SerializeToElement(value.Value) : null;
 
@@ -37,7 +40,8 @@ internal sealed record Argument(string Name, string Type, string Description, do
                         ["items"] = new JsonObject { ["type"] = "string", ["enum"] = JsonSerializer.SerializeToNode(Choices) },
                     }),
             };
-        var schema = new JsonObject { ["type"] = Type, ["description"] = Description };
+        var schema = new JsonObject { ["type"] = Type == "rgb" ? "string" : Type, ["description"] = Description };
+        if (Type == "rgb") schema["pattern"] = AllowEmpty ? "^(#?[0-9a-fA-F]{6})?$" : "^#?[0-9a-fA-F]{6}$";
         if (Minimum is { } min) schema["minimum"] = min;
         if (Maximum is { } max) schema["maximum"] = max;
         if (Default is { } fallback) schema["default"] = JsonNode.Parse(fallback.GetRawText());
@@ -62,6 +66,10 @@ internal sealed record Argument(string Name, string Type, string Description, do
             value.GetArrayLength() <= Choices!.Length && value.EnumerateArray().All(item =>
                 item.ValueKind == JsonValueKind.String && Choices.Contains(item.GetString(), StringComparer.Ordinal)) &&
             value.EnumerateArray().Select(item => item.GetString()).Distinct(StringComparer.Ordinal).Count() == value.GetArrayLength(),
+        "rgb" => value.ValueKind == JsonValueKind.String && value.GetString() is { } rgb &&
+            (AllowEmpty && rgb.Length == 0 ||
+             rgb.Length == 6 && rgb.All(char.IsAsciiHexDigit) ||
+             rgb.Length == 7 && rgb[0] == '#' && rgb.Skip(1).All(char.IsAsciiHexDigit)),
         "string" => value.ValueKind == JsonValueKind.String && value.GetString() is { } text
             && (AllowEmpty || text.Length > 0)
             && (Choices is null || Array.IndexOf(Choices, text) >= 0)

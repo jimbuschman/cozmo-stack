@@ -748,6 +748,7 @@ public sealed class CozmoMotion
                 }
                 return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed", !Current()));
             }
+            action.HostCaller = ActionRunner.CallerContext.Value;
             var task = AwaitAiMove(action, completion, owner, cancellationToken, detail, freeplay);
             freeplay = null; // The terminal action owns the activity handoff from here.
             return task;

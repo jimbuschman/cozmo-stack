@@ -185,8 +185,8 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
 /// <summary>
 /// <c>BehaviorReactToOnCharger</c> (0x00606C94..; config <c>timeTilSleepAnimation_s</c> 300,
 /// <c>timeTilDisconnection_s</c> 330, <c>triggeredFromVoiceCommand</c> for <c>VC_GoToSleep</c>): runnable when the
-/// robot is on the charger (the reaction table maps <c>PlacedOnCharger</c> to it), or when the voice command
-/// requests it. <c>InitInternal</c> pushes the idle animation 0x23F (none) and plays 0x189
+/// placement strategy activates it, or a caller selects the voice-command variant. The behavior itself
+/// returns true from IsRunnableInternal (0x00606C90). <c>InitInternal</c> pushes the idle animation 0x23F (none) and plays 0x189
 /// <see cref="AnimationTrigger.PlacedOnCharger"/> with <c>TriggerLiftSafeAnimationAction</c>; then it stays until
 /// receipt of CancelIdleTimeout. Init broadcasts GoingToSleep and arms the Robot idle deadlines.
 /// The host replacement for PauseManager sends cancel when a qualifying reaction takes over.
@@ -278,6 +278,8 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
         else ReportMissing("M7-019 StartIdleTimeout 0x53 has no engine robot recipient");
     }
 
+    // 0x00606E70..0x00606E7C latches only game tag 0x54.
+    // 0x00606E5C..0x00606E6E consumes that latch. ChargerEvent(false) leaves it alone.
     protected override void OnUpdate()
     {
         if (_cancelled) { _cancelled = false; Finish(); }

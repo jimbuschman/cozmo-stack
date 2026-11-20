@@ -160,6 +160,9 @@ public abstract class ActionRunner : IActionRunner
     // fidelity: M8-015
     // Ownership observation for M1-034's double-delete skip; never changes a defined native path.
     internal bool DestructionObserved { get; private set; }
+    // Host-only attribution for the existing completion report. Never packed or used by the action.
+    internal static readonly AsyncLocal<object?> CallerContext = new();
+    internal object? HostCaller { get; set; }
     /// <summary>An optional log sink, wired by the owner (the engine log).</summary>
     public Action<string>? Log { get; set; }
     public SourceLogSink? SourceLog { get; set; }

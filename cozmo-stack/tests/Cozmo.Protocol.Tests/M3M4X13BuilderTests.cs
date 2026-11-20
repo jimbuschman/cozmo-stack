@@ -99,7 +99,10 @@ public sealed class M3M4X13BuilderTests : IDisposable
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 222, DetectedFlags = 0x0a });
         Assert.Equal("at 12.500,-3.250. DetectedFlags = 0x0A", Assert.Single(entries.Where(e => e.Name == "RobotImplMessaging.HandleCliffEvent.Detected")).Text);
         Assert.Contains(entries, e => e.Name == "BlockWorld.AddLocatedObject");
-        Assert.Contains(missing, s => s.Contains("M11-062")); Assert.True(cliffInserted);
+        var cliff = Assert.Single(robot.LocalizationWorld.LocatedObjects, o => o.Type == ObjectType.CliffDetection);
+        Assert.Same(robot.Engine.Robot!.MainPose.Node!.Parent, cliff.NativePose.Node!.Parent);
+        Assert.DoesNotContain(missing, s => s.Contains("M11-062") || s.Contains("M11-091"));
+        Assert.True(cliffInserted);
         entries.Clear(); robot.Sensors.CliffHistoricalPoseForTest = _ => (2, default);
         EngineErrorState.ErrorFlagSet = false;
         robot.Engine.LogEntry += observeError;

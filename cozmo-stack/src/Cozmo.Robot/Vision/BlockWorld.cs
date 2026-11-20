@@ -1499,17 +1499,28 @@ public sealed partial class BlockWorld
     {
         var size = MarkerlessObject.SizeByType(type) ?? throw new ArgumentException($"{type} is not markerless", nameof(type));
         var candidate = new ObservableObject(type, Array.Empty<KnownMarker>()) { OriginId = CurrentOriginId, LastObservedTimestamp = timestamp };
-        Missing("M11-062 Robot::GetPose VERIFY root checks 0x004EA398..0x004EA46C; flattened host pose has no full Pose3d root-ID owner");
-        var standing = input.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, (float)size.Z * 0.5f)));
+        var owner = NativeSnapshotOwner?.Invoke();
+        using var height = new Pose3d(Mat3.Identity, new Vec3(0, 0, (float)size.Z * 0.5f));
+        var standing = input.Compose(height); // 0x006223CC..0x00622408
+        if (owner is not null)
+        {
+            // 0x0062240E..0x0062241E: verify MAIN, then set its parent on the product.
+            // SetParent keeps the product's transform, even when MAIN has an intermediate parent.
+            using var poseGate = LogCallbackDeferral.EnterGated(owner.PoseTreeGate);
+            Pose3d parent = null!;
+            if (owner.GetCheckedMainPose().TryGetParent(ref parent))
+                using (parent) standing.SetParent(parent);
+        }
+        else if (RobotPoseTreeIsUnbuilt?.Invoke() == true)
+            Missing("M11-062 / M12 pose records: Pose3d reparent to Robot::GetPose parent 0x00622418; tree transform unavailable");
         candidate.InitPose(standing, PoseState.Known); // InitPose before SetID: Object_-1.
-        candidate.PoseNameNode!.Parent = OriginNode?.Invoke(CurrentOriginId) ?? new PoseTreeNameNode(PoseOriginNames.NameOf(CurrentOriginId));
-        // The flattened pose owner cannot reproduce a non-flat Pose3d tree reparenting.
-        if (RobotPoseTreeIsUnbuilt?.Invoke() == true) Missing("M11-062 / M12 pose records: Pose3d reparent to Robot::GetPose parent 0x00622418; tree transform unavailable");
+        standing.Name = candidate.PoseNameNode!.Name;
+        candidate.PoseNameNode.Parent = OriginNode?.Invoke(CurrentOriginId) ?? new PoseTreeNameNode(PoseOriginNames.NameOf(CurrentOriginId));
         List<ObservableObject> overlaps;
         lock (_gate) overlaps = _located.Values.Where(o => o.OriginId == CurrentOriginId && o.Family == candidate.Family && o.Type == type)
             .Where(o =>
             {
-                try{return MarkerlessSameAs(o,candidate,new Vec3(size.X,size.Y,size.Z));}
+                try{return MarkerlessSameAs(o,candidate,new Vec3(size.X,size.Y,size.Z),owner is not null);}
                 catch(NotSupportedException){Missing($"M11-062 overlap candidate {unchecked((int)o.ObjectId)} pose-tree comparison is unbuilt; candidate skipped");return false;}
             }).ToList();
         if (overlaps.Count != 0)
@@ -1517,7 +1528,7 @@ public sealed partial class BlockWorld
             foreach (var match in overlaps) match.LastObservedTimestamp = timestamp;
             return overlaps[0]; // Host return view; native AddMarkerlessObject returns status 0.
         }
-        var quad = MarkerlessQuad(candidate, standing);
+        var quad = QuadFor(candidate);
         var filter = new BlockWorldFilter();
         if (LocalizedToObjectId is not null) filter.AllowedFamilies.UnionWith(new[] { ObjectFamily.LightCube, ObjectFamily.MarkerlessObject });
         filter.Predicates.Add(o =>
@@ -1538,7 +1549,7 @@ public sealed partial class BlockWorld
                 float nx = ((float)r[0,0]*1f + (float)r[0,1]*0f) + (float)r[0,2]*0f;
                 float ny = ((float)r[1,0]*1f + (float)r[1,1]*0f) + (float)r[1,2]*0f;
                 var data = new CliffMapData(new Vec2(nx,ny),timestamp); // constructor before GetBoundingQuad
-                var mapQuad = MarkerlessQuad(candidate, input); // r8: input, not standing/object pose.
+                var mapQuad = QuadFor(candidate, input, 0f); // r8: input, not standing/object pose.
                 if(Maps.Current is {} map)map.InsertCliff(Enumerable.Range(0, 4).Select(i => new Vec2(mapQuad[i].X, mapQuad[i].Y)).ToArray(),data);
                 else Missing("M13-032 current map unavailable during robot reconstruction; cliff map insertion skipped");
             }
@@ -1553,7 +1564,7 @@ public sealed partial class BlockWorld
                 var forward = rootedRobot.Quaternion.Rotate(new Vec3(1, 0, 0));
                 var data = new ProxObstacleMapData(new Vec2(forward.X, forward.Y), timestamp);
                 // 0x0062268C..0x006226C6: zero-padding quad from the supplied pose before the height lift.
-                var mapQuad = MarkerlessQuad(candidate, input);
+                var mapQuad = QuadFor(candidate, input, 0f);
                 map.InsertObject(Enumerable.Range(0, 4).Select(i => new Vec2(mapQuad[i].X, mapQuad[i].Y)).ToArray(), data);
             }
             else Missing("M13-030: robot pose or current map unavailable; skip proximity map insertion at 0x00622646..0x006226C6");
@@ -1564,13 +1575,17 @@ public sealed partial class BlockWorld
 
     internal void AddCliffFromCheckedPose(Pose3d input, uint timestamp, Action<string> missing) => AddMarkerless(input, ObjectType.CliffDetection, RobotTimestamp?.Invoke() ?? timestamp);
 
-    private bool MarkerlessSameAs(ObservableObject existing, ObservableObject candidate, Vec3 size)
+    private bool MarkerlessSameAs(ObservableObject existing, ObservableObject candidate, Vec3 size, bool native)
     {
         // Getter order is distance, angle, then type/family. IsSameAs overrides the getter with pi (0x40490FDB).
         var tol = new Vec3((float)size.X * 0.5f, (float)size.Y * 0.5f, (float)size.Z * 0.5f);
         _ = BitConverter.UInt32BitsToSingle(0x3F490FDB);
         if (existing.Type != candidate.Type || existing.Family != candidate.Family) return false;
         if (ReferenceEquals(existing, candidate)) return true;
+        // 0x0061FD98..0x0061FDD6 gets tolerance from the existing object and compares
+        // its pose to the new one. The markerless ambiguity path uses pi.
+        if (native)
+            return existing.NativePose.IsSameAs(candidate.NativePose,tol,Radians.Pi,out _);
         Pose3d otherInFrame = candidate.Pose;
         var parent = existing.PoseNameNode?.Parent;
         if (parent is not null && ReferenceEquals(parent,candidate.PoseNameNode))
@@ -1600,13 +1615,11 @@ public sealed partial class BlockWorld
         return !(MathF.Abs(dx) > tol.X || MathF.Abs(dy) > tol.Y || MathF.Abs(dz) > tol.Z);
     }
 
-    private Quadrilateral MarkerlessQuad(ObservableObject obj, Pose3d pose)
-    { var s = MarkerlessObject.SizeByType(obj.Type)!.Value; return ObjectFootprint.MarkerlessBoundingQuadXY(new Vec3(s.X,s.Y,s.Z), pose, 0, Missing); }
-    private Quadrilateral QuadFor(ObservableObject obj,float padding)
+    // 0x00622920..0x00622934 and 0x0062464C: use the object's +0x50 override on its owned pose.
+    private static Quadrilateral QuadFor(ObservableObject obj,float padding) => QuadFor(obj,obj.NativePose,padding);
+    private static Quadrilateral QuadFor(ObservableObject obj,Pose3d pose,float padding)
     {
-        if(obj.Family==ObjectFamily.MarkerlessObject)
-            return ObjectFootprint.MarkerlessBoundingQuadXY(MarkerlessObject.SizeByType(obj.Type) is {} size ? new Vec3(size.X,size.Y,size.Z) : throw new NotSupportedException("M11-062 markerless size unavailable"),obj.Pose,padding,Missing);
-        if(obj.TryObservableBoundingQuad50(obj.NativePose,padding,out var quad))return quad!;
+        if(obj.TryObservableBoundingQuad50(pose,padding,out var quad))return quad!;
         throw new NotSupportedException("M11-088 bounding quad reached an unbound shared recipient");
     }
     private Quadrilateral QuadFor(ObservableObject obj) => QuadFor(obj,0f);
@@ -1870,11 +1883,11 @@ public sealed partial class BlockWorld
     {
         return UpdateObservedMarkers(markers,camera,timestamp,pd,worldRotatingGate,null,null);
     }
-    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose=null)
+    internal BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose=null, Func<uint,bool>? nativeCameraMovingAt=null)
     {
-        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeObjectReport,nativeComputedPose);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd,worldRotatingGate,nativeObjectReport,nativeComputedPose,nativeCameraMovingAt);
     }
-    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd, Func<uint,bool>? worldRotatingGate, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose, Func<uint,bool>? nativeCameraMovingAt)
     {
         _missingPoseChangedReported = false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
@@ -1909,7 +1922,7 @@ public sealed partial class BlockWorld
             AddLiftOccluder(camera, pd);                                           // 0x00624FA4
             _didObjectsChange = false;                                             // 0x00624FAC
             var instances = CreateObjectsFromMarkers(markers, camera);             // 0x00624FC4 (always succeeds, 0x00625616)
-            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeObjectReport,nativeComputedPose);   // 0x0062505A
+            uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations,nativeObjectReport,nativeComputedPose,nativeCameraMovingAt);   // 0x0062505A
             if (status != 0)
             {
                 Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
@@ -2078,10 +2091,10 @@ public sealed partial class BlockWorld
     /// its cross-origin branch (<c>Rejigger</c>, 0x00515854..0x005159B2) are built.
     /// </summary>
     // fidelity: M11-013, M11-004, M11-007, M11-044
-    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose)
+    private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose, Func<uint,bool>? nativeCameraMovingAt)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
-        var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose); // 0x00620B0C
+        var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose,nativeCameraMovingAt); // 0x00620B0C
         foreach (var instance in instances)
         {
             float dx = (float)(instance.Pose.Translation.X - robotPos.X);
@@ -2099,7 +2112,9 @@ public sealed partial class BlockWorld
             if (!confirmed)
             {
                 var existing = before;                                             // GetLocatedObjectByIdHelper(id, -1)
-                if (!AddVisualObservation(instance, existing, pd.CameraMoving, dist))
+                // 0x00620C7E queries raw history at this observation's time while the result is committed.
+                bool wasMoving = nativeCameraMovingAt?.Invoke(instance.LastObservedTimestamp) ?? pd.CameraMoving;
+                if (!AddVisualObservation(instance, existing, wasMoving, dist))
                 {
                     EmitPublicLog($"BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for {(int)instance.ObjectId}");
                     continue;
@@ -3979,12 +3994,14 @@ internal sealed class PotentialObjectsForLocalizingTo
 
     private readonly BlockWorld _w;
     private readonly Func<uint,Pose3d?>? _computedPose;
+    private readonly Func<uint,bool>? _cameraMovingAt;
     private readonly SortedDictionary<uint, Pair> _map = new();
 
-    public PotentialObjectsForLocalizingTo(BlockWorld world,Func<uint,Pose3d?>? computedPose=null)
+    public PotentialObjectsForLocalizingTo(BlockWorld world,Func<uint,Pose3d?>? computedPose=null, Func<uint,bool>? cameraMovingAt=null)
     {
         _w = world;
         _computedPose = computedPose;
+        _cameraMovingAt = cameraMovingAt;
         bool localized = _w.LocalizedToObjectId is not null;
         Gate = localized ? _w.RobotMovedSinceLocalized : true;
     }
@@ -4018,11 +4035,11 @@ internal sealed class PotentialObjectsForLocalizingTo
         float threshold = (float)BlockWorld.MaxLocalizationDistanceMm + 1e-5f;
         if (threshold < dist || !Gate || !could)
         {
-            if (inWorldOrigin) UseDiscardedObservation(pair, wasCameraMoving);   // 0x0050CFE2
+            if (inWorldOrigin) UseDiscardedObservation(pair, _cameraMovingAt?.Invoke(ts) ?? wasCameraMoving);   // 0x0050CFE2
             return 0;
         }
         var mc = _w.MovementBytes?.Invoke() ?? (false, false);
-        if (mc.HeadNotInPosition || mc.WheelsMoving || wasCameraMoving) return 0;
+        if (mc.HeadNotInPosition || mc.WheelsMoving || (_cameraMovingAt?.Invoke(ts) ?? wasCameraMoving)) return 0;
         if (inWorldOrigin)
         {
             uint lastUpdated = _w.EntryFor(matched.ObjectId)?.LastPoseUpdatedTime ?? 0;   // GetLastPoseUpdatedTime 0x0050780C

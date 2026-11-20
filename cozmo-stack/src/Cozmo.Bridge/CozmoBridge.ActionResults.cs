@@ -35,7 +35,7 @@ public sealed partial class CozmoBridge
                 runner is not { } action || record.Tag != action.Tag || record.ActionType != action.Type)
                 return;
             var report = new ActionCompletionReport(record.Tag, record.ActionType, record.Result,
-                Array.AsReadOnly(record.SubActionResults.ToArray()), record.CompletionUnion);
+                Array.AsReadOnly(record.SubActionResults.ToArray()), record.CompletionUnion) { HostCaller = record.HostCaller };
             engine.QueueAppEvent(completion =>
             {
                 OnActionCompleted(completion);
@@ -55,7 +55,7 @@ public sealed partial class CozmoBridge
             try
             {
                 await manipulation.PlaceObjectOnGroundAsync(owner, token,
-                    (action, _) => runner = action).ConfigureAwait(false);
+                    (action, _) => { runner = action; action.HostCaller = eventCaller; }).ConfigureAwait(false);
             }
             catch (InvalidOperationException error) when (error.Message.StartsWith("MISSING:", StringComparison.Ordinal))
             {

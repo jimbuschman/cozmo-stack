@@ -206,6 +206,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         else DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);
         if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         DeadlineSec=-1;
+        LastFailedArrival = null;
         if(!_nativeGoalsSet)return 0x0300000F;
         var owner=_scopedOwner??_m.Robot.Engine.Robot??throw new NativeActionUnavailable("M12-023 actual Robot owner unavailable");
         if(!owner.TryGetNativeOriginOwner(owner.CurrentOriginId,out var origin)||origin is null)
@@ -292,6 +293,10 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     public Action AbortPath { get; set; }
     public IReadOnlyList<string> Trace => _trace;
     private readonly List<string> _trace = new();
+
+    internal sealed record ArrivalCheck(ushort PathId, int GoalIndex, Vec3 GoalMm, Vec3 ActualMm,
+        Vec3 OffsetMm, Vec3 ToleranceMm, float? RotationRad, float RotationLimitRad);
+    internal ArrivalCheck? LastFailedArrival { get; private set; }
 
     private Pose3d GoalAtIndex()
     {
@@ -384,9 +389,22 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         var tol = new Vec3(tx, ty, heightMm);
         // Pose3d::IsSameAs 0x00846EA4 uses a default-constructed empty RotationAmbiguities and compares
         // the full relative rotation (GetAngleDiffFrom 0x0084A694), so the full goal pose is passed.
-        if (robotPose.IsSameAs(goal, tol, AngleToleranceRad, out _))
+        var offset = Vec3.Zero;
+        var limit = new Radians((float)AngleToleranceRad);
+        var rotation = new Radians(float.NaN);
+        bool inPosition = robotPose.IsSameAsWithAmbiguity(goal, tol, limit, ref offset, ref rotation, Array.Empty<Mat3>(), false);
+        LastFailedArrival = null;
+        var wanted = goal.Translation;
+        var actual = robotPose.Translation;
+        float dx = (float)offset.X, dy = (float)offset.Y, dz = (float)offset.Z;
+        float dist = MathF.Sqrt(dx * dx + dy * dy + dz * dz);
+        if (inPosition)
         {
-            MissingSource("native Success info at 0x0055AE94: Robot ID and float translation-difference log inputs have no checked mapping; source log not fabricated");
+            // 0x0055ADFC..0x0055AE94: signed tag, Robot ID, norm of the comparison's
+            // translation output, MAIN X/Y, selected goal X/Y, tolerance X/Y.
+            int robotId = unchecked((int)((_scopedOwner ?? _m.Robot.Engine.Robot)?.NativeRobotId ?? 0));
+            LogArrival("DriveToPoseAction.CheckIfDone.Success",
+                FormattableString.Invariant($"[{unchecked((int)Tag)}] Robot {robotId} successfully finished following path (Tdiff={dist:F1}mm) robotPose ({actual.X:F1}, {actual.Y:F1}) goalPose ({wanted.X:F1} {wanted.Y:F1}) threshold ({tx:F1} {ty:F1})."));
             return ActionResult.Success;
         }
         if (pathIdAt0x42 != pathIdAt0x44)
@@ -395,8 +413,21 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
             EngineErrorState.StoreAndMaybeBreak();
             return ActionResult.FollowingPathButNotTraversing;
         }
-        MissingSource("native DoneNotInPlace info at 0x0055B030: complete float pose/angle/distance log argument mapping is unchecked; source log not fabricated");
+        // 0x0055AED0..0x0055B030: same norm, received path ID, selected goal
+        // and MAIN XYZ/yaw, then XY tolerances. The comparison itself uses full rotation.
+        LastFailedArrival = new(pathIdAt0x44, GoalIndex, wanted, actual, offset, tol,
+            float.IsFinite(rotation.Value) ? rotation.Value : null, limit.Value);
+        float goalYaw = (float)goal.AngleAroundZ * (180.0f / Radians.Pi);
+        float actualYaw = (float)robotPose.AngleAroundZ * (180.0f / Radians.Pi);
+        LogArrival("DriveToPoseAction.CheckIfDone.DoneNotInPlace",
+            FormattableString.Invariant($"[{unchecked((int)Tag)}] Robot is done traversing path, but is not in position (dist={dist:F1}mm). lastPathID={pathIdAt0x44} goal {GoalIndex} ({wanted.X:F6}, {wanted.Y:F6}, {wanted.Z:F6}, {goalYaw:F6}deg), actual ({actual.X:F6}, {actual.Y:F6}, {actual.Z:F6}, {actualYaw:F6}deg), threshold ({tx:F6}, {ty:F6})"));
         return ActionResult.FailedTraversingPath;
+
+        void LogArrival(string key, string text)
+        {
+            _trace.Add($"{key}: {text}");
+            _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", key, text);
+        }
     }
 
     // fidelity: M12-024 — the real ActionList supplies TIMEOUT-before-check and category-4 retry/Init ordering.

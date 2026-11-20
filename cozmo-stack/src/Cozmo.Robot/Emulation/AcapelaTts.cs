@@ -20,9 +20,8 @@ public sealed class AcapelaTtsException : Exception
 /// <item><see cref="Synthesize"/>: doCreateAudioData: setSpeechRate (nSetSpeechRate), setTTSSettings VOICESHAPE
 /// (nSetTTSSetting), setPitch (nSetShape), speak (nSpeak) (CozmoTextToSpeech.java:121-156).</item>
 /// </list>
-/// Not called: the Java searchVoices' nGetVoiceInfo(ini, "speaker") for each .ini found (File.list order), and speak()'s
-/// stop() (nStop) before and after nSpeak; the output was checked to be the same with and without the probe's single
-/// nGetVoiceInfo call. The licence is the engine's own,
+/// The app-shaped driver queries nGetVoiceInfo(ini, "speaker") for the voice files and
+/// orders nStop and the Java 100 ms wait before and after nSpeak. The licence is the engine's own,
 /// decoded by <see cref="AcapelaCredentials.FromEngine"/>. Output: 22050 Hz mono s16, the samples the library hands to the
 /// Java samplesCallback.
 /// </summary>

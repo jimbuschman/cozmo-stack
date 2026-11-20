@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Bridge;
@@ -19,6 +20,7 @@ public sealed partial class CozmoBridge
         private readonly object gate = new();
         private EngineRobot? owner;
         private IActionRunner? root;
+        private (ReactionTrigger Trigger, string? Behavior)? blockedBy;
         private HashSet<IActionRunner> previous = [];
         private NativeDriveToMountChargerRunner? mount;
         private string? poseCheck;
@@ -50,6 +52,7 @@ public sealed partial class CozmoBridge
         internal void BeforeAdmission()
         {
             owner = Robot.Engine.Robot;
+            blockedBy = ReactionBlockingAdmission();
             previous = new HashSet<IActionRunner>(Runners(), ReferenceEqualityComparer.Instance);
         }
 
@@ -59,7 +62,19 @@ public sealed partial class CozmoBridge
             // APIs append their requested runner after that synchronous handoff.
             root = Runners().LastOrDefault(r => !previous.Contains(r));
             mount = root as NativeDriveToMountChargerRunner;
+            blockedBy ??= ReactionBlockingAdmission();
             previous.Clear();
+        }
+
+        private (ReactionTrigger Trigger, string? Behavior)? ReactionBlockingAdmission()
+        {
+            // The engine sets this gate at the reaction transition (0x005A2106..0x005A2110).
+            // Capture it under the same engine owner as this admission attempt.
+            if (owner is null || owner.Lifetime.Destroying || !ReferenceEquals(Robot.Engine.Robot, owner) ||
+                !owner.ActionList.ExternalActionsDisabled ||
+                owner.BehaviorManagerOwner is not { CurrentReactionTrigger: { } trigger } manager)
+                return null;
+            return (trigger, manager.Current?.Id);
         }
 
         // These callbacks are synchronous native action/path logs and ingress, on
@@ -146,8 +161,32 @@ public sealed partial class CozmoBridge
                             hint = FormattableString.Invariant($"Backup pitch was {pitch * 180 / Math.PI:F1} degrees, below the {cutoff * 180 / Math.PI:F1} degree cutoff; the check requires pitch at or above that cutoff.");
                     }
                 }
+                var drive = mount?.Drive.Drive ?? root as DriveToPoseAction;
+                if (result.EngineResult == (uint)ActionResult.FailedTraversingPath && drive?.LastFailedArrival is { } arrival &&
+                    double.IsFinite(arrival.ToleranceMm.X) && double.IsFinite(arrival.ToleranceMm.Y) &&
+                    double.IsFinite(arrival.ToleranceMm.Z) && float.IsFinite(arrival.RotationLimitRad) &&
+                    double.IsFinite(arrival.GoalMm.X + arrival.GoalMm.Y + arrival.GoalMm.Z + arrival.ActualMm.X +
+                        arrival.ActualMm.Y + arrival.ActualMm.Z + arrival.OffsetMm.X + arrival.OffsetMm.Y + arrival.OffsetMm.Z))
+                {
+                    snapshot["pathArrival"] = JsonSerializer.SerializeToNode(arrival, Json);
+                    hint = arrival.RotationRad is { } angle && angle > arrival.RotationLimitRad
+                        ? FormattableString.Invariant($"DriveToPose completed path {arrival.PathId}, then rejected the arrival rotation ({angle * 180 / Math.PI:F1} degrees against {arrival.RotationLimitRad * 180 / Math.PI:F1} degrees).")
+                        : FormattableString.Invariant($"DriveToPose rejected the arrival pose after path {arrival.PathId} completed.");
+                }
                 if (docking is not null) snapshot["docking"] = JsonSerializer.SerializeToNode(docking, Json);
                 if (path.Count != 0) snapshot["pathPlanner"] = JsonSerializer.SerializeToNode(path, Json);
+                if (blockedBy is { } reaction && IsReactionRefusal(result))
+                {
+                    snapshot["reaction"] = new JsonObject
+                    {
+                        ["trigger"] = reaction.Trigger.ToString(),
+                        ["behavior"] = reaction.Behavior,
+                        ["source"] = "ActionQueue.QueueAction.ExternalActionsDisabled 0x0053D94C..0x0053D9A2",
+                    };
+                    hint = reaction is { Trigger: ReactionTrigger.PlacedOnCharger, Behavior: "ReactToOnCharger" }
+                        ? "ReactToOnCharger is holding action admission. Pick Cozmo up and set him back on his treads, then retry once the reaction clears. Sliding him off the charger leaves the reaction active."
+                        : $"The {reaction.Trigger} reaction is holding action admission. Retry after it clears.";
+                }
                 if (truncated) hint = "Animation was cut off by robot buffer; see playbackIssues for the captured evidence.";
                 return new JsonObject
                 {

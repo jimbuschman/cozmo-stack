@@ -268,7 +268,7 @@ public class ManipulationTests
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
-        Assert.Contains(drive.Trace, l => l.Contains("Success"));
+        Assert.Contains(drive.Trace, l => l.StartsWith("DriveToPoseAction.CheckIfDone.Success:", StringComparison.Ordinal));
         // Native DriveToPoseAction built with head = false (+0x79 = 0): Init's MoveHeadToAngle (I6, 0x0055A9EC) is not called, so no head move is sent.
         // (The legacy Init's "M13-021" MISSING line was retired with that Init, RETIRE-LEGACY-DRIVE-API-1.)
         Assert.DoesNotContain(rig.Sent, m => m is SetHeadAngle);

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
+    <InternalsVisibleTo Include="cozmo-mcp" />
     <ProjectReference Include="..\Cozmo.Robot\Cozmo.Robot.csproj" />
   </ItemGroup>
 </Project>
