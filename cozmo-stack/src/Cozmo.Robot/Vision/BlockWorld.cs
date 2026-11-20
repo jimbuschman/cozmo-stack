@@ -69,11 +69,10 @@ public enum NotVisibleReason
 }
 
 /// <summary>
-/// One entry of the engine's <c>Anki::Vision::OccluderList</c>: a quad in image space and the depth it
-/// sits at. <c>BlockWorld::AddAndUpdateObjects</c> 0x006211CC adds one per marker actually observed in
-/// the frame through <c>Camera::AddOccluder(KnownMarker)</c> 0x0085E76C, which takes the marker's 3D
-/// corners with respect to the camera and projects them; <c>BlockWorld::UpdateObservedMarkers</c>
-/// 0x00624F98 clears the list first. So the occluders are what the camera actually saw this frame.
+/// One entry of the engine's <c>Anki::Vision::OccluderList</c>: four corners of an image-space
+/// bounding rectangle and its depth. <c>BlockWorld::UpdateObservedMarkers</c> clears the list and
+/// adds the lift (0x00624F98–0x00624FA4). Observed markers join it through
+/// <c>Camera::AddOccluder(KnownMarker)</c> at 0x006211CC.
 /// </summary>
 // fidelity: M11-010
 public readonly record struct Occluder(Vec2[] Quad, double DepthMm);
@@ -2974,15 +2973,24 @@ public sealed partial class BlockWorld
     public void AddLiftOccluder(CameraModel camera, VisionPoseData pd)
     {
         if (LiftOccluderPoints.Count == 0) return;
-        var liftInCamera = camera.Pose.Inverse().Compose(pd.RobotPose.Compose(LiftGeometry.LiftPoseInRobotFrame(pd.LiftAngleRad)));
+        using var cameraInverse = camera.Pose.Inverse();
+        using var liftInRobot = LiftGeometry.LiftPoseInRobotFrame(pd.LiftAngleRad);
+        using var liftInWorld = pd.RobotPose.Compose(liftInRobot);
+        using var liftInCamera = cameraInverse.Compose(liftInWorld);
         var px = new Vec2[LiftOccluderPoints.Count];
-        for (int i = 0; i < LiftOccluderPoints.Count; i++)
+        for (int i = 0; i < px.Length; i++)
         {
-            var p = camera.Project(liftInCamera.Apply(LiftOccluderPoints[i]));
+            // 0x0065653E transforms into camera space before projection at 0x00656550.
+            var p = camera.ProjectCameraPoint(liftInCamera.Apply(LiftOccluderPoints[i]));
             if (p is null) return;
             px[i] = p.Value;
         }
-        camera.Occluders.Add(px, liftInCamera.Translation.Length);
+        var t = liftInCamera.Translation;
+        float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
+        float lengthSquared = x * x;
+        lengthSquared += y * y;
+        lengthSquared += z * z;
+        camera.Occluders.Add(px, MathF.Sqrt(lengthSquared));
     }
 
     // ------------------------------------------------------------------------------ stacked and markerless
