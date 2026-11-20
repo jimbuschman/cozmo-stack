@@ -80,5 +80,24 @@ charger mount action stays in A).
 
 ## Count
 
-Required (A + B): 12 command items and about 40 behaviour classes. On the robot today: 3 command items and about 8
-classes. No code at all: 5 command items and 1 class.
+Robot acceptance now comes from ordinary MCP sessions, scored by `re-analysis/tools/session_check.py` against the
+engine-sourced round expectations (operator 2026-11-20; combined table
+`re-analysis/jobs/trial-m13/session-check-1/combined.md`, four sessions 2026-11-19/20).
+
+**2026-11-20:** 16 command items (A) and 41 behaviour classes (B).
+- **A, passed with no unbuilt step on the path (finished):** 5. Events; charger seen; the connection for an LLM;
+  colour camera; reaction locks and wait until accepted.
+- **A, passed but blocked by one shared MISSING marker** (the action queue's VizManager/SDK-status recipients,
+  0x0053F65C..0x0053F6F2; SHARED-QUEUE-MISSING-1): 3. Head/lift/drive/turn; play an authored animation; pick up and
+  put down.
+- **A, seen but not passed:** 6. Face turn/cube turn/track (cube turn and track not passed); speech (completion
+  report fixed 2026-11-20, needs a new session); teach/rename/erase (rename and erase not tried); mount the charger
+  (the engine's own results, needs a clear desk); roll; stack.
+- **A, not exercised:** go to a place; Freeplay return after a command.
+- **B, passed with no MISSING on the path:** 20 of 41 classes (Freeplay loop; ReactToCliff, Pickup, RobotOnBack,
+  ReturnedToTreads, Impact, UnexpectedMovement, MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube,
+  PounceOnMotion, ThinkAboutBeacons; AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; AcknowledgeObject,
+  ReactToCubeMoved, RollBlock). The manager's spot-read of each path is still to do before these count as finished.
+- **B, not exercised:** 21 classes (OnFace, OnSide, Shaken, PlacedOnSlope, Frustration; the four Needs classes;
+  PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, VisitInterestingEdge; SearchForFace,
+  DriveToFace, RespondToRenameFace; PickUpCube, PutDownBlock, StackBlocks, DriveOffCharger).
