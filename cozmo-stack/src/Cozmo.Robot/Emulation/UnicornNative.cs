@@ -39,6 +39,8 @@ internal static unsafe partial class UnicornNative
     [LibraryImport(Dll)] public static partial int uc_mem_map_ptr(nint uc, ulong address, nuint size, uint perms, void* ptr);
     [LibraryImport(Dll)] public static partial int uc_reg_read(nint uc, int regid, void* value);
     [LibraryImport(Dll)] public static partial int uc_reg_write(nint uc, int regid, void* value);
+    [LibraryImport(Dll)] public static partial int uc_reg_read_batch(nint uc, int* registers, void** values, int count);
+    [LibraryImport(Dll)] public static partial int uc_reg_write_batch(nint uc, int* registers, void** values, int count);
     [LibraryImport(Dll)] public static partial int uc_emu_start(nint uc, ulong begin, ulong until, ulong timeout, nuint count);
     [LibraryImport(Dll)] public static partial int uc_emu_stop(nint uc);
     [LibraryImport(Dll)] public static partial int uc_context_alloc(nint uc, nint* context);

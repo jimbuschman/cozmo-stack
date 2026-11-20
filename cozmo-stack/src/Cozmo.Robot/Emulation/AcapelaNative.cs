@@ -41,6 +41,7 @@ public sealed class AcapelaNative : IDisposable
             InstallHost();
             _m.Relocate();
             _lib = _m.Library(Library);
+            AcapelaArmAcceleration.Install(_m, _lib);
             _m.RunInitializers(Library);
             InstallJni();
         }

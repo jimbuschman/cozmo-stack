@@ -185,6 +185,13 @@ public sealed unsafe partial class ArmMachine : IDisposable
         }
     }
 
+    internal uint MapCodePageAfter(LoadedLibrary library)
+    {
+        uint address = checked(library.Base + ((library.Elf.End + 0xFFF) & ~0xFFFu));
+        Map(address, 0x1000);
+        return address;
+    }
+
     private Region Map(uint address, uint size)
     {
         var alloc = NativeMemory.AllocZeroed((nuint)size + 0x1000);
@@ -277,14 +284,43 @@ public sealed unsafe partial class ArmMachine : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ulong v = 0;
-        Check(uc_reg_read(_uc, id, &v), $"reg_read {id}");
+        int code = uc_reg_read(_uc, id, &v);
+        if (code != 0) Check(code, $"reg_read {id}");
         return v;
     }
 
     public void WriteReg(int id, ulong v)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        Check(uc_reg_write(_uc, id, &v), $"reg_write {id}");
+        int code = uc_reg_write(_uc, id, &v);
+        if (code != 0) Check(code, $"reg_write {id}");
+    }
+
+    internal void ReadRegisters(ReadOnlySpan<int> registers, Span<ulong> values)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (registers.Length != values.Length) throw new ArgumentException("Register and value counts must agree.");
+        values.Clear();
+        fixed (int* ids = registers)
+        fixed (ulong* data = values)
+        {
+            void** pointers = stackalloc void*[registers.Length];
+            for (int i = 0; i < registers.Length; i++) pointers[i] = data + i;
+            Check(uc_reg_read_batch(_uc, ids, pointers, registers.Length), "read register batch");
+        }
+    }
+
+    internal void WriteRegisters(ReadOnlySpan<int> registers, ReadOnlySpan<ulong> values)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (registers.Length != values.Length) throw new ArgumentException("Register and value counts must agree.");
+        fixed (int* ids = registers)
+        fixed (ulong* data = values)
+        {
+            void** pointers = stackalloc void*[registers.Length];
+            for (int i = 0; i < registers.Length; i++) pointers[i] = data + i;
+            Check(uc_reg_write_batch(_uc, ids, pointers, registers.Length), "write register batch");
+        }
     }
 
     public uint Reg(int n) => (uint)ReadReg(UC_ARM_REG_R0 + n);
