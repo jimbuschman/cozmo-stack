@@ -129,6 +129,7 @@ public sealed partial class CozmoBridge
                 .Select(o => new { worldObjectId = o.ObjectId, poseState = o.PoseState.ToString(), o.LastObservedTimestamp, relative = Relative(o.NativePose) }).ToArray() : [],
             activity = activity?.Activity,
             highLevelActivity = activity?.HighLevelActivity,
+            freeplay = Robot.GetFreeplayObservation(),
             behavior = activity?.Behavior,
             reaction = activity?.Reaction,
             reactionLocks = connected ? Robot.Engine.Robot?.BehaviorManagerOwner?.GetReactionLocks() ?? [] : [],

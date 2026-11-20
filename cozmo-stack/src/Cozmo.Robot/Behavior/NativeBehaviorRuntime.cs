@@ -72,6 +72,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private long _admissionEpoch;
     private int _aiCommands;
     private bool _resumeFreeplayAfterAi;
+    private float? _lastAiResumeSeconds;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
     private readonly VisionSystem? _vision;
@@ -362,7 +363,20 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         if (--_aiCommands != 0) return;
         bool resume = _resumeFreeplayAfterAi;
         _resumeFreeplayAfterAi = false;
-        if (resume && _highLevel == 2 && IsCurrentAiCommandOwner()) AdmitNativeHighLevel("Freeplay");
+        if (!resume || _highLevel != 2 || !IsCurrentAiCommandOwner()) return;
+        AdmitNativeHighLevel("Freeplay");
+        // Host observation of the engine's activity switch timestamp (+0x50,
+        // 0x005A1200..0x005A120C), after the last admitted action has unlinked.
+        if (_highLevel == 1 && IsCurrentAiCommandOwner() && ReferenceEquals(_manager.Activity, _observer))
+            _lastAiResumeSeconds = _manager.ParentSwitchTime;
+    }
+
+    internal RobotFreeplayObservation ObserveHostFreeplay()
+    {
+        bool active = _highLevel == 1;
+        bool pausedForCommand = _highLevel == 2 && _aiCommands != 0 && _resumeFreeplayAfterAi;
+        return new(active || pausedForCommand, active, pausedForCommand,
+            active ? _observer?.Current?.Id : null, active ? _manager.Current?.Id : null, _lastAiResumeSeconds);
     }
 
     private sealed class AiCommandLease(NativeBehaviorRuntime runtime) : IDisposable
