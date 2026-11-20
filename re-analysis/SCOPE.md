@@ -85,11 +85,10 @@ engine-sourced round expectations (operator 2026-11-20; combined table
 `re-analysis/jobs/trial-m13/session-check-1/combined.md`, four sessions 2026-11-19/20).
 
 **2026-11-20:** 16 command items (A) and 41 behaviour classes (B).
-- **A, passed with no unbuilt step on the path (finished):** 5. Events; charger seen; the connection for an LLM;
-  colour camera; reaction locks and wait until accepted.
-- **A, passed but blocked by one shared MISSING marker** (the action queue's VizManager/SDK-status recipients,
-  0x0053F65C..0x0053F6F2; SHARED-QUEUE-MISSING-1): 3. Head/lift/drive/turn; play an authored animation; pick up and
-  put down.
+- **A, finished (passed in a session, no MISSING on the path, main path spot-read):** 8. Events; charger seen; the
+  connection for an LLM; colour camera; reaction locks and wait until accepted; head/lift/drive/turn; play an
+  authored animation; pick up and put down (the shared action-queue marker closed by SHARED-QUEUE-MISSING-1:
+  VizManager send is return-only at 0x006BE610, SDK status only in excluded SDK mode).
 - **A, seen but not passed:** 6. Face turn/cube turn/track (cube turn and track not passed); speech (completion
   report fixed 2026-11-20, needs a new session); teach/rename/erase (rename and erase not tried); mount the charger
   (the engine's own results, needs a clear desk); roll; stack.
