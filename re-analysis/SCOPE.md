@@ -97,7 +97,7 @@ engine-sourced round expectations (operator 2026-11-20; combined table
   19 of 41 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
   MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube, PounceOnMotion, ThinkAboutBeacons;
   AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; AcknowledgeObject, RollBlock.
-- **B, passed but the spot-read found a difference:** ReactToCubeMoved. Its presence branch plays AcknowledgeObject
+- **B, passed; spot-read difference fixed 2026-11-20 (CUBEMOVED-PRESENCE-1), presence branch to recheck next session:** ReactToCubeMoved. Its presence branch played AcknowledgeObject
   without the engine's lift-safe action (0x00602526..0x00602546; CUBEMOVED-PRESENCE-1).
 - **B, not exercised:** 21 classes (OnFace, OnSide, Shaken, PlacedOnSlope, Frustration; the four Needs classes;
   PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, VisitInterestingEdge; SearchForFace,
