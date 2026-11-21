@@ -47,7 +47,7 @@ Robot script: `m15-cube-hw --personality` (built 2026-11-15) walks through every
 | Needs | ExpressNeeds, PlayAnimOnNeedsChange, DriveInDesperation, EarnedSparks | sim (DriveInDesperation's cube search built 2026-11-16; untargeted search never succeeds, as in the engine) |
 | Idle life | PlayAnim, PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, FindFaces, LookForFaceAndCube, VisitInterestingEdge, PounceOnMotion, ThinkAboutBeacons | robot for Pounce, VisitInterestingEdge, FindFaces; sim for the rest |
 | Faces | AcknowledgeFace, InteractWithFaces, SearchForFace, DriveToFace, EnrollFace, RespondToRenameFace, ReactToPet | sim |
-| Cubes | AcknowledgeObject, ReactToCubeMoved, PickUpCube, PutDownBlock, RollBlock, StackBlocks, DriveOffCharger | robot for pickup, put-down, drive-off, roll (2026-11-16 again); wheelie: engine success 2026-11-16; flip cancelled by a reaction mid-turn (FLIP-REACTION-SHIELD-1); stack: needs a second live cube; ReactToCubeMoved not shown (no cube messages in its window; cube tap has no reaction in the shipped map, to confirm); sim for the rest |
+| Cubes | AcknowledgeObject, ReactToCubeMoved, PutDownBlock, RollBlock, StackBlocks, DriveOffCharger | robot for pickup, put-down, drive-off, roll (2026-11-16 again); wheelie: engine success 2026-11-16; flip cancelled by a reaction mid-turn (FLIP-REACTION-SHIELD-1); stack: needs a second live cube; ReactToCubeMoved not shown (no cube messages in its window; cube tap has no reaction in the shipped map, to confirm); sim for the rest |
 
 ## C. Playful extras (wanted, after A and B)
 
@@ -73,6 +73,10 @@ CheckForStackAtInterval, CantHandleTallStack, ReactToStackOfCubes, ReactToSparke
 RequestGameSimple (10 IDs), FeedingEat, FeedingSearchForCube, OnboardingShowCube, LookInPlaceMemoryMap,
 ExploreVisitPossibleMarker, PickUpAndPutDownCube.
 
+PickUpCube (operator 2026-11-21): moved here from B. Freeplay chooses it only inside BuildPyramid's build phase
+(0x005A888C..0x005A88B2, 0x005A8BB8..0x005A8BE4) or the Sparks stack flow, both deferred, so no ordinary session can
+reach it. Commanded pickup stays in A (finished). Revisit with BuildPyramid after A and B, alongside C2.
+
 ## E. Excluded
 
 FactoryTest, FactoryCentroidExtractor, LiftLoadTest, DevTurnInPlaceTest, DockingTestSimple (as a behaviour; the
@@ -84,7 +88,7 @@ Robot acceptance now comes from ordinary MCP sessions, scored by `re-analysis/to
 engine-sourced round expectations (operator 2026-11-20; combined table
 `re-analysis/jobs/trial-m13/session-check-1/combined.md`, four sessions 2026-11-19/20).
 
-**2026-11-20:** 16 command items (A) and 41 behaviour classes (B).
+**2026-11-21:** 16 command items (A) and 40 behaviour classes (B; PickUpCube moved to D by the operator 2026-11-21).
 - **A, finished (passed in a session, no MISSING on the path, main path spot-read):** 8. Events; charger seen; the
   connection for an LLM; colour camera; reaction locks and wait until accepted; head/lift/drive/turn; play an
   authored animation; pick up and put down (the shared action-queue marker closed by SHARED-QUEUE-MISSING-1:
@@ -94,11 +98,13 @@ engine-sourced round expectations (operator 2026-11-20; combined table
   (the engine's own results, needs a clear desk); roll; stack.
 - **A, not exercised:** go to a place; Freeplay return after a command.
 - **B, finished (passed in a session, no MISSING on the path, main path spot-read against the binary 2026-11-20):**
-  19 of 41 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
+  19 of 40 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
   MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube, PounceOnMotion, ThinkAboutBeacons;
   AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; AcknowledgeObject, RollBlock.
 - **B, passed; spot-read difference fixed 2026-11-20 (CUBEMOVED-PRESENCE-1), presence branch to recheck next session:** ReactToCubeMoved. Its presence branch played AcknowledgeObject
   without the engine's lift-safe action (0x00602526..0x00602546; CUBEMOVED-PRESENCE-1).
-- **B, not exercised:** 21 classes (OnFace, OnSide, Shaken, PlacedOnSlope, Frustration; the four Needs classes;
+- **B, not exercised:** 20 classes (OnFace, OnSide, Shaken, PlacedOnSlope, Frustration; the four Needs classes;
   PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, VisitInterestingEdge; SearchForFace,
-  DriveToFace, RespondToRenameFace; PickUpCube, PutDownBlock, StackBlocks, DriveOffCharger).
+  DriveToFace, RespondToRenameFace; PutDownBlock, StackBlocks, DriveOffCharger). All 20 now have offline replays
+  or fixtures and session rounds (PHYS-REACTIONS-READY-1, NEEDS-PERSONALITY-1, IDLE-LIFE-1, FACES-PERSONALITY-1,
+  CUBE-FREEPLAY-READY-1; the rest queued); they need a robot session.
