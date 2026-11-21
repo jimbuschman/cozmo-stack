@@ -20,6 +20,10 @@ NOT_EXERCISED = "NOT EXERCISED"
 COMPLETION = "M8-015, E2G 0x5A at 0x0053FAAA–0x0053FAB2"
 BEHAVIOR_REPORT = "M8-012, E2G 0x87 at 0x005A22B4–0x005A24AC"
 REACTION_REPORT = "M8-012, E2G 0x88 at 0x005A20AA–0x005A20D6 and 0x005A2EE8"
+UNDEFINED_INTERACTION_REPORTS = {
+    "roll": "Roll own-path GetCompletionUnion005567E0..EE/setter0075C400..410 reads four undefined unused IDs",
+    "turn-to-cube": "TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: native interaction words are undefined",
+}
 EDGE_TERMINAL_SIGNALS = {
     "Hiking_VisitInterestingEdge.S3": "observe from close",
     "Hiking_VisitInterestingEdge.GatheringAccurateEdge.Done": "edge lost during gathering",
@@ -269,12 +273,18 @@ class Session:
                 "M12-052 existing M1-034 policy for undefined ID words",
             "MISSING: M12-002 PathSegment.Print 0x00507F36 -> 0x0085C034 text/body has no checked row; "
             "segment print is unbuilt": "0x0085C138 calls CoreTechPrint before the path wire send",
+            "MISSING: M13-033 ComputeClosestGoalPose Debug fields/rotation-axis formatting "
+            "0x00508870..0x0050890A not represented":
+                "0x00508870–0x0050890A formats candidate pose and axis for Debug",
             "MISSING: M13-034 IPathPlanner.PrintPath 0x005090A0 output formatting remains unbuilt":
                 "0x005090A0 prints the resulting planner path",
             "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt":
                 "0x0085C7C8 prints segments after AppendToPath",
             **{f"MISSING: M13-033 PrintPlan {address} -> 0x00855E7C output remains unbuilt":
                 "0x00855E7C formats the plan for logging" for address in ("0x00500532", "0x0050058A")},
+            "MISSING: M8-007/M8-015 TracksLockedBecause Warning0x00540530: MovementComponent.WhoIsLocking "
+            "native string recipient0x00540506 is not bound; no invented owner-description text":
+                "0x00540506 supplies warning text to 0x00540530; the existing TRACKS_LOCKED result is retained",
             "MISSING: M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt":
                 "0x006BFB1A writes only the visualizer path",
             **{f"MISSING: M12-024 | EraseAllPlannerObstacles({mode}) 0x0055A626/0x0055A632 visualizer handoff absent":
@@ -398,6 +408,11 @@ def action_check(session, name, prompt, citation, expected, seconds, calls=None)
                 passed, reason = True, f"Matching local 0x5A action tag {next(iter(tags))}."
             else:
                 reason = f"Native reply matched, with {len(reports)} attributable 0x5A reports in the round window."
+                undefined = UNDEFINED_INTERACTION_REPORTS.get(name)
+                if not reports and undefined and any(undefined in line and (at is None or call.start <= at <= end)
+                                                     for _, at, line in session.missing):
+                    reason = ("Native action returned SUCCESS. The documented M1-034 skip retained the defined result "
+                              "and withheld the full 0x5A interaction payload.")
             if passed and name == "track-face":
                 elapsed = (call.cancelled_at - call.start) if call.cancelled_at is not None else 0.0
                 if call.cancelled_at is None:
@@ -984,6 +999,8 @@ def evaluate(session):
                          "Ready arrival branch at 0x0055ACA2–0x0055B0A6")
         command_verdicts[tool] = action_check(session, tool, prompt, citation, expected, seconds)
     for tool, (prompt, citation, seconds) in SKILLS.items():
+        if tool in {"roll", "stack", "mount-charger"}:
+            citation += "; M13-033, M13-034; pre-dock planner starts at 0x0064ACC4, recheck at 0x00559A86–0x00559AE4"
         command_verdicts[tool] = action_check(session, tool, prompt, citation, 0, seconds)
     for name, step in signals.items():
         command_verdicts[name] = signal_check(session, name, step, taught)

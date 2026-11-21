@@ -323,6 +323,32 @@ class SessionCheckTests(unittest.TestCase):
         self.assertEqual(PASSED, checks["colour camera"].status)
         self.assertIn("reads the raw frame tail", report)
 
+    def test_stack_tracks_warning_text_does_not_hide_the_successful_root_result(self):
+        self.request(100, 1, "stack", objectId=3)
+        message = ("MISSING: M8-007/M8-015 TracksLockedBecause Warning0x00540530: MovementComponent.WhoIsLocking "
+                   "native string recipient0x00540506 is not bound; no invented owner-description text")
+        self.event(120, "engine-log", line=message)
+        self.completion(150, 15, 0x19)
+        self.reply(155, 1, admitted=True, engineResult=0)
+        checks, report = self.check([message])
+        self.assertEqual(PASSED, checks["stack"].status)
+        self.assertIn("0x00540506 supplies warning text", report)
+
+        other = "MISSING: M13-034 Native path profile unavailable"
+        self.event(130, "engine-log", line=other)
+        checks, _ = self.check([message, other])
+        self.assertEqual(SEEN, checks["stack"].status)
+
+    def test_undefined_interaction_payload_preserves_the_seen_result(self):
+        self.request(100, 1, "turn-to-cube", objectId=1)
+        message = ("MISSING: M1-034/M8-015 TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: "
+                   "native interaction words are undefined; retain defined metadata only.")
+        self.event(130, "engine-log", line=message)
+        self.reply(140, 1, admitted=True, engineResult=0)
+        checks, _ = self.check([message])
+        self.assertEqual(SEEN, checks["turn-to-cube"].status)
+        self.assertIn("withheld the full 0x5A interaction payload", checks["turn-to-cube"].reason)
+
     def test_mount_needs_contacts_and_the_requested_charger_sighting(self):
         self.request(100, 1, "mount-charger", chargerId=4)
         self.completion(200, 7, -2)
