@@ -1,6 +1,7 @@
 using Cozmo.Protocol;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -318,6 +319,8 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     public Phase CurrentPhase { get; private set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => TargetObjectId is not null;
+    // BehaviorAcknowledgeCubeMoved vptr+0x28 (0x0102B768) returns true at 0x006027F8.
+    protected override bool RunnableGate28(BehaviorContext context) => true;
     protected override bool KeepsRunningWithoutAction => CurrentPhase == Phase.TurningToLastLocation || HasCurrentAction;
 
     /// <summary>The engine's <c>HandleObservedObject</c>: a sighting of the target while running.</summary>
@@ -357,8 +360,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     private void StartNativeSenseReaction(ManipulationSystem manipulation, EngineRobot owner, long generation)
     {
         var robot = manipulation.Robot;
-        bool Current() => HostExecutionVersionCurrent(generation) && !owner.Lifetime.Destroying &&
-            ReferenceEquals(robot.Engine.Robot, owner);
+        bool Current() => NativeOwnerCurrent(owner, generation);
         if (!Current()) return;
         _completionLease ??= AcquireActionCompletionOwner(robot, owner);
         // 0x00602458, 0x0060246E, 0x00602486 and 0x00602498: lift-safe trigger 0x72
@@ -368,25 +370,31 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
         animation.SetScopedOwner(owner);
         var wait = new NativeTimedWaitRunner(manipulation, 1f) { ScopedOwner = owner, ScopedParentCurrent = Current };
         var compound = new CompoundActionParallel(() => robot.Engine.Timer.SecondsF, animation, wait);
+        // 0x0054E9B8..0x0054E9BE type -2 uses table index 0 at 0x0053FED8, defaultCompleted.
+        compound.SeedNativeEmptyCompletion();
         StartActing(compound, _ => { if (Current()) TransitionToTurningToLastLocationOfBlock(); }, Current);
     }
+
+    private bool NativeOwnerCurrent(EngineRobot owner, long generation) =>
+        HostExecutionVersionCurrent(generation) && !owner.Lifetime.Destroying && ReferenceEquals(owner.Engine.Robot, owner);
 
     // fidelity: M15-010
     private void TransitionToTurningToLastLocationOfBlock()
     {
+        long generation = CaptureHostExecutionVersion();
         CurrentPhase = Phase.TurningToLastLocation;
         Log("TurningToLastLocationOfBlock");
-        SetStateName("TurningToLastLocationOfBlock");  // fidelity: M7-021 (helper 0x005C0CA8 at 0x00602298, before the located-object lookup 0x006022B8)
-        if (TargetObjectId is not { } id || _locator is null || !_locator.IsLocated(id))
+        SetStateName("TurningToLastLocationOfBlock");  // fidelity: M7-021 (0x00602298 before the lookup)
+        if (_native is { } native)
         {
-            // BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270: when
-            // GetLocatedObjectByIdHelper returns nothing (0x006022B8 cbz) the behaviour warns and returns
-            // without starting the turn or the absence reaction (0x00602370).
-            Log($"the robot's context has changed and the block's location is no longer valid (ObjectID={TargetObjectId?.ToString() ?? "-1"}); ending without a reaction");
-            Finish();
+            StartNativeTurn(native.Manipulation, native.Owner, generation);
             return;
         }
-        // the turn and the 0.5 s wait are one CompoundActionParallel (0x0060246e..): one StartActing, one callback
+        if (TargetObjectId is not { } id || _locator is null || !_locator.IsLocated(id))
+        {
+            FinishWithoutLocatedCube();
+            return;
+        }
         var both = StartParallel(2, TransitionToReactingToBlockAbsence);
         if (both is null) return;
         WaitInParallel(both, 0.5);
@@ -403,10 +411,71 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
         }, TaskScheduler.Default);
     }
 
+    private void StartNativeTurn(ManipulationSystem manipulation, EngineRobot owner, long generation)
+    {
+        bool Current() => NativeOwnerCurrent(owner, generation);
+        if (!Current()) return;
+        NativeTurnTowardsPoseRunner? turn = null;
+        using (manipulation.World.EnterPoseMutation())
+        {
+            // 0x006022AA..0x006022E8: family -1 in the current origin, then copy the located pose with max turn pi.
+            if (TargetObjectId is { } id && manipulation.World.GetLocatedObjectByIdHelper(id) is { } located)
+                turn = new NativeTurnTowardsPoseRunner(manipulation, located.NativePose, Radians.Pi)
+                { ScopedOwner = owner, ScopedParentCurrent = Current };
+        }
+        if (turn is null)
+        {
+            if (Current()) FinishWithoutLocatedCube();
+            return;
+        }
+        // 0x006022FE/0x00602316/0x00602328: second child Wait(0.5f), parallel, then the absence callback.
+        var robot = manipulation.Robot;
+        var wait = new NativeTimedWaitRunner(manipulation, 0.5f) { ScopedOwner = owner, ScopedParentCurrent = Current };
+        var compound = new CompoundActionParallel(() => robot.Engine.Timer.SecondsF, turn, wait);
+        compound.SeedNativeEmptyCompletion();
+        if (!Current()) { compound.RetireNeverAdmittedTree(); return; }
+        _completionLease ??= AcquireActionCompletionOwner(robot, owner);
+        StartActing(compound, _ => { if (Current()) TransitionToReactingToBlockAbsence(); }, Current);
+    }
+
+    private void FinishWithoutLocatedCube()
+    {
+        long generation = CaptureHostExecutionVersion();
+        // 0x00602334..0x00602370: warn and return without a turn or an absence reaction.
+        Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null,
+            "BehaviorAcknowledgeCubeMoved.TransitionToTurningToLastLocationOfBlock.NullObject",
+            $"The robot's context has changed and the block's location is no longer valid. (ObjectID={unchecked((int)(TargetObjectId ?? uint.MaxValue))})");
+        if (HostExecutionVersionCurrent(generation)) Finish();
+    }
+
+    private void StartNativePresenceReaction(ManipulationSystem manipulation, EngineRobot owner)
+    {
+        long generation = CaptureHostExecutionVersion();
+        bool Current() => NativeOwnerCurrent(owner, generation);
+        StopActing(); // 0x00602522: StopActing(false, false) cancels the turn without invoking its callback.
+        if (!Current()) return;
+        var robot = manipulation.Robot;
+        _completionLease ??= AcquireActionCompletionOwner(robot, owner);
+        // 0x00602546/0x00602554: lift-safe trigger 3, one loop, interrupt true, tracks 0, timeout 60, final flag false.
+        // The StartActing callback is empty. 0x00602582/0x0060258A publish the state after admission.
+        var action = new TriggerLiftSafeAnimationAction(robot, new(AnimationTrigger.AcknowledgeObject, 1, true, 0, 60f, false));
+        if (!Current()) { action.RetireStaleConstructor(Current); return; }
+        action.SetScopedOwner(owner);
+        StartActing(action, null, Current);
+        if (!Current()) return;
+        CurrentPhase = Phase.ReactingToBlockPresence;
+        SetStateName("ReactingToBlockPresence");
+    }
+
     protected override void OnUpdate()
     {
         if (CurrentPhase == Phase.TurningToLastLocation && _observed)
         {
+            if (_native is { } native)
+            {
+                StartNativePresenceReaction(native.Manipulation, native.Owner);
+                return;
+            }
             StopActing();
             _turnCancel?.Cancel();
             CurrentPhase = Phase.ReactingToBlockPresence;
