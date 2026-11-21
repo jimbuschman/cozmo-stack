@@ -1,0 +1,26 @@
+# FACES-PERSONALITY-1
+
+Freeplay now explains behavior starts in compact MCP `read_events`. `behavior-changed` gives the behavior names and the observed reaction trigger, Freeplay activity and choice, or reaction resume as applicable. The full feed keeps the native E2G 0x87 payload. The face behaviors now bind the shipped unlock and live active Spark fields for the common reaction-lock gate.
+
+| Input to result | Primary evidence and offline check |
+| --- | --- |
+| Captured camera to face world | F2 camera chunks and F0/IMU feed the production camera and OKAO detector/recognizer. The test restores the real album/enrollment NV blobs for the named case and uses an empty album for the unnamed case. Vision publishes 0x46 at `0x004F4B7A..0x004F4B82` and remaps identity through 0x47 at `0x004F3DCC..0x004F3E64`. |
+| Freeplay to Socialize | `activities_config.json` names Socialize for face-only/face-plus-cube. `activities/freeplay/socialize.json` sets scores 1000/30/20/1/0.1/0/0, minimum social score 0.5 and base cooldown 30 s. Normal scored choices take precedence at `0x005B0282..0x005B02DA`. The fallback checks the retained InteractWithFaces before FindFaces_socialize at `0x005B02F6..0x005B0376`. Both excerpts show the latter give way to InteractWithFaces once a face is observed. |
+| Named acknowledgement | `reactionTrigger_behavior_map.json` maps FacePositionUpdated to AcknowledgeFace. The strategy admits a first named face or a newly close face (300/400 mm hysteresis and 4 s cooldown, `0x0060CB84..0x0060CE20`). The turn waits three images (`0x00602A94..0x00602A98`). Inside the 60 s first-greeting gate (`0x006029B2..0x00602A24`), the callback selects NamedFaceInitialGreeting (`0x00602D8C..0x00602DDE`). The replay renders the name through the native SayText path (`0x0054C596..0x0054C5D6`), observes successful completion and returns to the interrupted interaction (`0x005A2D86..0x005A2D8C`). |
+| Unnamed turn, approach and departure | The clear ray selects +40 mm at 40 mm/s, parallel with head tracking (`0x005C2420..0x005C2610`). Verification plays InteractWithFacesInitialUnnamed (`0x005C224A..0x005C229C`), then the second compound tracks with the idle animation for a sampled 8–15 s (`behaviors/freeplay/interactWithFaces.json`, `0x005C2740..0x005C2882`). Empty camera frames stop new face observations. At the native deadline the behavior emits InteractedWithFace and stops (`0x005C235A..0x005C239C`). The replay checks the turn result, motor path, both track masks, idle trigger and objective. |
+| Requested face behaviors | `behaviors/voiceCommands/VC_SearchForFace.json` and `VC_ComeHere.json` use Selection G2E 0x94 (`0x0060AA58..0x0060AB7A`), separate from autonomous Socialize. The existing configured replays exercise the search→found animations (`0x005C91A4..0x005C9368`) and 200 mm approach standoff with timed tracking (`0x005DA950..0x005DA9EC`, `0x005DAB34..0x005DABE2`, `0x005DACDC`). |
+| Shared lock and transition | IBehavior reads active Spark and its soft bit at `0x005BCCAC..0x005BCCC2`. Init/Resume compare the config unlock at +0x70 to the live Spark at manager+0x58 (`0x005BCD16..0x005BCD44`, `0x005BCFAC..0x005BCFDE`). The binding closes the missing lock input on these configured instances. E2G 0x87 remains at `0x005A22B4..0x005A24AC`; compact metadata follows the actual chooser switch at `0x005A2A20..0x005A2AB4` or the committed reaction `0x005A1F12..0x005A1F1C`. |
+
+The replays use the 120650–139100 ms and 247000–255800 ms windows from the locally held 20261117 command capture. After selecting the face behavior, the fixture repeats its admitted pixels with fresh timestamps and supplies device acknowledgments to new commands. The unnamed case masks PetInitialDetection only because the repeated input can also trigger the pet detector. The sink is silent, so speech completion is verified offline and audibility remains a robot observation.
+
+Shared diagnostics remain visible. Camera/pose ownership and profiling (M11-033/055/058/077/078/080), the marker collision dirty pass (M11-037/042), subscription cleanup (M8-023/027), animation DAS (M8-021), path print/viz (M12-002/032), initial behavior audio needs caches (M13-039), and the fixture's unresolved needs write/notification inputs (M15-014/093). PounceOnMotion can be chosen immediately afterward and still has its own shared Spark-lock input diagnostic. Neither replay hits an M14 face/audio gate. No fidelity classification or scope acceptance was changed.
+
+**Three-minute operator check**
+
+1. Start on a clear, well-lit surface off the charger with Freeplay on. Teach your name, switch back to Freeplay, and stay out of view briefly.
+2. Sit in view for about a minute. Ask the client to read `behavior-changed` and `reaction-changed` events while you watch for the turn and listen for your name.
+3. Step out of view for the rest of the three minutes. Record the interaction ending and what resumes. For the two requested behaviors, the `search-for-face` and `drive-to-face` personality rounds use the existing Selection entry point.
+
+## Verification
+
+Build `4763740c` passed all 8,839 tests in 60.49 minutes with the local recordings enabled. All 229 focused face, MCP and Freeplay cases passed. The fidelity check passed for 765 records. The offline four-round personality validation passed without opening a robot connection.
