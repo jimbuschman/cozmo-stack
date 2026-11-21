@@ -217,6 +217,9 @@ public sealed partial class CozmoBridge
         bool pickedUp = to == OffTreadsState.InAir;
         bool putDown = from == OffTreadsState.InAir && to == OffTreadsState.OnTreads;
         Add("off-treads-changed", new { from = from.ToString(), to = to.ToString(), pickedUp, putDown },
-            eligible: pickedUp || putDown || to == OffTreadsState.OnBack);
+            eligible: pickedUp || putDown || to == OffTreadsState.OnBack,
+            compactEligible: pickedUp || putDown || to == OffTreadsState.OnBack ||
+                (from, to) is (OffTreadsState.InAir, OffTreadsState.Falling) or
+                              (OffTreadsState.Falling, OffTreadsState.OnTreads));
     }
 }

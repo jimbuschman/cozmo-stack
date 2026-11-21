@@ -368,7 +368,7 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         try
         {
             long start = await channelReady.Task.WaitAsync(token).ConfigureAwait(false);
-            await foreach (var page in bridge.StreamEventsAsync(start, significantOnly: true, token: token).ConfigureAwait(false))
+            await foreach (var page in bridge.StreamPushEventsAsync(start, token).ConfigureAwait(false))
             {
                 var meta = new Dictionary<string, string>();
                 if (page.Events.Count == 1)

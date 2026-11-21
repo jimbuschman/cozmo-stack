@@ -74,8 +74,68 @@ public sealed class BridgeEventPushTests
         Assert.False(unrelated.GetProperty("significant").GetBoolean());
         Assert.False(match.GetProperty("payload").GetProperty("completion").TryGetProperty("hostCaller", out _));
 
+        const uint externalTag = 3000567;
+        f.Rig.Engine.BroadcastActionCompletion(new(externalTag, 8, 0, [], 0, CompletionVariant: 6));
+        f.Rig.Engine.DrainAppDelivery();
+        var callerPush = await FirstPush(bridge);
+        Assert.DoesNotContain(callerPush.Events, e => e.Type == "action-completed" &&
+            e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag);
+        Assert.Contains(callerPush.Events, e => e.Type == "action-completed" &&
+            e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == externalTag);
+        var otherPush = await FirstPush(other);
+        Assert.Contains(otherPush.Events, e => e.Type == "action-completed" &&
+            e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag);
+
         bool IsOurReport(JsonElement e) => Type(e) == "action-completed" &&
             e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == tag;
+    }
+
+    [Fact]
+    public async Task CompactFaceApproachesKeepRecognitionAndTheFullFeed()
+    {
+        using var f = new Fixture();
+        var clock = new EventClock();
+        using var bridge = new CozmoBridge(f.Rig.Robot, timeProvider: clock);
+        var pose = f.Robot.LastPublishedState!.Pose;
+        void See(int id, uint tick, string name, float distance = 200)
+        {
+            var facePose = pose with { X = pose.X + distance };
+            f.Rig.Engine.PublishRobotObservedFace(new(id, tick, facePose, new(10, 10, 50, 50), name, [], [], [], []));
+            f.Rig.Engine.DrainAppDelivery();
+        }
+
+        See(-1, 1000, "");
+        clock.Advance(TimeSpan.FromSeconds(1));
+        See(-2, 2000, "");
+        f.Rig.Engine.PublishFaceIdReport(0x47, new NativeChangedFace(-2, 1));
+        f.Rig.Engine.DrainAppDelivery();
+        See(1, 2001, "Ada");
+        clock.Advance(TimeSpan.FromSeconds(1));
+        See(1, 3000, "Ada");
+        See(1, 3001, "Grace");
+        clock.Advance(TimeSpan.FromSeconds(10));
+        See(-3, 13001, "");
+        See(-4, 13002, "", 450);
+
+        var visible = (await FirstPush(bridge)).Events;
+        Assert.Equal(new[] { 1000u, 2001u, 3001u, 13001u, 13002u }, visible.Select(e => e.RobotTimestamp!.Value));
+        Assert.Equal(200, visible[0].Payload.GetProperty("distanceMm").GetDouble());
+        Assert.False(visible[0].Payload.GetProperty("recognised").GetBoolean());
+        Assert.True(visible[1].Payload.GetProperty("recognised").GetBoolean());
+        Assert.Equal("Grace", visible[2].Payload.GetProperty("name").GetString());
+        Assert.All(visible, e => Assert.False(e.Payload.TryGetProperty("leftEye", out _)));
+        var full = await bridge.ReadEventPageAsync(0, 0, 100, null, null, full: true);
+        Assert.Equal(11, Events(full).Count());
+        Assert.Contains(Events(full), e => Type(e) == "face-seen" &&
+            e.GetProperty("payload").TryGetProperty("leftEye", out _));
+    }
+
+    private static async Task<BridgeEventPage> FirstPush(CozmoBridge bridge)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var feed = bridge.StreamPushEventsAsync(0, timeout.Token).GetAsyncEnumerator();
+        Assert.True(await feed.MoveNextAsync());
+        return feed.Current;
     }
 
     [Fact]

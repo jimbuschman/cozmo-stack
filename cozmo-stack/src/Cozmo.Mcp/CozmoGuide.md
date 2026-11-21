@@ -6,7 +6,7 @@
 - Look with `get_camera_image` before moving or manipulating an object. `annotate` adds matching face/object boxes. This reads the existing camera stream; it does not enable a different vision mode. With `annotate`, the returned image can be older than the newest received frame. Empty boxes mean there were no matching reports for the returned image.
 - Use the current `worldObjectId` from `knownCubes` or `knownChargers` for object actions. `factoryId` and `radioObjectId` identify different things. Face actions use the signed `faceId` from state/events; follow `face-id-changed` updates.
 - Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
-- While a call is pending, other state, camera and event calls remain available. Use `read_events` with the last returned `cursor` as `since`. Set `waitMs` up to 30000 to wait for matching events. Set `significantOnly: true` to wait for events with the shared `significant` flag. Choose `types` to include or `excludeTypes` to exclude named event types. `limit` counts matching events before compaction and defaults to 100. Reuse the new cursor even if a page has fewer than 100 events. An empty page after waiting is a timeout. `gap=true` means older events were evicted [senses].
+- While a call is pending, other state, camera and event calls remain available. Use `read_events` with the last returned `cursor` as `since`. Set `waitMs` up to 30000 to wait for matching events. Set `significantOnly: true` to wait for events marked significant in the selected view. Choose `types` to include or `excludeTypes` to exclude named event types. `limit` counts matching events before compaction and defaults to 100. Reuse the new cursor even if a page has fewer than 100 events. An empty page after waiting is a timeout. `gap=true` means older events were evicted [senses].
 - Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` may remain pending until native completion or caller cancellation.
 - Before a multi-step task like stacking or enrolling a face, use `lock-reactions` with a task-specific ID and the reaction triggers you need to suppress. For example, lock `["CubeMoved","ObjectPositionUpdated"]` while stacking. Trigger names are case-sensitive. `"all"` disables every mapped trigger while the lock is held. Use `unlock-reactions` with the same ID when the task ends. Other IDs continue to hold their locks.
 
@@ -26,14 +26,24 @@ For a reaction refusal, `why.snapshot.reaction` names the trigger and behavior a
 
 `why.engineResultName` preserves the native result name. `why.snapshot` contains captured per-command comparisons/observations; `why.hint` explains them. `why.checkAvailable=false` means no applicable native failure check was captured. Earlier comparisons may have been superseded by later steps. Untagged docking observations do not by themselves establish a failure cause [why].
 
-`during` covers the event window from invocation through completion. Compact replies keep single sightings and other events in `events`. Repeated `face-seen`, `cube-seen`, `charger-seen`, and `robot-state` observations are grouped in `sightings`, with counts, first and last timestamps, and the last payload. Compact `during` and `read_events` also group repeat `face-recognised` events by face ID and name. The counts cover the repeats. Each face's first recognition and every name change in the window keep their full payloads, along with face ID changes, losses, and enrolment, rename and erase events. An oversized `during` page includes a `continuation`. Pass its `since` and `excludeTypes` to `read_events` and keep paging through `through`. When the complete compact action window fits only once, `structuredContent` carries it and the text includes the action result and identity entries with `during.detailsInStructuredContent: true`. Use event cursors to deduplicate any completion already in the action reply. The action's own `cursor` still marks the end of its window.
+`during` covers the event window from invocation through completion. Compact replies keep single sightings and other events in `events`. Repeated `face-seen`, `cube-seen`, `charger-seen`, and `robot-state` observations are grouped in `sightings`, with counts, first and last timestamps, and the last payload. Compact `during` and `read_events` also group repeat `face-recognised` events by face ID and name. The counts cover the repeats. Each face's first recognition and name changes stay as individual entries. A compact face entry carries the ID, name when known, recognition flag, and distance and bearing when the latest robot pose shares its origin. Full face details include landmarks and expression, gaze and blink values. A matching animation start and end or abort in a compact action window become one entry in `during.animations`. Unmatched animation events stay in `during.events`. An oversized `during` page includes a `continuation`. Pass its `since` and `excludeTypes` to `read_events` and keep paging through `through`. When the complete compact action window fits only once, `structuredContent` carries it and the text includes the action result and identity entries with `during.detailsInStructuredContent: true`. Use event cursors to deduplicate any completion already in the action reply. The action's own `cursor` still marks the end of its window.
 
 For a host on the Cozmo machine, start the server with `--event-stream-port 8765`
 and send one newline-terminated JSON subscription to `127.0.0.1:8765`, such as
 `{"significantOnly":true}`. For interactive Claude Code, add `--channel` to
 the MCP server arguments and enable the configured server as a development
-channel. It pushes significant event pages after initialization. The server
-README has examples for both clients and the in-process C# feed.
+channel. It pushes significant event pages after initialization. Reactions carry
+trigger names and the names of the behaviors that started or ended. Falling and
+landing after a fall are significant. Completions from other callers still push,
+and your own completions are available in tool results and `read_events`.
+
+The channel reports a face once per approach and again on recognition or an
+identity change. It can fold a new temporary ID into one nearby approach if the
+last sighting was 0.3 to 10 seconds ago and its position is within 200 mm in the
+same origin. After ten seconds without a sighting, the next observation starts
+a new approach. This is presentation grouping of temporary tracks. Use
+`face-id-changed` for the engine's identity updates. The server README has
+examples for the channel and the full-record TCP and C# feeds.
 
 Use `duringDetail: "full"` for the complete retained action window at once. On `read_events`, `detail: "full"` keeps all matching event payloads within the chosen limit. Both full options can produce large replies. Poll during long calls when you need a complete history before the feed evicts it [senses].
 

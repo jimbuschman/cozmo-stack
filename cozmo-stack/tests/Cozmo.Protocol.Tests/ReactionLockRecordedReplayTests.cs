@@ -66,6 +66,7 @@ public sealed partial class ReactionLockMcpTests
             manager.HostReactionChecksEnabled = false;
             f.Rig.Tick();
             manager.HostReactionChecksEnabled = true;
+            long reactionCursor = bridge.CurrentEventCursor();
             var activation = manager.CheckReactions(f.Rig.Engine.Timer.Seconds);
             f.Rig.Engine.DrainAppDelivery();
             byte[] expected = emissions.Single(e => e.At == cubeMoveReactionAt).Body;
@@ -82,6 +83,10 @@ public sealed partial class ReactionLockMcpTests
                     $"distance={locator.DistanceFromRobotMm(cube.ObjectId)}, visible={locator.IsVisibleFromCamera(cube.ObjectId)}, " +
                     $"current={manager.Current?.Id}, transitions={string.Join(',', observed.Select(Convert.ToHexString))}.");
                 Assert.Equal(expected, Assert.Single(observed));
+                var compact = await bridge.ReadEventPageAsync(reactionCursor, 0, 4, ["reaction-changed"], null, full: false);
+                var reaction = Assert.Single(compact.GetProperty("events").EnumerateArray()).GetProperty("payload");
+                Assert.Equal("CubeMoved", reaction.GetProperty("newTrigger").GetString());
+                Assert.Equal("ReactToCubeMoved", reaction.GetProperty("newBehavior").GetString());
                 ReplayCubeMovedAbsence(f, evidence, cubeMoveReactionAt);
                 // The same reaction ends before the second turn and reacquisition.
                 f.Rig.Engine.DrainAppDelivery();
