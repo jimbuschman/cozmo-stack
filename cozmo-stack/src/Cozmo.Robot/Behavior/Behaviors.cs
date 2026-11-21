@@ -1,4 +1,5 @@
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -24,7 +25,7 @@ namespace Cozmo.Robot.Behavior;
 /// <c>ResumeInternal</c> (<c>vtable+0x4c</c>) 0x005BFF1E returns 1: the engine never resumes a PlayAnim.
 /// <c>IsRunnableInternal</c> 0x005C013A is false for an empty trigger list. This is <b>not</b> the
 /// <c>PlayAnimWithFace</c> class: <c>BehaviorPlayAnimSequenceWithFace::InitInternal</c> (0x005C0648) runs a
-/// <c>TurnTowardsFaceAction</c> (0x005C0686) before the animation, so that class needs a tracked face.
+/// <c>TurnTowardsFaceAction</c> (0x005C0686) before the animation. Its resultless callback runs the base sequence.
 ///
 /// It locks no tracks of its own: the action's mask is 0, except that the lift-safe constructor ORs LIFT in while
 /// the robot is carrying and on its treads (<see cref="SteppedBehavior.RunTriggerAction"/>), so the engine sends
@@ -54,7 +55,10 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     /// <c>wantsToRunStrategyConfig</c> and the three <c>requiredRecent...</c> windows.
     /// </summary>
     // fidelity: M7-018, M8-005
-    public static PlayAnimBehavior FromConfig(System.Text.Json.JsonElement root, Action<string>? log = null)
+    public static PlayAnimBehavior FromConfig(System.Text.Json.JsonElement root, Action<string>? log = null) =>
+        FromConfig(root, withFace: false);
+
+    internal static PlayAnimBehavior FromConfig(System.Text.Json.JsonElement root, bool withFace)
     {
         var id = BehaviorConfigLoader.ExtractIdFromConfig(root).ToString();
         var parsed = new List<AnimationTrigger>();
@@ -86,7 +90,7 @@ public sealed class PlayAnimBehavior : SteppedBehavior
         double? Sec(string key) => root.TryGetProperty(key, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.Number ? v.GetDouble() : null;
         int loops = root.TryGetProperty("num_loops", out var nl) && nl.ValueKind == System.Text.Json.JsonValueKind.Number
             ? nl.GetInt32() : 1;
-        return new PlayAnimBehavior(id, "PlayAnim", parsed)
+        return new PlayAnimBehavior(id, withFace ? "PlayAnimWithFace" : "PlayAnim", parsed)
         {
             NumLoops = loops,
             WantsToRunStrategy = strategy,
@@ -99,22 +103,35 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     }
 
     private readonly List<AnimationTrigger> _triggers;
-    private EngineRobot? _reactRobot;
-    private Cozmo.Robot.Manipulation.ManipulationSystem? _reactManipulation;
+    private EngineRobot? _nativeOwner;
+    private Cozmo.Robot.Manipulation.ManipulationSystem? _nativeManipulation;
     private System.Text.Json.JsonElement _reactConfig;
     private bool _nativeReact;
-    private long _reactGeneration;
-    private int _reactRetired;
+    private bool _turnToFace;
+    private bool NativeConfigured => _nativeOwner is not null;
+    internal bool OwnsConfiguredAnimationSequence => NativeConfigured && !_nativeReact;
+
+    // IBehavior's update status follows its current action handle (0x005BE1EC..0x005BE224).
+    protected override bool KeepsRunningWithoutAction => OwnsConfiguredAnimationSequence && HasCurrentAction;
+    private long _nativeGeneration;
+    private int _nativeRetired;
     internal void BindNativeReact(BehaviorFactoryContext source,System.Text.Json.JsonElement config)
     {
-        _nativeReact=true;_reactRobot=source.NativeRobot;_reactManipulation=source.Manipulation;_reactConfig=config;
+        _nativeReact=true;_nativeOwner=source.NativeRobot;_nativeManipulation=source.Manipulation;_reactConfig=config;
     }
+    internal void BindNativePlay(BehaviorFactoryContext source, bool withFace)
+    {
+        _nativeOwner = source.NativeRobot;
+        _nativeManipulation = source.Manipulation;
+        _turnToFace = withFace;
+    }
+
     private bool ReactAvailable
     {
         get
         {
-            var robot=_reactRobot;var m=_reactManipulation;
-            return _nativeReact && Volatile.Read(ref _reactRetired)==0 && robot is not null && m is not null &&
+            var robot=_nativeOwner;var m=_nativeManipulation;
+            return _nativeReact && Volatile.Read(ref _nativeRetired)==0 && robot is not null && m is not null &&
                 ReferenceEquals(robot.Engine.Robot,robot) && robot.NativeBehaviorRuntime is {IsRetired:false} runtime &&
                 ReferenceEquals(runtime.Manipulation,m) && runtime.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this) &&
                 runtime.Container.Behaviors.TryGetValue(BehaviorID.ReactToObstacle,out var retained) && ReferenceEquals(retained,this) &&
@@ -123,13 +140,19 @@ public sealed class PlayAnimBehavior : SteppedBehavior
                 _reactConfig.TryGetProperty("displayNameKey",out var display) && display.ValueKind==System.Text.Json.JsonValueKind.String && display.GetString()=="behavior.ReactToObstacle";
         }
     }
-    private bool ReactOwnerCurrent=>Volatile.Read(ref _reactRetired)==0 && _reactRobot is {} robot &&
+    private bool ReactOwnerCurrent=>Volatile.Read(ref _nativeRetired)==0 && _nativeOwner is {} robot &&
         ReferenceEquals(robot.Engine.Robot,robot) && robot.NativeBehaviorRuntime is {IsRetired:false} runtime &&
         runtime.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this) &&
         runtime.Container.Behaviors.TryGetValue(BehaviorID.ReactToObstacle,out var retained) && ReferenceEquals(retained,this);
+    private bool PlayOwnerCurrent => Volatile.Read(ref _nativeRetired) == 0 && _nativeOwner is { } owner &&
+        _nativeManipulation is { } manipulation && !owner.Lifetime.Destroying &&
+        ReferenceEquals(owner.Engine.Robot, owner) && owner.NativeBehaviorRuntime is { IsRetired: false } runtime &&
+        ReferenceEquals(runtime.Manipulation, manipulation) &&
+        runtime.Bound.TryGetValue(Id, out var behavior) && ReferenceEquals(behavior, this);
+
     private bool ReactCurrent(long generation)
     {
-        if(Volatile.Read(ref _reactRetired)!=0 || Interlocked.Read(ref _reactGeneration)!=generation || !ReferenceEquals(_reactRobot?.Engine.Robot,_reactRobot))return false;
+        if(Volatile.Read(ref _nativeRetired)!=0 || Interlocked.Read(ref _nativeGeneration)!=generation || !ReferenceEquals(_nativeOwner?.Engine.Robot,_nativeOwner))return false;
         if(ReactOwnerCurrent && ReactAvailable)return true;
         MarkReadinessUnavailable();ReportMissing("M8-005 ReactToObstacle live owner/profile unavailable");return false;
     }
@@ -138,20 +161,28 @@ public sealed class PlayAnimBehavior : SteppedBehavior
         if(!_nativeReact || ReactAvailable)return true;
         MarkReadinessUnavailable();ReportMissing("M8-005 ReactToObstacle original owner or checked single-trigger profile unavailable");return false;
     }
-    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context)=>_nativeReact?_reactRobot?.Engine.EnterSynchronousOwner():null;
-    protected override void HostRunStarting(){if(_nativeReact)Interlocked.Increment(ref _reactGeneration);}
-    protected override long CaptureHostExecutionVersion()=>_nativeReact?Interlocked.Read(ref _reactGeneration):0;
-    protected override bool HostExecutionVersionCurrent(long version)=>!_nativeReact || (Interlocked.Read(ref _reactGeneration)==version && ReactOwnerCurrent);
-    protected override bool HostStopContinuationCurrent(long version)=>!_nativeReact || (Volatile.Read(ref _reactRetired)==0 && Interlocked.Read(ref _reactGeneration)==unchecked(version+1) && ReferenceEquals(_reactRobot?.Engine.Robot,_reactRobot));
-    protected override bool HostResumeContinuationCurrent(long version)=>!_nativeReact || (Volatile.Read(ref _reactRetired)==0 && (Interlocked.Read(ref _reactGeneration)==version || Interlocked.Read(ref _reactGeneration)==unchecked(version+1)) && ReferenceEquals(_reactRobot?.Engine.Robot,_reactRobot));
-    protected override void OnStop(BehaviorStopReason reason){if(_nativeReact)Interlocked.Increment(ref _reactGeneration);}
-    internal void RetireNativeReact()
-    {if(!_nativeReact || Interlocked.Exchange(ref _reactRetired,1)!=0)return;Interlocked.Increment(ref _reactGeneration);RetireActionCompletionOwner();}
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => _nativeOwner?.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting(){if(NativeConfigured)Interlocked.Increment(ref _nativeGeneration);}
+    protected override long CaptureHostExecutionVersion()=>NativeConfigured?Interlocked.Read(ref _nativeGeneration):0;
+    protected override bool HostExecutionVersionCurrent(long version)=>!NativeConfigured ||
+        (Interlocked.Read(ref _nativeGeneration)==version && (_nativeReact ? ReactOwnerCurrent : PlayOwnerCurrent));
+    protected override bool HostStopContinuationCurrent(long version)=>!NativeConfigured || (Volatile.Read(ref _nativeRetired)==0 && Interlocked.Read(ref _nativeGeneration)==unchecked(version+1) && ReferenceEquals(_nativeOwner?.Engine.Robot,_nativeOwner));
+    protected override bool HostResumeContinuationCurrent(long version)=>!NativeConfigured || (Volatile.Read(ref _nativeRetired)==0 && (Interlocked.Read(ref _nativeGeneration)==version || Interlocked.Read(ref _nativeGeneration)==unchecked(version+1)) && ReferenceEquals(_nativeOwner?.Engine.Robot,_nativeOwner));
+    protected override void OnStop(BehaviorStopReason reason){if(NativeConfigured)Interlocked.Increment(ref _nativeGeneration);}
+    internal void RetireNativePlay()
+    {if(!NativeConfigured || Interlocked.Exchange(ref _nativeRetired,1)!=0)return;Interlocked.Increment(ref _nativeGeneration);RetireActionCompletionOwner();}
     public override bool IsRunnable(BehaviorContext context)
     {
-        if(!_nativeReact)return base.IsRunnable(context);
-        using var owner=EnterHostExecutionOwner(context);
-        if(!HostScoringInputsAvailable() || !ReferenceEquals(context.AI,_reactRobot!.NativeBehaviorRuntime!.AI))
+        if (!NativeConfigured) return base.IsRunnable(context);
+        using var owner = EnterHostExecutionOwner(context);
+        if (!_nativeReact)
+        {
+            if (PlayOwnerCurrent) return base.IsRunnable(context);
+            MarkReadinessUnavailable();
+            ReportMissing($"M8-005 {Id} original animation or Robot owner unavailable");
+            return false;
+        }
+        if(!HostScoringInputsAvailable() || !ReferenceEquals(context.AI,_nativeOwner!.NativeBehaviorRuntime!.AI))
         {MarkReadinessUnavailable();ReportMissing("M8-005 ReactToObstacle original AI owner unavailable");return false;}
         long generation=CaptureHostExecutionVersion();bool result=base.IsRunnable(context);
         if(!ReactCurrent(generation))return false;
@@ -306,14 +337,87 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     /// <summary><c>BehaviorPlayAnimSequence::InitInternal</c> (<c>vtable+0x48</c>) 0x005C014E: <c>StartPlayingAnimations</c>, result always 0.</summary>
     protected override void OnStart()
     {
-        if(!_nativeReact){StartPlayingAnimations();return;}
+        if (!_nativeReact)
+        {
+            if (!NativeConfigured)
+            {
+                StartPlayingAnimations();
+                return;
+            }
+            if (!PlayOwnerCurrent)
+            {
+                InitFailed = true;
+                return;
+            }
+
+            long sequenceGeneration = CaptureHostExecutionVersion();
+            if (_turnToFace)
+            {
+                // 0x005C065A..0x005C06AA uses raw zero, Pi, sayName=false. The resultless
+                // callback at 0x005C075A enters StartPlayingAnimations even when the turn fails.
+                var turn = new NativeLastFaceRunner(_nativeManipulation!, _nativeOwner!, rawId: 0);
+                StartActing(turn, _ => StartNativeAnimationSequence(sequenceGeneration), () => HostExecutionVersionCurrent(sequenceGeneration));
+            }
+            else StartNativeAnimationSequence(sequenceGeneration);
+            return;
+        }
         long generation=CaptureHostExecutionVersion();
         if(!ReactCurrent(generation)){InitFailed=true;return;}
         ReportMissing("M8-005 PlayAnim listener registration identity, pointer order and lifetime remain unavailable outside the checked empty constructor path");
         if(!ReactCurrent(generation))return;
-        var action=new TriggerLiftSafeAnimationAction(_reactManipulation!.Robot,new((AnimationTrigger)417,1,true,0,60f,false));
+        var action=new TriggerLiftSafeAnimationAction(_nativeManipulation!.Robot,new((AnimationTrigger)417,1,true,0,60f,false));
         if(!ReactCurrent(generation)){action.RetireNeverAdmittedTree();return;}
         StartActing(action,_=>{if(ReactCurrent(generation))CallToListeners();},()=>ReactCurrent(generation));
+    }
+
+    private void StartNativeAnimationSequence(long generation)
+    {
+        if (!HostExecutionVersionCurrent(generation)) return;
+        if (_triggers.Count == 1)
+        {
+            var trigger = NewNativeTrigger(_triggers[0], NumLoops);
+            StartActing(trigger, _ =>
+            {
+                if (HostExecutionVersionCurrent(generation)) CallToListeners();
+            }, () => HostExecutionVersionCurrent(generation));
+            return;
+        }
+
+        _loopIndex = 0;
+        QueueNativeLoop(generation);
+    }
+
+    private void QueueNativeLoop(long generation)
+    {
+        if (!HostExecutionVersionCurrent(generation) || _loopIndex >= NumLoops) return;
+        var sequence = new CompoundActionSequential(() => _nativeOwner!.Engine.Timer.SecondsF);
+        foreach (var trigger in _triggers)
+        {
+            var child = NewNativeTrigger(trigger, 1);
+            if (sequence.AddActionGuarded(child, false, () => HostExecutionVersionCurrent(generation))) continue;
+            child.RetireNeverAdmittedTree();
+            sequence.RetireNeverAdmittedTree();
+            return;
+        }
+        _loopIndex++;
+        StartActing(sequence, _ =>
+        {
+            if (!HostExecutionVersionCurrent(generation)) return;
+            CallToListeners();
+            QueueNativeLoop(generation);
+        }, () => HostExecutionVersionCurrent(generation));
+    }
+
+    private TriggerLiftSafeAnimationAction NewNativeTrigger(AnimationTrigger trigger, int loops)
+    {
+        var action = new TriggerLiftSafeAnimationAction(_nativeManipulation!.Robot, new(trigger, loops, true, 0, 60f, false));
+        action.SetScopedOwner(_nativeOwner!);
+        action.PlaybackAdmitted = (ticket, clip) =>
+        {
+            LastSelected = clip;
+            ObserveNativePlayback(ticket, clip);
+        };
+        return action;
     }
 
     protected override void OnTriggerResolved(AnimationTrigger trigger, string clip) => LastSelected = clip;

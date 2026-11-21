@@ -40,6 +40,7 @@ internal class TriggerAnimationAction : ActionRunner
     private byte _animationTag;
     internal byte HostAnimationTag => _animationTag; // read-only PlayAnimation +0x8B diagnostic
     internal byte AnimationTagForTest => HostAnimationTag;
+    internal Action<AnimationTicket, string>? PlaybackAdmitted;
     private RetainedSubscription? _ca, _cb, _d5, _aborted;
     private readonly Action<string> _missing;
     internal TriggerAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null, bool liftSafe = false, AnimationClip? directClip = null) : base(0x1A, (uint)request.Argument4)
@@ -191,6 +192,7 @@ internal class TriggerAnimationAction : ActionRunner
         if (!ScopedCurrent()) { _d5?.Dispose(); _d5=null; _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
         RetainedSubscription.Replace(ref _aborted, _robot.Engine.AnimationMessages.SubscribeMessage(0x5F, true, p => Aborted((uint)p!)));
         if (!ScopedCurrent()) { _aborted?.Dispose(); _aborted=null; _d5?.Dispose(); _d5=null; _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
+        PlaybackAdmitted?.Invoke(_ticket, _clip);
         return 0;
     }
     // fidelity: M8-020 — 0x005452F0..0x0054534E.
