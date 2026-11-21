@@ -74,6 +74,10 @@ public sealed class NeedsPersonalityMcpTests(ITestOutputHelper output)
                     if (need == NeedId.Energy)
                         Assert.Equal(FormattableString.Invariant($"{prior.Repair:F5}:{prior.Energy:F5}:{prior.Play:F5}:1.00000:0.21000:1.00000"),
                             forcedDas[^1]);
+                    // Keep the live selection check inside the shipped Warning band while
+                    // the behavior waits for a turn. Update (0x00695CBE..0x00695CE4) can
+                    // apply its 60 s decay tick after the exact-boundary API check above.
+                    await Set(need, boundary + .05f);
                     string warningId = $"Needs_MildLow{need}Request";
                     PumpUntil(() => manager.Current?.Id == warningId && animations.Contains(warning));
                     PumpUntil(() => manager.Current?.Id != warningId);

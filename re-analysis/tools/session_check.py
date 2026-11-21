@@ -161,6 +161,7 @@ class Session:
         self.public = defaultdict(dict)
         self.missing = []
         self.edge_terminal_signals = []
+        self.activity_changes = []
         self.resolved_markers = []
         self.end = 0.0
         self.startup = None
@@ -212,6 +213,10 @@ class Session:
                 self.timed_missing[event["line"]].append(at)
             if kind == "engine-log" and event.get("name") in EDGE_TERMINAL_SIGNALS:
                 self.edge_terminal_signals.append((at, EDGE_TERMINAL_SIGNALS[event["name"]]))
+            if kind == "engine-log" and event.get("name") == "RobotAudioClient.UpdateActivityMusicState.NoFreeplayMusic":
+                activity = re.fullmatch(r"No freeplay music for ActivityName '(Selection|Freeplay)'", event.get("text", ""))
+                if activity:
+                    self.activity_changes.append((at, activity[1]))
             if kind == "engine-to-game":
                 self.reports[int(event["tag"], 16)].append((at, bytes.fromhex(event["bodyHex"])))
             elif kind == "mcp-input":
@@ -262,6 +267,18 @@ class Session:
             "objectInteractionCompleted ID slots; full raw/API payload unavailable, defined saved-carry/count1/false "
             "and scalar result retained; PlaceRel normalization policy does not apply":
                 "M12-052 existing M1-034 policy for undefined ID words",
+            "MISSING: M12-002 PathSegment.Print 0x00507F36 -> 0x0085C034 text/body has no checked row; "
+            "segment print is unbuilt": "0x0085C138 calls CoreTechPrint before the path wire send",
+            "MISSING: M13-034 IPathPlanner.PrintPath 0x005090A0 output formatting remains unbuilt":
+                "0x005090A0 prints the resulting planner path",
+            "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt":
+                "0x0085C7C8 prints segments after AppendToPath",
+            **{f"MISSING: M13-033 PrintPlan {address} -> 0x00855E7C output remains unbuilt":
+                "0x00855E7C formats the plan for logging" for address in ("0x00500532", "0x0050058A")},
+            "MISSING: M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt":
+                "0x006BFB1A writes only the visualizer path",
+            **{f"MISSING: M12-024 | EraseAllPlannerObstacles({mode}) 0x0055A626/0x0055A632 visualizer handoff absent":
+                "0x006BFCCA reaches the Viz ErasePath(-1) at 0x006BFC7C" for mode in (0, 1)},
         }
         counts = Counter()
         for index, line in enumerate(source(self.path / "stack-log.txt").splitlines(), 1):
@@ -352,10 +369,10 @@ def action_tags(call, action_types, result):
             and "tag" in completion}
 
 
-def action_check(session, name, prompt, citation, expected, seconds):
+def action_check(session, name, prompt, citation, expected, seconds, calls=None):
     citation += "; " + COMPLETION
     candidates = []
-    for call in session.calls[name]:
+    for call in session.calls[name] if calls is None else calls:
         end = min(call.end if call.end is not None else session.end, call.start + 1000 * seconds)
         window = (call.start, end)
         result = call.reply.get("engineResult")
@@ -604,6 +621,9 @@ def behavior_checks(session, personality):
             if name == "VisitInterestingEdge":
                 yield group, name, visit_interesting_edge_check(session, names)
                 continue
+            if name == "RespondToRenameFace":
+                yield group, name, rename_response_check(session, names)
+                continue
             citation = BEHAVIOR_REPORT + "; M7-001, shipped BehaviorID and BehaviorClass tables"
             prompt = f"Leave Freeplay on and watch for the {name} behavior."
             trigger = identity = None
@@ -717,6 +737,42 @@ def visit_interesting_edge_check(session, names):
     return choose(candidates, citation, prompt)
 
 
+def rename_response_check(session, names):
+    identifier = "RespondToRenameFace"
+    native_id = names[identifier]
+    citation = (BEHAVIOR_REPORT + "; M14-011, G2E 0x8C and E2G 0x1D at 0x00657B40–0x00657B82; "
+                "M7-019, 0x0060080C–0x00600844 stages the name. M14-006, 0x00600884–0x006008F0 "
+                "starts Name_Normal with the authored trigger. 0x00600A50–0x00600A5C waits for the action; " + COMPLETION)
+    prompt = ("Teach Cozmo a face, then rename that enrolled ID while he is still in Meet Cozmo. "
+              "Let him finish saying the new name before leaving Meet Cozmo.")
+    candidates = []
+    requests = session.calls["rename-face"]
+    for index, call in enumerate(requests):
+        end = requests[index + 1].start if index + 1 < len(requests) else session.end
+        entered = next((at for at, body in session.in_window(0x87, call.start, end)
+                        if len(body) >= 7 and body[0] != body[1] == native_id), None)
+        if entered is None:
+            candidates.append(Verdict(SEEN, "A rename was requested; the Meet response did not enter.", citation, prompt))
+            continue
+        stopped = next((at for at, body in session.in_window(0x87, entered, end)
+                        if len(body) >= 7 and body[0] == native_id != body[1]), None)
+        changed = any(len(body) >= 5 and struct.unpack_from("<i", body)[0] == call.args.get("faceId")
+                      and text8(body, 4) == call.args.get("newName")
+                      for _, body in session.in_window(0x1D, call.start, min(end, call.end or end)))
+        speech = [(at, tag) for at, body in session.in_window(0x5A, entered, stopped or end)
+                  if len(body) >= 14 and (tag := struct.unpack_from("<I", body)[0]) > 3_000_000
+                  and struct.unpack_from("<iI", body, 4) == (0x20, 0)]
+        if changed and stopped is not None and len(speech) == 1:
+            status = PASSED
+            reason = f"The rename report matched, and the Meet response exited after successful SayText tag {speech[0][1]}."
+        else:
+            status = SEEN
+            reason = "The response entered; a matching rename report, owned SayText success and exit are required."
+        candidates.append(session.apply_missing(Verdict(
+            status, reason, citation, prompt, (call.start, stopped or end), (identifier, "SayTextAction"))))
+    return choose(candidates, citation, prompt)
+
+
 def cube_round_gap(session, at, stopped_at, objective, carrying):
     if not freeplay_running_at(session, at):
         return "The configured behavior entered without an active Freeplay request."
@@ -738,6 +794,68 @@ def freeplay_running_at(session, at):
     calls = sorted((c for c in session.calls["freeplay"] if c.end is not None and c.end < at
                     and c.reply.get("status") == "submitted"), key=lambda c: c.end)
     return bool(calls and calls[-1].args.get("enabled") is True)
+
+
+def freeplay_return_check(session):
+    citation = ("M15-031, M15-058; Unity NeedsHub_2018.cs:376–390,486–490; G2E 0x92 at 0x005A4FA2, "
+                "SetCurrentActivity at 0x005A11E8–0x005A122A; Selection Wait at 0x0060AAAE–0x0060AAC8; "
+                "activity public-state subscriber at 0x00592B1E and activity log at 0x00592010–0x00592190; " + BEHAVIOR_REPORT + "; " + COMPLETION)
+    prompt = ("While Cozmo is active in Freeplay, ask him to move his head or turn in place. Check that he "
+              "returns to Freeplay after the command, then ask him to turn Freeplay off.")
+    candidates = []
+    wait = enum_members("BehaviorID")["Wait"]
+    observed = sorted(((call.end, call.reply) for call in session.calls["get_state"] if call.end is not None),
+                      key=lambda sample: sample[0])
+    for tool, types in ACTION_TYPES.items():
+        for call in session.calls[tool]:
+            if call.end is None:
+                continue
+            before = next((state for at, state in reversed(observed) if at < call.start), {})
+            was_active = (before.get("freeplay") or {}).get("active", before.get("highLevelActivity") == "Freeplay")
+            if not was_active:
+                continue
+            aliases = ("Freeplay", *ACTION_ALIASES[tool])
+            window = (call.start, call.end)
+            native = action_check(session, tool, "", citation, 0, (call.end - call.start) / 1000 + 1, (call,))
+            if native.status != PASSED:
+                candidates.append(session.apply_missing(Verdict(SEEN, native.reason, citation, prompt, window, aliases)))
+                continue
+            tags = action_tags(call, types, 0)
+            completion = next((at for at, body in session.in_window(0x5A, *window)
+                               if len(body) >= 14 and (data := struct.unpack_from("<IiI", body))[1] in types
+                               and data[2] == 0 and (data[0] in tags if tags else 0 < data[0] <= 1_000_000)), None)
+            if completion is None:
+                candidates.append(session.apply_missing(Verdict(
+                    SEEN, f"{tool} returned successfully; a timestamped engine completion was unavailable.",
+                    citation, prompt, window, aliases)))
+                continue
+            selection = next((at for at, name in session.activity_changes if call.start <= at <= completion and name == "Selection"), None)
+            interrupted_wait = any(len(body) >= 7 and body[1] == wait for _, body in session.in_window(0x87, call.start, completion))
+            toggled = next((toggle.start for toggle in session.calls["freeplay"] if toggle.start >= call.start), session.end)
+            if selection is not None and interrupted_wait:
+                resumed = next((at for at, name in session.activity_changes if completion <= at <= toggled and name == "Freeplay"), None)
+                if resumed is not None:
+                    candidates.append(session.apply_missing(Verdict(
+                        PASSED, f"Selection and Wait bracketed {tool}; 0x5A completed at {completion:.0f} ms "
+                        f"and Freeplay resumed at {resumed:.0f} ms.", citation, prompt, (call.start, resumed), aliases)))
+                    continue
+            snapshots = [(call.end, call.reply), *observed]
+            previous_resume = (before.get("freeplay") or {}).get("lastResumedAtEngineSeconds")
+            resumed = next((at for at, response in snapshots if completion <= at <= toggled
+                            and (state := response.get("freeplay") or {}).get("active")
+                            and state.get("lastResumedAtEngineSeconds") is not None
+                            and (previous_resume is None or state["lastResumedAtEngineSeconds"] > previous_resume)), None)
+            paused = interrupted_wait or any(call.start <= at <= completion and (state.get("freeplay") or {}).get("pausedForCommand")
+                                            for at, state in observed)
+            if paused and resumed is not None:
+                candidates.append(session.apply_missing(Verdict(
+                    PASSED, f"{tool} completed at {completion:.0f} ms; a newer native Freeplay resume was "
+                    f"reported at {resumed:.0f} ms.", citation, prompt, (call.start, resumed), aliases)))
+            else:
+                candidates.append(session.apply_missing(Verdict(
+                    SEEN, f"{tool} completed during the round; the Selection pause and automatic return were not both observed.",
+                    citation, prompt, window, aliases)))
+    return choose(candidates, citation, prompt)
 
 
 def freeplay_check(session, command_verdicts, require_resume):
@@ -859,6 +977,11 @@ def evaluate(session):
                 taught = enrolled
             continue
         seconds = FACE_ACTION_WINDOW if name in {"track-face", "turn-to-face"} else 65 if name in {"animation", "sentence"} else 45
+        if tool == "go-to-pose":
+            prompt = ("Read the world pose with get_map, choose a clear target about 200 mm ahead, "
+                      "ask him to drive there and face left, then read his world pose again.")
+            citation += ("; M12-002, M12-024, M12-032, M13-033, M13-034; G2E handler 0x0052A11C–0x0052A20C; "
+                         "Ready arrival branch at 0x0055ACA2–0x0055B0A6")
         command_verdicts[tool] = action_check(session, tool, prompt, citation, expected, seconds)
     for tool, (prompt, citation, seconds) in SKILLS.items():
         command_verdicts[tool] = action_check(session, tool, prompt, citation, 0, seconds)
@@ -870,7 +993,11 @@ def evaluate(session):
          "M15CubeHw.RunCharger; E2G 0x44 at 0x007131E2, M11-038", 30))
     for name in ("connection", "colour camera", "reaction locks", "wait until accepted"):
         command_verdicts[name] = bridge_check(session, name)
-    command_verdicts["freeplay"] = freeplay_check(session, command_verdicts, True)
+    command_verdicts["freeplay"] = freeplay_return_check(session)
+    if command_verdicts["freeplay"].status != PASSED:
+        conformance_round = freeplay_check(session, command_verdicts, True)
+        if conformance_round.status == PASSED or command_verdicts["freeplay"].status == NOT_EXERCISED:
+            command_verdicts["freeplay"] = conformance_round
     scope_a = {
         "Head, lift, drive straight, turn in place": "head,lift,drive-straight,turn-in-place",
         "Turn to a face, turn to a cube, track a face": "turn-to-face,turn-to-cube,track-face",

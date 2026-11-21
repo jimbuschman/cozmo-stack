@@ -109,6 +109,50 @@ class SessionCheckTests(unittest.TestCase):
         checks, _ = self.check(["MISSING: M11-092 VisitInterestingEdge test gap"])
         self.assertEqual(SEEN, checks["VisitInterestingEdge"].status)
 
+    def test_freeplay_return_uses_the_head_completion_and_automatic_activity_bracket(self):
+        ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
+        self.request(10, 1, "get_state")
+        self.reply(20, 1, highLevelActivity="Freeplay", activity="Socialize")
+        self.request(30, 2, "head", radians=-.15)
+        self.event(35, "engine-log", name="RobotAudioClient.UpdateActivityMusicState.NoFreeplayMusic",
+                   text="No freeplay music for ActivityName 'Selection'")
+        self.raw(40, 0x87, bytes((ids["InteractWithFaces"], ids["Wait"], classes["InteractWithFaces"], 12,
+                                  classes["Wait"], 11, 0)))
+        self.completion(90, 7, 0x12)
+        self.reply(95, 2, engineResult=0, admitted=True)
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["freeplay"].status)
+
+        self.event(92, "engine-log", name="RobotAudioClient.UpdateActivityMusicState.NoFreeplayMusic",
+                   text="No freeplay music for ActivityName 'Freeplay'")
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["freeplay"].status)
+
+        self.request(91, 3, "freeplay", enabled=True)
+        self.reply(94, 3, status="submitted")
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["freeplay"].status)
+
+    def test_rename_response_needs_the_identity_report_and_owned_speech(self):
+        ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
+        rename, wait = ids["RespondToRenameFace"], ids["Wait"]
+        rc, wc = classes["RespondToRenameFace"], classes["Wait"]
+        self.request(30, 1, "rename-face", faceId=7, oldName="Drawn", newName="Ada")
+        self.raw(35, 0x1D, struct.pack("<i", 7) + b"\x03Ada")
+        self.reply(40, 1, faceOperation={"outcome": "renamed", "faceId": 7, "name": "Ada"})
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["RespondToRenameFace"].status)
+
+        self.raw(50, 0x87, bytes((wait, rename, wc, 11, rc, 12, 0)))
+        self.completion(70, 42, 0x20)
+        self.raw(90, 0x87, bytes((rename, wait, rc, 12, wc, 11, 0)))
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["RespondToRenameFace"].status)
+
+        self.completion(80, 3000101, 0x20)
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["RespondToRenameFace"].status)
+
     def test_physical_rounds_require_both_native_reaction_edges(self):
         triggers = enum_members("ReactionTrigger")
         pairs = {
