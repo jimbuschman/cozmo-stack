@@ -89,14 +89,14 @@ engine-sourced round expectations (operator 2026-11-20; combined table
 `re-analysis/jobs/trial-m13/session-check-1/combined.md`, four sessions 2026-11-19/20).
 
 **2026-11-21:** 16 command items (A) and 40 behaviour classes (B; PickUpCube moved to D by the operator 2026-11-21).
-- **A, finished (passed in a session, no MISSING on the path, main path spot-read):** 8. Events; charger seen; the
+- **A, finished (passed in a session, no MISSING on the path, main path spot-read):** 9. Events; charger seen; the
   connection for an LLM; colour camera; reaction locks and wait until accepted; head/lift/drive/turn; play an
   authored animation; pick up and put down (the shared action-queue marker closed by SHARED-QUEUE-MISSING-1:
-  VizManager send is return-only at 0x006BE610, SDK status only in excluded SDK mode).
+  VizManager send is return-only at 0x006BE610, SDK status only in excluded SDK mode). Freeplay return after a command (2026-11-19 182433 session: head command switched Freeplay to Selection/Wait and the activity resumed on its 0x5A completion; A-UNEXERCISED-READY-1, G2E 0x93 handler 0x0060AAAE..0x0060AAC8 spot-read 2026-11-21; Selection-owner guard M15-031 is diagnostic only).
 - **A, seen but not passed:** 6. Face turn/cube turn/track (cube turn and track not passed); speech (completion
   report fixed 2026-11-20, needs a new session); teach/rename/erase (rename and erase not tried); mount the charger
   (the engine's own results, needs a clear desk); roll; stack.
-- **A, not exercised:** go to a place; Freeplay return after a command.
+- **A, not exercised:** go to a place (fixture and session round built, A-UNEXERCISED-READY-1).
 - **B, finished (passed in a session, no MISSING on the path, main path spot-read against the binary 2026-11-20):**
   19 of 40 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
   MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube, PounceOnMotion, ThinkAboutBeacons;
