@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
+using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -23,10 +24,19 @@ public sealed class FaceRecognitionRecordedReplayTests(ITestOutputHelper output)
     private sealed record Packet(double At, RobotMessage Message);
 
     [Theory]
-    [InlineData(false,120650,139100)]
-    [InlineData(true,120650,139100)]
-    [InlineData(true,247000,255800)]
-    public void CapturedCameraUsesTheNativeAlbumAndNamedReaction(bool named,double from,double to)
+    [InlineData(false, 120650, 139100)]
+    [InlineData(true, 120650, 139100)]
+    [InlineData(true, 247000, 255800)]
+    public Task CapturedCameraUsesTheNativeAlbumAndNamedReaction(bool named, double from, double to) =>
+        ReplayCapturedFaces(named, from, to, freeplay: false);
+
+    [Theory]
+    [InlineData(false, 120650, 139100)]
+    [InlineData(true, 247000, 255800)]
+    public Task FreeplayChoosesTheCapturedFaceAndReportsItsDecision(bool named, double from, double to) =>
+        ReplayCapturedFaces(named, from, to, freeplay: true);
+
+    private async Task ReplayCapturedFaces(bool named, double from, double to, bool freeplay)
     {
         string? bundle=Environment.GetEnvironmentVariable("COZMO_FACE_REPLAY_BUNDLE");
         if(string.IsNullOrEmpty(bundle))return; // Explicit optional private-input replay, like shipped-library tests.
@@ -70,11 +80,12 @@ public sealed class FaceRecognitionRecordedReplayTests(ITestOutputHelper output)
             SpeechAudioArchivePath=Path.Combine(WwiseAssets.SoundDir!,"AudioAssets.zip")};
         Assert.NotNull(calibration);
         byte[]? album=named?Payload(0x184000):null,enrollment=named?Payload(0x183000):null;
-        var sink=new SilentSink();
-        using var f=new Fixture(sourceNvEmpty:true,preloadAnimations:named,pumpAnimations:named,engineOptions:options,
+        using var sink=new SilentSink();
+        using var f=new Fixture(sourceNvEmpty:true,preloadAnimations:named||freeplay,pumpAnimations:named||freeplay,engineOptions:options,
             sourceNvRaw:tag=>tag==CameraCalibration.NvEntryTag?calibration:null,
             sourceNvStored:tag=>tag==0x184000?album:tag==0x183000?enrollment:null,
-            engineCreated:engine=>{if(named)engine.RuntimeAudioSinkForTest=()=>sink;});
+            engineCreated:engine=>{if(named||freeplay)engine.RuntimeAudioSinkForTest=()=>sink;});
+        using var bridge=freeplay ? new CozmoBridge(f.Rig.Robot) : null;
         var vision=f.M.Vision;
         string? name=named?Assert.Single(vision.Recognizer.EnrolledFaces).Name:null;
         var faces=new List<RobotObservedFaceReport>();var changes=new List<RobotChangedObservedFaceIdReport>();
@@ -94,7 +105,17 @@ public sealed class FaceRecognitionRecordedReplayTests(ITestOutputHelper output)
         f.Robot.ActionList.RegisterActionEndedCallback(completed.Add);
         f.Rig.Engine.LogEntry+=e=>{if(e.Name.Contains("Action",StringComparison.Ordinal)||e.Name.Contains("Face",StringComparison.Ordinal)||e.Name.Contains("Animation",StringComparison.Ordinal)||e.Name=="IBehavior.BehaviorObjectiveAchieved")trace.Enqueue(e.Name+": "+e.Text);};
         SteppedBehavior.ResetMissingForTests();
-        vision.Enabled=true;f.Rig.Robot.SetEnableFreeplayActivity(false);f.Rig.Tick();
+        vision.Enabled=true;
+        long freeplayCursor=bridge?.CurrentEventCursor()??0;
+        f.Rig.Robot.SetEnableFreeplayActivity(freeplay);f.Rig.Tick();
+        if (freeplay && !named)
+        {
+            // A repeated frame in the anonymous excerpt also stimulates the pet detector.
+            // Isolate the Socialize interaction with the native mask, without masking face reactions.
+            var mask = new bool[BehaviorManager.TriggerCount];
+            mask[(int)ReactionTrigger.PetInitialDetection] = true;
+            f.Robot.BehaviorManagerOwner!.DisableReactionsWithLock("face replay: pet only", mask);
+        }
         uint offset=packets.Select(p=>p.Message).OfType<RobotState>().First().Timestamp-f.Robot.StoredState!.Timestamp-30;
         int index=0;double first=packets[0].At;var wall=Stopwatch.StartNew();
         for(double tick=first;index<packets.Count;tick+=60)
@@ -112,9 +133,19 @@ public sealed class FaceRecognitionRecordedReplayTests(ITestOutputHelper output)
             f.Rig.Tick();vision.WaitForProcessorIdle();f.Rig.Tick(0);f.Rig.Engine.DrainAppDelivery();
             // React while the face is in view. The rest of this window includes
             // the subject leaving; waiting until then tests a different scene.
-            if(from>200000 && faces.Any(face=>face.FaceId==1 && face.Name==name))break;
+            if(freeplay && f.Robot.BehaviorManagerOwner!.Current?.Id==(named ? "AcknowledgeFace" : "InteractWithFaces") &&
+                (named ? namedFeatureTimestamp.HasValue : faces.Count>0)) break;
+            if(!freeplay && from>200000 && faces.Any(face=>face.FaceId==1 && face.Name==name))break;
         }
         output.WriteLine($"window={from}..{to}; named album={named}; faces={faces.Count}; named={faces.Count(x=>!string.IsNullOrEmpty(x.Name))}; IDs={string.Join(',',faces.Select(x=>x.FaceId).Distinct())}");
+        if(freeplay)
+        {
+            uint imageStamp = named ? namedFeatureTimestamp!.Value : faces.Last().Timestamp;
+            Assert.True(admittedImages.TryGetValue(imageStamp, out var image),
+                $"Observation image {imageStamp}, admitted {string.Join(',',admittedImages.Keys.Order())}");
+            await ReplayFreeplay(f, sink, bridge!, freeplayCursor, name, image!.Pixels, trace, fault);
+            return;
+        }
         Assert.NotEmpty(faces);
         if(from<200000)
         {
@@ -125,7 +156,6 @@ public sealed class FaceRecognitionRecordedReplayTests(ITestOutputHelper output)
             foreach(string line in trace.Where(x=>x.StartsWith("MISSING",StringComparison.Ordinal)))output.WriteLine(line);
             Assert.DoesNotContain(trace,line=>line.StartsWith("MISSING",StringComparison.Ordinal)&&line.Contains("M14-",StringComparison.Ordinal));
             Assert.Empty(fault);
-            if(!named)sink.Dispose();
             return;
         }
         Assert.Contains(faces,x=>x.FaceId==1 && x.Name==name);
@@ -210,6 +240,187 @@ public sealed class FaceRecognitionRecordedReplayTests(ITestOutputHelper output)
         Assert.True(vision.Faces.GetNativeFace(f.Robot,1)!.TurnedTowards);
         Assert.Contains(trace,line=>line.StartsWith("IBehavior.BehaviorObjectiveAchieved",StringComparison.Ordinal)&&line.Contains("Objective:ReactedAcknowledgedFace",StringComparison.Ordinal));
     }
+    private async Task ReplayFreeplay(Fixture f, SilentSink sink, CozmoBridge bridge, long cursor, string? name,
+        byte[] visible, ConcurrentQueue<string> trace, ConcurrentQueue<Exception> faults)
+    {
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var initial = f.Robot.StoredState!;
+        f.Rig.ContinueRobotTimestampAfterReplay(initial.Timestamp);
+        f.Head = initial.HeadAngle;
+        f.Lift = initial.LiftAngle;
+        f.X = initial.Pose.X;
+        f.Y = initial.Pose.Y;
+        f.Yaw = initial.Pose.Angle;
+
+        bool named = name is not null;
+        string behaviorId = named ? "AcknowledgeFace" : "InteractWithFaces";
+        Assert.Equal(behaviorId, manager.Current?.Id);
+        foreach (string id in new[] { "AcknowledgeFace", "InteractWithFaces", "FindFaces_socialize", "VC_SearchForFace", "VC_ComeHere" })
+        {
+            var configured = Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[id]);
+            Assert.NotNull(configured.UnlockIdentifier);
+            Assert.Equal((int)configured.NativeBaseInputs!.RequiredUnlock, configured.UnlockIdentifier());
+            Assert.NotNull(configured.ActiveSparkIdentifier);
+            Assert.Equal((int)manager.ActiveSparkId, configured.ActiveSparkIdentifier());
+            Assert.NotNull(configured.SparkGate);
+            Assert.Equal(manager.ActiveSparkId != 0x55 && (manager.ActiveSparkSoft ^ 1) != 0, configured.SparkGate());
+        }
+        var disappearance = Enumerable.Repeat((byte)150, visible.Length).ToArray();
+        var wall = Stopwatch.StartNew();
+        double last = 0, nextCamera = 0, pathStarted = 0;
+        double? faceLeft = null;
+        long lastFaceSighting = 0;
+        f.Rig.Engine.RobotObservedFace += _ => lastFaceSighting = wall.ElapsedMilliseconds;
+        uint frameId = 61000;
+        int mark = f.Rig.Mark();
+        byte? currentAnim = null;
+        ExecutePath? path = null;
+        AppendPathSegmentLine? line = null;
+        SayTextAction? greeting = null;
+        TriggerAnimationAction? intro = null;
+        bool headTracker = false, idleTracker = false;
+        NativeLastFaceRunner? faceTurn = null;
+        bool departedWhileTracking = false;
+        bool wentBackToFreeplay = false;
+        f.Rig.DefaultTickMs = 0;
+        while (wall.Elapsed < TimeSpan.FromSeconds(45))
+        {
+            double now = wall.Elapsed.TotalMilliseconds;
+            f.Rig.Tick(now - last);
+            last = now;
+            sink.Complete();
+            var stream = f.Rig.Robot.Animations.Scheduler.Stream;
+            f.Rig.Data(new AnimationState { NumAudioFramesPlayed = stream.FramesStreamed, NumAnimBytesPlayed = stream.BytesStreamed });
+            if (nextCamera <= now)
+            {
+                nextCamera = now + 110;
+                f.NativeCameraFrame(frameId++, faceLeft is null ? visible : disappearance);
+            }
+
+            var runner = (manager.Current as SteppedBehavior)?.OwnedRunner;
+            if (manager.Current?.Id == behaviorId)
+            {
+                var turn = runner as NativeLastFaceRunner ??
+                    (runner as CompoundActionSequential)?.Children.OfType<NativeLastFaceRunner>().FirstOrDefault();
+                faceTurn = turn ?? faceTurn;
+                if (turn?.ChildForTest is SayTextAction speech)
+                {
+                    greeting = speech;
+                    intro = speech.ChildForTest ?? intro;
+                }
+                else if (turn?.ChildForTest is TriggerAnimationAction trigger) intro = trigger;
+                if (runner is CompoundActionParallel group)
+                {
+                    var tracker = group.Children.OfType<NativeTrackFaceRunner>().FirstOrDefault();
+                    headTracker |= tracker?.RequiredTrackMask == 1;
+                    if (tracker?.RequiredTrackMask == 5 && group.Children.OfType<TriggerAnimationAction>().Any(a =>
+                            a.Request.Trigger == AnimationTrigger.InteractWithFaceTrackingIdle))
+                    {
+                        idleTracker = true;
+                        faceLeft ??= now;
+                        departedWhileTracking |= now - faceLeft >= 1000;
+                    }
+                }
+            }
+
+            foreach (var msg in f.Rig.SentSince(mark))
+            {
+                switch (msg)
+                {
+                    case StartOfAnimation started:
+                        currentAnim = started.AnimId;
+                        f.Rig.Data(new AnimationStarted { AnimId = started.AnimId });
+                        break;
+                    case EndOfAnimation when currentAnim is { } animation:
+                        f.Rig.Data(new AnimationEnded { AnimId = animation });
+                        currentAnim = null;
+                        break;
+                    case AppendPathSegmentLine segment:
+                        line = segment;
+                        break;
+                    case ExecutePath execute:
+                        path = execute;
+                        pathStarted = now;
+                        f.Rig.Data(new PathFollowingEvent { EventId = execute.EventId, EventType = 0 });
+                        break;
+                }
+            }
+            mark = f.Rig.Mark();
+            if (path is { } active && line is { } segmentLine && now - pathStarted >= 1000)
+            {
+                f.X += segmentLine.XEndMm - segmentLine.XStartMm;
+                f.Y += segmentLine.YEndMm - segmentLine.YStartMm;
+                f.Rig.Data(new PathFollowingEvent { EventId = active.EventId, EventType = 2 });
+                path = null;
+            }
+            f.Motors();
+            f.Rig.Engine.DrainAppDelivery();
+            if (manager.Current?.Id != behaviorId)
+            {
+                wentBackToFreeplay = f.Runtime.SelectedActivityId == "Freeplay" && manager.CurrentReactionTrigger is null;
+                break;
+            }
+            Thread.Sleep(10);
+        }
+
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        const string eventType = "behavior-changed";
+        var result = await client.Tool("read_events", new { since = cursor, types = new[] { eventType } });
+        var events = result.GetProperty("result").GetProperty("structuredContent").GetProperty("events");
+        output.WriteLine($"face={behaviorId} intro={intro?.Request.Trigger} turn={faceTurn?.State:X} speech={greeting?.State:X} " +
+            $"line={line?.Speed.SpeedMmps} head={headTracker} idle={idleTracker} left={faceLeft:F0} terminal={manager.Current?.Id}");
+        foreach (string entry in trace.Where(s => s.Contains("MISSING") || s.Contains("TimedOut"))) output.WriteLine(entry);
+        Assert.Empty(faults);
+        Assert.DoesNotContain(trace, entry => entry.StartsWith("MISSING:", StringComparison.Ordinal) &&
+            (entry.Contains("M14-", StringComparison.Ordinal) ||
+             entry.StartsWith("MISSING: InteractWithFaces", StringComparison.Ordinal)));
+        var payloads = events.EnumerateArray().Select(item => item.GetProperty("payload")).ToArray();
+        Assert.Contains(payloads, payload => Selection(payload, "FindFaces_socialize", "Socialize", "searching for a face"));
+        Assert.Contains(payloads, payload => Selection(payload, "InteractWithFaces", "Socialize", "face available for interaction"));
+        Assert.True(wentBackToFreeplay, $"Stopped in {manager.Current?.Id}, reaction {manager.CurrentReactionTrigger}");
+        Assert.Equal(EngineActionResult.Success, Assert.IsType<NativeLastFaceRunner>(faceTurn).State);
+        Assert.NotNull(intro);
+        if (named)
+        {
+            Assert.Contains(payloads, payload => Selection(payload, "AcknowledgeFace", null, "FacePositionUpdated"));
+            Assert.Contains(payloads, payload => Selection(payload, "InteractWithFaces", null, "resumed after reaction"));
+            Assert.Equal(AnimationTrigger.NamedFaceInitialGreeting, intro.Request.Trigger);
+            Assert.NotNull(greeting);
+            Assert.Equal(name, greeting.Text);
+            Assert.Equal(EngineActionResult.Success, greeting.State);
+        }
+        else
+        {
+            Assert.Null(greeting);
+            Assert.Equal(AnimationTrigger.InteractWithFacesInitialUnnamed, intro.Request.Trigger);
+            Assert.NotNull(line);
+            Assert.Equal(40f, line.Speed.SpeedMmps);
+            float distance = MathF.Sqrt(
+                MathF.Pow(line.XEndMm - line.XStartMm, 2) + MathF.Pow(line.YEndMm - line.YStartMm, 2));
+            Assert.Equal(40f, distance, 2); // clear forward ray, 0x005C254E..0x005C2610
+            Assert.True(headTracker);
+            Assert.True(idleTracker);
+            Assert.True(departedWhileTracking);
+            Assert.True(last - lastFaceSighting >= 1000, "The tracker never saw the face leave before completion.");
+            Assert.Contains(trace, entry => entry.StartsWith("IBehavior.BehaviorObjectiveAchieved", StringComparison.Ordinal) &&
+                entry.Contains("Objective:InteractedWithFace", StringComparison.Ordinal));
+        }
+
+        var full = await client.Tool("read_events", new { since = cursor, types = new[] { eventType }, detail = "full" });
+        Assert.All(full.GetProperty("result").GetProperty("structuredContent").GetProperty("events").EnumerateArray(), item =>
+        {
+            var payload = item.GetProperty("payload");
+            Assert.True(payload.TryGetProperty("newId", out _));
+            Assert.False(payload.TryGetProperty("reason", out _));
+        });
+
+        static bool Selection(JsonElement payload, string behavior, string? activity, string reason) =>
+            payload.GetProperty("newBehavior").GetString() == behavior &&
+            payload.GetProperty("activity").GetString() == activity &&
+            payload.GetProperty("reason").GetString() == reason;
+    }
+
     private static string FixtureResources()=>PickupPyramidNativeExecutionTests.Resources();
     private sealed class Idle():ActionRunner(8,0)
     {

@@ -1078,7 +1078,9 @@ public sealed partial class BehaviorManager : IDisposable
         // 0x005A2A74..0x005A2A80 compares behavior pointers. A failed Init has
         // cleared Current, so the chooser can return the same candidate next tick.
         if (ReferenceEquals(desired, current)) return;
-        bool started = SwitchToBehaviorBaseCore(new RunningInfo(desired, null, null), nowSec, BehaviorStopReason.Interrupted, hostReadiness:host);
+        var transition = (activity as FreeplaySystem)?.DescribeSwitch();
+        bool started = SwitchToBehaviorBaseCore(new RunningInfo(desired, null, null), nowSec,
+            BehaviorStopReason.Interrupted, hostReadiness: host, transition: transition);
         if(host is not null && !ReferenceEquals(Activity,activity))return;
         activity.BehaviorSwitched(desired, started, nowSec);
     }
@@ -1106,7 +1108,8 @@ public sealed partial class BehaviorManager : IDisposable
     /// </summary>
     // fidelity: M8-012
     private bool SwitchToBehaviorBaseCore(RunningInfo info, double nowSec, BehaviorStopReason stopReason,
-                                          CancellationToken cancel = default, IHostReadinessOwner? hostReadiness = null)
+                                          CancellationToken cancel = default, IHostReadinessOwner? hostReadiness = null,
+                                          BehaviorTransitionContext? transition = null)
     {
         using var executionLease = _context.Robot.Engine.EnterSynchronousOwner();
         if(info.Current is {} attempted)_context.Robot.Engine.Robot?.InvalidateConfiguredScoreHistory(attempted.Id);
@@ -1177,7 +1180,7 @@ public sealed partial class BehaviorManager : IDisposable
         var running = info with { Current = initFailed ? null : next };
         SetRunningAndResumeInfo(running, scope, nowSec);
         // 0x005A1F16..0x005A1F1C reads committed info, including the empty endpoint after Init failure.
-        ReportBehaviorTransition(old, running.Current, running.Trigger);
+        ReportBehaviorTransition(old, running.Current, running.Trigger, initFailed ? null : transition);
         if (next is not null) DasTransition?.Invoke(next);
         return !initFailed;
     }
@@ -1382,7 +1385,8 @@ public sealed partial class BehaviorManager : IDisposable
 
     private void SetRunningAndResumeInfoForResume(IBehavior resume, BehaviorScope scope, double nowSec)
     {
-        ReportBehaviorTransition(Current, resume, null); // 0x005A2D86..0x005A2D8C reads the post-Stop info before committing the resume.
+        // 0x005A2D86..0x005A2D8C reads the post-Stop info before committing the resume.
+        ReportBehaviorTransition(Current, resume, null, new(null, "resumed after reaction"));
         if (_requestOwner is not null && !RequestOwnerCurrent(_requestOwner))
         {
             scope.Dispose();
@@ -1517,7 +1521,8 @@ public sealed partial class BehaviorManager : IDisposable
     }
 
     // 0x005A22B4..0x005A24AC: external-interface gate, DAS events, then the E2G 0x87 union.
-    private void ReportBehaviorTransition(IBehavior? old, IBehavior? next, ReactionTrigger? trigger)
+    private void ReportBehaviorTransition(IBehavior? old, IBehavior? next, ReactionTrigger? trigger,
+        BehaviorTransitionContext? transition = null)
     {
         if (_requestOwner is not { HasExternalInterface: true } owner || !ReferenceEquals(owner.BehaviorManagerOwner, this)
             || !RequestOwnerCurrent(owner)) return;
@@ -1542,7 +1547,8 @@ public sealed partial class BehaviorManager : IDisposable
         // 0x005A22EC..0x005A2480 emits equal endpoint IDs too. In particular,
         // a failed switch starting from an empty slot reports the two Wait sentinels.
         owner.Engine.BroadcastBehaviorTransition(new(previous.Id, current.Id, previous.Class, previous.Executable,
-            current.Class, current.Executable, current.DisplayKey));
+            current.Class, current.Executable, current.DisplayKey),
+            trigger is { } cause && (byte)cause < 0x15 ? new(null, cause.ToString()) : transition);
     }
 
     private bool TryGetEndpoint(EngineRobot owner, IBehavior? behavior, out (byte Id, byte Class, byte Executable, string DisplayKey) endpoint)

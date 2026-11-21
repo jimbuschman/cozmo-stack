@@ -238,7 +238,22 @@ public sealed partial class CozmoBridge
             Add("object-pose-lost", report);
         }
     }
-    private void OnBehavior(BehaviorTransitionReport report) => Add("behavior-changed", report);
+    private void OnBehavior(BehaviorTransitionReport report)
+    {
+        var context = Robot.Engine.GetBehaviorTransitionContext(report);
+        var compact = JsonSerializer.SerializeToElement(new
+        {
+            report.OldId, report.NewId, report.OldClass, report.OldExecutable, report.NewClass, report.NewExecutable,
+            report.DisplayKey,
+            oldBehavior = ((Cozmo.Robot.Behavior.BehaviorID)report.OldId).ToString(),
+            newBehavior = ((Cozmo.Robot.Behavior.BehaviorID)report.NewId).ToString(),
+            activity = context?.Activity,
+            reason = context?.Reason,
+        }, Json);
+        lock (eventGate)
+            Append("behavior-changed", null, JsonSerializer.SerializeToElement(report, Json),
+                significantTypes.Contains("behavior-changed"), compactPayload: compact);
+    }
     private void OnReaction(ReactionTransitionReport report)
     {
         static string TriggerName(byte trigger) => trigger == 0x16 ? "NoneTrigger" :
