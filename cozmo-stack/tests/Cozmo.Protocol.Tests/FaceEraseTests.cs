@@ -1,3 +1,7 @@
+using System.Buffers.Binary;
+using System.Collections.Concurrent;
+using System.Text.Json;
+using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Emulation;
@@ -71,6 +75,102 @@ public sealed class FaceEraseTests
         {VisionSystem.FaceAlbumNvTag=>album,VisionSystem.FaceEnrollmentNvTag=>enrollment,_=>null});
         var remaining=Assert.Single(restored.M.Vision.Recognizer.EnrolledFaces);
         Assert.Equal(8,remaining.FaceID);Assert.Equal("Survivor",remaining.Name);
+    }
+
+    [Fact]
+    public async Task EraseThroughMcpPersistsDeletionOfARecordedEnrollment()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_FACE_REPLAY_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+
+        // The teach-face writes in 20261117-052405 are complete by 255799 ms
+        // (FaceRecognitionRecordedReplayTests uses this same album window).
+        var writes = new Dictionary<uint, byte[]>();
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "messages.jsonl")))
+        {
+            using var row = JsonDocument.Parse(line);
+            var entry = row.RootElement;
+            double at = entry.GetProperty("atMs").GetDouble();
+            if (at > 256000) break;
+            if (at < 255000 || !entry.GetProperty("outbound").GetBoolean() || entry.GetProperty("tag").GetString() != "0x81")
+                continue;
+            var payload = Convert.FromHexString(entry.GetProperty("payloadHex").GetString()!);
+            if (RobotMessage.Parse(payload) is NVCommand { Op: NvStorageComponent.OpWrite } command)
+                writes[command.Tag] = command.Data;
+        }
+
+        byte[] SavedPayload(uint tag)
+        {
+            var bytes = new List<byte>();
+            for (uint next = tag; writes.TryGetValue(next, out var chunk); next += (uint)chunk.Length)
+            {
+                Assert.NotEmpty(chunk);
+                bytes.AddRange(chunk);
+            }
+            byte[] raw = bytes.ToArray();
+            Assert.True(raw.Length > NvStorageComponent.NvHeaderSize);
+            Assert.Equal(NvStorageComponent.NonFactoryHeaderMagic, BinaryPrimitives.ReadUInt32LittleEndian(raw));
+            int length = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(raw.AsSpan(8)));
+            Assert.Equal(NvStorageComponent.NvHeaderSize + length, raw.Length);
+            return raw[NvStorageComponent.NvHeaderSize..];
+        }
+
+        byte[] album = SavedPayload(VisionSystem.FaceAlbumNvTag);
+        byte[] enrollment = SavedPayload(VisionSystem.FaceEnrollmentNvTag);
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true, sourceNvStored: tag => tag switch
+        {
+            VisionSystem.FaceAlbumNvTag => album,
+            VisionSystem.FaceEnrollmentNvTag => enrollment,
+            _ => null,
+        });
+        var target = Assert.Single(f.M.Vision.Recognizer.EnrolledFaces);
+        Assert.False(string.IsNullOrEmpty(target.Name));
+        int faceId = target.FaceID;
+        string originalName = target.Name;
+        var reports = new ConcurrentQueue<byte[]>();
+        var missing = new ConcurrentQueue<string>();
+        f.Rig.Engine.StackLogLine += line =>
+        {
+            if (line.StartsWith("MISSING", StringComparison.Ordinal)) missing.Enqueue(line);
+        };
+        f.Rig.Engine.EngineToGameMessage += (tag, body) =>
+        {
+            if (tag == 0x57) reports.Enqueue(body.ToArray());
+        };
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        int wire = f.Rig.Mark();
+        int request = await client.Send("tools/call", new { name = "erase-face", arguments = new { faceId } });
+        f.Rig.Tick();
+        f.Rig.Engine.DrainAppDelivery();
+        var reply = (await client.Receive(request)).GetProperty("result").GetProperty("structuredContent");
+        var operation = reply.GetProperty("faceOperation");
+        Assert.Equal("erased", operation.GetProperty("outcome").GetString());
+        Assert.Equal(faceId, operation.GetProperty("faceId").GetInt32());
+        Assert.Equal(originalName, operation.GetProperty("lastKnownName").GetString());
+        byte[] report = Assert.Single(reports);
+        Assert.Equal(5, report.Length);
+        Assert.Equal(faceId, BinaryPrimitives.ReadInt32LittleEndian(report));
+        Assert.Equal(0, report[4]); // 0x00657A98–0x00657ABE sends the empty native name.
+        Assert.Empty(f.M.Vision.Recognizer.EnrolledFaces);
+
+        // The report is sent after the save attempt, while the robot NV reply is
+        // pending. The empty export's native queue erases the album then enrollment.
+        var nv = f.Rig.Engine.NvStorage!;
+        Assert.False(nv.IsIdle);
+        for (int i = 0; i < 60 && !nv.IsIdle; i++)
+        {
+            f.AnswerInFlightNv();
+            f.Rig.Tick();
+        }
+        Assert.True(nv.IsIdle);
+        Assert.Equal(new[] { (VisionSystem.FaceAlbumNvTag, NvStorageComponent.OpErase),
+            (VisionSystem.FaceEnrollmentNvTag, NvStorageComponent.OpErase) },
+            f.Rig.SentSince(wire).OfType<NVCommand>()
+                .Where(c => c.Tag is VisionSystem.FaceAlbumNvTag or VisionSystem.FaceEnrollmentNvTag)
+                .Select(c => (c.Tag, c.Op)));
+        Assert.DoesNotContain(missing, line => line.Contains("M14-011") || line.Contains("M14-012"));
     }
 
     [Fact]

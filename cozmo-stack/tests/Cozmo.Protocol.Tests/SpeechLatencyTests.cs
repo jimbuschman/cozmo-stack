@@ -34,7 +34,59 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
         finally { SpeechTiming.Observer = null; }
     }
 
-    private async Task Profile(string report)
+    [Fact]
+    public async Task RecordedSpeechRequestEmitsTheNativeDefaultCompletion()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SPEECH_REPLAY_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+
+        // The local 20261119-182433 session is dated Nov 20 UTC. Replay the MCP
+        // request from its first successful speech window against the live action.
+        string? text = null;
+        int? id = null;
+        double began = 0;
+        uint? archivedResult = null;
+        int archivedCompletions = 0;
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+        {
+            using var row = JsonDocument.Parse(line);
+            var entry = row.RootElement;
+            double at = entry.GetProperty("atMs").GetDouble();
+            if (at < 574270) continue;
+            if (at > 587300) break;
+            string? kind = entry.GetProperty("kind").GetString();
+            if (kind == "mcp-input" && entry.TryGetProperty("params", out var request) &&
+                request.TryGetProperty("name", out var name) && name.GetString() == "say-text")
+            {
+                Assert.Null(text);
+                text = request.GetProperty("arguments").GetProperty("text").GetString();
+                id = entry.GetProperty("id").GetInt32();
+                began = at;
+            }
+            if (text is null) continue;
+            if (kind == "engine-to-game" && entry.GetProperty("tag").GetString() == "0x5A")
+            {
+                var reader = new CladReader(Convert.FromHexString(entry.GetProperty("bodyHex").GetString()!));
+                if (reader.U32() is > 0 and <= 1_000_000 && reader.I32() == 0x20)
+                    archivedCompletions++;
+            }
+            if (kind == "mcp-output" && entry.TryGetProperty("id", out var replyId) &&
+                replyId.ValueKind == JsonValueKind.Number && replyId.GetInt32() == id)
+            {
+                archivedResult = entry.GetProperty("result").GetProperty("structuredContent").GetProperty("engineResult").GetUInt32();
+                output.WriteLine($"Recorded request {id} at {began:F3} ms returned 0x{archivedResult:X8} at {at:F3} ms.");
+                break;
+            }
+        }
+
+        Assert.False(string.IsNullOrEmpty(text));
+        Assert.Equal(0u, archivedResult);
+        Assert.Equal(0, archivedCompletions);
+        try { await Profile(null, new[] { text! }); }
+        finally { SpeechTiming.Observer = null; }
+    }
+
+    private async Task Profile(string? report, string[]? recordedTexts = null)
     {
         var startup = new ConcurrentDictionary<string, long>();
         SpeechTiming.Observer = (phase, at, _) => startup.TryAdd(phase, at);
@@ -53,6 +105,11 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
         await using var client = new McpServerTests.Client(bridge);
         await client.Initialize();
         var completed = new ConcurrentQueue<(uint Tag, uint Result, byte Union)>();
+        var missing = new ConcurrentQueue<string>();
+        f.Rig.Engine.StackLogLine += line =>
+        {
+            if (line.StartsWith("MISSING", StringComparison.Ordinal)) missing.Enqueue(line);
+        };
         f.Rig.Engine.EngineToGameMessage += (tag, payload) =>
         {
             if (tag != 0x5A) return;
@@ -69,7 +126,7 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
         var wall = Stopwatch.StartNew(); long start = f.Rig.NowNs;
         try
         {
-            foreach (string text in new[] { "Hello! Look how tall I am!", "Hi.", "I am ready to play.", "Hello there. It is a good day to play together.", "Hello! Look how tall I am!" })
+            foreach (string text in recordedTexts ?? new[] { "Hello! Look how tall I am!", "Hi.", "I am ready to play.", "Hello there. It is a good day to play together.", "Hello! Look how tall I am!" })
             {
                 var times = new ConcurrentDictionary<string, double>();
                 string? hash = null; int count = 0;
@@ -94,6 +151,7 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
                     }
                 };
                 int mark = f.Rig.Mark(); byte? tag = null; int chunks = 0;
+                bool nonSilentAudio = false;
                 using var wireHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
                 int call = await client.Send("tools/call", new { name = "say-text", arguments = new { text } });
                 Task<JsonElement>? response = null;
@@ -113,7 +171,9 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
                             case EndOfAnimation when tag is { } id: f.Rig.Data(new AnimationEnded { AnimId = id }); tag = null; break;
                             case AudioSample audio:
                                 response ??= client.Receive(call);
-                                chunks++; wireHash.AppendData(audio.Samples); break;
+                                chunks++;
+                                nonSilentAudio |= audio.Samples.Any(sample => sample is not (0xFF or 0x7F));
+                                wireHash.AppendData(audio.Samples); break;
                         }
                     }
                     await Task.Delay(1);
@@ -127,21 +187,28 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
                 Assert.Equal(0u, completion.Result);
                 Assert.Equal((byte)6, completion.Union);
                 Assert.Empty(completed);
+                Assert.Equal(0u, reply.GetProperty("result").GetProperty("structuredContent").GetProperty("engineResult").GetUInt32());
+                Assert.True(nonSilentAudio);
+                output.WriteLine($"E2G 0x5A SayText tag={completion.Tag} result={completion.Result} union={completion.Union}; audio chunks={chunks}.");
                 string resultsWireHash = Convert.ToHexString(wireHash.GetHashAndReset());
-                var expected = text switch
+                if (recordedTexts is null)
                 {
-                    "Hello! Look how tall I am!" => (83532, "7D65C74AE9D975D21A6DE5D006149223F8A539EF42A025804563440CBF7A4E02", "DDA175D2DC8A6AB4631B904959FDA0F777FBB0D1A15442937B4D4D8E24749E2C"),
-                    "Hi." => (18808, "C8415A6A426366E59000AB59572D05CFE8A5B6E63D925B08956F47B86BFDDFA3", "CEAC2181FF51576B7F66215DE39F9C3F2FAEE7FC96D013EFEB4EB3E3C798412F"),
-                    "I am ready to play." => (51088, "B67578BB849603CA10B45CB2EBCDDCD9765D98D0D4CA6B4296D154100AA67A6B", "7B3546ACABAB81F9D5952E4D66A1A224A8FEDD8B6393A8B41EC5FD935423F64F"),
-                    "Hello there. It is a good day to play together." => (114372, "BBEE4AAE7C992E61537508A9F90C19275F97D03FE4C82CDAC8738003F4BF692D", "68F95AEE5F8A39D8D29C5B28C9F48CA42B83DD48A61FB1D2FE573FA19029772C"),
-                    _ => throw new InvalidOperationException(text),
-                };
-                Assert.Equal(expected.Item1, count);
-                Assert.Equal(expected.Item2, hash);
-                Assert.Equal(expected.Item3, resultsWireHash);
+                    var expected = text switch
+                    {
+                        "Hello! Look how tall I am!" => (83532, "7D65C74AE9D975D21A6DE5D006149223F8A539EF42A025804563440CBF7A4E02", "DDA175D2DC8A6AB4631B904959FDA0F777FBB0D1A15442937B4D4D8E24749E2C"),
+                        "Hi." => (18808, "C8415A6A426366E59000AB59572D05CFE8A5B6E63D925B08956F47B86BFDDFA3", "CEAC2181FF51576B7F66215DE39F9C3F2FAEE7FC96D013EFEB4EB3E3C798412F"),
+                        "I am ready to play." => (51088, "B67578BB849603CA10B45CB2EBCDDCD9765D98D0D4CA6B4296D154100AA67A6B", "7B3546ACABAB81F9D5952E4D66A1A224A8FEDD8B6393A8B41EC5FD935423F64F"),
+                        "Hello there. It is a good day to play together." => (114372, "BBEE4AAE7C992E61537508A9F90C19275F97D03FE4C82CDAC8738003F4BF692D", "68F95AEE5F8A39D8D29C5B28C9F48CA42B83DD48A61FB1D2FE573FA19029772C"),
+                        _ => throw new InvalidOperationException(text),
+                    };
+                    Assert.Equal(expected.Item1, count);
+                    Assert.Equal(expected.Item2, hash);
+                    Assert.Equal(expected.Item3, resultsWireHash);
+                }
                 results.Add(new { text, startupProviderMs, renderBeforeFirstSendMs = renderTotal, samples = count, pcmSha256 = hash, wireSha256 = resultsWireHash,
                     chunks, phasesMs = times.OrderBy(k => k.Value).ToDictionary(k => k.Key, k => k.Value), engineResult = reply.GetProperty("result").GetProperty("structuredContent").GetProperty("engineResult") });
-                File.WriteAllText(report, JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+                if (report is not null)
+                    File.WriteAllText(report, JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
                 output.WriteLine(text + ": " + JsonSerializer.Serialize(times));
                 Assert.True(times.ContainsKey("first-send"), reply.ToString());
                 Assert.NotNull(hash);
@@ -150,6 +217,10 @@ public sealed class SpeechLatencyTests(ITestOutputHelper output)
                 Assert.True(times["offer-ready"] <= times["hijack-frame"]);
                 Assert.True(times["hijack-frame"] <= times["first-send"]);
             }
+            if (recordedTexts is not null)
+                foreach (string diagnostic in missing.Distinct()) output.WriteLine(diagnostic);
+            Assert.DoesNotContain(missing, line => line.Contains("M14-006") || line.Contains("M6-018") ||
+                line.Contains("VOICE-ANIMATION-FIT-1"));
         }
         finally { SpeechTiming.Observer = null; }
     }

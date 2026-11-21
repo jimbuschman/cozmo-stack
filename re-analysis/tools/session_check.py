@@ -379,6 +379,11 @@ def action_tags(call, action_types, result):
             and "tag" in completion}
 
 
+def action_completion_variant(body):
+    offset = 13 + 4 * body[12]
+    return body[offset] if offset < len(body) else None
+
+
 def action_check(session, name, prompt, citation, expected, seconds, calls=None):
     citation += "; " + COMPLETION
     candidates = []
@@ -396,7 +401,7 @@ def action_check(session, name, prompt, citation, expected, seconds, calls=None)
                       if set(types).intersection(ACTION_TYPES.get(tool, ())) for other in calls
                       if other is not call and other.start <= end and
                       (other.end if other.end is not None else session.end) >= call.start)
-            reports = [(at, tag) for at, body in session.in_window(0x5A, *window) if len(body) >= 14
+            reports = [(at, tag, action_completion_variant(body)) for at, body in session.in_window(0x5A, *window) if len(body) >= 14
                        for tag, action_type, code in [struct.unpack_from("<IiI", body)]
                        if action_type in types and code == result and
                        (tag in tags if tags else 0 < tag <= 1_000_000)]
@@ -419,6 +424,10 @@ def action_check(session, name, prompt, citation, expected, seconds, calls=None)
                     passed, reason = False, "The engine cancelled tracking. There is no caller cancellation in the recording."
                 elif elapsed < TRACK_SECONDS * 1000 or not (call.reply.get("report") or {}).get("callerCancellationRequested"):
                     passed, reason = False, "The round requires caller cancellation after 10 s of tracking."
+            if passed and name == "say-text":
+                _, matched_tag, union = reports[0]
+                if union != 6:
+                    passed, reason = False, f"Matching SayText tag {matched_tag} carried completion variant {union}; expected defaultCompleted (6)."
             if passed and name == "animation" and call.reply.get("truncatedByRobot"):
                 passed, reason = False, "The robot cut off the animation."
             if passed and name == "mount-charger":
@@ -454,6 +463,8 @@ def face_operation(session, name, step):
     prompt, citation, expected = step
     tools, tag, seconds, outcome = FACE_TOOLS[name]
     citation += f"; E2G 0x{tag:02X}"
+    if tag == 0x57:
+        citation += "; G2E 0x89, remove and attempt album save at 0x00657A60–0x00657A98 before the empty-name report"
     candidates = []
     enrolled = set()
     for tool in tools:
@@ -463,7 +474,8 @@ def face_operation(session, name, step):
             wanted = operation.get("faceId")
             wanted_name = operation.get("name")
             reports = []
-            if wanted is not None and operation.get("outcome") == outcome and call.reply.get("engineResult") == expected:
+            requested_id_matches = tag != 0x57 or wanted == call.args.get("faceId")
+            if wanted is not None and requested_id_matches and operation.get("outcome") == outcome and call.reply.get("engineResult") == expected:
                 for at, body in session.in_window(tag, call.start, end):
                     offset = int(tag == 0x56)
                     if len(body) < offset + 5 or struct.unpack_from("<i", body, offset)[0] != wanted:
@@ -992,6 +1004,8 @@ def evaluate(session):
                 taught = enrolled
             continue
         seconds = FACE_ACTION_WINDOW if name in {"track-face", "turn-to-face"} else 65 if name in {"animation", "sentence"} else 45
+        if tool == "say-text":
+            citation += "; SayText type 0x20 at 0x00560B74, defaultCompleted (6) at 0x0053FF0E–0x0053FF14"
         if tool == "go-to-pose":
             prompt = ("Read the world pose with get_map, choose a clear target about 200 mm ahead, "
                       "ask him to drive there and face left, then read his world pose again.")

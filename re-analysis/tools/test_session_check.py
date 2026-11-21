@@ -349,6 +349,36 @@ class SessionCheckTests(unittest.TestCase):
         self.assertEqual(SEEN, checks["turn-to-cube"].status)
         self.assertIn("withheld the full 0x5A interaction payload", checks["turn-to-cube"].reason)
 
+    def test_say_text_checks_default_completed_after_the_subaction_results(self):
+        self.request(100, 1, "say-text", text="Hello")
+        self.reply(150, 1, admitted=True, engineResult=0)
+        body = struct.pack("<IiIBI", 7, 0x20, 0, 1, 0)
+        self.raw(140, 0x5A, body + bytes((0,)))
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["say-text"].status)
+        self.assertIn("defaultCompleted (6)", checks["say-text"].reason)
+
+        self.events.pop()
+        self.raw(140, 0x5A, body + bytes((6,)))
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["say-text"].status)
+
+    def test_erase_requires_the_requested_id_and_empty_native_report_name(self):
+        self.request(100, 1, "erase-face", faceId=7)
+        self.reply(150, 1, faceOperation={"outcome": "erased", "faceId": 7, "lastKnownName": "Ada"})
+        self.raw(140, 0x57, struct.pack("<iB", 7, 3) + b"Ada")
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["erase-face"].status)
+
+        self.events.pop()
+        self.raw(140, 0x57, struct.pack("<iB", 8, 0))
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["erase-face"].status)
+
+        self.raw(141, 0x57, struct.pack("<iB", 7, 0))
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["erase-face"].status)
+
     def test_mount_needs_contacts_and_the_requested_charger_sighting(self):
         self.request(100, 1, "mount-charger", chargerId=4)
         self.completion(200, 7, -2)
