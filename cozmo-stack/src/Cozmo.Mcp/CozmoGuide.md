@@ -50,7 +50,7 @@ Use `duringDetail: "full"` for the complete retained action window at once. On `
 
 **Faces:** `teach-face` and `enroll-face` are aliases. Native success returns `faceOperation.outcome=enrolled`, face ID/name and engineResult=0. Failure returns the native reason or `no-report`; a failed save can leave a partial named record. Rename and erase return `confirmed`, with `renamed` or `erased` and the ID/name information. Their confirmations acknowledge the mutation before NV persistence or optional spoken-response completion. Erase's native report name is empty; `lastKnownName` is a labeled host snapshot. Continued sightings can register an unnamed guest, even with the same ID. After enrollment/rename, wait for a fresh named observation separately [faces].
 
-**Settings:** `freeplay` returns `submitted` when its message is posted; observe activity/events for the effect. Needs settings return their confirmed status, including `loaded`/`applied`; they have no native action result. `set_needs` requires real mode and loaded stored needs. Full needs mode refills and pauses the native needs; real mode resumes native changes.
+**Settings:** `freeplay` returns `submitted` when its message is posted; observe activity/events for the effect. Needs settings return their confirmed status, including `loaded`/`applied`; they have no native action result. `set_needs` requires real mode and loaded stored needs. Full needs mode refills and pauses native needs. Real mode resumes them. Read `needs-changed` for the reported levels, brackets and causing action, and `freeplay-sparks-awarded` for the engine’s reward amount and display key.
 
 **Lights**
 
@@ -91,7 +91,7 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `isOnCharger`, `isCharging` | Latest native contact/charging state, or null when unavailable. |
 | `activity`, `highLevelActivity`, `behavior`, `reaction` | Latest activity and reaction observations; null when unavailable. |
 | `reactionLocks` | Current named locks, each with its `id` and mapped `triggers`. Cozmo and the caller can both hold locks. |
-| `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. The flags distinguish requested mode from applied native needs. |
+| `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. Loaded needs include `brackets` for all three levels and `selectedSevereNeed` when the engine is expressing one. |
 | `knownFaces` | Signed `faceId`, `name`, `lastObservedTimestamp`, `enrolled`, `relative`. Enrolled names can remain without a current sighting. |
 | `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A located cube need not have a current radio connection. |
 | `knownChargers` | Command `worldObjectId`, `poseState`, `lastObservedTimestamp`, `relative`, in the current origin. |

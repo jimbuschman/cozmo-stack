@@ -386,9 +386,10 @@ public class M7BatchThreeATests
         Assert.Contains(drive.Trace, l => l.Contains("Behavior:DriveOffCharger, FromState: ToState:DrivingForward"));
     }
 
-    /// <summary>M7-021 (R9): the Robot::Update reader of +0x58 (robot+0x4C, VizManager::SetText / SetSdkStatus) is M11/M12 and reported, not built.</summary>
+    // M7-021: Robot::Update calls local-only VizManager::SetText at 0x00513FE6 and writes
+    // excluded SDK status at 0x0051407A. These recipients do not make the state-name path missing.
     [Fact]
-    public void TheRobotUpdateReaderOfTheStateNameIsReportedMissing()
+    public void SettingTheBehaviorStateNameDoesNotReportAnUnsupportedDebugPath()
     {
         using var rig = new Rig();
         var reported = new List<string>();
@@ -400,7 +401,8 @@ public class M7BatchThreeATests
             var b = new ReactToCliffBehavior();
             b.StartAsync(Ctx(rig, () => null), new BehaviorScope(), default).GetAwaiter().GetResult();
             b.Update(Ctx(rig, () => null), 0);
-            Assert.Contains(reported, r => r.Contains("robot+0x4C") && r.Contains("VizManager::SetText") && r.Contains("SetSdkStatus"));
+            Assert.Equal("PlayingStopReaction", b.StateName);
+            Assert.DoesNotContain(reported, r => r.Contains("robot+0x4C") && r.Contains("VizManager::SetText") && r.Contains("SetSdkStatus"));
         }
         finally { SteppedBehavior.MissingReported -= On; }
     }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Bridge;
@@ -38,6 +39,8 @@ public sealed partial class CozmoBridge
         engine.ObjectPoseUnknown += OnObjectPoseLost;
         engine.BehaviorTransition += OnBehavior;
         engine.ReactionTransition += OnReaction;
+        engine.NeedsStateReported += OnNeedsState;
+        engine.Needs.FreeplaySparksAwarded += OnFreeplaySparksAwarded;
         engine.GoingToSleep += OnGoingToSleep;
         engine.ChargerSleepCancelled += OnChargerSleepCancelled;
         engine.RobotDisconnected += OnRobotDisconnected;
@@ -136,7 +139,7 @@ public sealed partial class CozmoBridge
             behavior = activity?.Behavior,
             reaction = activity?.Reaction,
             reactionLocks = connected ? Robot.Engine.Robot?.BehaviorManagerOwner?.GetReactionLocks() ?? [] : [],
-            needs = Robot.Engine.GetNeedsStatus(),
+            needs = ReadNeedsState(),
             knownFaces = faces.Values.OrderBy(f => f.FaceId),
             knownCubes = cubes,
         }, Json);
@@ -270,6 +273,50 @@ public sealed partial class CozmoBridge
             Append("reaction-changed", null, JsonSerializer.SerializeToElement(report, Json),
                 report.OldTrigger != 0x16 || report.NewTrigger != 0x16, compactPayload: compact);
     }
+    private object ReadNeedsState()
+    {
+        var engine = Robot.Engine;
+        var status = engine.GetNeedsStatus();
+        var state = engine.Needs.State;
+        int selected = engine.Needs.SevereNeeds.Selected;
+        return new
+        {
+            status.KeepFull, status.Loaded, status.Applied, status.Paused, status.Repair, status.Energy, status.Play,
+            brackets = status.Loaded ? new
+            {
+                repair = state.GetNeedBracket(NeedId.Repair).ToString(),
+                energy = state.GetNeedBracket(NeedId.Energy).ToString(),
+                play = state.GetNeedBracket(NeedId.Play).ToString(),
+            } : null,
+            selectedSevereNeed = status.Loaded ? Enum.GetName((NeedId)selected) : null,
+        };
+    }
+
+    private void OnNeedsState(NativeNeedsStateReport report)
+    {
+        // NeedsState 0x62 writes repair, energy and play in that order (0x0069383C..0x006939D2).
+        Add("needs-changed", new
+        {
+            repair = NeedsLevel(report.Levels[(int)NeedId.Repair]),
+            energy = NeedsLevel(report.Levels[(int)NeedId.Energy]),
+            play = NeedsLevel(report.Levels[(int)NeedId.Play]),
+            brackets = new
+            {
+                repair = ((NeedBracketId)report.Brackets[(int)NeedId.Repair]).ToString(),
+                energy = ((NeedBracketId)report.Brackets[(int)NeedId.Energy]).ToString(),
+                play = ((NeedBracketId)report.Brackets[(int)NeedId.Play]).ToString(),
+            },
+            action = ((NeedsActionId)report.Action).ToString(),
+        });
+
+        static float? NeedsLevel(uint bits)
+        {
+            float level = BitConverter.UInt32BitsToSingle(bits);
+            return float.IsFinite(level) ? level : null;
+        }
+    }
+
+    private void OnFreeplaySparksAwarded(FreeplaySparksAwardedReport report) => Add("freeplay-sparks-awarded", report);
     private void OnGoingToSleep(GoingToSleepReport report) => Add("going-to-sleep", report);
     private void OnChargerSleepCancelled(ChargerSleepCancelledReport report) => Add("sleep-cancelled", report);
     private void OnRobotDisconnected(RobotDisconnectedMessage report)
@@ -337,6 +384,8 @@ public sealed partial class CozmoBridge
         engine.ObjectPoseUnknown -= OnObjectPoseLost;
         engine.BehaviorTransition -= OnBehavior;
         engine.ReactionTransition -= OnReaction;
+        engine.NeedsStateReported -= OnNeedsState;
+        engine.Needs.FreeplaySparksAwarded -= OnFreeplaySparksAwarded;
         engine.GoingToSleep -= OnGoingToSleep;
         engine.ChargerSleepCancelled -= OnChargerSleepCancelled;
         engine.RobotDisconnected -= OnRobotDisconnected;

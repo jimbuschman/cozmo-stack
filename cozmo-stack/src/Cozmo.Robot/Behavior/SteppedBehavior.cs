@@ -546,9 +546,9 @@ public abstract partial class SteppedBehavior : IBehavior
     /// 175 call sites reach: <c>sChanneledInfoF("Behaviors", "Behavior.TransitionToState", {}, "Behavior:%s,
     /// FromState:%s ToState:%s", EnumToString(BehaviorID at +0x3C), old +0x58, new)</c> (0x005C0CD6..0x005C0CEC),
     /// then <c>std::string::assign</c> into +0x58 (0x005C0D12..0x005C0D16). The log shows the previous value as
-    /// FromState; nothing branches on the string. The only readers of +0x58 outside logs are in
-    /// <c>Robot::Update</c> (0x00513F6A..0x00513F9C): it builds <c>robot+0x4C</c> and sends it to
-    /// <c>VizManager::SetText</c> and <c>SetSdkStatus(Behavior)</c>; those are M11/M12 and not built here (MISSING).
+    /// FromState. Robot::Update appends it at 0x00513F6A..0x00513F9C, calls VizManager::SetText
+    /// at 0x00513FE6, then writes SDK status type 0 at 0x0051407A. The shipped Viz body only constructs
+    /// and clears a local message. SDK status is consumed in excluded external SDK mode (M1-051).
     /// </summary>
     protected void SetStateName(string newState)
     {
@@ -557,7 +557,6 @@ public abstract partial class SteppedBehavior : IBehavior
         Log(line);
         Context?.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "Behavior.TransitionToState", text);
         _stateName = newState;
-        ReportMissing("Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built");
     }
 
     // Host reentry guard for callers whose synchronous observers may replace the active run.
@@ -570,7 +569,6 @@ public abstract partial class SteppedBehavior : IBehavior
         Context?.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "Behavior.TransitionToState", text);
         if (!current()) return false;
         _stateName = newState;
-        ReportMissing("Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built");
         return true;
     }
 

@@ -1,0 +1,25 @@
+# NEEDS-PERSONALITY-1
+
+MCP now reports loaded need brackets and the currently selected severe need in `get_state`. `read_events` exposes the actual needs-state and Sparks-awarded broadcasts. The replay drives the native command and activity owners through energy, repair and play, restores each to Full, then tests an independent earned reward.
+
+| Input to result | Primary evidence and offline check |
+| --- | --- |
+| Request and thresholds | Real mode uses G2E C9 (`0x0069B0E2..0x0069B0F6`). Force levels uses G2E C6, clamps 0.03–1, dirties the cached brackets and sends NoAction (`0x00697DA4..0x00697EC6`). `needs_config.json` defines Full at 0.99, Normal at 0.6/0.6/0.5 and Warning at 0.27/0.21/0.14 in Repair/Energy/Play order. `VCMPE.F32` at `0x0069C1BE` makes the exact warning boundary inclusive. The host now compares both operands in binary32. Exactly at each boundary the replay sees Warning and one f32 step below it Critical. |
+| Broadcast and diagnostic | NeedsState is refreshed and sent as E2G 0x62 (`0x0069383C..0x006939D2`, packing `0x007169A4`). `needs-changed` is derived from that report's level words, brackets and action, and agrees with `get_state`. The force-levels DAS event formats old and new values at `0x006969D8..0x00696A9C` and emits after the report (`0x00697F5C`, `0x00697F86`). The local formatter now emits all six fixed precision-five fields. |
+| Warning and critical choices | `BehaviorExpressNeeds::IsRunnableInternal` `0x005EE570..0x005EE5DC` checks the actual bracket and cooldown. Shipped mild request configs pick the three animations and a level-dependent 20–60 s cooldown. Freeplay's strict order in `activities_config.json` gives critical Repair before Energy and the Play get-in after both. `needsSevereLow{Repair,Energy,PlayGetIn}.json` and `0x005B4718..0x005B4768`, `0x005B4D88..0x005B4DE8` supply the guards. PlayAnimOnNeedsChange uses the zero-ID face turn, configured lift-safe get-in, then sets SevereNeeds when still critical on Stop (M15-104, `0x005C0648..0x005C06D4`, `0x005C075A` → `0x005C0158..0x005C01A6`, `0x005BFEF8..0x005BFF16`). |
+| Drive, bored sequence and refill | Native DriveInDesperation installs the shipped Energy or Repair profile and draws a wait (`0x005D8ECA..0x005D8FE4`), then starts the native drive and only Energy may enter cube search (`0x005DA2DE..0x005DA2EC`). The replay observes the path packet and uses modeled path/motor replies. At critical Play the normal interlude admits Needs_SevereLowPlayBored after the get-in, with the shipped intro/event/outro (`needs_SevereLowPlayBored.json`). Refill clears the selected need during the AI update (`0x00572BD0..0x00572C3E` → `0x00572C8C..0x00572D6E`). The activity leaves the severe response after its current action retires. |
+| Reward | A separate RollACube completion reaches `NeedsManager::RegisterNeedsActionCompleted` via its normal recipient (`0x005BE40C` → `0x006960D0`). The reward producer sets the amount and pending flag at `0x0069640A..0x00696482`. EarnedSparks checks pending at `0x005DAEC2`, plays the lift-safe trigger at `0x005DAECC..0x005DAF3E`, and clears/communicates at `0x005DAF7C` → `0x00696E64`. The replay sees the earned animation and the 2–3 Sparks E2G 0x65 report with the RollACube display key. |
+
+The run uses shipped assets, source-shaped stored needs, modeled firmware replies and a same-day fixture clock. The request animation/motion and reward signals come from the production owners. Severe DriveInDesperation and EarnedSparks now bind the common Spark lock inputs (`0x005BCCAC..0x005BCCC2`, `0x005BCD16..0x005BCD44`). The state-name label is read at `0x00513F6A..0x00513F9C`. Its Viz call at `0x00513FE6` produces no send, and SDK status type 0 at `0x0051407A` feeds excluded SDK mode. The state-name log and state store still run.
+
+Remaining diagnostics include action or animation DAS and subscription retirement (M8-015/021/023/027), planner text and visualization (M12-002/024/032, M13-033/034), and the shared robot audio construction status check. The shared Spark lock input message can still be emitted by a different interlude after the needs response. The two updated fidelity notes retain their classifications.
+
+**Three-minute operator check**
+
+1. Start off the charger on a clear surface with Freeplay on. Ask Claude to select real needs. Set energy to 0.20 with repair and play at 1. Watch for the get-in and the start of the tired drive. Ask for `needs-changed` and `behavior-changed`.
+2. Ask Claude to refill energy and set repair to 0.26, then refill repair and set play to 0.13. Allow each response time before switching. Watch the severe repair motion and the bored play animations.
+3. Return all three levels to 1. Read `get_state` and record the transition out of the severe state. The EarnedSparks round requires a pending gameplay reward.
+
+## Verification
+
+Build `6bc147c4` passed all 8,840 tests in 60.88 minutes with the local recordings enabled. All 180 focused needs, MCP, reaction and fidelity cases passed. The fidelity check passed for 765 records. The four-round personality validation passed without opening a robot connection.
