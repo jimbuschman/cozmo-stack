@@ -413,8 +413,9 @@ public sealed partial class NeedsState
         foreach (int i in _levels.Keys)
         {
             var (full, normal, warning, critical) = Thresholds((NeedId)i);
-            double level = _levels[i];
-            var thresholds = new[] { full, normal, warning, critical };
+            // VCMPE.F32 at 0x0069C1BE compares the stored level and binary32 thresholds.
+            float level = _levels[i];
+            var thresholds = new[] { (float)full, (float)normal, (float)warning, (float)critical };
             int index = thresholds.Length - 1;
             for (int j = 0; j < thresholds.Length; j++)
                 if (thresholds[j] <= level) { index = j; break; }
@@ -1228,7 +1229,13 @@ public sealed partial class NeedsManager
                 State.NativeUnlockLevel,State.NativeStarsAwarded,State.NativeStarsForNextUnlock,(int)action,variation,rounds);
             var copied=engine.CaptureAppEvent(NeedsLevelBitsCopied,(IReadOnlyList<uint>)words,action);
             var sent=engine.CaptureAppEvent(NeedsStateSent,action);
-            engine.DeliverNurture(0x62,NativeNeedsStateReportCodec.Pack(report),report,()=>{copied?.Invoke();sent?.Invoke();});
+            var reported = engine.CaptureNativeNeedsStateReport(report);
+            engine.DeliverNurture(0x62, NativeNeedsStateReportCodec.Pack(report), report, () =>
+            {
+                copied?.Invoke();
+                sent?.Invoke();
+                reported?.Invoke();
+            });
         }
         else if(HostEngine is {} legacyEngine)
         {
@@ -2137,14 +2144,27 @@ public sealed partial class NeedsManager
         lock(_gate)
         {
             SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsManager.ForceSetNeedsLevels",$"Game sent ForceSetNeedsLevels message with {PrintfNeedsF6(levels[0])}, {PrintfNeedsF6(levels[1])}, {PrintfNeedsF6(levels[2])}");
-            for(int i=0;i<3;i++)
+            // 0x00697E0E..0x00697E54 snapshots the old levels before clamping.
+            var oldLevels = new float[3];
+            for (int i = 0; i < oldLevels.Length; i++)
             {
-                float value=levels[i],minimum=(float)Config.MinimumNeedLevel,maximum=(float)Config.MaximumNeedLevel;
-                if(value<=minimum)value=minimum;else if(value>=maximum)value=maximum;
-                State.StoreLevel((NeedId)i,value);
+                var need = (NeedId)i;
+                oldLevels[i] = (float)State.GetNeedLevel(need);
+                float value = levels[i], minimum = (float)Config.MinimumNeedLevel, maximum = (float)Config.MaximumNeedLevel;
+                if (value <= minimum) value = minimum;
+                else if (value >= maximum) value = maximum;
+                State.StoreLevel(need, value);
             }
             SendNeedsStateToGame(NeedsActionId.NoAction);
-            SteppedBehavior.ReportMissing("M15-048 needs.force_set_needs_levels event 0x00697ECA..0x00698002: FormatStringOldAndNewLevels text (including NaN) is unread; no guessed event string");
+
+            // 0x006969D8..0x00696A9C streams old Repair/Energy/Play, then new, fixed precision five.
+            var text = new[]
+            {
+                oldLevels[0], oldLevels[1], oldLevels[2],
+                (float)State.GetNeedLevel(NeedId.Repair), (float)State.GetNeedLevel(NeedId.Energy), (float)State.GetNeedLevel(NeedId.Play),
+            };
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Event, null,
+                "needs.force_set_needs_levels", string.Join(':', text.Select(level => LibcxxPrintf.FormatFixedFloat(level, 5))));
         }
     }
 

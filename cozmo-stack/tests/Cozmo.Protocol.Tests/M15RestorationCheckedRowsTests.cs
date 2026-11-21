@@ -134,10 +134,38 @@ public sealed class M15RestorationCheckedRowsTests
     [Fact]
     public void ForceSetClampsFiniteValuesButKeepsAndCopiesRawNaNPayload()
     {
-        var needs=new NeedsManager(()=>0); needs.EnableUncertifiedPersistenceForTests();uint nan=0x7F812345;var order=new List<string>();needs.SourceLog=(l,c,k,t)=>{Assert.Equal(EngineLogLevel.Info,l);Assert.Equal("NeedsSystem",c);Assert.Equal("NeedsManager.ForceSetNeedsLevels",k);order.Add("info");};
-        needs.NeedsLevelBitsCopied+=(bits,action)=>{Assert.Equal(nan,bits[2]);Assert.Equal(NeedsActionId.NoAction,action);order.Add("copy");};
-        needs.ForceSetNeedsLevels(new[]{-1f,2f,BitConverter.Int32BitsToSingle(unchecked((int)nan))});
-        Assert.Equal(new[]{"info","copy"},order);Assert.Equal(0x3CF5C28Fu,needs.State.LevelBits(NeedId.Repair));Assert.Equal(0x3F800000u,needs.State.LevelBits(NeedId.Energy));Assert.Equal(nan,needs.State.LevelBits(NeedId.Play));
+        var needs = new NeedsManager(() => 0);
+        needs.EnableUncertifiedPersistenceForTests();
+        const uint nan = 0x7F812345;
+        var order = new List<string>();
+        needs.SourceLog = (level, channel, key, text) =>
+        {
+            if (key == "NeedsManager.ForceSetNeedsLevels")
+            {
+                Assert.Equal(EngineLogLevel.Info, level);
+                Assert.Equal("NeedsSystem", channel);
+                order.Add("info");
+                return;
+            }
+
+            // 0x00697F5C..0x00697F86 sends the old/new text after the NoAction report.
+            Assert.Equal(EngineLogLevel.Event, level);
+            Assert.Null(channel);
+            Assert.Equal("needs.force_set_needs_levels", key);
+            Assert.Equal("1.00000:1.00000:1.00000:0.03000:1.00000:nan", text);
+            order.Add("event");
+        };
+        needs.NeedsLevelBitsCopied += (bits, action) =>
+        {
+            Assert.Equal(nan, bits[2]);
+            Assert.Equal(NeedsActionId.NoAction, action);
+            order.Add("copy");
+        };
+        needs.ForceSetNeedsLevels(new[] { -1f, 2f, BitConverter.UInt32BitsToSingle(nan) });
+        Assert.Equal(new[] { "info", "copy", "event" }, order);
+        Assert.Equal(0x3CF5C28Fu, needs.State.LevelBits(NeedId.Repair));
+        Assert.Equal(0x3F800000u, needs.State.LevelBits(NeedId.Energy));
+        Assert.Equal(nan, needs.State.LevelBits(NeedId.Play));
         string root=Directory.CreateTempSubdirectory("m15-nan-").FullName,path=Path.Combine(root,"state.json");
         try{needs.Save(path);using var json=System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));Assert.Equal(0,json.RootElement.GetProperty("CurNeedLevel").GetProperty("Play").GetInt32());}
         finally{Directory.Delete(root,true);}

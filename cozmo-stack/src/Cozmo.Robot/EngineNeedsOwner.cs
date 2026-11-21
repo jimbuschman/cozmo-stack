@@ -11,6 +11,10 @@ public sealed partial class EngineRobot
 public sealed partial class CozmoEngine
 {
     public NeedsManager Needs { get; private set; } = null!;
+    internal event Action<NativeNeedsStateReport>? NeedsStateReported;
+
+    internal Action? CaptureNativeNeedsStateReport(NativeNeedsStateReport report) =>
+        CaptureAppEvent(NeedsStateReported, report);
     private long _needsCurrentConstructorMicros,_needsCandidateConstructorMicros;
     internal LocalNotifications? NativeLocalNotifications {get;private set;}
     internal long NeedsWallClockMicros()=>Options.NeedsSystemClockMicroseconds?.Invoke() ?? (DateTimeOffset.UtcNow.Ticks-DateTimeOffset.UnixEpoch.Ticks)/10;

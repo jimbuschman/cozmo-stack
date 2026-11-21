@@ -581,7 +581,8 @@ public sealed class BehaviorFactory
             }
             if(stepped is ReactToReturnedToTreadsBehavior or ReactToCliffBehavior or ReactToImpactBehavior or
                 ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior or AcknowledgeFaceBehavior or
-                NativeInteractWithFaces or NativeFindFacesSocialize or NativeSearchForFaceBehavior or NativeDriveToFaceBehavior)
+                NativeInteractWithFaces or NativeFindFacesSocialize or NativeSearchForFaceBehavior or NativeDriveToFaceBehavior or
+                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior)
             {
                 // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);

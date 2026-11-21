@@ -87,7 +87,7 @@ internal static class LibcxxPrintf
     internal static string FormatG(double y, int precision) => FormatDecimal(y, precision, false);
 
     // fidelity: M11-083 — float to_string entry0x66524..30, bundled %f F1-F7; double SDK overload excluded.
-    internal static string FormatFixedFloat(float value) => FormatDecimal((double)value, 6, true);
+    internal static string FormatFixedFloat(float value, int precision = 6) => FormatDecimal(value, precision, true);
 
     private static string FormatDecimal(double y, int precision, bool fixedFloat)
     {
