@@ -217,7 +217,7 @@ public sealed partial class CozmoRobot : IDisposable
         manager.ActionListIsEmpty=()=>native.ActionList.IsEmpty;
         manager.UpdateRobotPropertiesForReaction=active=>{ Motion.DirectDriveDisabled=active; native.ActionList.ExternalActionsDisabled=active; };
         if(native.HasExternalInterface)
-            manager.ReactionTriggerTransitionSender=(oldTrigger,newTrigger)=>Engine.BroadcastReactionTransition(oldTrigger,newTrigger);
+            manager.BindHostReactionTransitionSender(Engine.BroadcastReactionTransition);
         manager.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
         native.BehaviorManagerOwner=manager;
         native.NativeBehaviorRuntimeConstructing=true;

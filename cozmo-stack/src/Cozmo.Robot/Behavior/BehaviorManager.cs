@@ -1200,8 +1200,7 @@ public sealed partial class BehaviorManager : IDisposable
         }
         if (oldTrigger is not null || info.Trigger is not null)
         {
-            if (ReactionTriggerTransitionSender is { } send) send(oldTrigger, info.Trigger);
-            else SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+            if (!SendReactionTransition(oldTrigger, info.Trigger, oldCurrent, info.Current)) SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
         }
         if ((oldTrigger is null) != (info.Trigger is null))
         {
@@ -1221,6 +1220,26 @@ public sealed partial class BehaviorManager : IDisposable
 
     /// <summary>The <c>ReactionTriggerTransition</c> game message (0x005a2ee8).</summary>
     public Action<ReactionTrigger?, ReactionTrigger?>? ReactionTriggerTransitionSender { get; set; }
+    private Action<ReactionTrigger?, ReactionTrigger?>? defaultReactionTransitionSender;
+    private Action<ReactionTrigger?, ReactionTrigger?, string?, string?>? hostReactionTransitionSender;
+
+    internal void BindHostReactionTransitionSender(Action<ReactionTrigger?, ReactionTrigger?, string?, string?> send)
+    {
+        hostReactionTransitionSender = send;
+        ReactionTriggerTransitionSender = defaultReactionTransitionSender = (oldTrigger, newTrigger) =>
+            send(oldTrigger, newTrigger, null, null);
+    }
+
+    private bool SendReactionTransition(ReactionTrigger? oldTrigger, ReactionTrigger? newTrigger,
+        IBehavior? oldBehavior, IBehavior? newBehavior)
+    {
+        if (ReactionTriggerTransitionSender is not { } send) return false;
+        if (ReferenceEquals(send, defaultReactionTransitionSender) && hostReactionTransitionSender is { } host)
+            host(oldTrigger, newTrigger, oldTrigger.HasValue ? oldBehavior?.Id : null,
+                newTrigger.HasValue ? newBehavior?.Id : null);
+        else send(oldTrigger, newTrigger);
+        return true;
+    }
     /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54), called on entry or exit.</summary>
     public Action<bool>? UpdateRobotPropertiesForReaction { get; set; }
     /// <summary>The cube light stop on a behaviour change (0x005a2230..0x005a223e). MISSING.</summary>
@@ -1463,8 +1482,8 @@ public sealed partial class BehaviorManager : IDisposable
         ReactionTrigger? trigger;lock(_gate)trigger=_currentReaction;
         if(trigger is not null)
         {
-            if(owner.HasExternalInterface && ReactionTriggerTransitionSender is {} send)send(trigger,null);
-            else SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+            if (!owner.HasExternalInterface || !SendReactionTransition(trigger, null, oldCurrent, null))
+                SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
             if(!RequestCanContinue(owner))return;
             CheckRoots();if(!RequestCanContinue(owner))return;
         }

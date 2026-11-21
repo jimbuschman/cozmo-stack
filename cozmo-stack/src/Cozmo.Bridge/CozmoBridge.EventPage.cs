@@ -15,6 +15,35 @@ public sealed partial class CozmoBridge
         uint? FirstRobotTimestamp, uint? LastRobotTimestamp, JsonElement LastPayload,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? FaceId,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Name);
+    private sealed record AnimationWindow(byte Tag, string? Name, long StartCursor, long EndCursor,
+        DateTimeOffset StartUtc, DateTimeOffset EndUtc, string Result);
+
+    private static (BridgeEvent[] Events, AnimationWindow[] Animations) CollapseAnimations(BridgeEvent[] events)
+    {
+        var starts = new Dictionary<byte, BridgeEvent>();
+        var paired = new HashSet<long>();
+        var summaries = new List<AnimationWindow>();
+        foreach (var entry in events)
+        {
+            if (entry.Type is not ("animation-started" or "animation-ended" or "animation-aborted")) continue;
+            byte tag = entry.Payload.GetProperty("tag").GetByte();
+            if (entry.Type == "animation-started")
+            {
+                starts[tag] = entry;
+                continue;
+            }
+            if (!starts.Remove(tag, out var start)) continue;
+
+            paired.Add(start.Cursor);
+            paired.Add(entry.Cursor);
+            string? name = entry.Payload.GetProperty("name").GetString() ?? start.Payload.GetProperty("name").GetString();
+            summaries.Add(new(tag, name, start.Cursor, entry.Cursor, start.TimestampUtc, entry.TimestampUtc,
+                entry.Type == "animation-ended" ? "ended" : "aborted"));
+        }
+        return (events.Where(e => !paired.Contains(e.Cursor)).ToArray(),
+            summaries.OrderBy(summary => summary.StartCursor).ToArray());
+    }
+
     private readonly record struct SightingKey(string Type, int? FaceId = null, string? Name = null);
 
     internal long CurrentEventCursor()
@@ -28,7 +57,10 @@ public sealed partial class CozmoBridge
 
     // Caller holds eventGate. A nonmatching event can advance the cursor but never
     // costs a slot in the requested page. Stop before a matching event beyond limit.
-    private BridgeEventPage CaptureEventPage(long since, int limit, HashSet<string>? include, HashSet<string>? exclude, bool significantOnly = false)
+    private enum EventView { Full, Compact, Push }
+
+    private BridgeEventPage CaptureEventPage(long since, int limit, HashSet<string>? include, HashSet<string>? exclude,
+        bool significantOnly = false, EventView view = EventView.Full)
     {
         ThrowIfDisposed();
         if (since > lastCursor)
@@ -36,18 +68,25 @@ public sealed partial class CozmoBridge
 
         var selected = new List<BridgeEvent>();
         long next = since;
-        foreach (var item in events)
+        foreach (var entry in events)
         {
+            var item = entry.Full;
             if (item.Cursor <= since) continue;
-            if ((!significantOnly || item.Significant) &&
+            bool significant = view switch
+            {
+                EventView.Push => entry.PushSignificant,
+                EventView.Compact => entry.CompactSignificant,
+                _ => item.Significant,
+            };
+            if ((!significantOnly || significant) &&
                 (include is null || include.Contains(item.Type)) && exclude?.Contains(item.Type) != true)
             {
                 if (selected.Count == limit) break;
-                selected.Add(item);
+                selected.Add(view == EventView.Full ? item : item with { Payload = entry.CompactPayload ?? item.Payload, Significant = significant });
             }
             next = item.Cursor;
         }
-        long oldest = events.TryPeek(out var first) ? first.Cursor : 1;
+        long oldest = events.TryPeek(out var first) ? first.Full.Cursor : 1;
         return new(next, oldest, since < oldest - 1, selected.ToArray());
     }
 
@@ -62,12 +101,14 @@ public sealed partial class CozmoBridge
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
         var include = types?.ToHashSet(StringComparer.Ordinal);
         var exclude = excludeTypes?.ToHashSet(StringComparer.Ordinal);
-        var page = await WaitEventPageAsync(since, waitMs, limit, include, exclude, significantOnly, token).ConfigureAwait(false);
+        var page = await WaitEventPageAsync(since, waitMs, limit, include, exclude, significantOnly, token,
+            full ? EventView.Full : EventView.Compact).ConfigureAwait(false);
         return SerializeReadPage(page, full, significantOnly);
     }
 
     private async Task<BridgeEventPage> WaitEventPageAsync(long since, int waitMs, int limit,
-        HashSet<string>? include, HashSet<string>? exclude, bool significantOnly, CancellationToken token)
+        HashSet<string>? include, HashSet<string>? exclude, bool significantOnly, CancellationToken token,
+        EventView view = EventView.Full)
     {
         var clock = Stopwatch.StartNew();
         while (true)
@@ -76,7 +117,7 @@ public sealed partial class CozmoBridge
             Task signal;
             lock (eventGate)
             {
-                page = CaptureEventPage(since, limit, include, exclude, significantOnly);
+                page = CaptureEventPage(since, limit, include, exclude, significantOnly, view);
                 signal = eventAvailable.Task;
             }
             var remaining = TimeSpan.FromMilliseconds(waitMs) - clock.Elapsed;
@@ -90,7 +131,8 @@ public sealed partial class CozmoBridge
     private void AttachDuring(JsonObject response, long since, bool full, uint? completionTag)
     {
         BridgeEventPage page;
-        lock (eventGate) page = CaptureEventPage(since, int.MaxValue, null, null);
+        lock (eventGate) page = CaptureEventPage(since, int.MaxValue, null, null,
+            view: full ? EventView.Full : EventView.Compact);
         int budget = full ? int.MaxValue : CompactToolReplyBytes - EchoPayloadCost(JsonSerializer.SerializeToElement(response, Json));
         response["during"] = JsonNode.Parse(FormatDuring(page, since, full, budget, completionTag).GetRawText());
     }
@@ -197,11 +239,12 @@ public sealed partial class CozmoBridge
     private static JsonElement FormatDuring(BridgeEventPage page, long since, bool full, int budget, uint? completionTag)
     {
         if (full) return JsonSerializer.SerializeToElement(page, Json);
-        var (remaining, sightings) = Collapse(page.Events.ToArray());
+        var (ordinary, sightings) = Collapse(page.Events.ToArray());
+        var (remaining, animations) = CollapseAnimations(ordinary);
         int keep = remaining.Length;
         var complete = JsonSerializer.SerializeToElement(new
         {
-            page.Cursor, page.OldestCursor, page.Gap, events = remaining, sightings,
+            page.Cursor, page.OldestCursor, page.Gap, events = remaining, sightings, animations,
         }, Json);
         if (keep == 0 || EchoPayloadCost(complete) <= budget ||
             HasRecognitionSummaries(complete) && EchoPayloadCost(complete, RecognitionWindowText(complete)) <= budget)
@@ -223,7 +266,7 @@ public sealed partial class CozmoBridge
             var visible = completion is not null && !prefix.Contains(completion) ? [..prefix, completion] : prefix;
             var result = JsonSerializer.SerializeToElement(new
             {
-                page.Cursor, page.OldestCursor, page.Gap, events = visible, sightings,
+                page.Cursor, page.OldestCursor, page.Gap, events = visible, sightings, animations,
                 continuation = new { since = keep == 0 ? since : prefix[^1].Cursor, through = page.Cursor, excludeTypes },
             }, Json);
             if (keep == 0 || EchoPayloadCost(result) <= budget) return result;

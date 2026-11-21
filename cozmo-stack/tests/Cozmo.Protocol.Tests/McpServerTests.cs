@@ -343,14 +343,16 @@ public sealed class McpServerTests
         Assert.Equal(100,Assert.Single(state.GetProperty("knownFaces").EnumerateArray()).GetProperty("relative").GetProperty("distanceMm").GetDouble(),3);
     }
 
-    [Fact]
-    public async Task ActionDuringContainsNamedRobotPlaybackReportsAndOffTreadsTransitions()
+    [Theory]
+    [InlineData("compact")]
+    [InlineData("full")]
+    public async Task ActionDuringContainsNamedRobotPlaybackReportsAndOffTreadsTransitions(string detail)
     {
         using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true);
         using var bridge=new CozmoBridge(f.Rig.Robot);
         await using var client=new Client(bridge);
         await client.Initialize();
-        int action=await client.Send("tools/call",new {name="track-face",arguments=new {faceId=-7}});
+        int action=await client.Send("tools/call",new {name="track-face",arguments=new {faceId=-7,duringDetail=detail}});
         var clip=f.Rig.Robot.Animations.Library!.GetClip("anim_reacttocliff_pickup_03");
         var ticket=f.Rig.Robot.Animations.PlayTracked(clip)!;
         Assert.DoesNotContain(bridge.ReadEvents().GetProperty("events").EnumerateArray(),e=>e.GetProperty("type").GetString()=="animation-started");
@@ -363,10 +365,25 @@ public sealed class McpServerTests
         f.Rig.Engine.DrainAppDelivery();
         await client.Notify("notifications/cancelled",new {requestId=action});
         f.Rig.Tick();
-        var during=Data(await client.Receive(action)).GetProperty("during").GetProperty("events");
-        foreach(string type in new[]{"animation-started","animation-ended","animation-aborted"})
-            Assert.Equal(clip.Name,Assert.Single(during.EnumerateArray(),e=>e.GetProperty("type").GetString()==type).GetProperty("payload").GetProperty("name").GetString());
-        Assert.Equal(2,during.EnumerateArray().Count(e=>e.GetProperty("type").GetString()=="off-treads-changed"));
+        var during = Data(await client.Receive(action)).GetProperty("during");
+        var events = during.GetProperty("events").EnumerateArray().ToArray();
+        if (detail == "full")
+        {
+            Assert.False(during.TryGetProperty("animations", out _));
+            foreach (string type in new[] { "animation-started", "animation-ended", "animation-aborted" })
+                Assert.Equal(clip.Name, Assert.Single(events, e => e.GetProperty("type").GetString() == type)
+                    .GetProperty("payload").GetProperty("name").GetString());
+        }
+        else
+        {
+            var pair = Assert.Single(during.GetProperty("animations").EnumerateArray());
+            Assert.Equal(clip.Name, pair.GetProperty("name").GetString());
+            Assert.Equal("ended", pair.GetProperty("result").GetString());
+            Assert.DoesNotContain(events, e => e.GetProperty("type").GetString() is "animation-started" or "animation-ended");
+            var abort = Assert.Single(events, e => e.GetProperty("type").GetString() == "animation-aborted");
+            Assert.Equal(clip.Name, abort.GetProperty("payload").GetProperty("name").GetString());
+        }
+        Assert.Equal(2, events.Count(e => e.GetProperty("type").GetString() == "off-treads-changed"));
     }
 
     [Theory]

@@ -17,7 +17,7 @@ namespace Cozmo.Protocol.Tests;
 public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
 {
     [Fact]
-    public async Task EveningSessionReportsReachAllThreeClientsInTheSameOrder()
+    public async Task EveningSessionFullReportsReachTcpAndMcpInTheSameOrder()
     {
         string? bundle = Environment.GetEnvironmentVariable("COZMO_EVENT_PUSH_BUNDLE");
         if (string.IsNullOrEmpty(bundle)) return;
@@ -26,7 +26,7 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
         var robot = fixture.Rig.Robot;
         var clock = new EventClock();
         using var bridge = new CozmoBridge(robot, 16000, timeProvider: clock);
-        await using var client = new McpServerTests.Client(bridge, channel: true);
+        await using var client = new McpServerTests.Client(bridge);
         await client.Initialize();
         await using var stream = new BridgeEventStream(bridge, 0);
         using var tcp = new TcpClient();
@@ -50,19 +50,10 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
             entry.GetProperty("robotTimestamp").GetUInt32() > 1180000);
         var polled = new List<JsonElement>();
         var pushed = new List<JsonElement>();
-        var notifications = new List<JsonElement>();
         long cursor = 0;
-        while (notifications.Count < expected.Length)
-        {
-            var message = await client.Next();
-            Assert.Equal("notifications/claude/channel", message.GetProperty("method").GetString());
-            var page = JsonSerializer.Deserialize<JsonElement>(message.GetProperty("params").GetProperty("content").GetString()!);
-            Assert.False(page.GetProperty("gap").GetBoolean());
-            notifications.AddRange(Events(page));
-        }
         do
         {
-            var page = Data(await client.Tool("read_events", new { since = cursor, significantOnly = true, limit = 13 }));
+            var page = Data(await client.Tool("read_events", new { since = cursor, significantOnly = true, limit = 13, detail = "full" }));
             Assert.False(page.GetProperty("gap").GetBoolean());
             polled.AddRange(Events(page));
             cursor = page.GetProperty("cursor").GetInt64();
@@ -73,13 +64,70 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
             Assert.False(page.GetProperty("gap").GetBoolean());
             pushed.AddRange(Events(page));
         }
-        foreach (var actual in new[] { polled, pushed, notifications })
+        foreach (var actual in new[] { polled, pushed })
         {
             Assert.Equal(expected.Length, actual.Count);
             for (int i = 0; i < expected.Length; i++)
                 Assert.True(JsonElement.DeepEquals(expected[i], actual[i]), $"Feed record {i} differs.");
         }
         output.WriteLine($"Evening recording yielded {expected.Length} significant events from {bridge.CurrentEventCursor()} feed records.");
+    }
+
+    [Fact]
+    public async Task SessionFourPushReplayKeepsReactionsRecognitionsAndFalls()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_EVENT_FILTER_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        using var fixture = new Fixture();
+        var clock = new EventClock();
+        using var bridge = new CozmoBridge(fixture.Rig.Robot, 16000, timeProvider: clock);
+        Replay(bundle, fixture, bridge, clock);
+        long endOfReplay = bridge.CurrentEventCursor();
+        // A final significant sentinel lets the test finish even when the last
+        // capture records are quiet; it is excluded from all measurements.
+        var sleep = typeof(CozmoBridge).GetMethod("OnGoingToSleep", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .CreateDelegate<Action<GoingToSleepReport>>(bridge);
+        sleep(new(false));
+
+        var full = Events(bridge.ReadEvents()).Where(e => e.GetProperty("cursor").GetInt64() <= endOfReplay).ToArray();
+        var before = full.Where(e => e.GetProperty("significant").GetBoolean()).ToArray();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var after = new List<BridgeEvent>();
+        await foreach (var page in bridge.StreamPushEventsAsync(0, timeout.Token))
+        {
+            after.AddRange(page.Events.Where(e => e.Cursor <= endOfReplay));
+            if (page.Cursor > endOfReplay) break;
+        }
+        Assert.Equal(after.Select(e => e.Cursor).Order(), after.Select(e => e.Cursor));
+
+        string[] preserve = ["reaction-changed", "face-recognised", "cube-moved", "cube-tapped", "cliff-detected",
+            "unexpected-movement", "going-to-sleep", "object-pose-lost", "charger-seen"];
+        foreach (var entry in before.Where(e => preserve.Contains(Type(e))))
+            Assert.Contains(after, e => e.Cursor == entry.GetProperty("cursor").GetInt64());
+        Assert.All(after.Where(e => e.Type == "reaction-changed"), e =>
+        {
+            Assert.Equal(JsonValueKind.String, e.Payload.GetProperty("oldTrigger").ValueKind);
+            Assert.Equal(JsonValueKind.String, e.Payload.GetProperty("newTrigger").ValueKind);
+            Assert.True(e.Payload.GetProperty("oldBehavior").ValueKind == JsonValueKind.String ||
+                e.Payload.GetProperty("newBehavior").ValueKind == JsonValueKind.String);
+        });
+        Assert.Contains(after, e => e.Type == "off-treads-changed" &&
+            e.Payload.GetProperty("from").GetString() == "InAir" && e.Payload.GetProperty("to").GetString() == "Falling");
+        Assert.Contains(after, e => e.Type == "off-treads-changed" &&
+            e.Payload.GetProperty("from").GetString() == "Falling" && e.Payload.GetProperty("to").GetString() == "OnTreads");
+        Assert.DoesNotContain(after, e => e.Type == "action-completed" &&
+            before.Any(raw => raw.GetProperty("cursor").GetInt64() == e.Cursor));
+        Assert.Contains(after, e => e.Type == "action-completed");
+        var faces = after.Where(e => e.Type is "face-seen" or "face-recognised").ToArray();
+        Assert.NotEmpty(faces);
+        Assert.True(faces.Count(e => e.Type == "face-seen") < before.Count(e => Type(e) == "face-seen"));
+        Assert.All(faces, e => Assert.False(e.Payload.TryGetProperty("leftEye", out _)));
+
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        int beforeBytes = JsonSerializer.SerializeToUtf8Bytes(before, json).Length;
+        int afterBytes = JsonSerializer.SerializeToUtf8Bytes(after, json).Length;
+        output.WriteLine($"Session 4 replay significant events: {before.Length} / {beforeBytes} UTF-8 bytes before, " +
+            $"{after.Count} / {afterBytes} UTF-8 bytes after (event arrays, excluding transport wrappers).");
     }
 
     private static void Replay(string bundle, Fixture fixture, CozmoBridge bridge, EventClock clock)
@@ -101,6 +149,9 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
         var groundTags = new HashSet<uint>();
         var groundCalls = new HashSet<string>();
         OffTreadsState treads = OffTreadsState.OnTreads;
+        var reactionNames = new Dictionary<double, string>();
+        double? awaitingBehaviorAt = null;
+        string? lastReactionBehavior = null;
 
         foreach (var line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
         {
@@ -129,10 +180,17 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
                     break;
                 case "engine-to-game":
                     string tag = row.GetProperty("tag").GetString()!;
+                    if (tag == "0x87" && awaitingBehaviorAt is { } reactionAt && at - reactionAt < 10)
+                    {
+                        byte id = Convert.FromHexString(row.GetProperty("bodyHex").GetString()!)[1];
+                        reactionNames[reactionAt] = Enum.GetName((BehaviorID)id)!;
+                        awaitingBehaviorAt = null;
+                    }
                     if (tag is not ("0x0F" or "0x10" or "0x13" or "0x2D" or "0x44" or "0x46" or "0x47" or "0x4B" or "0x52" or "0x5A" or "0x88"))
                         break;
                     var body = new CladReader(Convert.FromHexString(row.GetProperty("bodyHex").GetString()!));
-                    events.Add((at, () => ReplayReport(tag, body)));
+                    if (tag == "0x88") awaitingBehaviorAt = at;
+                    events.Add((at, () => ReplayReport(at, tag, body)));
                     break;
             }
         }
@@ -153,7 +211,7 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
             previous = at;
         }
 
-        void ReplayReport(string tag, CladReader body)
+        void ReplayReport(double at, string tag, CladReader body)
         {
             switch (tag)
             {
@@ -212,7 +270,12 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
                     break;
                 case "0x88":
                     ReactionTrigger? Trigger(byte value) => value == 0x16 ? null : (ReactionTrigger)value;
-                    engine.BroadcastReactionTransition(Trigger(body.U8()), Trigger(body.U8()));
+                    var oldTrigger = Trigger(body.U8());
+                    var newTrigger = Trigger(body.U8());
+                    string? newBehavior = newTrigger.HasValue ? reactionNames.GetValueOrDefault(at) : null;
+                    engine.BroadcastReactionTransition(oldTrigger, newTrigger,
+                        oldTrigger.HasValue ? lastReactionBehavior : null, newBehavior);
+                    lastReactionBehavior = newBehavior;
                     break;
             }
         }

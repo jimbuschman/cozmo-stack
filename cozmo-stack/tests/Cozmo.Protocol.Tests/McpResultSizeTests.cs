@@ -193,7 +193,35 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
     private static void Append(CozmoBridge bridge, string type, JsonElement payload, uint? timestamp = null)
     {
         lock (FeedGate.GetValue(bridge)!)
-            AppendFeed.Invoke(bridge, [type, timestamp, payload, false]);
+            AppendFeed.Invoke(bridge, [type, timestamp, payload, false, null, null, null]);
+    }
+
+    [Fact]
+    public void CompactDuringPairsAnimationEndsAndAbortsWithoutLosingUnmatchedEvents()
+    {
+        using var rig = new M4ControlTests.Rig();
+        using var bridge = new CozmoBridge(rig.Robot);
+        void Animation(string type, byte tag, string name) =>
+            Append(bridge, type, JsonSerializer.SerializeToElement(new { tag, name }));
+
+        Animation("animation-ended", 9, "older");
+        Animation("animation-started", 5, "first");
+        Animation("animation-started", 6, "second");
+        Animation("animation-aborted", 6, "second");
+        Animation("animation-ended", 5, "first");
+        Animation("animation-started", 5, "still playing");
+        var result = new JsonObject();
+        AttachDuring.Invoke(bridge, [result, 0L, false, null]);
+        var during = JsonSerializer.SerializeToElement(result).GetProperty("during");
+        var summaries = during.GetProperty("animations").EnumerateArray().ToArray();
+        Assert.Equal(new[] { "first", "second" }, summaries.Select(a => a.GetProperty("name").GetString()));
+        Assert.Equal(new[] { "ended", "aborted" }, summaries.Select(a => a.GetProperty("result").GetString()));
+        Assert.Equal(new long[] { 1, 6 }, during.GetProperty("events").EnumerateArray().Select(e => e.GetProperty("cursor").GetInt64()));
+
+        AttachDuring.Invoke(bridge, [result, 0L, true, null]);
+        var full = JsonSerializer.SerializeToElement(result).GetProperty("during");
+        Assert.Equal(6, full.GetProperty("events").GetArrayLength());
+        Assert.False(full.TryGetProperty("animations", out _));
     }
 
     [Theory]
@@ -256,7 +284,9 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
             Assert.Equal(100595u, repeats.GetProperty("firstRobotTimestamp").GetUInt32());
             Assert.Equal(113485u, repeats.GetProperty("lastRobotTimestamp").GetUInt32());
             Assert.Equal(113485u, repeats.GetProperty("lastPayload").GetProperty("timestamp").GetUInt32());
-            Assert.Equal(captured.Where(e => !MayCollapse(e.GetProperty("type").GetString()))
+            var paired = during.GetProperty("animations").EnumerateArray().SelectMany(a =>
+                new[] { a.GetProperty("startCursor").GetInt64(), a.GetProperty("endCursor").GetInt64() }).ToHashSet();
+            Assert.Equal(captured.Where((e, i) => !paired.Contains(i + 1) && !MayCollapse(e.GetProperty("type").GetString()))
                     .Select(e => (e.GetProperty("type").GetString(), e.GetProperty("payload").GetRawText())),
                 all.Where(e => !MayCollapse(e.GetProperty("type").GetString()))
                     .Select(e => (e.GetProperty("type").GetString(), e.GetProperty("payload").GetRawText())));

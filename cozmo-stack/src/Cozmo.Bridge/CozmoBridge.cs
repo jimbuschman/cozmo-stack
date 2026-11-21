@@ -10,7 +10,9 @@ public sealed partial class CozmoBridge
     private CozmoRobot Robot { get; }
     private readonly int eventCapacity;
     private readonly object eventGate = new();
-    private readonly Queue<BridgeEvent> events = new();
+    private sealed record FeedEntry(BridgeEvent Full, JsonElement? CompactPayload, bool CompactSignificant, bool PushSignificant);
+
+    private readonly Queue<FeedEntry> events = new();
     private long lastCursor;
     private TaskCompletionSource eventAvailable = NewEventSignal();
     private static TaskCompletionSource NewEventSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -54,9 +56,9 @@ public sealed partial class CozmoBridge
         {
             ThrowIfDisposed();
             if (since > lastCursor) throw new ArgumentOutOfRangeException(nameof(since), "Cursor belongs to a different or newer event feed.");
-            page = events.Where(e => e.Cursor > since).ToArray();
+            page = events.Select(e => e.Full).Where(e => e.Cursor > since).ToArray();
             next = lastCursor;
-            oldest = events.TryPeek(out var first) ? first.Cursor : 1;
+            oldest = events.TryPeek(out var first) ? first.Full.Cursor : 1;
         }
         return JsonSerializer.SerializeToElement(new { cursor = next, oldestCursor = oldest, gap = since < oldest - 1, events = page }, Json);
     }
@@ -160,11 +162,16 @@ public sealed partial class CozmoBridge
     private void OnFace(RobotObservedFaceReport report)
     {
         var payload = JsonSerializer.SerializeToElement(report, Json);
+        var compact = PresentFace(report);
         lock (eventGate)
         {
-            Append("face-seen", report.Timestamp, payload, locatedFaces.Add(report.FaceId));
-            if (!string.IsNullOrEmpty(report.Name))
-                Append("face-recognised", report.Timestamp, payload, FirstRecognitionThisMinute(report.FaceId));
+            var (newApproach, newRecognition) = TrackFaceApproach(report);
+            bool named = !string.IsNullOrEmpty(report.Name);
+            Append("face-seen", report.Timestamp, payload, locatedFaces.Add(report.FaceId), compact,
+                compactEligible: newApproach && !named);
+            if (named)
+                Append("face-recognised", report.Timestamp, payload, FirstRecognitionThisMinute(report.FaceId), compact,
+                    compactEligible: newRecognition);
         }
     }
     private void OnFaceIdChanged(RobotChangedObservedFaceIdReport report)
@@ -172,6 +179,12 @@ public sealed partial class CozmoBridge
         lock (eventGate)
         {
             if (locatedFaces.Remove(report.OldId)) locatedFaces.Add(report.NewId);
+            if (faceApproaches.Remove(report.OldId, out var track) &&
+                (!faceApproaches.TryGetValue(report.NewId, out var newer) || newer.LastSeen <= track.LastSeen))
+            {
+                if (track.Approach.RecognisedId == report.OldId) track.Approach.RecognisedId = report.NewId;
+                faceApproaches[report.NewId] = track;
+            }
             if (recognisedAt.Remove(report.OldId, out var at) &&
                 (!recognisedAt.TryGetValue(report.NewId, out var existing) || at > existing))
                 recognisedAt[report.NewId] = at;
@@ -225,8 +238,22 @@ public sealed partial class CozmoBridge
         }
     }
     private void OnBehavior(BehaviorTransitionReport report) => Add("behavior-changed", report);
-    private void OnReaction(ReactionTransitionReport report) =>
-        Add("reaction-changed", report, eligible: report.OldTrigger != 0x16 || report.NewTrigger != 0x16);
+    private void OnReaction(ReactionTransitionReport report)
+    {
+        static string TriggerName(byte trigger) => trigger == 0x16 ? "NoneTrigger" :
+            Enum.GetName((Cozmo.Robot.Behavior.ReactionTrigger)trigger) ?? $"Unknown ({trigger})";
+        var (oldBehavior, newBehavior) = Robot.Engine.GetReactionBehaviorNames(report);
+        var compact = JsonSerializer.SerializeToElement(new
+        {
+            oldTrigger = TriggerName(report.OldTrigger),
+            newTrigger = TriggerName(report.NewTrigger),
+            oldBehavior,
+            newBehavior,
+        }, Json);
+        lock (eventGate)
+            Append("reaction-changed", null, JsonSerializer.SerializeToElement(report, Json),
+                report.OldTrigger != 0x16 || report.NewTrigger != 0x16, compactPayload: compact);
+    }
     private void OnGoingToSleep(GoingToSleepReport report) => Add("going-to-sleep", report);
     private void OnChargerSleepCancelled(ChargerSleepCancelledReport report) => Add("sleep-cancelled", report);
     private void OnRobotDisconnected(RobotDisconnectedMessage report)
@@ -236,6 +263,7 @@ public sealed partial class CozmoBridge
             locatedFaces.Clear();
             locatedObjects.Clear();
             recognisedAt.Clear();
+            faceApproaches.Clear();
             batteryLow = false;
             onCharger = false;
             Add("robot-disconnected", new { report.TimeSinceLastMsgSec, reason = report.Reason.ToString(), reasonCode = (byte)report.Reason });
@@ -243,21 +271,27 @@ public sealed partial class CozmoBridge
     }
     private void OnActionCompleted(ActionCompletionReport report) =>
         Add("action-completed", new { completion = report, resultName = Enum.GetName((NativeActionResultName)report.Result) },
-            eligible: ReferenceEquals(report.HostCaller, eventCaller));
+            eligible: ReferenceEquals(report.HostCaller, eventCaller),
+            compactEligible: true, pushEligible: !ReferenceEquals(report.HostCaller, eventCaller));
 
-    private void Add<T>(string type, T payload, uint? robotTimestamp = null, bool eligible = true)
+    private void Add<T>(string type, T payload, uint? robotTimestamp = null, bool eligible = true,
+        bool? compactEligible = null, bool? pushEligible = null)
     {
         var json = JsonSerializer.SerializeToElement(payload, Json);
-        lock (eventGate) Append(type, robotTimestamp, json, eligible);
+        lock (eventGate) Append(type, robotTimestamp, json, eligible, compactEligible: compactEligible, pushEligible: pushEligible);
     }
 
-    private void Append(string type, uint? robotTimestamp, JsonElement payload, bool eligible = true)
+    private void Append(string type, uint? robotTimestamp, JsonElement payload, bool eligible = true,
+        JsonElement? compactPayload = null, bool? compactEligible = null, bool? pushEligible = null)
     {
         if (disposed) return;
         if (events.Count == eventCapacity) events.Dequeue();
         var now = timeProvider.GetUtcNow();
-        bool significant = eligible && significantTypes.Contains(type);
-        events.Enqueue(new(++lastCursor, type, now, robotTimestamp, payload, significant));
+        bool significantType = significantTypes.Contains(type);
+        var full = new BridgeEvent(++lastCursor, type, now, robotTimestamp, payload, eligible && significantType);
+        events.Enqueue(new(full, compactPayload,
+            (compactEligible ?? eligible) && significantType,
+            (pushEligible ?? compactEligible ?? eligible) && significantType));
         var signal = eventAvailable;
         eventAvailable = NewEventSignal();
         signal.TrySetResult();

@@ -9,12 +9,22 @@ internal sealed record DefaultHeadAndLiftState(bool Enable, float HeadRadians, f
 public sealed partial class CozmoEngine
 {
     public event Action<ReactionTransitionReport>? ReactionTransition;
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<ReactionTransitionReport, ReactionBehaviorNames> reactionBehaviorNames = new();
+    private sealed record ReactionBehaviorNames(string? Old, string? New);
+
+    // Receipt-local metadata for host presentation. The public report and raw 0x88 bytes are unchanged.
+    internal (string? Old, string? New) GetReactionBehaviorNames(ReactionTransitionReport report) =>
+        reactionBehaviorNames.TryGetValue(report, out var names) ? (names.Old, names.New) : default;
+
     // fidelity: M8-012: 0x005A20AA..D6, 0x005A2EE8; E2G 0x88 old then new.
-    internal void BroadcastReactionTransition(ReactionTrigger? oldTrigger, ReactionTrigger? newTrigger)
+    internal void BroadcastReactionTransition(ReactionTrigger? oldTrigger, ReactionTrigger? newTrigger,
+        string? oldBehavior = null, string? newBehavior = null)
     {
         var owner = Robot;
         var report = new ReactionTransitionReport(oldTrigger is { } old ? (byte)old : (byte)0x16,
             newTrigger is { } next ? (byte)next : (byte)0x16);
+        if (oldBehavior is not null || newBehavior is not null)
+            reactionBehaviorNames.Add(report, new(oldBehavior, newBehavior));
         DeliverAnimationReportToApp(0x88, new byte[] { report.OldTrigger, report.NewTrigger }, CaptureAppEvent(ReactionTransition, report));
         AnimationMessages.Deliver(0x88, true, report);
         if (owner is not null && ReferenceEquals(Robot, owner)) ObserveChargerSleepReaction(owner, newTrigger);

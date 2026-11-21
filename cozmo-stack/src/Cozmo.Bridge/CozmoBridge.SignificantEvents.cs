@@ -69,9 +69,17 @@ public sealed partial class CozmoBridge
     /// Follows retained and live events. A null cursor starts at the live edge. Use each page cursor to
     /// resume. Gap indicates that the ring has evicted part of the unscanned history.
     /// </summary>
-    public async IAsyncEnumerable<BridgeEventPage> StreamEventsAsync(long? since = null,
+    public IAsyncEnumerable<BridgeEventPage> StreamEventsAsync(long? since = null,
         IReadOnlyCollection<string>? types = null, bool significantOnly = false,
-        [EnumeratorCancellation] CancellationToken token = default)
+        CancellationToken token = default) =>
+        StreamEventViewAsync(since, types, significantOnly, EventView.Full, token);
+
+    internal IAsyncEnumerable<BridgeEventPage> StreamPushEventsAsync(long since, CancellationToken token) =>
+        StreamEventViewAsync(since, null, true, EventView.Push, token);
+
+    private async IAsyncEnumerable<BridgeEventPage> StreamEventViewAsync(long? since,
+        IReadOnlyCollection<string>? types, bool significantOnly, EventView view,
+        [EnumeratorCancellation] CancellationToken token)
     {
         long cursor = since ?? CurrentEventCursor();
         ArgumentOutOfRangeException.ThrowIfNegative(cursor);
@@ -79,7 +87,7 @@ public sealed partial class CozmoBridge
         while (true)
         {
             token.ThrowIfCancellationRequested();
-            var page = await WaitEventPageAsync(cursor, 30000, 64, include, null, significantOnly, token).ConfigureAwait(false);
+            var page = await WaitEventPageAsync(cursor, 30000, 64, include, null, significantOnly, token, view).ConfigureAwait(false);
             cursor = page.Cursor;
             if (page.Gap || page.Events.Count != 0) yield return page;
         }
