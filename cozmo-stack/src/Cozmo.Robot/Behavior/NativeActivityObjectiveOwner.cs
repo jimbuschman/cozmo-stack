@@ -115,7 +115,8 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
         long epoch=_epoch;
         bool Valid()=>!_retired && epoch==_epoch && ReferenceEquals(_robot.Engine.Robot,_robot);
         ChooserDecision Missing()=>normal with {InputUnavailable=true};
-        ChooserDecision Chosen(IBehavior? target)=>normal with {Behavior=target};
+        ChooserDecision Chosen(IBehavior? target, string? reason = null) =>
+            normal with { Behavior = target, Reason = reason ?? normal.Reason };
         if (_phase is 0 or 1 or 2 && (_search is null || _interact is null))
         {
             Unavailable("retained FindFaces_socialize or InteractWithFaces owner");
@@ -124,30 +125,30 @@ internal sealed class NativeActivityObjectiveOwner : IDisposable
         if(_phase==0)
         {
             var interact=Runnable(_interact,context,false);if(interact is null || !Valid())return Missing();
-            if(interact.Value){_phase=2;return Chosen(_interact);}
+            if(interact.Value){_phase=2;return Chosen(_interact, "face available for interaction");} // 0x005B02F6..0x005B0302
             var ready=Runnable(_search,context,false);if(ready is null || !Valid())return Missing();
             if(ready.Value)
             {
-                _searchSnapshot=_search!.SearchIterations;_phase=1;return Chosen(_search); // 0x005B033A..3E
+                _searchSnapshot=_search!.SearchIterations;_phase=1;return Chosen(_search, "searching for a face"); // 0x005B0304..0x005B033E
             }
             return normal;
         }
         if(_phase==1)
         {
             var interact=Runnable(_interact,context,false);if(interact is null || !Valid())return Missing();
-            if(interact.Value){_phase=2;return Chosen(_interact);}
+            if(interact.Value){_phase=2;return Chosen(_interact, "face available for interaction");} // 0x005B0344..0x005B0376
             if(_maxSearch!=0 && unchecked(_search!.SearchIterations-_searchSnapshot)>=_maxSearch)
             {_phase=6;return normal;} // 0x005B0520..38
             var ready=Runnable(_search,context,true);if(ready is null || !Valid())return Missing();
-            return ready.Value?Chosen(_search):normal;
+            return ready.Value ? Chosen(_search, "searching for a face") : normal;
         }
         if(_phase==2)
         {
             var ready=Runnable(_interact,context,true);if(ready is null || !Valid())return Missing();
-            if(ready.Value)return Chosen(_interact);
+            if(ready.Value)return Chosen(_interact, "face available for interaction");
             ready=Runnable(_search,context,true);
             if(ready is null || !Valid())return Missing();_phase=1;
-            return ready.Value?Chosen(_search):normal;
+            return ready.Value ? Chosen(_search, "searching again after interaction ended") : normal;
         }
         if(_phase==3)
         {

@@ -367,6 +367,9 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
         return desired;
     }
 
+    internal BehaviorTransitionContext? DescribeSwitch() =>
+        Current is { } activity ? new(activity.Id, _switchReason) : null;
+
     // IActivity::GetDesiredActiveBehavior 0x005B387C caches the interlude itself.
     private ChooserDecision ChooseActivityBehavior(Activity activity, IBehavior? current, double nowSec)
     {
@@ -418,7 +421,7 @@ public sealed class FreeplaySystem : IManagedActivity, IHostReadinessOwner
             if(NativeOwner && interlude.InputUnavailable)
             {activity.CachedInterlude=priorInterlude;_childUnavailable=true;ReportActivityMissing("MISSING: actual interlude input unavailable; retaining current behavior");return decision with {Behavior=current,InputUnavailable=true};}
             activity.CachedInterlude = interlude.Behavior;
-            if (activity.CachedInterlude is not null) return decision with { Behavior = activity.CachedInterlude };
+            if (activity.CachedInterlude is not null) return decision with { Behavior = activity.CachedInterlude, Reason = interlude.Reason };
         }
         return decision;
     }
