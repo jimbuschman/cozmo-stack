@@ -404,6 +404,28 @@ internal sealed class SourceQuadTree
     {
         lock(_geometryGate)return Processor.TypeSets.TryGetValue(type,out var nodes)&&nodes.Count!=0;
     }
+    // Host observation of the same leaves as AddQuadsToSendDebugViz 0x00687B80..0x00687BEA.
+    // Bounds come from the existing native geometry (MakeQuadXY 0x00686AFC, padding 0).
+    internal (SourceQuadBounds Bounds, MemoryMapCell[] Cells) CaptureCells(double x, double y, double radius)
+    {
+        lock (_geometryGate)
+        {
+            var cells = new List<MemoryMapCell>();
+            void Visit(SourceQuadNode node)
+            {
+                var bounds = node.Bounds;
+                if (bounds.MinX > x + radius || bounds.MaxX < x - radius ||
+                    bounds.MinY > y + radius || bounds.MaxY < y - radius) return;
+                if (node.Children.Count == 0)
+                    cells.Add(new(node.Content.Data.Type, bounds));
+                else
+                    foreach (var child in node.Children) Visit(child!);
+            }
+            Visit(Root);
+            return (Root.Bounds, cells.ToArray());
+        }
+    }
+
     // Host observation only. Take the same gate as Insert/ray and return detached counts.
     internal IReadOnlyDictionary<MemoryMapContentType,int> ContentCounts()
     {

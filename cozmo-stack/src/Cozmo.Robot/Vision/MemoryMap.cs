@@ -73,6 +73,8 @@ public static class MemoryMapTypes
 /// <summary>One region of the map: a polygon in the world plane and what is in it.</summary>
 public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, uint? ObjectId, uint Timestamp);
 
+internal readonly record struct MemoryMapCell(MemoryMapContentType Type, SourceQuadBounds Bounds);
+
 /// <summary>
 /// The engine's memory map (<c>Anki::Cozmo::MemoryMap</c>, reached through
 /// <c>MapComponent::GetCurrentMemoryMapHelper</c> 0x0067EA5C): what is known about the ground around the

@@ -2,7 +2,8 @@
 
 ## Working with him
 
-- Read `get_state` and check `connection.connected` and `connection.ready` before an action.
+- Read `get_state` and check `connection.connected` and `connection.ready` before an action. `pose` gives x, y and z in millimeters, heading in radians, the current `originId` and `poseFrameId`, and the object Cozmo is localized to when one is known. `robotTimestamp` and `ageMs` describe the last odometry estimate applied in that frame. They can be null after a frame change until fresh odometry arrives.
+- Use `get_map` for Cozmo's current memory map. The default window extends 500 mm in each direction around him. Set `radiusMm` or `limit` to refine the request. Bounds are `[minX,minY,maxX,maxY]` in millimeters. Robot-relative bounds enclose the same cell with forward as +X and left as +Y. `Unknown` means the map has no content for that cell. Compare origin IDs before using older coordinates. `truncated` means the region list keeps only the nearest cells. Set `render: true` for a 192 × 192 world-aligned PNG of the requested window with Cozmo's heading and located objects. Red marks cliffs, blue marks the charger, yellow marks edges, and purple marks other obstacles.
 - Look with `get_camera_image` before moving or manipulating an object. `annotate` adds matching face/object boxes. This reads the existing camera stream; it does not enable a different vision mode. With `annotate`, the returned image can be older than the newest received frame. Empty boxes mean there were no matching reports for the returned image.
 - Use the current `worldObjectId` from `knownCubes` or `knownChargers` for object actions. `factoryId` and `radioObjectId` identify different things. Face actions use the signed `faceId` from state/events; follow `face-id-changed` updates.
 - Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
