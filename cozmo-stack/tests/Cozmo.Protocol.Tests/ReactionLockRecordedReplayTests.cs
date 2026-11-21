@@ -6,6 +6,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
@@ -81,9 +82,8 @@ public sealed partial class ReactionLockMcpTests
                     $"distance={locator.DistanceFromRobotMm(cube.ObjectId)}, visible={locator.IsVisibleFromCamera(cube.ObjectId)}, " +
                     $"current={manager.Current?.Id}, transitions={string.Join(',', observed.Select(Convert.ToHexString))}.");
                 Assert.Equal(expected, Assert.Single(observed));
-                // The capture returns to NoneTrigger before the second turn and reacquisition.
-                // Restore that captured entry context for the next input window.
-                manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.Seconds);
+                ReplayCubeMovedAbsence(f, evidence, cubeMoveReactionAt);
+                // The same reaction ends before the second turn and reacquisition.
                 f.Rig.Engine.DrainAppDelivery();
                 Assert.Equal(emissions.Single(e => e.At == FirstMoveExit).Body, observed[1]);
             }
@@ -106,6 +106,170 @@ public sealed partial class ReactionLockMcpTests
         {
             Assert.Equal(ReactionTrigger.ObjectPositionUpdated, manager.CurrentReactionTrigger);
             Assert.Equal(emissions.Single(e => e.At == reactionAt).Body, Assert.Single(observed));
+        }
+    }
+
+    private static void ReplayCubeMovedAbsence(Fixture f, List<Captured> evidence, double reactionAt)
+    {
+        // The 09:48:33 capture has no target sighting in this reaction. The 0x8B
+        // objective and the 0x88 exit are output oracles; firmware ACKs are modeled.
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var behavior = Assert.IsType<AcknowledgeCubeMovedBehavior>(manager.Current);
+        var sense = Assert.IsType<CompoundActionParallel>(behavior.OwnedRunner);
+        var stopped = evidence.Single(e => e.Tag == "0x10" && e.At > reactionAt && e.At < FirstMoveExit);
+        var objective = evidence.Single(e => e.Tag == "0x8B" && e.At > reactionAt && e.At < FirstMoveExit);
+        var capturedAnimation = evidence.Single(e => e.Tag == "0x5A" && e.At > objective.At && e.At < FirstMoveExit);
+        var objectives = new List<byte[]>();
+        var completions = new List<ActionCompletionReport>();
+
+        void OnEngineMessage(ushort tag, ReadOnlyMemory<byte> body)
+        {
+            if (tag == 0x8B) objectives.Add(body.ToArray());
+        }
+        f.Rig.Engine.EngineToGameMessage += OnEngineMessage;
+        f.Rig.Engine.ActionCompleted += completions.Add;
+        double start = f.Rig.Engine.Timer.Seconds;
+        int wireCursor = f.Rig.Mark();
+        byte? runningAnimation = null;
+        bool stopDelivered = false;
+        CompoundActionParallel? turn = null;
+        TriggerLiftSafeAnimationAction? absence = null;
+        manager.HostReactionChecksEnabled = false;
+        try
+        {
+            for (int frame = 0; frame < 500 && ReferenceEquals(manager.Current, behavior); frame++)
+            {
+                if (!stopDelivered && (f.Rig.Engine.Timer.Seconds - start) * 1000 >= stopped.At - reactionAt)
+                {
+                    f.Rig.Engine.AnimationMessages.Deliver(0x10, true, ObjectStoppedMoving.Read(new CladReader(stopped.Body)));
+                    stopDelivered = true;
+                }
+                f.Motors();
+                ReplyToCubeMovedAnimationPackets(f, ref wireCursor, ref runningAnimation);
+                if (behavior.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.TurningToLastLocation && turn is null)
+                {
+                    turn = Assert.IsType<CompoundActionParallel>(behavior.OwnedRunner);
+                    Assert.Same(turn, f.Robot.ActionList.GetCurrentAction());
+                    Assert.Collection(turn.Children,
+                        child => Assert.IsType<NativeTurnTowardsPoseRunner>(child),
+                        child => Assert.Equal(0.5f, Assert.IsType<NativeTimedWaitRunner>(child).Duration));
+                }
+                if (behavior.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockAbsence && absence is null)
+                    absence = Assert.IsType<TriggerLiftSafeAnimationAction>(behavior.OwnedRunner);
+            }
+            f.Rig.Engine.DrainAppDelivery();
+            Assert.True(stopDelivered);
+            Assert.NotSame(behavior, manager.Current);
+            Assert.Equal(objective.Body, Assert.Single(objectives));
+            Assert.NotNull(turn);
+            Assert.NotNull(absence);
+            Assert.Equal(AnimationTrigger.CubeMovedUpset, absence.Request.Trigger);
+            Assert.Contains(completions, r => r.Tag == sense.Tag && r.ActionType == -2 && r.CompletionVariant == 6);
+            Assert.Contains(completions, r => r.Tag == turn.Tag && r.ActionType == -2 && r.Result == 0 && r.CompletionVariant == 6);
+            var replayedAnimation = Assert.Single(completions, r => r.Tag == absence.Tag);
+            Assert.Equal(System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(capturedAnimation.Body.AsSpan(4)), replayedAnimation.ActionType);
+            Assert.Equal(System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(capturedAnimation.Body.AsSpan(8)), replayedAnimation.Result);
+        }
+        finally
+        {
+            manager.HostReactionChecksEnabled = true;
+            f.Rig.Engine.EngineToGameMessage -= OnEngineMessage;
+            f.Rig.Engine.ActionCompleted -= completions.Add;
+        }
+    }
+
+    // Follow real streamer packets. Native PlayAnimation requires CA before matching CB.
+    private static void ReplyToCubeMovedAnimationPackets(Fixture f, ref int cursor, ref byte? animationTag)
+    {
+        var transmitted = f.Rig.SentSince(cursor);
+        cursor = f.Rig.Mark();
+        foreach (var message in transmitted)
+        {
+            switch (message)
+            {
+                case StartOfAnimation start:
+                    animationTag = start.AnimId;
+                    f.Rig.Data(new AnimationStarted { AnimId = start.AnimId });
+                    break;
+                case EndOfAnimation when animationTag is { } tag:
+                    f.Rig.Data(new AnimationEnded { AnimId = tag });
+                    animationTag = null;
+                    break;
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CubeMovedPresenceUsesTheNativeAnimationAndHoldsTheCarriedLift(bool carrying)
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        f.Rig.Tick();
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.Activity = null;
+        manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.Seconds);
+        manager.HostReactionChecksEnabled = false;
+        var registration = Assert.Single(manager.Reactions, r => r.Strategy.Trigger == ReactionTrigger.CubeMoved);
+        var strategy = Assert.IsType<CubeMovedReactionStrategy>(registration.Strategy);
+        var behavior = Assert.IsType<AcknowledgeCubeMovedBehavior>(registration.Behavior);
+        var target = f.Add(id: 7, x: -180);
+        if (carrying)
+        {
+            var held = f.Add(id: 8, x: 32);
+            Assert.True(f.Robot.CarryingOwner!.SetCarryingObject(f.M.World, held.ObjectId, (ushort)held.LastObservedMarkers[0]));
+        }
+        Assert.Equal(OffTreadsState.OnTreads, f.Rig.Robot.Sensors.OffTreadsState);
+        behavior.TargetObjectId = target.ObjectId;
+        Assert.True(behavior.IsRunnable(f.Runtime.Context)); // the native +0x28 gate permits carrying
+        using var scope = new BehaviorScope();
+        await behavior.StartAsync(f.Runtime.Context, scope, default);
+        try
+        {
+            var sense = Assert.IsType<CompoundActionParallel>(behavior.OwnedRunner);
+            Assert.True(f.Robot.ActionList.Cancel(sense.Tag)); // fixture shortcut through the result-insensitive callback
+            var turn = Assert.IsType<CompoundActionParallel>(behavior.OwnedRunner);
+            var reports = new List<ActionCompletionReport>();
+            f.Rig.Engine.ActionCompleted += reports.Add;
+            f.Rig.Tick();
+            strategy.ObjectObserved(target.ObjectId);
+            behavior.Update(f.Runtime.Context, f.Rig.Engine.Timer.TimeStampMs);
+            Assert.Equal(AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockPresence, behavior.CurrentPhase);
+            var presence = Assert.IsType<TriggerLiftSafeAnimationAction>(behavior.OwnedRunner);
+            Assert.Same(presence, f.Robot.ActionList.GetCurrentAction());
+            Assert.Equal(new DrivingAnimationRequest(AnimationTrigger.AcknowledgeObject, 1, true, 0, 60f, false), presence.Request);
+            Assert.Equal(carrying ? 2u : 0u, presence.RequiredTrackMask);
+            Assert.Null(behavior.SharedHandle); // empty completion callable at 0x0060254A
+            f.Rig.Engine.DrainAppDelivery();
+            Assert.Contains(reports, report => report.Tag == turn.Tag && report.ActionType == -2 &&
+                report.Result == EngineActionResult.Cancelled && report.CompletionVariant == 6);
+
+            int start = f.Rig.Mark();
+            f.Rig.Tick();
+            Assert.True(f.Rig.Robot.Animations.IsPlaying);
+            Assert.Equal(carrying, f.Rig.Robot.Motion.AreAnyTracksLocked(CozmoMotion.LiftTrack));
+            var started = f.Rig.SentSince(start);
+            Assert.Equal(carrying ? new byte[] { 2 } : Array.Empty<byte>(),
+                started.OfType<DisableAnimTracks>().Select(m => m.Field0));
+            Assert.Empty(started.OfType<SetLiftHeight>());
+            int wireCursor = start;
+            byte? runningAnimation = null;
+            for (int frame = 0; frame < 350 && behavior.OwnedRunner is not null; frame++)
+            {
+                ReplyToCubeMovedAnimationPackets(f, ref wireCursor, ref runningAnimation);
+                f.Motors();
+            }
+            f.Rig.Engine.DrainAppDelivery();
+            Assert.Null(behavior.OwnedRunner);
+            Assert.False(f.Rig.Robot.Motion.AreAnyTracksLocked(CozmoMotion.LiftTrack));
+            Assert.Equal(carrying ? new byte[] { 2 } : Array.Empty<byte>(),
+                f.Rig.SentSince(start).OfType<EnableAnimTracks>().Select(m => m.Field0));
+            Assert.Contains(reports, report => report.Tag == presence.Tag && report.ActionType == 0x1A && report.Result == 0);
+        }
+        finally
+        {
+            behavior.Stop(BehaviorStopReason.Interrupted);
         }
     }
 
@@ -235,7 +399,7 @@ public sealed partial class ReactionLockMcpTests
                 result.Add(new(at, "mcp-input", [], row.GetProperty("params").Clone()));
             if (row.GetProperty("kind").GetString() != "engine-to-game") continue;
             string tag = row.GetProperty("tag").GetString()!;
-            if (tag is "0x44" or "0x0F" or "0x10" or "0x88")
+            if (tag is "0x44" or "0x0F" or "0x10" or "0x88" or "0x8B" or "0x5A")
                 result.Add(new(at, tag, Convert.FromHexString(row.GetProperty("bodyHex").GetString()!)));
         }
         return result;
