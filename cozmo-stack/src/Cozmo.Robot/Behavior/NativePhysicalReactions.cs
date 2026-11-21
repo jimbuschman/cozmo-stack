@@ -18,6 +18,8 @@ internal sealed class PhysicalReactionOwner(ManipulationSystem manipulation,Engi
     internal void Retire(){_retired=true;Advance();}
     internal bool CanRun=>Current && Robot.NativeBehaviorRuntime?.IsRetired!=true;
     internal bool CurrentAt(long version)=>Current && Version==version;
+    internal TriggerAnimationAction Animation(AnimationTrigger trigger,int loops=1) =>
+        Prepare(new TriggerAnimationAction(M.Robot,new(trigger,loops,true,0,60f,false)));
     internal TriggerAnimationAction Prepare(TriggerAnimationAction action)
     {action.UseBoundedOrdinaryAuthoredAudio(Robot);return action;}
     internal bool Start(SteppedBehavior behavior,ActionRunner action,Action<RobotCompletedAction>? completion,long version)

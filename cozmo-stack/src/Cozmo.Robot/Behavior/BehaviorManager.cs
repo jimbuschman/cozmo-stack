@@ -158,6 +158,7 @@ public sealed partial class BehaviorManager : IDisposable
             nativeUnexpected: bound is not null&&bound.TryGetValue("ReactToUnexpectedMovement",out var unexpected)?unexpected as ReactToUnexpectedMovementBehavior:null,
             nativeOnCharger: bound is not null && bound.TryGetValue("ReactToOnCharger", out var onCharger)
                 ? onCharger as ReactToOnChargerBehavior : null,
+            nativePhysical: bound,
             nativeFistBump: row =>
             {
                 if (nativeOwner is null || row.BehaviorId != "FistBump" || bound is null ||

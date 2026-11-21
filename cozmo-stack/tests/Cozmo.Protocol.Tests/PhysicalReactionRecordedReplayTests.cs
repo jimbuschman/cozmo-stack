@@ -30,9 +30,13 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
     [InlineData("cliff-preempt",68000,71000)]
     [InlineData("cliff-late",79000,82500)]
     [InlineData("unexpected",592800,599000)]
+    [InlineData("face-down",111900,117900)]
+    [InlineData("right-side",99750,111350)]
+    [InlineData("shake",123900,132600)]
     public void RecordedWindow(string label,double from,double to)
     {
-        var bundle=Environment.GetEnvironmentVariable("COZMO_REACTIONS_REPLAY_BUNDLE");
+        bool righting = label is "face-down" or "right-side" or "shake";
+        var bundle=Environment.GetEnvironmentVariable(righting ? "COZMO_RIGHTING_REPLAY_BUNDLE" : "COZMO_REACTIONS_REPLAY_BUNDLE");
         if(string.IsNullOrWhiteSpace(bundle))return;
         var packets=new List<Packet>();byte capturedLocks=0;
         foreach(string line in File.ReadLines(Path.Combine(bundle,"messages.jsonl")))
@@ -65,6 +69,9 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         var trace=new List<string>();var clips=new List<(string? Owner,AnimationClipInitializedObservation Clip)>();
         var reports=new List<ActionCompletionReport>();var reactions=new List<ReactionTrigger>();var gaps=new List<string>();
         var rightingMarkers=new HashSet<string>();
+        var transitions=new List<ReactionTransitionReport>();
+        using var transitionReport = rig.Engine.AnimationMessages.SubscribeMessage(0x88,true,
+            payload => { if (payload is ReactionTransitionReport report) transitions.Add(report); });
         var responseSnapshots=new List<(int Obstacles,byte LocalizationPending)>();
         rig.Robot.Sensors.UnexpectedMovementDetectedInternal+=_=>responseSnapshots.Add((
             f.M.World.LocatedObjects.Count(o=>o.Type==ObjectType.CollisionObstacle),f.Robot.VisionPoseUpdated));
@@ -164,10 +171,32 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
             var starts=rig.SentSince(replayStart).OfType<StartOfAnimation>().Select(s=>s.AnimId).ToHashSet();
             Assert.Contains(selected,c=>starts.Contains(c.Clip.Tag));
         }
+        void ReportedReaction(ReactionTrigger trigger)
+        {
+            byte code = (byte)trigger;
+            int admitted = transitions.FindIndex(report => report.NewTrigger == code && report.OldTrigger != code);
+            Assert.True(admitted >= 0, $"No 0x88 entry for {trigger}");
+            Assert.Contains(transitions.Skip(admitted+1), report => report.OldTrigger == code && report.NewTrigger != code);
+        }
         switch(label)
         {
+            case "face-down":
+                ReportedReaction(ReactionTrigger.RobotOnFace);
+                SentReaction("ReactToRobotOnFace",Family(0xA5)); // 608ADE..608B28
+                break;
+            case "right-side":
+                ReportedReaction(ReactionTrigger.RobotOnSide);
+                SentReaction("ReactToRobotOnSide",Family(0x1A7)); // 608D88..608DCA
+                break;
+            case "shake":
+                ReportedReaction(ReactionTrigger.RobotShaken);
+                SentReaction("ReactToRobotShaken",Family(0x89)); // 609174..60918E
+                SentReaction("ReactToRobotShaken",Family(0x8A)); // 609350..609356
+                SentReaction("ReactToRobotShaken",Family(0x88)); // 609428..60942C (short recorded shake)
+                break;
             case "slope":
                 Assert.Contains(ReactionTrigger.RobotPlacedOnSlope,reactions);
+                ReportedReaction(ReactionTrigger.RobotPlacedOnSlope);
                 SentReaction("ReactToPlacedOnSlope",Family(0x145,0x139,0x1A8),3);
                 Assert.Contains(reports,r=>r.Result==0&&r.AnimationName is {} name&&Family(0x145,0x139,0x1A8).Contains(name));
                 break;

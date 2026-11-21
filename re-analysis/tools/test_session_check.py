@@ -46,6 +46,29 @@ class SessionCheckTests(unittest.TestCase):
         entries = list(evaluate(session))
         return {name: verdict for _, name, verdict in entries}, render(session, entries)
 
+    def test_physical_rounds_require_both_native_reaction_edges(self):
+        triggers = enum_members("ReactionTrigger")
+        pairs = {
+            "ReactToRobotOnFace": "RobotOnFace",
+            "ReactToRobotOnSide": "RobotOnSide",
+            "ReactToRobotShaken": "RobotShaken",
+            "ReactToPlacedOnSlope": "RobotPlacedOnSlope",
+            "ReactToFrustration": "Frustration",
+        }
+        native_none = 0x16  # ReactionTransitionReport.cs and E2G 0x88 at 0x005A2EE8.
+        for i, reaction in enumerate(pairs.values(), 1):
+            self.raw(100 * i, 0x88, bytes((native_none, triggers[reaction])))
+        checks, _ = self.check()
+        for behavior in pairs:
+            self.assertEqual(SEEN, checks[behavior].status, behavior)
+
+        for i, reaction in enumerate(pairs.values(), 1):
+            self.raw(100 * i + 50, 0x88, bytes((triggers[reaction], native_none)))
+        checks, _ = self.check()
+        for behavior in pairs:
+            self.assertEqual(PASSED, checks[behavior].status, behavior)
+            self.assertIn("0x88", checks[behavior].citation)
+
     def test_command_needs_matching_type_and_result_within_its_own_window(self):
         self.request(100, 1, "head")
         self.completion(110, 7, 0x13)
