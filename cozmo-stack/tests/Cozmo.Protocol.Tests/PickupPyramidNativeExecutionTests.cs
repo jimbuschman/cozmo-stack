@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -685,6 +686,14 @@ public sealed class PickupPyramidNativeExecutionTests
         f.Robot.Progression!.Unlocked.Add(6);
         var pickup=Assert.IsType<NativePickUpCubeBehavior>(f.Runtime.Bound["SparksPickupSingleCubeForPyramid"]);
         Assert.True(pickup.IsRunnable(f.Runtime.Context));Assert.True(pickup.CheckExecutionAvailability());
+
+        // The native parent calls its build chooser in phase 2 (005A888C..005A88B2).
+        // Test the shipped chooser there with a supplied phase, independent of that deferred parent.
+        string config = Path.Combine(Resources(),"config","engine","behaviorSystem","activities","freeplay","buildPyramid.json");
+        using var activity = JsonDocument.Parse(File.ReadAllText(config),new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip });
+        var chooser = ActivityTreeLoader.BuildChooser(activity.RootElement.GetProperty("buildChooser"),f.Runtime.Bound,null,null,f.Robot);
+        var choice = chooser.GetDesiredActiveBehavior(null,0,f.Runtime.Context,f.Rig.Engine.Timer.SecondsF);
+        Assert.Same(pickup,choice.Behavior);
         var reports=new List<RobotCompletedAction>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)reports.Add(r);});
         var app=new List<ActionCompletionReport>();f.Rig.Engine.ActionCompleted+=app.Add;
         Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(pickup.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner,pickup.Id);

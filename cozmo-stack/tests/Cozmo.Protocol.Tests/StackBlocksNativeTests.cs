@@ -115,8 +115,9 @@ public sealed class StackBlocksNativeTests
         f.Robot.Progression.Unlocked.Add(9);f.Rig.Tick();stack.OwnSlot7C();Assert.Equal(new[]{1},stack.OwnSlot2C());
     }
     [Theory]
-    [InlineData(false,false)] [InlineData(true,false)] [InlineData(false,true)] [InlineData(true,true)]
-    public void SuppliedManagerChoiceRunsRegularPipelineBothUnlockModesAndReportsNeeds42(bool carrying,bool rollUnlocked)
+    [InlineData(false,false,false)] [InlineData(true,false,false)] [InlineData(false,true,false)] [InlineData(true,true,false)]
+    [InlineData(false,false,true)] [InlineData(true,false,true)]
+    public void RegularPipelineReportsNeeds42AfterManagerOrFreeplayChoice(bool carrying,bool rollUnlocked,bool freeplay)
     {
         using var scene=new StackFirmwareScene(carrying,"StackBlocks",rollUnlocked);var f=scene.F;var stack=Stack(f);
         var order=new List<string>();var app=new List<ActionCompletionReport>();var local=new List<RobotCompletedAction>();var sparkReports=new List<ushort>();
@@ -124,7 +125,20 @@ public sealed class StackBlocksNativeTests
         f.Rig.Engine.Needs.Log+=line=>{if(!line.StartsWith("needs.action_completed StackCube:"))return;Assert.Equal(new[]{"objective40"},order);var animation=Assert.IsType<TriggerAnimationAction>(stack.OwnedRunner);Assert.Equal((AnimationTrigger)0x21A,animation.Request.Trigger);Assert.Equal(.8f,(float)stack.RunningScoreBonus);order.Add("needs42");};
         using var completion=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r&&r.ActionType==0x19)local.Add(r);});
         f.Rig.Engine.ActionCompleted+=r=>{if(r.ActionType==0x19)app.Add(r);};f.Rig.Engine.EngineToGameMessage+=(tag,_)=>{if(tag is 0x83 or 0x84)sparkReports.Add(tag);};
-        Assert.Same(stack,Admit(scene));
+        if (freeplay)
+        {
+            var owner = f.Runtime.FreeplayObserver;
+            // Supply the inferred activity byte through the actual object/face query at
+            // 005ADF4C, which PutDownDispatch normally invokes.
+            Assert.True(owner.CalculateNativeDesired(f.Robot, f.M, () => true));
+            Assert.Equal("PlayAlone",owner.DesiredActivityCacheForTest);
+            f.Rig.Robot.SetEnableFreeplayActivity(true);
+            f.Rig.Tick();
+            Assert.Equal("PlayAlone",owner.Current?.Id);
+            Assert.Same(stack,f.Robot.BehaviorManagerOwner!.Current);
+            Assert.Contains(owner.Decisions,d=>d.Activity=="PlayAlone"&&d.Behavior==stack.Id);
+        }
+        else Assert.Same(stack,Admit(scene));
         if(!carrying)Assert.Equal(new Radians(90f).Value,stack.PickupHelper!.MaxTurn); // R7 literal90f through checked Radians recipient.
         for(int i=0;i<160&&order.Count<2;i++)scene.Step();
         Assert.True(order.Count==2,string.Join(" | ",scene.Trace.TakeLast(20)));Assert.Equal(new[]{"objective40","needs42"},order);

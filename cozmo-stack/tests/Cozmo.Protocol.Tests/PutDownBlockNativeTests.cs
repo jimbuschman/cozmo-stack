@@ -150,20 +150,39 @@ public sealed class PutDownBlockNativeTests
         for(int i=0;i<15&&!action.DestructionObserved;i++)f.Motors();
         Assert.True(action.DestructionObserved);Assert.Equal(0u,action.State);Assert.True(f.M.Vision.Faces.HasTurnedTowardsFace(-1));Assert.False(ActionRunnerTagCounter.Global.IsInUse(tag));
     }
-    [Fact]
-    public void ConfiguredPutDownRunsThroughRealPathAnimationAndImageCompletionBeforeCarryRelease()
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void ConfiguredPutDownRunsThroughRealPathAnimationAndImageCompletionBeforeCarryRelease(bool freeplay)
     {
-        // Real configured instance→manager Start→ActionList→wire/C6/CA/CB→43→release.
+        // Real configured instance→manager→ActionList→wire/C6/CA/CB→43→release.
         // Firmware full states/acks/images are admitted inputs; no hardware-motion claim.
         using var f=new Fixture();f.InstallNvCalibration();f.Rig.Robot.Animations.LoadFrom(Resources());f.Carry();
         var completions=new List<RobotCompletedAction>();using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction done)completions.Add(done);});
-        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(f.Behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
-        QueuedSelection.Keep(f.Rig.Robot,f.Robot.BehaviorManagerOwner!,f.Behavior.Id);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var behavior = f.Behavior;
+        if (freeplay)
+        {
+            var owner = f.Runtime.FreeplayObserver;
+            // Native debug activity input at 005ADCD8 supplies the ordinary fallback
+            // child while its shipped scoring chooser still selects the behavior.
+            owner.ForcedActivity = "NothingToDo";
+            f.Rig.Engine.SetNeedsMode(true);
+            f.Rig.Robot.SetEnableFreeplayActivity(true);
+            f.Rig.Tick();
+            behavior = Assert.IsType<NativePutDownBlockBehavior>(f.Runtime.Bound["PutDownBlockNothingToDo"]);
+            Assert.Same(behavior,manager.Current);
+            Assert.Contains(owner.Decisions,d=>d.Activity=="NothingToDo"&&d.Behavior==behavior.Id);
+        }
+        else
+        {
+            Assert.True(manager.StartAsync(behavior.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            QueuedSelection.Keep(f.Rig.Robot,manager,behavior.Id);
+        }
         var initial=Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());uint firstTag=initial.Tag;
         var paths=new HashSet<ushort>();var animations=new HashSet<byte>();int image=0;
         try
         {
-            for(int tick=0;tick<100&&(f.Behavior.HasCurrentAction||f.M.Docking.Carrying.IsCarryingObject);tick++)
+            for(int tick=0;tick<100&&(behavior.HasCurrentAction||f.M.Docking.Carrying.IsCarryingObject);tick++)
             {
                 f.Motors();
                 foreach(var path in f.Rig.SentSince(0).OfType<ExecutePath>())if(paths.Add(path.EventId))
@@ -176,7 +195,7 @@ public sealed class PutDownBlockNativeTests
                     if(wait?.Subscribed==true)f.Image((uint)++image,1<<1);
                 }
             }
-            Assert.False(f.Behavior.HasCurrentAction);Assert.False(f.M.Docking.Carrying.IsCarryingObject);
+            Assert.False(behavior.HasCurrentAction);Assert.False(f.M.Docking.Carrying.IsCarryingObject);
             Assert.Equal(2,paths.Count);Assert.True(animations.Count>=2);Assert.Equal(2,image);
             Assert.Contains(completions,c=>c.Tag==firstTag&&c.Result==0);
             Assert.Equal(0u,completions.Last(c=>c.Tag!=firstTag).Result);
