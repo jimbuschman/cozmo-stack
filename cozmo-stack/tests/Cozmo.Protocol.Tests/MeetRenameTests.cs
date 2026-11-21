@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Emulation;
@@ -206,11 +208,17 @@ public sealed class MeetRenameTests
         var sink = new Sink();
         f.Robot.CannedSpeechSinkForTest = () => sink;
         var behavior = Assert.IsType<NativeRespondToRenameFace>(f.Runtime.Bound["RespondToRenameFace"]);
+        var reports = new ConcurrentQueue<(ushort Tag, byte[] Body)>();
+        f.Rig.Engine.EngineToGameMessage += (id, body) =>
+        {
+            if (id is 0x1D or 0x87 or 0x5A) reports.Enqueue((id, body.ToArray()));
+        };
         f.Rig.Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
         f.Rig.Tick();
-        f.Rig.Robot.UpdateEnrolledFaceById(7, "wrong", "Ada");
+        f.Rig.Robot.UpdateEnrolledFaceById(7, "Drawn", "Ada");
         int mark = f.Rig.Mark(), seen = 0;
         byte? tag = null;
+        uint? speechTag = null;
         bool sawOwnedSpeech = false, sentSecond = false, audio = false, completed = false, authoredClip = false;
         string? activeClip = null;
         f.Rig.DefaultTickMs = 0;
@@ -227,8 +235,10 @@ public sealed class MeetRenameTests
             if (behavior.EngineRunning && behavior.OwnedRunner is Cozmo.Robot.Animation.SayTextAction speech)
             {
                 sawOwnedSpeech = true;
+                speechTag ??= speech.Tag;
+                Assert.Equal("Ada", speech.Text);
                 Assert.Equal(0, speech.CannedTracks);
-                if (!sentSecond) { f.Rig.Robot.UpdateEnrolledFaceById(7, "Drawn", "New"); sentSecond = true; }
+                if (!sentSecond) { f.Rig.Robot.UpdateEnrolledFaceById(7, "Ada", "New"); sentSecond = true; }
             }
             var output = f.Rig.SentSince(mark);
             for (; seen < output.Count; seen++)
@@ -256,7 +266,21 @@ public sealed class MeetRenameTests
         Assert.Equal("", behavior.StagedName);
         Assert.Equal("New", f.M.Vision.Recognizer.EnrolledFaces.Single().Name);
         for (int i = 0; i < 10; i++) f.Rig.Tick();
+        f.Rig.Engine.DrainAppDelivery();
         Assert.False(behavior.EngineRunning);
         Assert.Equal("", behavior.StagedName);
+
+        byte renameId = (byte)BehaviorID.RespondToRenameFace;
+        var captured = reports.ToList();
+        Assert.Contains(captured, item => item.Tag == 0x1D && item.Body.AsSpan().SequenceEqual(
+            new byte[] { 7, 0, 0, 0, 3, (byte)'A', (byte)'d', (byte)'a' }));
+        int entered = captured.FindIndex(item => item.Tag == 0x87 && item.Body[0] != renameId && item.Body[1] == renameId);
+        int speechDone = captured.FindIndex(item => item.Tag == 0x5A &&
+            BinaryPrimitives.ReadUInt32LittleEndian(item.Body) == speechTag &&
+            BinaryPrimitives.ReadInt32LittleEndian(item.Body.AsSpan(4)) == 0x20 &&
+            BinaryPrimitives.ReadUInt32LittleEndian(item.Body.AsSpan(8)) == 0);
+        int exited = captured.FindIndex(item => item.Tag == 0x87 && item.Body[0] == renameId && item.Body[1] != renameId);
+        Assert.True(entered >= 0 && entered < speechDone && speechDone < exited,
+            $"Engine report indices: entry {entered}, owned SayText completion {speechDone}, exit {exited}.");
     }
 }

@@ -2,15 +2,110 @@ using System.Buffers.Binary;
 using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
+using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 using Xunit;
+using Xunit.Abstractions;
 using Fixture = Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.Fixture;
 
 namespace Cozmo.Protocol.Tests;
 
 [Collection("SteppedBehavior missing-report statics")]
-public sealed class MapStateMcpTests
+public sealed class MapStateMcpTests(ITestOutputHelper output)
 {
+    [Theory]
+    [InlineData(.15f, 0u)]
+    [InlineData(.19f, 0x04000002u)]
+    public async Task GoToPoseUsesThePublishedWorldAndChecksArrivalAfterFollowingThePath(float yawError, uint expectedResult)
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        f.X = 120;
+        f.Y = -60;
+        f.Motors();
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        var startMap = Data(await client.Tool("get_map", new { }));
+        Assert.True(startMap.GetProperty("available").GetBoolean());
+        var start = startMap.GetProperty("pose");
+        uint origin = start.GetProperty("originId").GetUInt32();
+        float targetX = start.GetProperty("xMm").GetSingle() + 170;
+        float targetY = start.GetProperty("yMm").GetSingle();
+        const float targetYaw = 0;
+        int mark = f.Rig.Mark();
+        var completions = new List<RobotCompletedAction>();
+        f.Robot.ActionList.RegisterActionEndedCallback(completions.Add);
+        var diagnostics = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        f.Rig.Engine.StackLogLine += line =>
+        {
+            if (line.Contains("MISSING", StringComparison.Ordinal)) diagnostics.Enqueue(line);
+        };
+        int animationMark = mark;
+        byte? animationTag = null;
+        void TickFirmware()
+        {
+            var stream = f.Rig.Robot.Animations.Scheduler.Stream;
+            f.Rig.Data(new AnimationState { NumAudioFramesPlayed = stream.FramesStreamed, NumAnimBytesPlayed = stream.BytesStreamed });
+            var messages = f.Rig.SentSince(animationMark);
+            animationMark = f.Rig.Mark();
+            foreach (var message in messages)
+            {
+                if (message is StartOfAnimation started)
+                {
+                    animationTag = started.AnimId;
+                    f.Rig.Data(new AnimationStarted { AnimId = started.AnimId });
+                }
+                else if (message is EndOfAnimation && animationTag is { } ended)
+                {
+                    f.Rig.Data(new AnimationEnded { AnimId = ended });
+                    animationTag = null;
+                }
+            }
+            f.Motors();
+        }
+
+        int request = await client.Send("tools/call", new
+        {
+            name = "go-to-pose",
+            arguments = new { xMm = targetX, yMm = targetY, angleRadians = targetYaw },
+        });
+        var action = Assert.IsType<DriveToPoseAction>(f.Robot.ActionList.GetCurrentAction());
+        for (int i = 0; i < 65 && !f.Rig.SentSince(mark).OfType<ExecutePath>().Any(); i++)
+            TickFirmware();
+        var sent = f.Rig.SentSince(mark);
+        var path = Assert.Single(sent.OfType<ExecutePath>());
+        var line = sent.OfType<AppendPathSegmentLine>().Last();
+        Assert.Equal(targetX - 20f, line.XEndMm, 3); // The path runs in drive-center coordinates.
+        Assert.Equal(targetY, line.YEndMm, 3);
+
+        f.Rig.Data(new PathFollowingEvent { EventId = path.EventId, EventType = (byte)PathEventType.Started });
+        TickFirmware();
+        f.X = targetX + 4f;
+        f.Y = targetY - 5f;
+        f.Yaw = targetYaw + yawError;
+        TickFirmware();
+        f.Rig.Data(new PathFollowingEvent { EventId = path.EventId, EventType = (byte)PathEventType.Completed });
+        for (int i = 0; i < 180 && !completions.Any(c => c.Tag == action.Tag); i++)
+            TickFirmware();
+
+        // Main pose near the goal with the same reported XYZ offsets in both cases.
+        // The Ready-state call at 0x0055ADA8 also checks the default 0x3E32B8C2 rad
+        // tolerance. Firmware Completed alone cannot produce engine SUCCESS.
+        var completion = Assert.Single(completions, c => c.Tag == action.Tag);
+        Assert.Equal((12, expectedResult), (completion.ActionType, completion.Result));
+        var result = Data(await client.Receive(request));
+        Assert.True(result.GetProperty("admitted").GetBoolean());
+        Assert.Equal(expectedResult, result.GetProperty("engineResult").GetUInt32());
+
+        var arrival = Data(await client.Tool("get_map", new { })).GetProperty("pose");
+        Assert.Equal(origin, arrival.GetProperty("originId").GetUInt32());
+        Assert.Equal(targetX + 4f, arrival.GetProperty("xMm").GetSingle(), 3);
+        Assert.Equal(targetY - 5f, arrival.GetProperty("yMm").GetSingle(), 3);
+        Assert.Equal(targetYaw + yawError, arrival.GetProperty("headingRad").GetSingle(), 4);
+        output.WriteLine($"goal=({targetX}, {targetY}, {targetYaw}) arrival=({f.X}, {f.Y}, {f.Yaw}) result=0x{expectedResult:X8}");
+        foreach (string diagnostic in diagnostics.Distinct()) output.WriteLine(diagnostic);
+    }
+
     [Fact]
     public async Task StateAndMapReadTheCurrentOriginAndReturnAnOptionalPng()
     {
