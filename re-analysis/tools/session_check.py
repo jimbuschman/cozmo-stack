@@ -555,6 +555,36 @@ FACES = {
     "RespondToRenameFace": None, "ReactToPet": "react-to-pet",
 }
 CUBES = ("AcknowledgeObject", "ReactToCubeMoved", "PickUpCube", "PutDownBlock", "RollBlock", "StackBlocks", "DriveOffCharger")
+CUBE_FREEPLAY_ROUNDS = {
+    "PickUpCube": (
+        ("SparksPickupSingleCubeForPyramid", "SparksPickupSingleCubeToStack"),
+        "Observe the configured pickup in the pyramid build phase. Keep one eligible cube in view and the lift empty.",
+        "buildPyramid.json and 0x005A888C–0x005A88B2 select the build chooser. "
+        "Pickup selects a located eligible cube at 0x005C6628–0x005C6644 and 0x005C6868–0x005C6A88. It delegates at 0x005C67AE–0x005C67BE.",
+        None, True,
+    ),
+    "PutDownBlock": (
+        ("PutDownBlock", "PutDownBlockNothingToDo", "PyramidPutDownBlock"),
+        "Start Freeplay holding one cube. Keep faces and other cubes out of view so the NothingToDo fallback can choose PutDownBlockNothingToDo.",
+        "nothingToDo.json scores the carry-only fallback at 1.1. The carried ID gate and final release are "
+        "at 0x005C7FB0–0x005C7FCA and 0x005C8480–0x005C84D4.",
+        None, False,
+    ),
+    "StackBlocks": (
+        ("StackBlocks",),
+        "Use two upright, distinct cubes and start Freeplay with stacking unlocked. Keep people out of view and let the cube-only scene select PlayAlone.",
+        "playAlone.json scores StackBlocks at 0.8. Native targets are refreshed at 0x005C94A6–0x005C9500. "
+        "Objective 40 is emitted on placement success at 0x005C9EA8.",
+        40, None,
+    ),
+    "DriveOffCharger": (
+        ("DriveOffCharger", "Hiking_DriveOffCharger"),
+        "Start on the charger and enable Freeplay. Leave a clear path straight ahead and wait until the behavior leaves the platform.",
+        "nothingToDo.json scores DriveOffCharger at 1000. Platform gate 0x005C0B10, departure update "
+        "0x005C0DA8–0x005C0E18 and success objective 4 at 0x005C0E9C–0x005C0EAE.",
+        4, None,
+    ),
+}
 
 
 def behavior_checks(session, personality):
@@ -572,6 +602,15 @@ def behavior_checks(session, personality):
                 prompt, identifier, trigger, seconds, evidence = personality[step]
                 identity = names[identifier]
                 citation += "; " + evidence
+            cube_round = CUBE_FREEPLAY_ROUNDS.get(name)
+            if cube_round:
+                configured, prompt, evidence, objective, carrying = cube_round
+                cube_ids = {names[behavior_id] for behavior_id in configured}
+                citation += "; " + evidence
+                if objective is not None:
+                    citation += "; E2G 0x8B, objective at 0x005BE228–0x005BE308"
+                else:
+                    citation += "; get_state projects the retained Carrying owner"
             if name == "ReactToCubeMoved":
                 citation += "; " + REACTION_REPORT + "; PersonalityHw cube-move, M4-009, 0x00534190–0x005341B0"
                 trigger = "CubeMoved"
@@ -587,6 +626,8 @@ def behavior_checks(session, personality):
                 for at, body in session.in_window(0x87):
                     if len(body) < 7 or body[1] == body[0]:
                         continue
+                    if cube_round and body[1] not in cube_ids:
+                        continue
                     if identity is not None and body[1] != identity:
                         continue
                     if identity is None and (body[4] != classes[name] or body[1] not in names.values()):
@@ -596,7 +637,7 @@ def behavior_checks(session, personality):
                         continue
                     starts.append((at, "0x87", body[1]))
             for at, tag, key in starts:
-                end = min(at + seconds * 1000, session.end)
+                end = session.end if cube_round else min(at + seconds * 1000, session.end)
                 if tag == "0x87":
                     stopped = (t for t, body in session.in_window(0x87, at, end)
                                if len(body) >= 7 and body[0] == key != body[1])
@@ -605,6 +646,13 @@ def behavior_checks(session, personality):
                                if len(body) == 2 and body[0] == key != body[1])
                 stopped_at = next(stopped, None)
                 end = stopped_at if stopped_at is not None else end
+                if cube_round:
+                    selected = next(behavior_id for behavior_id in configured if names[behavior_id] == key)
+                    reason = cube_round_gap(session, at, stopped_at, objective, carrying)
+                    if reason:
+                        candidates.append(session.apply_missing(Verdict(
+                            SEEN, reason, citation, prompt, (at, end), (name, selected))))
+                        continue
                 if step in REACTION_EXIT_ROUNDS and stopped_at is None:
                     candidates.append(session.apply_missing(Verdict(
                         SEEN, f"Engine {tag} entry arrived without an exit within {seconds} s.",
@@ -615,13 +663,30 @@ def behavior_checks(session, personality):
                                               citation, prompt, (at, end), (name,)))
                     continue
                 reason = (f"Engine {tag} entry at {at:.0f} ms and exit at {end:.0f} ms."
-                          if step in REACTION_EXIT_ROUNDS else f"Engine {tag} entry at {at:.0f} ms.")
-                aliases = (name, trigger) if step in REACTION_EXIT_ROUNDS else (name,)
+                          if cube_round or step in REACTION_EXIT_ROUNDS else f"Engine {tag} entry at {at:.0f} ms.")
+                aliases = (name, selected) if cube_round else (name, trigger) if step in REACTION_EXIT_ROUNDS else (name,)
                 candidates.append(session.apply_missing(Verdict(PASSED, reason, citation, prompt, (at, end), aliases)))
             if name == "ReactToCubeMoved" and not candidates and session.reports[0x0F]:
                 candidates.append(Verdict(SEEN, "ObjectMoved arrived without a CubeMoved reaction entry.",
                                           citation, prompt))
             yield group, name, choose(candidates, citation, prompt)
+
+
+def cube_round_gap(session, at, stopped_at, objective, carrying):
+    if not freeplay_running_at(session, at):
+        return "The configured behavior entered without an active Freeplay request."
+    if stopped_at is None:
+        return "The configured behavior entered without a matching exit."
+    if objective is not None:
+        found = any(body == struct.pack("<I", objective) for _, body in session.in_window(0x8B, at, stopped_at))
+        return None if found else f"The behavior exited without engine objective {objective}."
+    states = sorted((call for call in session.calls["get_state"] if call.end is not None
+                     and isinstance(call.reply.get("isCarrying"), bool)), key=lambda call: call.end)
+    before = next((call for call in reversed(states) if call.end <= at), None)
+    after = next((call for call in states if call.start >= stopped_at), None)
+    if before is None or after is None or before.reply["isCarrying"] == carrying or after.reply["isCarrying"] != carrying:
+        return "The behavior exited without the matching carry-state change in the surrounding get_state reports."
+    return None
 
 
 def freeplay_running_at(session, at):

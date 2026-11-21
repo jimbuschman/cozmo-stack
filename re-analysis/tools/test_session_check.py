@@ -46,6 +46,41 @@ class SessionCheckTests(unittest.TestCase):
         entries = list(evaluate(session))
         return {name: verdict for _, name, verdict in entries}, render(session, entries)
 
+    def test_cube_freeplay_rounds_use_the_native_transition_and_result(self):
+        ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
+        self.request(10, 1, "freeplay", enabled=True)
+        self.reply(20, 1, status="submitted")
+        cases = [
+            ("PickUpCube", "SparksPickupSingleCubeForPyramid", None, True),
+            ("PutDownBlock", "PutDownBlockNothingToDo", None, False),
+            ("StackBlocks", "StackBlocks", 40, None),
+            ("DriveOffCharger", "Hiking_DriveOffCharger", 4, None),
+        ]
+
+        def behavior(at, old_id, new_id, old_cls, new_cls):
+            self.raw(at, 0x87, bytes((ids[old_id], ids[new_id], classes[old_cls], 12, classes[new_cls], 12, 0)))
+
+        for i, (cls, name, objective, carrying) in enumerate(cases, 1):
+            at = i * 200
+            behavior(at, "Wait", name, "Wait", cls)
+            behavior(at + 50, name, "Wait", cls, "Wait")
+        checks, _ = self.check()
+        for cls, *_ in cases:
+            self.assertEqual(SEEN, checks[cls].status, cls)
+
+        for i, (cls, name, objective, carrying) in enumerate(cases, 1):
+            at = i * 200
+            if objective is not None:
+                self.raw(at + 30, 0x8B, struct.pack("<I", objective))
+            else:
+                self.request(at - 40, at, "get_state")
+                self.reply(at - 30, at, isCarrying=not carrying)
+                self.request(at + 60, at + 60, "get_state")
+                self.reply(at + 65, at + 60, isCarrying=carrying)
+        checks, _ = self.check()
+        for cls, *_ in cases:
+            self.assertEqual(PASSED, checks[cls].status, cls)
+
     def test_physical_rounds_require_both_native_reaction_edges(self):
         triggers = enum_members("ReactionTrigger")
         pairs = {
