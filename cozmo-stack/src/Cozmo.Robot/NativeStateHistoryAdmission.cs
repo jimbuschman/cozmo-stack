@@ -15,6 +15,8 @@ public sealed partial class EngineRobot
         return snapshot;
     }
     internal byte OnRampState; // robot+0x316; no true writer is reachable under M2-024/OV127
+    // Host observation of the successful native pose-history join (OV128 A8).
+    internal (uint Origin, uint Frame, uint Timestamp, long ReceivedNs)? LastOdometryPose { get; private set; }
     internal uint LastHistoryAdmissionResult {get;private set;}
     internal uint LastFullStateResult {get;set;}
     internal bool CheckHistoryOrigin(RobotState state)
@@ -74,7 +76,12 @@ public sealed partial class EngineRobot
             if(PoseHistory.ComputeStateAt(PoseHistory.NewestTimeStamp,ref time,value,false)!=0)return;
             using var current=new Pose3d("");var origin=GetNativeOrigin(CurrentOriginId);
             if(Pose3d.GetWithRespectTo(value.Pose,origin,current))
-            {SetPose(current);updated=true;return;}
+            {
+                SetPose(current);
+                LastOdometryPose = (CurrentOriginId, PoseFrameId, time, Engine.Timer.Nanoseconds);
+                updated = true;
+                return;
+            }
             using var root=value.Pose.FindRoot();
             Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","Robot.UpdateCurrPoseFromHistory.GetWrtParentFailed",
                 $"Could not update robot {unchecked((int)NativeRobotId)}'s current pose using historical pose w.r.t. {root.Name} because we are now in frame {origin.Name}.");

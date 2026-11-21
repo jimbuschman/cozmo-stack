@@ -122,6 +122,7 @@ public sealed partial class CozmoBridge
         {
             timestampUtc = DateTimeOffset.UtcNow,
             connection = new { connected, ready = connected && Robot.Engine.IsReadyDelivered, link = Robot.Transport.State.ToString() },
+            pose = ReadWorldPose(),
             batteryVolts = raw?.BatteryVoltage,
             isCarrying = connected ? carried.HasValue : (bool?)null,
             carriedObjectId = carried,

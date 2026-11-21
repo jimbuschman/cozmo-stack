@@ -195,7 +195,9 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
         });
         return catalogue.Concat(
         [
-            Tool("get_state", "Read timestampUtc, connection (connected/ready/link), batteryVolts, isCarrying/carriedObjectId, isOnCharger/isCharging, activity/highLevelActivity/behavior/reaction, reactionLocks, needs and knownFaces/knownCubes/knownChargers. Success: a latest-state snapshot; cozmo-guide defines fields and units. Failure: disconnected or not-ready flags and null/empty observations mean unavailable data; tool errors set isError. This read does not imply action success.", """{"type":"object","properties":{},"additionalProperties":false}"""),
+            Tool("get_state", "Read timestampUtc, connection (connected/ready/link), pose in the current world origin, batteryVolts, isCarrying/carriedObjectId, isOnCharger/isCharging, activity/highLevelActivity/behavior/reaction, reactionLocks, needs and knownFaces/knownCubes/knownChargers. Success: a latest-state snapshot; cozmo-guide defines fields and units. Failure: disconnected or not-ready flags and null/empty observations mean unavailable data; tool errors set isError. This read does not imply action success.", """{"type":"object","properties":{},"additionalProperties":false}"""),
+            Tool("get_map", "Read the current engine memory map around the robot. Regions have native content types and bounds in world and robot-relative millimeters. Defaults to a 500 mm radius and 64 regions. Success: a read-only map snapshot. Set render to include a world-aligned PNG with the robot and located objects. Failure: available=false means the current pose or map is unavailable; invalid arguments set isError.",
+                """{"type":"object","properties":{"radiusMm":{"type":"number","minimum":50,"maximum":2000,"default":500},"limit":{"type":"integer","minimum":1,"maximum":128,"default":64},"render":{"type":"boolean","default":false}},"additionalProperties":false}"""),
             Tool("get_camera_image", "See the latest received PNG. With annotate, select the latest vision-processed image and draw its own face/object boxes. If vision has yet to process an image, return the newest received image with visionProcessed=false. Success: PNG and metadata with imageId, latestReceivedImageId, colour/encoding, exposure-time headAngleRad, and liftInView with a pixel liftRegion when visible. A read uses the existing camera and vision settings. Failure: isError when no frame exists or decode fails.",
                 """{"type":"object","properties":{"annotate":{"type":"boolean","default":false}},"additionalProperties":false}"""),
             Tool("read_events", "Read a page after since and reuse its cursor. types and excludeTypes filter event names; significantOnly waits for significant matches. limit counts matching events before compaction. Success: a page, with gap=true if older events were evicted. An empty page after waiting is a timeout. Failure: isError for invalid arguments or a cursor from another feed.",
@@ -239,6 +241,35 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
                         structuredContent = image.Metadata,
                         isError = false,
                     };
+                case "get_map":
+                    if (args.EnumerateObject().Any(key => key.Name is not ("radiusMm" or "limit" or "render")))
+                        throw new ArgumentException("Unknown get_map argument.");
+                    double radius = 500;
+                    if (args.TryGetProperty("radiusMm", out var radiusValue) &&
+                        (radiusValue.ValueKind != JsonValueKind.Number || !radiusValue.TryGetDouble(out radius)))
+                        throw new ArgumentException("'radiusMm' must be a number.");
+                    int mapLimit = 64;
+                    if (args.TryGetProperty("limit", out var mapSize) &&
+                        (mapSize.ValueKind != JsonValueKind.Number || !mapSize.TryGetInt32(out mapLimit)))
+                        throw new ArgumentException("'limit' must be an integer.");
+                    bool render = false;
+                    if (args.TryGetProperty("render", out var renderValue))
+                    {
+                        if (renderValue.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                            throw new ArgumentException("'render' must be a boolean.");
+                        render = renderValue.GetBoolean();
+                    }
+                    var map = bridge.GetMap(radius, mapLimit, render);
+                    if (map.Png is { } png)
+                        return new
+                        {
+                            content = new object[] { new { type = "text", text = map.Metadata.GetRawText() },
+                                new { type = "image", mimeType = "image/png", data = Convert.ToBase64String(png) } },
+                            structuredContent = map.Metadata,
+                            isError = false,
+                        };
+                    result = map.Metadata;
+                    break;
                 case "get_state":
                     NoArguments(args);
                     result = bridge.GetState();

@@ -89,7 +89,10 @@ public sealed class McpServerTests
         await using var client = new Client(bridge);
         await client.Initialize();
         var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
-        Assert.Equal(33, tools.GetArrayLength());
+        Assert.Equal(34, tools.GetArrayLength());
+        var map = Assert.Single(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "get_map");
+        Assert.Equal(500, map.GetProperty("inputSchema").GetProperty("properties")
+            .GetProperty("radiusMm").GetProperty("default").GetInt32());
         foreach (var entry in bridge.GetCommandCatalogue().EnumerateArray())
         {
             var tool = Assert.Single(tools.EnumerateArray(), t => t.GetProperty("name").GetString() == entry.GetProperty("name").GetString());
