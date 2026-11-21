@@ -214,8 +214,9 @@ public sealed class RobotShakenStrategy : ReactionTriggerStrategy
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
+        bool ready = rc.RunningOrRunnable(behavior); // 612FDE..613004 checks the running flag and IsRunnable first.
         bool wants = WantsToRun(rc.Context.Robot);
-        return rc.RunningOrRunnable(behavior) && wants;
+        return ready && wants;
     }
 
     public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
@@ -226,8 +227,8 @@ public sealed class RobotShakenStrategy : ReactionTriggerStrategy
 /// RobotPlacedOnSlope (C16, C5, C10): WantsToRun, then IsRunnable. Constants 10/55 deg, 0.01 rad/s over the raw gyro
 /// (+0x36C..+0x374), 0.4 s, 1.5 s; +0x18 and +0x20 start at 0.0; times are BaseStationTimer seconds. Result = pitch in
 /// (10, 55) &amp;&amp; quietFor &gt; 0.4 &amp;&amp; (pickedUp || now − lastPicked &lt; 1.5) &amp;&amp; +0x355 &lt; 2. Flags (0, 1, 0).
-/// MISSING (C16): whether the two stamps are updated before the pitch test returns, and whether "max of raw gyro" is
-/// over the absolute values: the existing order (both stamps first, max of |x|, |y|, |z|) is kept until extracted.
+/// The axis magnitudes are absolute (0x614570..0x6145C6). The gyro stamp is updated at 0x6145DE..0x6145E2 and
+/// the pickup stamp at 0x61462C..0x614632 before either rejection can return.
 /// C5: its EnabledStateChanged (+0x1C) is the base no-op (0x60B73B); the disable/enable calls have no effect.
 /// </summary>
 public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
@@ -256,7 +257,7 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
         bool pickedUp = sensors.PickedUp;
         if (pickedUp) _lastPickedUpSec = nowSec;
 
-        float pitchDeg = sensors.OffTreads.PitchRad * (180f / MathF.PI);
+        float pitchDeg = sensors.OffTreads.PitchRad * BitConverter.UInt32BitsToSingle(0x42652EE1); // 6145FC calls Radians::getDegrees.
         if (!(pitchDeg > MinPitchDeg && pitchDeg < MaxPitchDeg)) return false;
         if (!(nowSec - _lastGyroActiveSec > QuietForSec)) return false;
         if (!(pickedUp || nowSec - _lastPickedUpSec < PutDownWithinSec)) return false;
@@ -264,7 +265,8 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
     }
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior) =>
-        WantsToRun(rc.Context.Robot, rc.NowSec) && behavior.IsRunnable(rc.Context);
+        WantsToRun(rc.Context.Robot, behavior is SteppedBehavior { NativeBaseInputs: not null }
+            ? rc.Context.Robot.Engine.Timer.SecondsF : rc.NowSec) && behavior.IsRunnable(rc.Context);
 
     public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 }
@@ -315,16 +317,16 @@ public sealed class FrustrationStrategy : ReactionTriggerStrategy
     /// <summary>last ≤ 0 || now − last &gt; cooldown.</summary>
     public bool CooldownElapsed(double nowSec)
     {
-        double last = LastAnimationCompleteSec;
-        double now = _clock?.Invoke() ?? nowSec;
-        return last <= 0 || now - last > CooldownSec;
+        float last = (float)LastAnimationCompleteSec;
+        float now = (float)(_clock?.Invoke() ?? nowSec);
+        return last <= 0 || now - last > CooldownSec; // 60EEA6..60EEC8
     }
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
         if (rc.CurrentTrigger == ReactionTrigger.Frustration) return false;
         if (rc.Context.Mood is not { } mood) return false;                         // MD2: no MoodManager, no Confident value
-        if (!(mood[EmotionType.Confident] < MaxConfidence)) return false;
+        if (!((float)mood[EmotionType.Confident] < MaxConfidence)) return false; // 60EE8C..60EEA4 (ordered f32)
         if (!CooldownElapsed(rc.NowSec)) return false;
         return behavior.IsRunnable(rc.Context);
     }

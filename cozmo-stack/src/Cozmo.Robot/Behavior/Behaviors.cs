@@ -868,7 +868,8 @@ public static class ShippedBehaviors
         ReactToReturnedToTreadsBehavior? nativeReturnedToTreads = null,
         ReactToCliffBehavior? nativeCliff = null,ReactToImpactBehavior? nativeImpact = null,
         ReactToPlacedOnSlopeBehavior? nativeSlope = null,ReactToUnexpectedMovementBehavior? nativeUnexpected = null,
-        ReactToOnChargerBehavior? nativeOnCharger = null)
+        ReactToOnChargerBehavior? nativeOnCharger = null,
+        IReadOnlyDictionary<string,IBehavior>? nativePhysical = null)
     {
         if (map.Count == 0) return Array.Empty<BehaviorManager.ReactionRegistration>();
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
@@ -957,6 +958,25 @@ public static class ShippedBehaviors
         var registrations = new List<BehaviorManager.ReactionRegistration>();
         foreach (var e in map)
         {
+            // 005A17CC: register the strategy against the behavior owned by the configured container.
+            if (nativePhysical is not null && nativeOwner is not null &&
+                e.Trigger is ReactionTrigger.RobotOnFace or ReactionTrigger.RobotOnSide or ReactionTrigger.RobotShaken or ReactionTrigger.Frustration)
+            {
+                if (nativePhysical.TryGetValue(e.BehaviorId, out var candidate))
+                {
+                    var configuredStrategy = strategies[e.Trigger];
+                    if (candidate is ReactToFrustrationBehavior configured)
+                    {
+                        var strategy = new FrustrationStrategy((float)(e.FrustrationMaxConfidence??0),
+                            (float)(e.FrustrationCooldownSec??0), () => nativeOwner.Engine.Timer.SecondsF);
+                        configured.BindFrustrationStrategy(strategy);
+                        configuredStrategy = strategy;
+                    }
+                    registrations.Add(new BehaviorManager.ReactionRegistration(configuredStrategy,candidate));
+                }
+                else unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
+                continue;
+            }
             var nativeFactory = e.Trigger switch
             {
                 ReactionTrigger.Hiccup => nativeHiccup,

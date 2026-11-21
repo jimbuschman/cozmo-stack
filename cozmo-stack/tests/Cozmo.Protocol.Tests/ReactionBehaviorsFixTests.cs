@@ -90,7 +90,12 @@ public sealed class ReactionBehaviorsFixTests
         Assert.False(f.M.Whiteboard.HiccupsActive);
         f.M.Whiteboard.HiccupsActive = hiccups; // Supply the value written by the checked Hiccup strategy.
         Assert.True(await manager.SwitchToBehaviorBase(behavior, f.Rig.Engine.Timer.SecondsF));
-        Assert.Contains(behavior.Trace, line => line.StartsWith($"play {trigger} -> ", StringComparison.Ordinal));
+        if (side == OffTreadsState.OnFace)
+        {
+            Assert.Same(f.Runtime.Bound["ReactToRobotOnFace"], behavior);
+            Assert.Equal(trigger, Assert.IsType<TriggerAnimationAction>(behavior.OwnedRunner).Request.Trigger);
+        }
+        else Assert.Contains(behavior.Trace, line => line.StartsWith($"play {trigger} -> ", StringComparison.Ordinal));
         manager.Stop(BehaviorStopReason.Cancelled, f.Rig.Engine.Timer.SecondsF);
     }
 

@@ -540,6 +540,7 @@ PHYSICAL = {
     "ReactToMotorCalibration": "react-to-motor-calibration", "ReactToOnCharger": "react-to-on-charger",
     "ReactToFrustration": "react-to-frustration",
 }
+REACTION_EXIT_ROUNDS = {"on-face", "on-side", "shaken", "react-to-placed-on-slope", "react-to-frustration"}
 NEEDS = {
     "ExpressNeeds": "express-needs", "PlayAnimOnNeedsChange": "needs-change-animation",
     "DriveInDesperation": "drive-in-desperation", "EarnedSparks": "earned-sparks",
@@ -602,13 +603,21 @@ def behavior_checks(session, personality):
                 else:
                     stopped = (t for t, body in session.in_window(0x88, at, end)
                                if len(body) == 2 and body[0] == key != body[1])
-                end = next(stopped, end)
+                stopped_at = next(stopped, None)
+                end = stopped_at if stopped_at is not None else end
+                if step in REACTION_EXIT_ROUNDS and stopped_at is None:
+                    candidates.append(session.apply_missing(Verdict(
+                        SEEN, f"Engine {tag} entry arrived without an exit within {seconds} s.",
+                        citation, prompt, (at, end), (name, trigger))))
+                    continue
                 if name == "ReactToCubeMoved" and not any(session.in_window(0x0F, max(0, at - seconds * 1000), at)):
                     candidates.append(Verdict(SEEN, "Reaction entered without the round’s ObjectMoved report.",
                                               citation, prompt, (at, end), (name,)))
                     continue
-                candidates.append(session.apply_missing(Verdict(PASSED, f"Engine {tag} entry at {at:.0f} ms.",
-                                                                 citation, prompt, (at, end), (name,))))
+                reason = (f"Engine {tag} entry at {at:.0f} ms and exit at {end:.0f} ms."
+                          if step in REACTION_EXIT_ROUNDS else f"Engine {tag} entry at {at:.0f} ms.")
+                aliases = (name, trigger) if step in REACTION_EXIT_ROUNDS else (name,)
+                candidates.append(session.apply_missing(Verdict(PASSED, reason, citation, prompt, (at, end), aliases)))
             if name == "ReactToCubeMoved" and not candidates and session.reports[0x0F]:
                 candidates.append(Verdict(SEEN, "ObjectMoved arrived without a CubeMoved reaction entry.",
                                           citation, prompt))

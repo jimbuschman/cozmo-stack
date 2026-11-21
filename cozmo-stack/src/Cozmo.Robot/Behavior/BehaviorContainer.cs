@@ -348,6 +348,10 @@ public sealed class BehaviorFactory
         [BehaviorClass.ReactToPlacedOnSlope] = (ctx,json)=>new ReactToPlacedOnSlopeBehavior(
             ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual manipulation owner"),
             ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToRobotOnFace] = (ctx,_) => new ReactToRobotOnFaceBehavior(ctx.Manipulation!,ctx.NativeRobot!),
+        [BehaviorClass.ReactToRobotOnSide] = (ctx,_) => new ReactToRobotOnSideBehavior(ctx.Manipulation!,ctx.NativeRobot!),
+        [BehaviorClass.ReactToRobotShaken] = (ctx,_) => new ReactToRobotShakenBehavior(ctx.Manipulation!,ctx.NativeRobot!),
+        [BehaviorClass.ReactToFrustration] = ReactToFrustrationBehavior.FromConfig,
         [BehaviorClass.ReactToUnexpectedMovement] = (ctx,json)=>new ReactToUnexpectedMovementBehavior(
             ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual manipulation owner"),
             ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
@@ -573,7 +577,8 @@ public sealed class BehaviorFactory
             SteppedBehavior.ReportMissing("Bouncer factory: actual vision, manipulation and native Robot owners unavailable");
             status=BehaviorCreateStatus.NotImplemented; return null;
         }
-        if (cls is BehaviorClass.ReactToCliff or BehaviorClass.ReactToImpact or BehaviorClass.ReactToPlacedOnSlope or BehaviorClass.ReactToUnexpectedMovement
+        if (cls is BehaviorClass.ReactToCliff or BehaviorClass.ReactToImpact or BehaviorClass.ReactToPlacedOnSlope or BehaviorClass.ReactToUnexpectedMovement or
+            BehaviorClass.ReactToRobotOnFace or BehaviorClass.ReactToRobotOnSide or BehaviorClass.ReactToRobotShaken or BehaviorClass.ReactToFrustration
             && (ctx.Manipulation is null || ctx.NativeRobot is null))
         {
             SteppedBehavior.ReportMissing($"{cls} factory requires actual manipulation and native Robot owners");

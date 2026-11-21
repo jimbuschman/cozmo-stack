@@ -94,14 +94,28 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
 {
     // Vtable 0x0102C6DC +8+0x20 -> 0x00608CA8: true.
     protected override bool RunnableGate20(BehaviorContext context)=>true;
+    protected override bool RunnableGate24(BehaviorContext context) => false; // 59EC12
+    protected override bool RunnableGate28(BehaviorContext context) => true; // 608CAC
+    protected override bool KeepsRunningWithoutAction => _physical is not null && HasCurrentAction;
+    private readonly PhysicalReactionOwner? _physical;
+    internal ReactToRobotOnFaceBehavior(ManipulationSystem m, EngineRobot owner) : this()
+    {
+        _physical = new(m, owner);
+        BindActionCompletionOwner(m.Robot, owner);
+    }
+    internal void RetireNativePhysical() { _physical?.Retire(); RetireActionCompletionOwner(); }
     internal Func<bool?>? ReadHiccups { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
-    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version && (_physical?.CanRun ?? true);
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
-    protected override void OnStop(BehaviorStopReason reason) => Interlocked.Increment(ref _generation);
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _generation);
+        _physical?.Advance();
+    }
     public ReactToRobotOnFaceBehavior() : base("ReactToRobotOnFace", "ReactToRobotOnFace") { }
 
     protected override void OnStart() => FlipOverIfNeeded();
@@ -115,19 +129,35 @@ public sealed class ReactToRobotOnFaceBehavior : SteppedBehavior
         float liftAngle = Context.Robot.Sensors.LiftAngleRad ?? 0f;
         var roll = hiccups.Value ? AnimationTrigger.HiccupRobotOnFace
             : liftAngle < 45f ? AnimationTrigger.FacePlantRoll : AnimationTrigger.FacePlantRollArmUp;
-        PlayTrigger(roll, DelayThenCheckState);
+        PlayRightingTrigger(roll, DelayThenCheckState);
     }
 
     private void DelayThenCheckState()
     {
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnFace) { Log("righted"); Finish(); return; }
-        Wait(0.5, CheckFlipSuccess);
+        if (_physical is { } physical)
+        {
+            long version = physical.Version;
+            var wait = new NativeTimedWaitRunner(physical.M, .5f) { ScopedOwner = physical.Robot };
+            physical.Start(this, wait, _ => CheckFlipSuccess(), version); // 608BE6..608C0E
+        }
+        else Wait(0.5, CheckFlipSuccess);
+    }
+
+    private void PlayRightingTrigger(AnimationTrigger trigger, Action completed)
+    {
+        if (_physical is { } physical)
+        {
+            long version = physical.Version;
+            physical.Start(this, physical.Animation(trigger), _ => completed(), version);
+        }
+        else PlayTrigger(trigger, completed);
     }
 
     private void CheckFlipSuccess()
     {
         if (Context.Robot.Sensors.OffTreadsState == OffTreadsState.OnFace)
-            PlayTrigger(AnimationTrigger.FailedToRightFromFace, FlipOverIfNeeded);
+            PlayRightingTrigger(AnimationTrigger.FailedToRightFromFace, FlipOverIfNeeded);
         else
         {
             long epoch = CaptureHostExecutionVersion();
@@ -156,6 +186,23 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 {
     // Vtable 0x0102C7D8 +8+0x20 -> 0x00609074: true.
     protected override bool RunnableGate20(BehaviorContext context)=>true;
+    protected override bool RunnableGate24(BehaviorContext context) => false; // 59EC12
+    protected override bool RunnableGate28(BehaviorContext context) => true; // 609078
+    protected override bool KeepsRunningWithoutAction => _physical is not null && HasCurrentAction;
+    private readonly PhysicalReactionOwner? _physical;
+    private float _deadlineSec;
+    internal ReactToRobotOnSideBehavior(ManipulationSystem m, EngineRobot owner) : this()
+    {
+        _physical = new(m, owner);
+        BindActionCompletionOwner(m.Robot, owner);
+    }
+    internal void RetireNativePhysical() { _physical?.Retire(); RetireActionCompletionOwner(); }
+    protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
+    protected override void HostRunStarting() => _physical?.Advance();
+    protected override long CaptureHostExecutionVersion() => _physical?.Version ?? 0;
+    protected override bool HostExecutionVersionCurrent(long version) => _physical?.CurrentAt(version) ?? true;
+    protected override bool HostStopContinuationCurrent(long version) => _physical is null || _physical.Version == unchecked(version+1);
+    protected override void OnStop(BehaviorStopReason reason) => _physical?.Advance();
     public const double HoldBeforeBoredSec = 15.0;
     private double _deadlineMs = -1;
 
@@ -167,9 +214,11 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
     protected override void OnStart()
     {
         _deadlineMs = -1;
+        _deadlineSec = -1f;
         BoredSequences = 0;
+        long version = CaptureHostExecutionVersion();
         if (NeedActionCompleted("PlacedOnSide") is { } action) Log($"needs action {action}");
-        ReactToBeingOnSide();
+        if (HostExecutionVersionCurrent(version)) ReactToBeingOnSide();
     }
 
     private OffTreadsState State => Context.Robot.Sensors.OffTreadsState;
@@ -183,7 +232,7 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
             _ => (AnimationTrigger?)null,
         };
         if (trigger is null) { Log("not on a side"); Finish(); return; }
-        PlayTrigger(trigger.Value, AskToBeRighted);
+        PlaySideTrigger(trigger.Value, AskToBeRighted);
     }
 
     private void AskToBeRighted()
@@ -195,12 +244,50 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
             _ => (AnimationTrigger?)null,
         };
         if (trigger is null) { Log("righted before asking"); Finish(); return; }
-        PlayTrigger(trigger.Value, HoldingLoop);
+        PlaySideTrigger(trigger.Value, HoldingLoop);
+    }
+
+    private void PlaySideTrigger(AnimationTrigger trigger, Action completed)
+    {
+        if (_physical is { } physical)
+        {
+            long version = physical.Version;
+            physical.Start(this, physical.Animation(trigger), _ => completed(), version);
+        }
+        else PlayTrigger(trigger, completed);
+    }
+
+    private void NativeHoldingLoop(PhysicalReactionOwner physical)
+    {
+        long version = physical.Version;
+        float now = physical.Robot.Engine.Timer.SecondsF;
+        // 608F04..608F2E uses the f32 timer, a f32 15s deadline, and ordered >=.
+        if (_deadlineSec < 0f) _deadlineSec = now + 15f;
+        if (now < _deadlineSec)
+        {
+            PlaySideTrigger(AnimationTrigger.WaitOnSideLoop, HoldingLoop);
+            return;
+        }
+        _deadlineSec = -1f;
+        BoredSequences++;
+        NeedActionCompleted("BoredOnSide"); // 608F78
+        if (!physical.CurrentAt(version)) return;
+        // 608F7C..60901A is a single compound, with normal failure propagation.
+        var sequence = new CompoundActionSequential(() => physical.Robot.Engine.Timer.SecondsF,
+            physical.Animation(AnimationTrigger.NothingToDoBoredIntro),
+            physical.Animation(AnimationTrigger.NothingToDoBoredEvent),
+            physical.Animation(AnimationTrigger.NothingToDoBoredOutro));
+        physical.Start(this, sequence, _ => HoldingLoop(), version);
     }
 
     private void HoldingLoop()
     {
         if (State is not (OffTreadsState.OnLeftSide or OffTreadsState.OnRightSide)) { Log("righted"); Finish(); return; }
+        if (_physical is { } physical)
+        {
+            NativeHoldingLoop(physical);
+            return;
+        }
         double t = NowMs;
         if (_deadlineMs < 0) _deadlineMs = t + HoldBeforeBoredSec * 1000;
         if (t < _deadlineMs)
@@ -507,12 +594,22 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 {
     // Vtable 0x0102C8E0 +8+0x20 -> 0x006097D2: true.
     protected override bool RunnableGate20(BehaviorContext context)=>true;
+    protected override bool RunnableGate24(BehaviorContext context) => false; // 59EC12
+    protected override bool RunnableGate28(BehaviorContext context) => true; // 6097D6
+    private readonly PhysicalReactionOwner? _physical;
+    private float _startedSeconds;
+    internal ReactToRobotShakenBehavior(ManipulationSystem m, EngineRobot owner) : this()
+    {
+        _physical = new(m, owner);
+        BindActionCompletionOwner(m.Robot, owner);
+    }
+    internal void RetireNativePhysical() { _physical?.Retire(); RetireActionCompletionOwner(); }
     private Action? _completionLease;
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
-    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version && (_physical?.CanRun ?? true);
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public enum Phase { Shaking, Stopping, Waiting, Choosing, Finishing }
     public enum Reaction : byte { None = 0, Soft = 1, Medium = 2, Hard = 3, NotBackOnTreads = 4 }
@@ -542,7 +639,14 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
         MaxAccelMagnitude = 0;
         ShakenDurationSec = 0;
         Played = Reaction.None;
-        LoopShake();
+        if (_physical is { } physical)
+        {
+            // 609162..60919C: store the f32 timer, start a plain looping action with an empty callable.
+            _startedSeconds = physical.Robot.Engine.Timer.SecondsF;
+            long version = physical.Version;
+            physical.Start(this, physical.Animation(AnimationTrigger.DizzyShakeLoop, 0), null, version);
+        }
+        else LoopShake();
     }
 
     private void LoopShake()
@@ -566,17 +670,31 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
                 if (mag > MaxAccelMagnitude) MaxAccelMagnitude = mag;
                 if (mag < ShakeContinuesAbove)
                 {
-                    ShakenDurationSec = (NowMs - (StartedMs ?? NowMs)) / 1000.0;
+                    ShakenDurationSec = _physical is { } physical
+                        ? physical.Robot.Engine.Timer.SecondsF - _startedSeconds // 609268..60927E
+                        : (NowMs - (StartedMs ?? NowMs)) / 1000.0;
                     Log($"shaking stopped after {ShakenDurationSec:F2} s, peak |accel| {MaxAccelMagnitude:F0}");
                     CurrentPhase = Phase.Stopping;
                 }
                 break;
             }
             case Phase.Stopping:
+            {
+                long epoch = CaptureHostExecutionVersion();
                 StopActing();
-                PlayTrigger(AnimationTrigger.DizzyShakeStop, () => PlayTrigger(AnimationTrigger.DizzyStillPickedUp, () => { }));
-                CurrentPhase = Phase.Waiting;
+                if (!HostExecutionVersionCurrent(epoch)) return;
+                if (_physical is { } physical)
+                {
+                    // 609322..6093A4: a two-child sequential action, with an empty callable.
+                    long version = physical.Version;
+                    var sequence = new CompoundActionSequential(() => physical.Robot.Engine.Timer.SecondsF,
+                        physical.Animation(AnimationTrigger.DizzyShakeStop), physical.Animation(AnimationTrigger.DizzyStillPickedUp));
+                    physical.Start(this, sequence, null, version);
+                }
+                else PlayTrigger(AnimationTrigger.DizzyShakeStop, () => PlayTrigger(AnimationTrigger.DizzyStillPickedUp, () => { }));
+                if (HostExecutionVersionCurrent(epoch)) CurrentPhase = Phase.Waiting;
                 break;
+            }
 
             case Phase.Waiting:
                 if (sensors.OffTreadsState == OffTreadsState.OnTreads) CurrentPhase = Phase.Choosing;
@@ -590,7 +708,9 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 
             case Phase.Choosing:
             {
+                long epoch = CaptureHostExecutionVersion();
                 StopActing();
+                if (!HostExecutionVersionCurrent(epoch)) return;
                 AnimationTrigger trigger;
                 if (ShakenDurationSec > HardAboveSec) { Played = Reaction.Hard; trigger = AnimationTrigger.DizzyReactionHard; }
                 else if (ShakenDurationSec > MediumAboveSec) { Played = Reaction.Medium; trigger = AnimationTrigger.DizzyReactionMedium; }
@@ -598,9 +718,20 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
                 Log($"back on treads: dizzy reaction {Played}");
                 // 0x00609460 / 0x0060946C name DizzyMedium (0x0F) and DizzySoft (0x10); the hard tier's
                 // DizzyHard (0x0E) follows the same naming.
-                if (NeedActionCompleted($"Dizzy{Played}") is { } action) Log($"needs action {action}");
-                PlayTrigger(trigger, () => { });
-                CurrentPhase = Phase.Finishing;
+                if (_physical is { } physical)
+                {
+                    // 6092D8..609474: admit the animation before dispatching the needs action.
+                    long version = physical.Version;
+                    physical.Start(this, physical.Animation(trigger), null, version);
+                    if (!HostExecutionVersionCurrent(epoch)) return;
+                    NeedActionCompleted($"Dizzy{Played}");
+                }
+                else
+                {
+                    if (NeedActionCompleted($"Dizzy{Played}") is { } action) Log($"needs action {action}");
+                    PlayTrigger(trigger, () => { });
+                }
+                if (HostExecutionVersionCurrent(epoch)) CurrentPhase = Phase.Finishing;
                 break;
             }
             case Phase.Finishing:
@@ -620,6 +751,7 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
     protected override void OnStop(BehaviorStopReason reason)
     {
         Interlocked.Increment(ref _generation);
+        _physical?.Advance();
         _completionLease?.Invoke(); _completionLease = null;
         Log($"DAS robot.dizzy_reaction: shakenDuration = {ShakenDurationSec:F3}s, maxShakingAccelMag = {MaxAccelMagnitude:F1}, reactionPlayed = '{Played}'");
     }
@@ -805,18 +937,26 @@ public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 /// </summary>
 public sealed class ReactToFrustrationBehavior : SteppedBehavior
 {
+    private readonly EngineRobot? _nativeOwner;
     private Action? _completionLease;
+    protected override bool RunnableGate20(BehaviorContext context) => false; // 5BF04C
+    protected override bool RunnableGate24(BehaviorContext context) => false; // 59EC12
+    protected override bool RunnableGate28(BehaviorContext context) => true; // 606110
+    internal void RetireNativePhysical() { Interlocked.Increment(ref _generation); RetireActionCompletionOwner(); }
     private long _generation;
     private ScopedAcquisition? _drivingLease;
     private readonly Dictionary<long, (Cozmo.Robot.Vision.Pose3d? Goal, Cozmo.Robot.Vision.Pose3d? Parent)> _retiredPoses = new();
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
-    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostExecutionVersionCurrent(long version) =>
+        Interlocked.Read(ref _generation) == version && (_nativeOwner is null ||
+            !_nativeOwner.Lifetime.Destroying && ReferenceEquals(_nativeOwner.Engine.Robot, _nativeOwner));
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     protected override bool KeepsRunningWithoutAction => HasCurrentAction;
     private Cozmo.Robot.Vision.Pose3d? _driveParent;
-    private readonly FrustrationStrategy? _strategy;
+    private FrustrationStrategy? _strategy;
+    internal void BindFrustrationStrategy(FrustrationStrategy strategy) => _strategy = strategy;
     private Cozmo.Robot.Manipulation.ManipulationSystem? _m;
 
     /// <summary>The shipped Major configuration, with its random drive on the manipulation system's paths.</summary>
@@ -845,6 +985,30 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
     public static ReactToFrustrationBehavior Minor(FrustrationStrategy? strategy = null) =>
         new("ReactToFrustrationMinor", AnimationTrigger.FrustratedByFailure, "FinishedMinorFrustration", strategy);
 
+    internal static ReactToFrustrationBehavior FromConfig(BehaviorFactoryContext source,System.Text.Json.JsonElement config)
+    {
+        // 605904..605C0A reads anim, finalEmotionEvent and the four optional drive floats.
+        string? String(string name) => config.TryGetProperty(name,out var field) ? field.GetString() : null;
+        float Number(string name) => config.TryGetProperty(name,out var field) ? field.GetSingle() : 0f;
+        var trigger = System.Enum.TryParse<AnimationTrigger>(String("anim"), out var animation) ? animation : (AnimationTrigger)0x23F;
+        var behavior = new ReactToFrustrationBehavior(BehaviorConfigLoader.ExtractIdFromConfig(config).ToString(),
+            trigger, String("finalEmotionEvent") ?? "", source.NativeRobot!)
+        {
+            _m = source.Manipulation,
+            RandomDriveMinDistMm = Number("randomDriveMinDist_mm"),
+            RandomDriveMaxDistMm = Number("randomDriveMaxDist_mm"),
+            RandomDriveMinAngleDeg = Number("randomDriveMinAngle_deg"),
+            RandomDriveMaxAngleDeg = Number("randomDriveMaxAngle_deg"),
+        };
+        return behavior;
+    }
+
+    private ReactToFrustrationBehavior(string id, AnimationTrigger animation, string finalEmotionEvent, EngineRobot owner)
+        : this(id, animation, finalEmotionEvent)
+    {
+        _nativeOwner = owner;
+    }
+
     public AnimationTrigger Animation { get; }
     public string FinalEmotionEvent { get; }
 
@@ -868,10 +1032,11 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
         _completionLease = AcquireActionCompletionOwner(Context.Robot);
         if ((int)Animation == 0x23F) { InitFailed = true; return; }
         var reaction = new TriggerLiftSafeAnimationAction(Context.Robot, new(Animation, 1, true, 0, 60f, false));
+        if (_nativeOwner is { } owner) reaction.UseBoundedOrdinaryAuthoredAudio(owner);
         if (!HostExecutionVersionCurrent(epoch)) { reaction.RetireStaleConstructor(() => false); return; }
         StartActing(reaction, _ =>
         {
-            double nowSec = Clock() / 1000.0;
+            double nowSec = _nativeOwner is { } original ? original.Engine.Timer.SecondsF : Clock() / 1000.0;
             if (!string.IsNullOrEmpty(FinalEmotionEvent))
             {
                 bool known = Context.Mood?.Trigger(FinalEmotionEvent, nowSec) ?? false;
@@ -901,7 +1066,10 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
                 DriveGoal = goal;
                 Log($"random drive: {dist:F0} mm at {ang * 180 / Math.PI:F0} deg");
                 if (!HostExecutionVersionCurrent(epoch)) return;
-                var drive = new Cozmo.Robot.Manipulation.DriveToPoseAction(_m, false, false);
+                // 605F68..605FA2: both flags false, (10,10,10), angle 0x3E32B8C2, 4s and 1s.
+                var drive = _nativeOwner is { } scoped
+                    ? new DriveToPoseAction(_m, false, false, scoped, () => HostExecutionVersionCurrent(epoch))
+                    : new DriveToPoseAction(_m, false, false);
                 drive.SetNativeGoals(new[] { goal });
                 StartActing(drive, _ => { }, () => HostExecutionVersionCurrent(epoch));
                 if (!HostExecutionVersionCurrent(epoch)) return;

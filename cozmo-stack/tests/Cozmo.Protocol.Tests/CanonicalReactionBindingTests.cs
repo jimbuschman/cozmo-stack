@@ -568,6 +568,66 @@ public sealed class CanonicalReactionBindingTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FrustrationUsesConfiguredActionAndCompletion(bool major)
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,sourceNvEmpty:true);
+        var engine = f.Rig.Engine;
+        var manager = f.Robot.BehaviorManagerOwner!;
+        OpenGate(f.Robot, manager);
+        var rows = manager.Reactions.Where(r => r.Strategy.Trigger == ReactionTrigger.Frustration).ToArray();
+        Assert.Equal(2,rows.Length);
+        var minorStrategy = Assert.IsType<FrustrationStrategy>(rows[0].Strategy);
+        var strategy = Assert.IsType<FrustrationStrategy>(rows[major ? 1 : 0].Strategy);
+        var behavior = Assert.IsType<ReactToFrustrationBehavior>(rows[major ? 1 : 0].Behavior);
+        Assert.Same(f.Runtime.Bound[behavior.Id],behavior);
+        if (major) minorStrategy.AnimationComplete(); // Supply the prior completion stamp at 0x0060EEF4.
+
+        var reports = new List<ReactionTransitionReport>();
+        using var transitions = engine.AnimationMessages.SubscribeMessage(0x88,true,
+            payload => reports.Add(Assert.IsType<ReactionTransitionReport>(payload)));
+        var objectives = new List<uint>();
+        using var objective = engine.AnimationMessages.SubscribeMessage(0x8B,true,
+            payload => objectives.Add(Assert.IsType<uint>(payload)));
+        var mood = f.Robot.MoodOwner!;
+        // Shipped reaction_events.json uses this event to supply a -1 Confident change.
+        Assert.True(mood.Trigger("TooManyResumesCliffOrMovement",engine.Timer.SecondsF));
+        Assert.Equal(-1d,mood[EmotionType.Confident]);
+        manager.CheckReactions(engine.Timer.Seconds);
+        Assert.Same(behavior,manager.Current);
+        var animation = Assert.IsType<TriggerLiftSafeAnimationAction>(behavior.OwnedRunner);
+        Assert.Equal(major ? AnimationTrigger.FrustratedByFailureMajor : AnimationTrigger.FrustratedByFailure,animation.Request.Trigger);
+        Assert.Contains(reports,r => r.NewTrigger == (byte)ReactionTrigger.Frustration);
+
+        // Model the matching action completion. The actual IBehavior callback applies the
+        // emotion, stamps the cooldown and (major only) constructs the native drive.
+        engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(animation.Tag,0x1A,0,[],0));
+        Assert.Contains(0x1Du,objectives);
+        Assert.Equal(engine.Timer.SecondsF,strategy.LastAnimationCompleteSec);
+        if (major)
+        {
+            Assert.Equal(0d,mood[EmotionType.Confident]);
+            var drive = Assert.IsType<DriveToPoseAction>(behavior.OwnedRunner);
+            Assert.False(drive.LowersHead);
+            Assert.False(drive.UsesManualSpeed);
+            Assert.Equal(10d,drive.DistanceToleranceMm);
+            Assert.Equal(4d,drive.PlanningTimeoutSec);
+            Assert.InRange(Assert.IsType<Pose3d>(behavior.DriveGoal).Translation.X,150f,400f);
+            engine.AnimationMessages.Deliver(0x5A,true,new RobotCompletedAction(drive.Tag,12,0,[],0));
+        }
+        else
+        {
+            Assert.InRange(mood[EmotionType.Confident],-.901,-.899);
+            Assert.Null(behavior.OwnedRunner);
+        }
+
+        manager.Update(engine.Timer.Seconds,0);
+        Assert.Contains(reports,r => r.OldTrigger == (byte)ReactionTrigger.Frustration && r.NewTrigger != r.OldTrigger);
+        Assert.False(behavior.EngineRunning);
+    }
+
+    [Theory]
     [InlineData("react-to-placed-on-slope")]
     [InlineData("react-to-unexpected-movement")]
     [InlineData("react-to-motor-calibration")]
