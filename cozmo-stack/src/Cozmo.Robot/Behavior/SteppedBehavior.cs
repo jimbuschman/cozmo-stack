@@ -55,6 +55,13 @@ public abstract partial class SteppedBehavior : IBehavior
     internal volatile bool CapturePlaybackObservationsForTest;
     private readonly ConcurrentQueue<PlaybackObservation> _playbackObservationsForTest=new();
     internal PlaybackObservation[] DrainPlaybackObservationsForTest(){var result=new List<PlaybackObservation>();while(_playbackObservationsForTest.TryDequeue(out var item))result.Add(item);return result.ToArray();}
+    protected void ObserveNativePlayback(AnimationTicket ticket, string clip)
+    {
+        if (!CapturePlaybackObservationsForTest) return;
+        _playbackObservationsForTest.Enqueue(new(this, unchecked((int)CurrentRunnerTag), CallbackEpoch,
+            Volatile.Read(ref _actionEpoch), ticket.Tag, ticket.Generation, clip, Context.Robot.Engine.Timer.Seconds,
+            EngineRunning, HasCurrentAction));
+    }
     internal sealed record AnimationCompletionObservation(long Id,Task Ticket,Task Callback);
     private readonly ConcurrentDictionary<long,AnimationCompletionObservation> _completionObservations=new();
     private long _completionObservationId;

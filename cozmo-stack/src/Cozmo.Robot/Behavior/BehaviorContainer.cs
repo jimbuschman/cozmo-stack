@@ -311,6 +311,12 @@ public sealed class BehaviorFactory
         // the whole of the shipped Hiccup behaviour (reactions/hiccup.json: animTriggers ["Hiccup"]); the timed hiccup/cure logic is the M10
         // strategy ReactionTriggerStrategyHiccup, which is not this class.
         [BehaviorClass.PlayAnim] = CreatePlayAnim,
+        [BehaviorClass.PlayAnimWithFace] = (ctx, json) =>
+        {
+            var behavior = PlayAnimBehavior.FromConfig(json, withFace: true);
+            behavior.BindNativePlay(ctx, withFace: true);
+            return behavior;
+        },
         [BehaviorClass.PlayArbitraryAnim] = (ctx,json)=>new NativePlayArbitraryAnimBehavior(json),
         [BehaviorClass.Wait] = (ctx,json)=>new NativeWaitBehavior(json),
         [BehaviorClass.DriveOffCharger] = CreateDriveOff,
@@ -379,7 +385,10 @@ public sealed class BehaviorFactory
     private static IBehavior CreatePlayAnim(BehaviorFactoryContext ctx,JsonElement json)
     {
         var behavior=PlayAnimBehavior.FromConfig(json,ctx.Log);
-        if(behavior.Id=="ReactToObstacle" && ctx.NativeRobot is not null)behavior.BindNativeReact(ctx,json);
+        if (behavior.Id == "ReactToObstacle" && ctx.NativeRobot is not null) behavior.BindNativeReact(ctx, json);
+        else if (ctx.NativeRobot is not null && ctx.Manipulation is not null &&
+            behavior.Id is "Hiking_FirstLookIntro" or "Hiking_FirstLookWakeUp" or "NothingToDo_BoredAnim" or "NothingToDo_Idle")
+            behavior.BindNativePlay(ctx, withFace: false);
         return behavior;
     }
     private static IBehavior CreateDriveOff(BehaviorFactoryContext ctx,JsonElement json)
@@ -470,6 +479,16 @@ public sealed class BehaviorFactory
         {
             SteppedBehavior.ReportMissing("ReturnedToTreads factory 0x0059D252 requires the original Robot and manipulation owners");
             status=BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
+        if (cls == BehaviorClass.PlayAnimWithFace &&
+            (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.VC_AlrightyResponse or
+                BehaviorID.VC_HowAreYouDoing_AllGood or BehaviorID.VC_HowAreYouDoing_Energy or
+                BehaviorID.VC_HowAreYouDoing_Play or BehaviorID.VC_HowAreYouDoing_Repair) ||
+             ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("PlayAnimWithFace 0x0059CE66 requires a supported voice configuration and the original Robot owners");
+            status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
         if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -582,7 +601,8 @@ public sealed class BehaviorFactory
             if(stepped is ReactToReturnedToTreadsBehavior or ReactToCliffBehavior or ReactToImpactBehavior or
                 ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior or AcknowledgeFaceBehavior or
                 NativeInteractWithFaces or NativeFindFacesSocialize or NativeSearchForFaceBehavior or NativeDriveToFaceBehavior or
-                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior)
+                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior ||
+                stepped is PlayAnimBehavior { OwnsConfiguredAnimationSequence: true })
             {
                 // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
