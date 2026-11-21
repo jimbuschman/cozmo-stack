@@ -20,6 +20,10 @@ NOT_EXERCISED = "NOT EXERCISED"
 COMPLETION = "M8-015, E2G 0x5A at 0x0053FAAA–0x0053FAB2"
 BEHAVIOR_REPORT = "M8-012, E2G 0x87 at 0x005A22B4–0x005A24AC"
 REACTION_REPORT = "M8-012, E2G 0x88 at 0x005A20AA–0x005A20D6 and 0x005A2EE8"
+EDGE_TERMINAL_SIGNALS = {
+    "Hiking_VisitInterestingEdge.S3": "observe from close",
+    "Hiking_VisitInterestingEdge.GatheringAccurateEdge.Done": "edge lost during gathering",
+}
 MISSING = re.compile(r"\bMISSING(?:\b|:)")
 RECORD = re.compile(r"\bM\d+-\d{3}\b")
 ADDRESS = re.compile(r"0x[0-9a-fA-F]{6,8}\b")
@@ -156,6 +160,7 @@ class Session:
         self.reports = defaultdict(list)
         self.public = defaultdict(dict)
         self.missing = []
+        self.edge_terminal_signals = []
         self.resolved_markers = []
         self.end = 0.0
         self.startup = None
@@ -205,6 +210,8 @@ class Session:
                 self.startup = at
             if kind in {"engine-log", "stack-log"} and MISSING.search(event.get("line", "")):
                 self.timed_missing[event["line"]].append(at)
+            if kind == "engine-log" and event.get("name") in EDGE_TERMINAL_SIGNALS:
+                self.edge_terminal_signals.append((at, EDGE_TERMINAL_SIGNALS[event["name"]]))
             if kind == "engine-to-game":
                 self.reports[int(event["tag"], 16)].append((at, bytes.fromhex(event["bodyHex"])))
             elif kind == "mcp-input":
@@ -594,6 +601,9 @@ def behavior_checks(session, personality):
     for group, members in (("Physical reactions", PHYSICAL), ("Needs", NEEDS),
                            ("Idle life", dict.fromkeys(IDLE)), ("Faces", FACES), ("Cubes", dict.fromkeys(CUBES))):
         for name, step in members.items():
+            if name == "VisitInterestingEdge":
+                yield group, name, visit_interesting_edge_check(session, names)
+                continue
             citation = BEHAVIOR_REPORT + "; M7-001, shipped BehaviorID and BehaviorClass tables"
             prompt = f"Leave Freeplay on and watch for the {name} behavior."
             trigger = identity = None
@@ -670,6 +680,41 @@ def behavior_checks(session, personality):
                 candidates.append(Verdict(SEEN, "ObjectMoved arrived without a CubeMoved reaction entry.",
                                           citation, prompt))
             yield group, name, choose(candidates, citation, prompt)
+
+
+def visit_interesting_edge_check(session, names):
+    identifier = "Hiking_VisitInterestingEdge"
+    native_id = names[identifier]
+    citation = (BEHAVIOR_REPORT + "; M11-079/M11-089/M11-092, hiking.json and Hiking_visitInterestingEdge.json. "
+                "Process 1 reads the border sets at 0x00574FCC–0x00575054. Goal gate at 0x005E6520–0x005E6824 "
+                "and stop at 0x005E729C–0x005E7302. Terminal branches log at "
+                "0x005E7564–0x005E7598 and 0x005E7DC8–0x005E7E0E.")
+    prompt = ("Start Freeplay with Cozmo on his treads, off the charger and carrying nothing. "
+              "Use a flat surface with a safe contrast boundary and clear room to turn and approach. "
+              "Give Hiking time to finish its intro and beacon check. Capture get_map around the attempt.")
+    candidates = []
+    transitions = [(at, body[0], body[1]) for at, body in session.in_window(0x87)
+                   if len(body) >= 7 and body[0] != body[1]]
+    for index, (at, _, new) in enumerate(transitions):
+        if new != native_id:
+            continue
+        stopped = next((time for time, previous, _ in transitions[index + 1:] if previous == native_id), None)
+        end = stopped if stopped is not None else session.end
+        if not freeplay_running_at(session, at):
+            status, reason = SEEN, "Hiking_VisitInterestingEdge entered without an active Freeplay request."
+        elif stopped is None:
+            status, reason = SEEN, "Hiking_VisitInterestingEdge entered without a matching engine exit."
+        else:
+            terminal = next((branch for time, branch in session.edge_terminal_signals if at <= time <= stopped), None)
+            if terminal is None:
+                status, reason = SEEN, "Hiking_VisitInterestingEdge exited before a terminal branch was recorded."
+            else:
+                status = PASSED
+                reason = (f"Engine 0x87 entered at {at:.0f} ms, reached the {terminal} branch "
+                          f"and exited at {end:.0f} ms.")
+        candidates.append(session.apply_missing(Verdict(
+            status, reason, citation, prompt, (at, end), ("VisitInterestingEdge", identifier))))
+    return choose(candidates, citation, prompt)
 
 
 def cube_round_gap(session, at, stopped_at, objective, carrying):

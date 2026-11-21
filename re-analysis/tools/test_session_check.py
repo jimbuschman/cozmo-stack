@@ -81,6 +81,34 @@ class SessionCheckTests(unittest.TestCase):
         for cls, *_ in cases:
             self.assertEqual(PASSED, checks[cls].status, cls)
 
+    def test_interesting_edge_round_uses_the_configured_engine_entry_and_exit(self):
+        ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
+        wait, edge = ids["Wait"], ids["Hiking_VisitInterestingEdge"]
+        wait_class, edge_class = classes["Wait"], classes["VisitInterestingEdge"]
+        self.request(10, 1, "freeplay", enabled=True)
+        self.reply(20, 1, status="submitted")
+        self.request(30, 2, "get_map")
+        self.reply(40, 2, available=True, regions=[{"type": "InterestingEdge"}])
+        checks, _ = self.check()
+        self.assertEqual(NOT_EXERCISED, checks["VisitInterestingEdge"].status)
+
+        self.raw(100, 0x87, bytes((wait, edge, wait_class, 12, edge_class, 12, 0)))
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["VisitInterestingEdge"].status)
+
+        self.raw(150, 0x87, bytes((edge, wait, edge_class, 12, wait_class, 12, 0)))
+        checks, _ = self.check()
+        self.assertEqual(SEEN, checks["VisitInterestingEdge"].status)
+
+        self.event(130, "engine-log", name="Hiking_VisitInterestingEdge.S3")
+        checks, _ = self.check()
+        self.assertEqual(PASSED, checks["VisitInterestingEdge"].status)
+        self.assertIn("0x005E729C", checks["VisitInterestingEdge"].citation)
+
+        self.event(120, "engine-log", line="MISSING: M11-092 VisitInterestingEdge test gap")
+        checks, _ = self.check(["MISSING: M11-092 VisitInterestingEdge test gap"])
+        self.assertEqual(SEEN, checks["VisitInterestingEdge"].status)
+
     def test_physical_rounds_require_both_native_reaction_edges(self):
         triggers = enum_members("ReactionTrigger")
         pairs = {
