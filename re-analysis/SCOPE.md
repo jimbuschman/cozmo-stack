@@ -98,11 +98,15 @@ engine-sourced round expectations (operator 2026-11-20; combined table
   (the engine's own results, needs a clear desk); roll; stack.
 - **A, not exercised:** go to a place (fixture and session round built, A-UNEXERCISED-READY-1).
 - **B, finished (passed in a session, no MISSING on the path, main path spot-read against the binary 2026-11-20):**
-  19 of 40 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
+  18 of 40 classes. Freeplay loop; ReactToCliff, Pickup, RobotOnBack, ReturnedToTreads, Impact, UnexpectedMovement,
   MotorCalibration, OnCharger; PlayAnim, FindFaces, LookForFaceAndCube, PounceOnMotion, ThinkAboutBeacons;
-  AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; AcknowledgeObject, RollBlock.
+  AcknowledgeFace, InteractWithFaces, EnrollFace, ReactToPet; RollBlock.
+- **B, seen but not passed (2026-11-22 path trace):** AcknowledgeObject. Its stacked-cube look hit
+  "MISSING: M15-081 ... M11-010 ghost visibility reason" after the reaction (20261120-094700 stack-log 4236); the checker
+  did not count it. ACK-STACKED-LOOK-1.
 - **B, passed; spot-read difference fixed 2026-11-20 (CUBEMOVED-PRESENCE-1), presence branch to recheck next session:** ReactToCubeMoved. Its presence branch played AcknowledgeObject
-  without the engine's lift-safe action (0x00602526..0x00602546; CUBEMOVED-PRESENCE-1).
+  without the engine's lift-safe action (0x00602526..0x00602546; CUBEMOVED-PRESENCE-1), and reaches the same stacked-cube
+  look gap (ACK-STACKED-LOOK-1).
 - **B, not exercised:** 20 classes (OnFace, OnSide, Shaken, PlacedOnSlope, Frustration; the four Needs classes;
   PlayAnimWithFace, PlayArbitraryAnim, Wait, ExploreLookAroundInPlace, VisitInterestingEdge; SearchForFace,
   DriveToFace, RespondToRenameFace; PutDownBlock, StackBlocks, DriveOffCharger). All 20 now have offline replays
