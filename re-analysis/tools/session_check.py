@@ -277,7 +277,15 @@ class Session:
             "0x00508870..0x0050890A not represented":
                 "0x00508870–0x0050890A formats candidate pose and axis for Debug",
             "MISSING: M13-034 IPathPlanner.PrintPath 0x005090A0 output formatting remains unbuilt":
-                "0x005090A0 prints the resulting planner path",
+                "0x00509072 calls Path::PrintPath for diagnostics",
+            "MISSING: M13-034 ApplyMotionProfile two-pass length/end-pose/split calls require "
+            "source-backed M13-011 PathSegment helpers (0x0085BC00..0x0085C034); only checked profile-field "
+            "assignment built, continuity/deceleration/splitting remain unbuilt":
+                "SHORT-PLANNER-1 binds the two-pass profile at 0x00508AE4; the recorded stack and roll "
+                "segments are compared in the offline replay",
+            "MISSING: M13-034 slot 0x18 -> 0x1C PathIsSafe body needs separately-owned PathSegment "
+            "geometry helpers; candidate short path safety is not claimed source-backed":
+                "SHORT-PLANNER-1 binds the safety dispatch at 0x00649FB6; this marker records the older build",
             "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt":
                 "0x0085C7C8 prints segments after AppendToPath",
             **{f"MISSING: M13-033 PrintPlan {address} -> 0x00855E7C output remains unbuilt":

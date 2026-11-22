@@ -339,6 +339,22 @@ class SessionCheckTests(unittest.TestCase):
         checks, _ = self.check([message, other])
         self.assertEqual(SEEN, checks["stack"].status)
 
+    def test_replayed_short_planner_markers_remain_in_the_historical_notes(self):
+        self.request(100, 1, "stack", objectId=3)
+        profile = ("MISSING: M13-034 ApplyMotionProfile two-pass length/end-pose/split calls require "
+                   "source-backed M13-011 PathSegment helpers (0x0085BC00..0x0085C034); only checked profile-field "
+                   "assignment built, continuity/deceleration/splitting remain unbuilt")
+        safety = ("MISSING: M13-034 slot 0x18 -> 0x1C PathIsSafe body needs separately-owned PathSegment "
+                  "geometry helpers; candidate short path safety is not claimed source-backed")
+        self.event(120, "engine-log", line=profile)
+        self.event(130, "engine-log", line=safety)
+        self.completion(150, 15, 0x19)
+        self.reply(155, 1, admitted=True, engineResult=0)
+        checks, report = self.check([profile, safety])
+        self.assertEqual(PASSED, checks["stack"].status)
+        self.assertIn("SHORT-PLANNER-1 binds the two-pass profile", report)
+        self.assertIn("this marker records the older build", report)
+
     def test_undefined_interaction_payload_preserves_the_seen_result(self):
         self.request(100, 1, "turn-to-cube", objectId=1)
         message = ("MISSING: M1-034/M8-015 TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: "

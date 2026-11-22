@@ -269,14 +269,15 @@ internal sealed partial class PathComponent
         if(_plan is not {} plan)return;
         if((byte)plan.Path.Count!=0)
         {
-            bool? skipped=PlannerSkipSafetyCheck?.Invoke();if(!IsCurrent())return;
-            bool? safe=skipped==false?PlannerPathIsSafe?.Invoke():null;if(!IsCurrent())return;
+            bool? skipped = PlannerSkipSafetyCheck?.Invoke() ?? _nativePlanners?.Current?.SkipsSafetyCheck;
+            if (!IsCurrent()) return;
+            // 0x00649F86..0x00649FBE checks the selected planner's predicate, then dispatches to the lattice owner.
+            bool? safe = skipped == false
+                ? PlannerPathIsSafe?.Invoke() ?? _nativePlanners?.CheckIsPathSafe(plan.Path)
+                : null;
+            if (!IsCurrent()) return;
             if(skipped==false && safe==false)
             {bool fallback=ReplanWithFallbackPlanner();if(!IsCurrent())return;if(fallback)Info("PathComponent.Update.Planner.Collisions","Planner returned a path with obstacles, using fallback planner instead");else{Abort(_scopedSend??SendNative,current);if(!IsCurrent())return;SetStatus(6,current);if(IsCurrent())Info("PathComponent.Update.Planner.Collisions.ReplanFail","Planner returned a path with obstacles, can't get valid fallback plan, failing");}return;}
-            else if(_nativePlanners?.Current is {} selected)
-            {
-                if(!selected.SkipsSafetyCheck && _nativePlanners.Lattice is not null)MissingOnce("M13-034 slot 0x18 -> 0x1C PathIsSafe body needs separately-owned PathSegment geometry helpers; candidate short path safety is not claimed source-backed");
-            }
         }
         if(_nativePlanners?.Current is {} chosen)_robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.plan_complete",chosen.Name,new Dictionary<string,string>{{"$data",((byte)plan.Path.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         else MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");

@@ -1,3 +1,4 @@
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -19,7 +20,7 @@ public sealed class M13X1BuilderTests
     {
         var source=new List<string>();var planner=new NativeShortPlanner(false,(_,_,k,t)=>source.Add(k+" "+t),_=>{});
         Assert.False(planner.GetCompletePath(Pose3d.Identity,PathMotionProfile.Default,out _,out _));
-        Assert.Equal(1,planner.ComputePath(Pose3d.Identity,new[]{At(20,0)}));
+        Assert.Equal(1,planner.ComputePath(Pose3d.Identity,new[]{At(12,0)}));
         Assert.True(planner.GetCompletePath(Pose3d.Identity,PathMotionProfile.Default,out var first,out _));Assert.Single(first);
         int before=source.Count;Assert.Equal(2,planner.ComputeNewPathIfNeeded(At(500,500),false));
         Assert.Equal(before,source.Count);Assert.Equal(2,planner.CheckPlanningStatus);
@@ -69,7 +70,12 @@ public sealed class M13X1BuilderTests
         var path=NativePathBuffer.ApplyMotionProfile(new[]{line},PathMotionProfile.Default,(_,_,_,_)=>{},_=>{});
         Assert.Equal(2,path.Count);var first=Assert.IsType<PathSegment.Line>(path[0]);var second=Assert.IsType<PathSegment.Line>(path[1]);
         Assert.Equal(90,first.ToX);Assert.Equal(100,first.SpeedMmps);Assert.Equal(90,second.FromX);Assert.Equal(20,second.SpeedMmps);
-        var reverse=(PathSegment.Line)NativePathBuffer.ApplyKnownProfile(new[]{line with{SpeedMmps=BitConverter.Int32BitsToSingle(unchecked((int)0x80000000))}},PathMotionProfile.Default,_=>{})[0];Assert.Equal(-100,reverse.SpeedMmps);
+        var reverse = NativePathBuffer.ApplyMotionProfile(new[]
+        {
+            line with { SpeedMmps = BitConverter.UInt32BitsToSingle(0x80000000) }
+        }, PathMotionProfile.Default, (_, _, _, _) => { }, _ => { });
+        Assert.Equal(-100, Assert.IsType<PathSegment.Line>(reverse[0]).SpeedMmps);
+        Assert.Equal(-20, Assert.IsType<PathSegment.Line>(reverse[1]).SpeedMmps);
         Assert.Empty(NativePathBuffer.ApplyMotionProfile(new PathSegment[]{new Unknown()},PathMotionProfile.Default,(_,_,_,_)=>{},_=>{}));
     }
     [Fact]
@@ -82,9 +88,111 @@ public sealed class M13X1BuilderTests
         StateC state=new(0,0,0);float eps=BitConverter.Int32BitsToSingle(0x3727C5AC);
         float penalty=NativePlanDependencies.ApplyPathSegment(line,G(line),ref state,true,eps,16,1,(_,_,_)=>new[]{eps/10f},(_,_,_,_)=>{},_=>{});
         Assert.True(penalty>=eps);Assert.Equal(new StateC(0,0,0),state);
-        var turn=new PathSegment.PointTurn(0,0,1,0.1f,1,1,1,true);var missing=new List<string>();
-        Assert.Equal(0,NativePlanDependencies.ApplyPathSegment(turn,new(3,new(0,0,0),new(0,0,1),0,1,0),ref state,true,eps,16,1,(_,_,_)=>new[]{1000f},(_,_,_,_)=>{},missing.Add));Assert.Equal(1,state.Theta);Assert.Contains(missing,s=>s.Contains("M1-034/M13-034"));
+        var turn = new PathSegment.PointTurn(0, 0, 1, 0.1f, 1, 1, 1, true);
+        var geometry = NativePlanDependencies.Describe(turn);
+        Assert.Equal(0, NativePlanDependencies.ApplyPathSegment(turn, geometry, ref state, true, eps, 16, 1,
+            (_, _, _) => Array.Empty<float>(), (_, _, key, _) => logs.Add(key), _ => { }));
+        Assert.Equal(1, state.Theta);
+        Assert.DoesNotContain("M1-034/M13-034", logs);
+
+        state = default;
+        Assert.Equal(0, NativePlanDependencies.ApplyPathSegment(turn, geometry, ref state, true, eps, 16, 1,
+            (_, _, _) => new[] { 1000f }, (_, _, key, _) => logs.Add(key), _ => { }));
+        Assert.Equal(1, state.Theta);
+        Assert.Contains("M1-034/M13-034", logs);
     }
+    [Fact]
+    public void ShortPathSafetyUsesTheLatticeContextObstacleBuckets()
+    {
+        using var rig = new Rig();
+        var environment = new LatticeEnvironment(Prims());
+        var keys = new List<string>();
+        using var runtime = new NativeLatticePlannerRuntime(new(environment), rig.Vision.World, () => null,
+            (_, _, key, _) => keys.Add(key), _ => { });
+        PathSegment[] path = [NativePlanDependencies.DefineLine(0, 0, 20, 0, 40, 200, 500)];
+        Assert.True(runtime.CheckIsPathSafe(path, 0));
+        Assert.True(environment.AddPolygonObstacle([new(10, -40), new(30, -40), new(30, 40), new(10, 40)],
+            LatticeEnvironment.HardPenalty, uint.MaxValue));
+        Assert.False(runtime.CheckIsPathSafe(path, 0));
+        Assert.Contains("xythetaEnvironment.PathIsSafe", keys);
+    }
+
+    [Theory]
+    [InlineData("094833", 544561.1182, 12, false, -0.168029f, 162.40463256835938f, 90.17548370361328f, 89.82451629638672f)]
+    [InlineData("094833", 555525.2311, 13, true, -0.692048f, 164.60806274414062f, 91.4075698852539f, 88.5924301147461f)]
+    [InlineData("182433", 717134.0557, 3, true, 0.350391f, 163.57691955566406f, 89.28025817871094f, 90.71974182128906f)]
+    public void RecordedStackAndRollShortPathsMatchTheRobotWire(
+        string session, double at, int id, bool minimal, float firstTurnDelta, float speed, float accel, float decel)
+    {
+        string? root = Environment.GetEnvironmentVariable("COZMO_SHORT_PLANNER_REPLAY_ROOT");
+        if (string.IsNullOrEmpty(root)) return;
+        string bundle = Path.Combine(root, $"20261119-{session}-LLM-SESSION");
+        var window = RecordedRobotInput.ReadOutbound(bundle, ms => ms >= at - 2000, at,
+            [0x3C, 0x3D, 0x3E, 0x3F, 0x41]).Select(row => row.Message).ToList();
+        Assert.Equal(id, Assert.IsType<ExecutePath>(window[^1]).EventId);
+        var recorded = window.Skip(window.FindLastIndex(message => message is ClearPath) + 1).SkipLast(1).ToArray();
+        var startLine = recorded.OfType<AppendPathSegmentLine>().First();
+        var firstTurn = recorded.OfType<AppendPathSegmentPointTurn>().First();
+        var finalTurn = Assert.IsType<AppendPathSegmentPointTurn>(recorded[^1]);
+
+        // Replay the short planner at its input boundary. The capture gives drive-center/goal
+        // coordinates via the path endpoints and logs the signed first-turn delta to six decimals.
+        // The speed chooser had already run. Supply its three recorded f32 values independently
+        // of the planner output and compare the native path doler's fields below.
+        float startYaw = EngineF.Rescale(firstTurn.TargetAngleRad - firstTurnDelta);
+        using var start = At(startLine.XStartMm, startLine.YStartMm, startYaw);
+        using var goal = At(finalTurn.XMm, finalTurn.YMm, finalTurn.TargetAngleRad);
+        var profile = PathMotionProfile.Default with
+        {
+            SpeedMmps = speed,
+            AccelMmps2 = accel,
+            DecelMmps2 = decel
+        };
+        var missing = new List<string>();
+        var planner = new NativeShortPlanner(minimal, (_, _, _, _) => { }, missing.Add);
+        Assert.Equal(1, planner.ComputePath(start, [goal]));
+        Assert.True(planner.GetCompletePath(start, profile, out var path, out _));
+        Assert.DoesNotContain(missing, message => message.Contains("M13-034"));
+
+        using var rig = new Rig();
+        var sent = new List<RobotMessage>();
+        Assert.Equal(0, rig.Robot.Motion.Path.ExecutePath(path, false, send: message =>
+        {
+            sent.Add(message);
+            return true;
+        }));
+        var segments = sent.Where(message => message is AppendPathSegmentLine or AppendPathSegmentPointTurn).ToArray();
+        Assert.Equal(recorded.Length, segments.Length);
+        for (int index = 0; index < segments.Length; index++)
+        {
+            switch (recorded[index])
+            {
+                case AppendPathSegmentLine line:
+                    var actualLine = Assert.IsType<AppendPathSegmentLine>(segments[index]);
+                    Near(line.XStartMm, actualLine.XStartMm, 0.001f);
+                    Near(line.YStartMm, actualLine.YStartMm, 0.001f);
+                    Near(line.XEndMm, actualLine.XEndMm, 0.001f);
+                    Near(line.YEndMm, actualLine.YEndMm, 0.001f);
+                    Assert.Equal(line.Speed, actualLine.Speed);
+                    break;
+                case AppendPathSegmentPointTurn turn:
+                    var actualTurn = Assert.IsType<AppendPathSegmentPointTurn>(segments[index]);
+                    Near(turn.XMm, actualTurn.XMm, 0.001f);
+                    Near(turn.YMm, actualTurn.YMm, 0.001f);
+                    Near(turn.TargetAngleRad, actualTurn.TargetAngleRad, 0.00001f);
+                    Assert.Equal(turn.AngleToleranceRad, actualTurn.AngleToleranceRad);
+                    Assert.Equal(turn.UseShortestDirection, actualTurn.UseShortestDirection);
+                    Assert.Equal(turn.Speed, actualTurn.Speed);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unexpected recorded segment {recorded[index].Id}.");
+            }
+        }
+
+        static void Near(float expected, float actual, float tolerance)
+            => Assert.InRange(actual, expected - tolerance, expected + tolerance);
+    }
+
     [Fact]
     public void SafePrefixRetainsCrossingActionOldPenaltyAndChecksLaterCollision()
     {

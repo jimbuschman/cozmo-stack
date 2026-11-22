@@ -130,6 +130,32 @@ internal static class NativePlanDependencies
     private static float ArcHeading(float start, float sweep, float speed)
         => EngineF.Rescale(((start + sweep) + (sweep > 0 ? MathF.PI / 2 : -MathF.PI / 2)) + (speed < 0 ? MathF.PI : 0));
 
+    // GetStartPoint 0x0085BEBC..0x0085BF1C. PathIsSafe only reads these coordinates.
+    private static StateC GetStartPoint(PathSegment segment) => segment switch
+    {
+        PathSegment.Line line => new(line.FromX, line.FromY, 0),
+        PathSegment.Arc arc => new(arc.CenterX + arc.RadiusMm * MathF.Cos(arc.StartAngleRad),
+            arc.CenterY + arc.RadiusMm * MathF.Sin(arc.StartAngleRad), 0),
+        PathSegment.PointTurn turn => new(turn.X, turn.Y, 0),
+        _ => throw new ArgumentOutOfRangeException(nameof(segment))
+    };
+
+    internal static Geometry Describe(PathSegment segment)
+    {
+        StateC start = GetStartPoint(segment);
+        StateC end = GetEndPose(segment);
+        float length = GetLength(segment);
+        // ApplyPathSegment 0x00850650, 0x008506E4 and 0x0085074A read the union's words at +0x0C and +0x14.
+        return segment switch
+        {
+            PathSegment.Line line => new(1, start, end, length, line.ToX, end.Theta),
+            PathSegment.Arc arc => new(2, start, end, length, arc.RadiusMm, arc.SweepRad,
+                arc.CenterX, arc.CenterY, arc.RadiusMm, arc.StartAngleRad),
+            PathSegment.PointTurn turn => new(3, start, end, length, turn.TargetAngleRad, 0),
+            _ => throw new ArgumentOutOfRangeException(nameof(segment))
+        };
+    }
+
     // GetEndPose 0x0085BF5C..0x0085BFEC. The arc evaluates center + radius * trig(start + sweep).
     internal static StateC GetEndPose(PathSegment segment) => segment switch
     {
@@ -164,24 +190,33 @@ internal static class NativePlanDependencies
         int numAngles,float inverseAngleStep,Func<int,float,float,IEnumerable<float>> containedPenalties,SourceLogSink source,Action<string> missing)
     {
         if(!check){state=g.End;return 0;}
-        if(g.Kind==3)
-        {
-            missing("M1-034/M13-034 undefined turn-weight padding read 0x008506E4: skipping this turn's penalty contribution, retaining total");state=g.End;return 0;
-        }
-        if(g.Kind is not (1 or 2))
+        if(g.Kind is not (1 or 2 or 3))
         {source(EngineLogLevel.Error,null,"xythetaEnvironment.ApplyPathSegment",$"Undefined segment {g.Kind}");EngineErrorState.StoreAndMaybeBreak();return 1000;}
         float delta=EngineF.RadiansMinus(g.Raw0C,state.Theta);
         int count=Math.Max(Math.Max((int)MathF.Ceiling(g.Length*4f+1f),(int)MathF.Ceiling(MathF.Abs(delta)*EngineF.Bits(0x4122F983))),2);
         float den=count-1,inv=1f/den,weight=den/g.Length,penalty=0;
-        float dx=inv*(g.End.X-g.Start.X),dy=inv*(g.End.Y-g.Start.Y),angleStep=inv*g.Raw14;
+        float dx=inv*(g.End.X-g.Start.X),dy=inv*(g.End.Y-g.Start.Y),angleStep=inv*(g.Kind==3?delta:g.Raw14);
         for(int i=1;i<count;i++)
         {
             float x,y,angle;
             if(g.Kind==1){x=state.X+i*dx;y=state.Y+i*dy;angle=state.Theta;}
-            else{float a=g.StartRad+i*angleStep;x=g.CenterX+g.Radius*MathF.Cos(a);y=g.CenterY+g.Radius*MathF.Sin(a);angle=state.Theta+i*angleStep;}
+            else if(g.Kind==2){float a=g.StartRad+i*angleStep;x=g.CenterX+g.Radius*MathF.Cos(a);y=g.CenterY+g.Radius*MathF.Sin(a);angle=state.Theta+i*angleStep;}
+            else { x = state.X; y = state.Y; angle = state.Theta + i * angleStep; } // 0x00850802..0x0085086A
             int bucket=EngineF.ThetaIndex(angle,inverseAngleStep,numAngles);
             foreach(float obstaclePenalty in containedPenalties(bucket,x,y))
-            {penalty+=weight*obstaclePenalty;if(penalty>=threshold)return penalty;}
+            {
+                // The turn weight reads padding at 0x008506E4, but it is consumed only
+                // after Contains succeeds (0x008509BA..0x008509D2). Apply M1-034 there.
+                if (g.Kind == 3)
+                {
+                    source(EngineLogLevel.Warning, null, "M1-034/M13-034",
+                        "Undefined turn-weight padding at 0x008506E4. Skipping this turn's penalty contribution.");
+                    state = g.End;
+                    return 0;
+                }
+                penalty += weight * obstaclePenalty;
+                if (penalty >= threshold) return penalty;
+            }
         }
         state=g.End;return penalty; // Corrected H10: retain the subthreshold accumulator.
     }

@@ -56,7 +56,7 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
         const float accel=200f;
         float tol=EngineF.Bits(0x3D0EFA35);
         void Turn(float px,float py,float target,float delta,float speed)=>NativePathBuffer.Append(output,new PathSegment.PointTurn(px,py,target,tol,delta<0?-speed:speed,10,10,true),missing,"AppendPointTurn");
-        void Line(float ax,float ay,float bx,float by,float speed)=>NativePathBuffer.Append(output,new PathSegment.Line(ax,ay,bx,by,speed,accel,accel),missing,"AppendLine");
+        void Line(float ax,float ay,float bx,float by,float speed)=>NativePathBuffer.Append(output,NativePlanDependencies.DefineLine(ax,ay,bx,by,speed,accel,accel),missing,"AppendLine");
         if(!minimal)
         {
             float dx=gx-x,dy=gy-y,d2=(float)((double)dx*dx+(double)dy*dy);
@@ -98,7 +98,10 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
     {
         goal=_goalIndex;path=_path;
         if(!_present)return false; // base internal +0x28==0: no copy
-        path=NativePathBuffer.ApplyKnownProfile(_path,profile,missing,source);_path=path;return true;
+        // IPathPlanner wrapper 0x005091E8..0x005091FA applies into the retained path, then copies it out.
+        path = NativePathBuffer.ApplyMotionProfile(_path, profile, source, missing);
+        _path = path;
+        return true;
     }
 }
 
@@ -118,10 +121,20 @@ internal static class NativePathBuffer
             var original=input[i];
             if(original is not (PathSegment.Line or PathSegment.Arc or PathSegment.PointTurn))
             {source(EngineLogLevel.Warning,null,"IPathPlanner.ApplyMotionProfile.UnknownSegment","Path has invalid segment");return Array.Empty<PathSegment>();}
-            if(original is PathSegment.PointTurn)
-            {reverse.Add(Profile(original,MathF.CopySign(MathF.Abs(p.PointTurnSpeedRadPerSec),Speed(original)),p.PointTurnAccelRadPerSec2,p.PointTurnDecelRadPerSec2));boundary=true;continue;}
-            float speed=MathF.CopySign(1,Speed(original))*p.SpeedMmps;
-            if(speed<0 && MathF.Abs(p.ReverseSpeedMmps)<=eps)missing("M13-034 reverse-speed warning 0x00508BB4..0x00508C0C has an unresolved source key; profile+0 magnitude is still used");
+            // 0x00508B58..0x00508BE6 applies profile+0 with the segment sign, and reads reverseSpeed only for the warning.
+            bool turn = original is PathSegment.PointTurn;
+            float speed = turn ? Speed(original) : MathF.CopySign(1, Speed(original)) * p.SpeedMmps;
+            if (speed < 0 && MathF.Abs(p.ReverseSpeedMmps) <= eps)
+                source(EngineLogLevel.Warning, null, "IPathPlanner.ApplyMotionProfile",
+                    "Tried to set speed to 0! PathMotionProfile.reverseSpeed_mmps = 0! Using speed_mmps instead.");
+            if (turn)
+            {
+                // 0x00508C44..0x00508C64 assigns the point-turn profile and breaks translation continuity.
+                reverse.Add(Profile(original, MathF.CopySign(MathF.Abs(p.PointTurnSpeedRadPerSec), speed),
+                    p.PointTurnAccelRadPerSec2, p.PointTurnDecelRadPerSec2));
+                boundary = true;
+                continue;
+            }
             float downstream=boundary?0:Speed(reverse[^1]);
             float upstream=input.Count>1 && (i==0 || input[i-1] is PathSegment.PointTurn)?0:p.SpeedMmps;
             float length=NativePlanDependencies.GetLength(original);
@@ -139,7 +152,11 @@ internal static class NativePathBuffer
             var segment=reverse[i];float speed=Speed(segment);
             if(segment is PathSegment.PointTurn){Append(output,segment,missing);continue;}
             float downstream=i+1==reverse.Count || reverse[i+1] is PathSegment.PointTurn?0:Speed(reverse[i+1]);
-            if((speed>0)!=(downstream>0))downstream=MathF.CopySign(MathF.Abs(downstream),speed);
+            // 0x00508DF6..0x00508E06 supplies positive zero at the end or before a turn.
+            // Only a following translating segment takes the sign-adjustment branch at 0x00508EE6..0x00508F24.
+            if (i + 1 < reverse.Count && reverse[i + 1] is not PathSegment.PointTurn
+                && (speed > 0) != (downstream > 0))
+                downstream = MathF.CopySign(MathF.Abs(downstream), speed);
             float length=NativePlanDependencies.GetLength(segment), tail=(downstream*downstream-speed*speed)/(p.DecelMmps2*-2f);
             if(segment is PathSegment.Line line && tail>0 && tail<length && MathF.Abs(tail-length)>=5f)
             {
@@ -151,35 +168,20 @@ internal static class NativePathBuffer
             }
             else
             {
-                if(MathF.Abs(downstream)<20 || i==reverse.Count-1)downstream=MathF.CopySign(20,speed);
+                if (MathF.Abs(downstream) < 20 || i == reverse.Count - 1) downstream = MathF.CopySign(20, downstream);
                 bool beforeTurn=i+1<reverse.Count && reverse[i+1] is PathSegment.PointTurn;
                 bool lastAfterTurn=i==reverse.Count-1 && i>0 && reverse[i-1] is PathSegment.PointTurn;
                 if(input.Count>=2 && !beforeTurn && !lastAfterTurn)segment=Profile(segment,downstream,p.AccelMmps2,p.DecelMmps2);
                 Append(output,segment,missing);
             }
         }
-        missing("M13-034 IPathPlanner.PrintPath 0x005090A0 output formatting remains unbuilt");return output;
+        // 0x00509072 calls Path::PrintPath on the finished output. This is diagnostic only.
+        source(EngineLogLevel.Debug, "Planner", "IPathPlanner.ApplyMotionProfile", $"Profiled path segments: {output.Count}");
+        return output;
     }
     internal static bool Append(List<PathSegment> output,PathSegment segment,Action<string> missing,string name="AppendSegment")
     {
         if(output.Count>=128){missing($"M13-034 CoreTechPrint: ERROR ({name}): Exceeded path size\n");return false;}
         output.Add(segment);return true;
-    }
-    internal static IReadOnlyList<PathSegment> ApplyKnownProfile(IReadOnlyList<PathSegment> path,PathMotionProfile p,Action<string> missing,SourceLogSink? source=null)
-    {
-        if(path.Any(s=>s is not (PathSegment.Line or PathSegment.Arc or PathSegment.PointTurn)))
-        {source?.Invoke(EngineLogLevel.Warning,null,"IPathPlanner.ApplyMotionProfile.UnknownSegment","Path has invalid segment");return Array.Empty<PathSegment>();}
-        missing("M13-034 ApplyMotionProfile two-pass length/end-pose/split calls require source-backed M13-011 PathSegment helpers (0x0085BC00..0x0085C034); only checked profile-field assignment built, continuity/deceleration/splitting remain unbuilt");
-        var output=new List<PathSegment>();
-        foreach(var s in path)
-        {
-            float Signed(float speed,float magnitude)=>MathF.CopySign(magnitude,speed);
-            PathSegment next=s switch{
-                PathSegment.Line l=>l with{SpeedMmps=MathF.CopySign(1,l.SpeedMmps)*p.SpeedMmps,AccelMmps2=p.AccelMmps2,DecelMmps2=p.DecelMmps2},
-                PathSegment.Arc a=>a with{SpeedMmps=MathF.CopySign(1,a.SpeedMmps)*p.SpeedMmps,AccelMmps2=p.AccelMmps2,DecelMmps2=p.DecelMmps2},
-                PathSegment.PointTurn t=>t with{SpeedRadPerSec=Signed(t.SpeedRadPerSec,MathF.Abs(p.PointTurnSpeedRadPerSec)),AccelRadPerSec2=p.PointTurnAccelRadPerSec2,DecelRadPerSec2=p.PointTurnDecelRadPerSec2},_=>s};
-            Append(output,next,missing);
-        }
-        return output;
     }
 }
