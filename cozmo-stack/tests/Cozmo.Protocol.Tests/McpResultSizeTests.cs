@@ -150,8 +150,8 @@ public sealed class McpResultSizeTests(ITestOutputHelper output)
             excludeTypes = continuation.GetProperty("excludeTypes"), detail = "full" }));
         Assert.Contains(later.GetProperty("events").EnumerateArray(), e => e.GetProperty("type").GetString() == "face-recognised" &&
             e.GetProperty("payload").GetProperty("faceId").GetInt32() == 40);
-        Assert.DoesNotContain(tag, rawCompletionTags);
-        Assert.DoesNotContain(tag, publicCompletionTags);
+        Assert.Single(rawCompletionTags, completionTag => completionTag == tag);
+        Assert.Single(publicCompletionTags, completionTag => completionTag == tag);
     }
 
     [Fact]

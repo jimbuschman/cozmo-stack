@@ -69,9 +69,9 @@ public sealed class RollBlockOnSideNativeTests
         Assert.Equal(1,scene.Rolls);Assert.Equal(1u,roll.RollHelper.Attempts);
         var dock=Assert.Single(f.Rig.SentSince(mark).OfType<DockWithObject>());
         Assert.Equal((byte)5,dock.DockAction);Assert.Equal((byte)0,dock.DockingMethod);Assert.Equal((byte)0,dock.Field6);Assert.False(dock.Field8);
-        Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);
-        // Source S14/M1-034: defined local result survives; full-public undefined unused IDs are guarded.
-        f.Rig.Engine.DrainAppDelivery();Assert.Empty(app);Capture("final");
+        Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:true}&&target==scene.Target);
+        // The operator policy publishes the same result with four zero-filled words.
+        f.Rig.Engine.DrainAppDelivery();Assert.Contains(app,r=>r.Result==0&&r.ObjectInteraction?.Word0==scene.Target);Capture("final");
         Assert.Same(f.Runtime.Bound["Wait"],manager.Current);var finalLights=manager.InspectStateLights();
         Assert.Empty(finalLights.Entries);Assert.Equal((byte)BehaviorClass.RollBlock,finalLights.Class); // M7-030 0x005A223E..226E
     }

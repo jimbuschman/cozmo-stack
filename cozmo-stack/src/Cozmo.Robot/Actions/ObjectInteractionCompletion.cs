@@ -1,9 +1,15 @@
 using Cozmo.Protocol;
 namespace Cozmo.Robot;
 
-/// <summary>Immutable source object-interaction completion. Undefined native words are never published.</summary>
+/// <summary>Immutable object-interaction completion. Unavailable payloads cannot be packed.</summary>
 public sealed record ObjectInteractionCompletion(uint Word0,uint Word1,uint Word2,uint Word3,uint Word4,byte Count,bool Flag,bool IsPayloadDefined=true)
 {
+    internal string? ZeroFilledWordsRecord { get; init; }
+
+    // Operator decision 2026-11-22: apply only at the cited getters that leave words 1–4 uninitialized.
+    internal static ObjectInteractionCompletion SingleWithZeroFilledWords(uint objectId, string record) =>
+        new(objectId, 0, 0, 0, 0, 1, false) { ZeroFilledWordsRecord = record };
+
     public byte[] PackBody()
     {
         if(!IsPayloadDefined)throw new InvalidOperationException("M1-034 undefined object interaction payload");

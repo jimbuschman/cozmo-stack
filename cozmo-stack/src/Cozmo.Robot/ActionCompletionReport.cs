@@ -13,14 +13,14 @@ public sealed partial class CozmoEngine
     public event Action<ActionCompletionReport>? ActionCompleted;
     internal void BroadcastActionCompletion(RobotCompletedAction record)
     {
+        if (record.ObjectInteraction?.ZeroFilledWordsRecord is { } policyRecord)
+            EmitStackLog($"{policyRecord} action completion tag {record.Tag}, type {record.ActionType}: zeroed four undefined object-interaction ID words (operator decision 2026-11-22).");
         var typed=new ActionCompletionReport(record.Tag,record.ActionType,record.Result,
             Array.AsReadOnly(record.SubActionResults.ToArray()),record.CompletionUnion)
             {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant,ObjectInteraction=record.ObjectInteraction,HostCaller=record.HostCaller};
         if(record.ObjectInteraction is {IsPayloadDefined:false})
         {
-            // Ground logs the recorded M1-034 skip in its getter. Other owners keep their open diagnostics.
-            if (record.ActionType != Manipulation.NativePlaceGroundRunner.NativeActionType)
-                Behavior.SteppedBehavior.ReportMissing("Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; no cross-action unused-word policy is applied.");
+            Behavior.SteppedBehavior.ReportMissing("Concrete object-interaction completion fields unavailable: full public 5A payload withheld; defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; no cross-action unused-word policy is applied.");
         }
         else if(record.ObjectInteraction is not null||record.CompletionVariant is 1 or 3 or 5 or 6)
             DeliverAnimationReportToApp(RobotCompletedAction.UnionTag,record.PackBody(),CaptureAppEvent(ActionCompleted,typed));

@@ -98,7 +98,7 @@ public sealed class SparksStackNativeTests
         Assert.Equal(new[]{"DriveOffCharger","KnockOverCubes","SparksStackBlock","SparksPickupSingleCubeToStack","SparksLookInPlace"},activity.Chooser!.BehaviorIds);
     }
     [Fact]
-    public void PolicyIsOnlyNormalSelectedLocatedPlacementAndGroundUndefinedCarrierStaysUnavailable()
+    public void PlacementAndGroundUseTheirOwnCompletionPolicies()
     {
         // P7/SF4 unit concrete getters; no action result, callback or physical success is supplied.
         using var f=new Fixture();Add(f,8,ObjectType.Block_LIGHTCUBE2,400);var place=new NativePlaceRelRunner(f.M,8);var ground=new NativePlaceGroundRunner(f.M);
@@ -107,7 +107,7 @@ public sealed class SparksStackNativeTests
             Assert.False(place.GetObjectInteractionCompletion().IsPayloadDefined);place.Action.SetSelectedDockAction(DockAction.PlaceHigh);
             var normal=place.GetObjectInteractionCompletion();Assert.True(normal.IsPayloadDefined);Assert.Equal(new ObjectInteractionCompletion(8,0,0,0,0,1,false),normal);
             Assert.Equal(new byte[]{8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0},normal.PackBody());
-            Assert.Equal((byte?)0,ground.GetCompletionVariant());Assert.False(ground.GetObjectInteractionCompletion().IsPayloadDefined);Assert.Equal((byte)1,ground.GetObjectInteractionCompletion().Count);
+            Assert.Equal((byte?)0,ground.GetCompletionVariant());Assert.True(ground.GetObjectInteractionCompletion().IsPayloadDefined);Assert.Equal((byte)1,ground.GetObjectInteractionCompletion().Count);
             Assert.False(place.CanInterrupt());Assert.False(ground.CanInterrupt());Assert.Equal(30f,place.TimeoutSeconds);Assert.Equal(30f,ground.TimeoutSeconds);
         }
         finally{place.Prep();place.WatcherEnding();ground.Prep();ground.WatcherEnding();}
@@ -200,7 +200,7 @@ public sealed class SparksStackNativeTests
     }
     [Theory]
     [InlineData(false)] [InlineData(true)]
-    public void ActualGroundRootKeepsScalarAndDefinedFieldsWhileUndefinedPublicPayloadIsWithheld(bool suppliedProcessedFramesOnly)
+    public void ActualGroundRootPublishesDefinedFieldsWithZeroFilledWords(bool suppliedProcessedFramesOnly)
     {
         // P8/SF4 standalone actual ActionList root (compound children do not broadcast their own5A).
         // Supplied firmware pose/scene/B8, actual retained Turn/Wait and Clear recipient.
@@ -220,9 +220,9 @@ public sealed class SparksStackNativeTests
         for(int i=0;i<60&&!runner.DestructionObserved;i++)scene.Step();
         Assert.True(runner.DestructionObserved);Assert.Equal(1,scene.Grounds);Assert.Null(f.Robot.CarryingOwner!.CarriedObjectId);
         var completed=Assert.Single(local);Assert.Equal(suppliedProcessedFramesOnly?0x0300001Du:0u,completed.Result);Assert.Equal((byte?)0,completed.CompletionVariant);
-        var fields=completed.ObjectInteraction!;Assert.Equal(scene.Top,fields.Word0);Assert.Equal((byte)1,fields.Count);Assert.False(fields.Flag);Assert.False(fields.IsPayloadDefined);
-        f.Rig.Engine.DrainAppDelivery();Assert.Empty(api);Assert.Empty(raw);Assert.Empty(deleted);Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(scene.Top));
-        Assert.Single(completionDiagnostics, line => line.StartsWith("M1-034 M12-052 Ground completion 0x00554AE0"));
+        var fields=completed.ObjectInteraction!;Assert.Equal(scene.Top,fields.Word0);Assert.Equal((byte)1,fields.Count);Assert.False(fields.Flag);Assert.True(fields.IsPayloadDefined);Assert.Equal((0u,0u,0u,0u),(fields.Word1,fields.Word2,fields.Word3,fields.Word4));
+        f.Rig.Engine.DrainAppDelivery();Assert.Equal(fields,Assert.Single(api).ObjectInteraction);Assert.Equal(completed.PackBody(),Assert.Single(raw));Assert.Empty(deleted);Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(scene.Top));
+        Assert.Single(completionDiagnostics, line => line.StartsWith("M12-052 action completion") && line.Contains("operator decision 2026-11-22"));
         Assert.DoesNotContain(completionDiagnostics, line => line.StartsWith("MISSING:") &&
             (line.Contains("M12-052 Ground completion") || line.Contains("Concrete object-interaction completion fields unavailable")));
         if(suppliedProcessedFramesOnly)Assert.Contains(logs,l=>l.Contains("BlockWorld.ClearObjectHelper.ClearingSelectedObject"));

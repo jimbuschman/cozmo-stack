@@ -9,7 +9,7 @@ namespace Cozmo.Protocol.Tests;
 public sealed class AiTurnToObjectControlTests
 {
     [Fact]
-    public async Task MissingTargetCompletesWithDefinedMetadataAndNoRawUndefinedBody()
+    public async Task MissingTargetPublishesTheDefinedIdAndZeroFilledWords()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
         var local = new List<RobotCompletedAction>();
@@ -26,12 +26,17 @@ public sealed class AiTurnToObjectControlTests
         Assert.False(f.Robot.ActionList.ContainsRunner(runner));
         var interaction = Assert.IsType<ObjectInteractionCompletion>(result.ObjectInteraction);
         Assert.Equal(99u, interaction.Word0); Assert.Equal((byte)1, interaction.Count);
-        Assert.False(interaction.Flag); Assert.False(interaction.IsPayloadDefined);
+        Assert.False(interaction.Flag); Assert.True(interaction.IsPayloadDefined);
         var report = Assert.Single(local.Where(r => r.Tag == runner.Tag));
         Assert.Equal((byte)0, report.CompletionVariant);
         Assert.DoesNotContain(f.Rig.SentSince(mark), m => m is SetHeadAngle or SetBodyAngle);
         f.Rig.Engine.DrainAppDelivery();
-        Assert.DoesNotContain(raw, body => BitConverter.ToUInt32(body, 0) == runner.Tag);
+        var wire = new CladReader(Assert.Single(raw, body => BitConverter.ToUInt32(body, 0) == runner.Tag));
+        Assert.Equal((runner.Tag, 0x2C, 0x03000004u), (wire.U32(), wire.I32(), wire.U32()));
+        int subActionCount = wire.U8();
+        for (int i = 0; i < subActionCount; i++) wire.U32();
+        Assert.Equal(((byte)0, 99u, 0u, 0u, 0u, 0u, (byte)1, (byte)0),
+            (wire.U8(), wire.U32(), wire.U32(), wire.U32(), wire.U32(), wire.U32(), wire.U8(), wire.U8()));
     }
 
     [Fact]
@@ -48,7 +53,7 @@ public sealed class AiTurnToObjectControlTests
         Assert.True(result.Admitted); Assert.Equal(0u, result.EngineResult);
         Assert.Contains(f.Rig.SentSince(mark), m => m is SetHeadAngle or SetBodyAngle);
         Assert.Equal(7u, result.ObjectInteraction!.Word0);
-        Assert.False(result.ObjectInteraction.IsPayloadDefined);
+        Assert.True(result.ObjectInteraction.IsPayloadDefined);
         Assert.False(f.Robot.ActionList.ContainsRunner(runner));
     }
 

@@ -90,15 +90,15 @@ public sealed class HikingRollCubeNativeTests
         finally{runner.Prep();runner.WatcherEnding();}
     }
     [Fact]
-    public void UndefinedRollFullPublicationPreservesLocalDefinedFieldsThroughActualProxy()
+    public void RollPublishesTheZeroFilledPayloadThroughTheActualProxy()
     {
         using var f=new Fixture();Add(f,7,150);var runner=new NativeDriveToRollRunner(f.M,7);var local=new List<RobotCompletedAction>();var app=new List<ActionCompletionReport>();
         f.Rig.Engine.ActionCompleted+=app.Add;using var sub=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A,true,p=>{if(p is RobotCompletedAction r)local.Add(r);});
         try
         {
-            var payload=runner.Roll.GetObjectInteractionCompletion();Assert.Equal(7u,payload.Word0);Assert.Equal((byte)1,payload.Count);Assert.False(payload.Flag);Assert.False(payload.IsPayloadDefined);Assert.Throws<InvalidOperationException>(()=>payload.PackBody());
+            var payload=runner.GetObjectInteractionCompletion()!;Assert.Equal(7u,payload.Word0);Assert.Equal((byte)1,payload.Count);Assert.False(payload.Flag);Assert.True(payload.IsPayloadDefined);Assert.Equal((0u,0u,0u,0u),(payload.Word1,payload.Word2,payload.Word3,payload.Word4));
             f.Rig.Engine.BroadcastActionCompletion(new(998,0x1F,0x03000004,Array.Empty<uint>(),0,CompletionVariant:0,ObjectInteraction:payload));f.Rig.Engine.DrainAppDelivery();
-            Assert.Empty(app);Assert.Equal(payload,Assert.Single(local).ObjectInteraction);
+            Assert.Equal(payload,Assert.Single(app).ObjectInteraction);Assert.Equal(payload,Assert.Single(local).ObjectInteraction);
         }
         finally{runner.Prep();runner.WatcherEnding();}
     }
@@ -112,8 +112,8 @@ public sealed class HikingRollCubeNativeTests
         var roll=Admit(f);for(int i=0;i<200&&order.Count<2;i++)scene.Step();
         Assert.True(order.Count==2,string.Join(" | ",scene.Trace.TakeLast(30)));Assert.Equal(new[]{"objective2","needs39"},order);Assert.True(roll.PreDockReached);
         Assert.Equal(1,scene.Rolls);var dock=Assert.Single(f.Rig.SentSince(0).OfType<DockWithObject>());Assert.Equal((byte)5,dock.DockAction);Assert.Equal((byte)0,dock.DockingMethod);Assert.Equal((byte)0,dock.Field6);Assert.False(dock.Field8);
-        Assert.Equal(1u,roll.RollHelper!.Attempts);Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);
-        f.Rig.Engine.DrainAppDelivery();Assert.Empty(app);Assert.Equal(1,roll.State);Assert.True(successAnimationObserved);
+        Assert.Equal(1u,roll.RollHelper!.Attempts);Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:true}&&target==scene.Target);
+        f.Rig.Engine.DrainAppDelivery();Assert.Contains(app,r=>r.Result==0&&r.ObjectInteraction is {IsPayloadDefined:true});Assert.Equal(1,roll.State);Assert.True(successAnimationObserved);
     }
 
     private sealed class Parent:SteppedBehavior
