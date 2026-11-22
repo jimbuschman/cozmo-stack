@@ -196,7 +196,7 @@ class SessionCheckTests(unittest.TestCase):
         self.reply(120, 1, engineResult=0, admitted=True)
         checks, _ = self.check()
         self.assertEqual(SEEN, checks["roll"].status)
-        self.completion(114, 7, 0x1F)
+        self.raw(114, 0x5A, struct.pack("<IiIBB5IBB", 7, 0x1F, 0, 0, 0, 4, 0, 0, 0, 0, 1, 0))
         checks, _ = self.check()
         self.assertEqual(PASSED, checks["roll"].status)
 
@@ -355,7 +355,7 @@ class SessionCheckTests(unittest.TestCase):
         self.assertIn("SHORT-PLANNER-1 binds the two-pass profile", report)
         self.assertIn("this marker records the older build", report)
 
-    def test_undefined_interaction_payload_preserves_the_seen_result(self):
+    def test_turn_to_cube_requires_the_matching_zero_filled_wire_body(self):
         self.request(100, 1, "turn-to-cube", objectId=1)
         message = ("MISSING: M1-034/M8-015 TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: "
                    "native interaction words are undefined; retain defined metadata only.")
@@ -363,7 +363,13 @@ class SessionCheckTests(unittest.TestCase):
         self.reply(140, 1, admitted=True, engineResult=0)
         checks, _ = self.check([message])
         self.assertEqual(SEEN, checks["turn-to-cube"].status)
-        self.assertIn("withheld the full 0x5A interaction payload", checks["turn-to-cube"].reason)
+        self.assertIn("0 attributable 0x5A", checks["turn-to-cube"].reason)
+        self.raw(135, 0x5A, struct.pack("<IiIBB5IBB", 9, 0x2C, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0))
+        checks, _ = self.check([message])
+        self.assertEqual(SEEN, checks["turn-to-cube"].status)
+        self.raw(136, 0x5A, struct.pack("<IiIBB5IBB", 9, 0x2C, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0))
+        checks, _ = self.check([message])
+        self.assertEqual(PASSED, checks["turn-to-cube"].status)
 
     def test_say_text_checks_default_completed_after_the_subaction_results(self):
         self.request(100, 1, "say-text", text="Hello")

@@ -168,6 +168,8 @@ public sealed partial class CozmoBridge : IDisposable
         {
             using var capture = new ActionWhyCapture(this);
             var (result, admissionWait) = await ExecuteWithAdmissionWait(entry, parsed, capture, cancellationToken).ConfigureAwait(false);
+            if (command is "roll" or "turn-to-cube" && result.OwnedCompletionTag is { } interactionTag)
+                await WaitForOwnedCompletion(startCursor, interactionTag).ConfigureAwait(false);
             var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
             if (admissionWait is not null) response["admissionWait"] = JsonSerializer.SerializeToNode(admissionWait, Json);
             if (command is "freeplay" or "turn-in-place" or "animation")
@@ -224,10 +226,12 @@ public sealed partial class CozmoBridge : IDisposable
                 new { r.RelocalizationCount }),
             AiTurnToFaceActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired,
                 new { r.FacePoseAvailable, r.FaceId, r.RequestedFaceId, r.EndReason, r.CallerCancellationRequested }),
-            AiTurnToObjectActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
+            AiTurnToObjectActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired)
+                with { OwnedCompletionTag = r.PublishedCompletionTag },
             AiTrackFaceActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.FaceId, r.RequestedFaceId, r.EndReason, r.CallerCancellationRequested }),
             AiAnimationActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired, new { r.AnimationName, r.PlaybackTag }),
-            AiPickupActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired),
+            AiPickupActionResult r => CommandResult.Action(r.Admitted, r.EngineResult, r.Detail, r.OwnerRetired)
+                with { OwnedCompletionTag = r.PublishedCompletionTag },
             _ => throw new InvalidOperationException("Unexpected result from a Cozmo command."),
         };
     }

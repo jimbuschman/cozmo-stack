@@ -6,7 +6,6 @@ namespace Cozmo.Robot.Manipulation;
 internal class NativePlaceGroundRunner:NativeVisionRunner
 {
     internal const int NativeActionType = 0x18;
-    private int _reportedCompletionPolicy;
     private bool _latched;
     private bool _ending;
     private uint _saved=uint.MaxValue;
@@ -36,14 +35,9 @@ internal class NativePlaceGroundRunner:NativeVisionRunner
     }
     // fidelity: M12-052 - saved carried ID completion projection only; lifecycle/wire owners retained.
     public override byte? GetCompletionVariant()=>0;
-    public override ObjectInteractionCompletion GetObjectInteractionCompletion()
-    {
-        // 00554AE0..4AFA: the other four native stack words were never initialized.
-        // M1-034 withholds only the full undefined publication; saved ID/count1/false and scalar callbacks survive.
-        if (Interlocked.Exchange(ref _reportedCompletionPolicy, 1) == 0)
-            StackDiagnostics.Write("M1-034 M12-052 Ground completion 0x00554AE0..0x00554AFA: withheld full public 0x5A payload because four objectInteractionCompleted ID words are uninitialized. Retained local saved ID, count 1, flag false and scalar result.");
-        return new(_saved,0,0,0,0,1,false,false);
-    }
+    // 0x00554AE0..0x00554AFA stores the saved carried ID at offset 0 and count/flag 0x0001 at +0x14.
+    public override ObjectInteractionCompletion GetObjectInteractionCompletion() =>
+        ObjectInteractionCompletion.SingleWithZeroFilledWords(_saved, "M12-052");
     internal override ActionWatcher? Watcher{get=>base.Watcher;set{base.Watcher=value;if(_verify is not null)_verify.Watcher=value;}}
     public override uint Update()
     {

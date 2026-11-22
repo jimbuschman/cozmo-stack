@@ -26,23 +26,6 @@ public sealed partial class CozmoBridge
                 delivered.TrySetResult();
         }
         void OnDisposed() => delivered.TrySetCanceled();
-        void OnLocalCompletion(object? message)
-        {
-            // M12-052, 0x00554AE0..0x00554AFA: Ground's union has undefined words.
-            // This MCP call observes the existing local 0x5A signal and keeps only
-            // its defined scalar data. The public C# report and raw wire stay withheld.
-            if (message is not RobotCompletedAction { ObjectInteraction.IsPayloadDefined: false } record ||
-                runner is not { } action || record.Tag != action.Tag || record.ActionType != action.Type)
-                return;
-            var report = new ActionCompletionReport(record.Tag, record.ActionType, record.Result,
-                Array.AsReadOnly(record.SubActionResults.ToArray()), record.CompletionUnion) { HostCaller = record.HostCaller };
-            engine.QueueAppEvent(completion =>
-            {
-                OnActionCompleted(completion);
-                delivered.TrySetResult();
-            }, report);
-        }
-        using var local = engine.AnimationMessages.SubscribeMessage(RobotCompletedAction.UnionTag, true, OnLocalCompletion);
         lock (eventGate)
         {
             ThrowIfDisposed();

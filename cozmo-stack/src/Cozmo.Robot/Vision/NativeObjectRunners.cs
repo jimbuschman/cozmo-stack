@@ -28,8 +28,8 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
     public override ObjectInteractionCompletion? GetObjectInteractionCompletion()
     {
         if (!_publicRequest) return base.GetObjectInteractionCompletion();
-        Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: native interaction words are undefined; retain defined metadata only.");
-        return new ObjectInteractionCompletion(_id, 0, 0, 0, 0, 1, false, false);
+        // 0x0054B020..0x0054B036 stores object ID at offset 0 and count/flag 0x0001 at +0x14.
+        return ObjectInteractionCompletion.SingleWithZeroFilledWords(_id, "M8-015");
     }
     internal void SetTolerances(float pan,float tilt)
     {Parameters.SetPanTolerance(pan);Parameters.SetTiltTolerance(tilt);}

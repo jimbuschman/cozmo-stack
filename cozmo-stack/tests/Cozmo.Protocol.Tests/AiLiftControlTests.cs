@@ -47,7 +47,7 @@ public sealed class AiLiftControlTests
     }
 
     [Fact]
-    public async Task Carrying32RunsActualGroundVerificationAndWithholdsUndefinedAppBody()
+    public async Task Carrying32RunsGroundVerificationAndPublishesTheZeroFilledAppBody()
     {
         using var scene = new StackFirmwareScene(true);
         var f = scene.F;
@@ -73,10 +73,10 @@ public sealed class AiLiftControlTests
         Assert.True(messages.IndexOf(placement) < messages.FindIndex(m => m is StopAllMotors));
         var completed = Assert.Single(local.Where(r => r.Tag == runner.Tag));
         Assert.Equal((byte)0, completed.CompletionVariant);
-        Assert.False(completed.ObjectInteraction!.IsPayloadDefined);
+        Assert.True(completed.ObjectInteraction!.IsPayloadDefined);
         f.Rig.Engine.DrainAppDelivery();
-        Assert.DoesNotContain(app, a => a.Tag == runner.Tag);
-        Assert.Empty(raw);
+        Assert.Equal(completed.ObjectInteraction, Assert.Single(app, a => a.Tag == runner.Tag).ObjectInteraction);
+        Assert.Equal(completed.PackBody(), Assert.Single(raw, body => BitConverter.ToUInt32(body, 0) == runner.Tag));
         f.Rig.Engine.EngineToGameMessage -= Raw;
     }
 

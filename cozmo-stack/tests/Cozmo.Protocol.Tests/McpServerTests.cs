@@ -451,6 +451,36 @@ public sealed class McpServerTests
     }
 
     [Fact]
+    public async Task TurnToCubePublishesItsOwnInteractionCompletionInTheReply()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        f.Add(7);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        int call = await client.Send("tools/call", new
+        {
+            name = "turn-to-cube",
+            arguments = new { objectId = 7, maximumTurnRadians = 3.14 }
+        });
+        var action = Assert.IsType<Cozmo.Robot.Vision.NativeTurnTowardsObjectRunner>(f.Robot.ActionList.GetCurrentAction());
+        for (int i = 0; i < 60 && !action.DestructionObserved; i++) f.Motors();
+        var reply = Data(await client.Receive(call));
+        Assert.Equal(0u, reply.GetProperty("engineResult").GetUInt32());
+        var completion = Assert.Single(reply.GetProperty("during").GetProperty("events").EnumerateArray()
+            .Where(e => e.GetProperty("type").GetString() == "action-completed" &&
+                e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == action.Tag))
+            .GetProperty("payload").GetProperty("completion");
+        Assert.Equal(0x2C, completion.GetProperty("actionType").GetInt32());
+        Assert.Equal(0, completion.GetProperty("completionVariant").GetInt32());
+        var payload = completion.GetProperty("objectInteraction");
+        Assert.Equal(7u, payload.GetProperty("word0").GetUInt32());
+        for (int i = 1; i <= 4; i++) Assert.Equal(0u, payload.GetProperty($"word{i}").GetUInt32());
+        Assert.Equal(1, payload.GetProperty("count").GetInt32());
+        Assert.False(payload.GetProperty("flag").GetBoolean());
+    }
+
+    [Fact]
     public async Task RollAdvancingPastAnIgnoredApproachFailureMarksItsCheckHistorical()
     {
         using var f = new Fixture(sourceNvEmpty: true);
@@ -467,6 +497,12 @@ public sealed class McpServerTests
         await client.Notify("notifications/cancelled", new { requestId = call });
         f.Rig.Tick();
         var data = Data(await client.Receive(call));
+        var completion = Assert.Single(data.GetProperty("during").GetProperty("events").EnumerateArray()
+            .Where(e => e.GetProperty("type").GetString() == "action-completed" &&
+                e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == root.Tag))
+            .GetProperty("payload").GetProperty("completion");
+        Assert.Equal(0x1F, completion.GetProperty("actionType").GetInt32());
+        Assert.Equal(7u, completion.GetProperty("objectInteraction").GetProperty("word0").GetUInt32());
         var why = data.GetProperty("why");
         Assert.True(why.GetProperty("snapshot").GetProperty("poseCheck").GetProperty("superseded").GetBoolean());
         Assert.Equal(data.GetProperty("detail").GetString(), why.GetProperty("hint").GetString());

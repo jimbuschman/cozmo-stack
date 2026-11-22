@@ -128,6 +128,27 @@ public sealed partial class CozmoBridge
         }
     }
 
+    private async Task WaitForOwnedCompletion(long since, uint tag)
+    {
+        // The action task can finish before the queued ActionCompleted reaches the event feed.
+        while (true)
+        {
+            Task signal;
+            lock (eventGate)
+            {
+                if (disposed) return;
+                var page = CaptureEventPage(since, int.MaxValue, null, null);
+                if (page.Gap || page.Events.Any(e => IsCompletionFor(e, tag))) return;
+                since = page.Cursor;
+                signal = eventAvailable.Task;
+            }
+            await signal.ConfigureAwait(false);
+        }
+    }
+
+    private static bool IsCompletionFor(BridgeEvent entry, uint tag) => entry.Type == "action-completed" &&
+        entry.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag;
+
     private void AttachDuring(JsonObject response, long since, bool full, uint? completionTag)
     {
         BridgeEventPage page;
@@ -250,12 +271,11 @@ public sealed partial class CozmoBridge
             HasRecognitionSummaries(complete) && EchoPayloadCost(complete, RecognitionWindowText(complete)) <= budget)
             return complete;
 
-        var completion = completionTag is { } tag ? remaining.LastOrDefault(e => e.Type == "action-completed" &&
-            e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag) : null;
+        var completion = completionTag is { } tag ? remaining.LastOrDefault(e => IsCompletionFor(e, tag)) : null;
 
         // The first reply covers the full action window for sighting counts. Other
         // events stay in their original shape and can be paged from the same feed.
-        // Keep the requested put-down's completion in the reply even after slicing.
+        // Keep the requested action's completion in the reply even after slicing.
         // Recognition groups summarize individual repeats. Excluding that whole type
         // would hide identity changes in the continuation.
         string[] excludeTypes = sightings.Where(sighting => IsSighting(sighting.Type)).Select(sighting => sighting.Type).ToArray();

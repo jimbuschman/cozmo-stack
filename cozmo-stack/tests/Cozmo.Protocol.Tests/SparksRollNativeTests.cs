@@ -188,8 +188,8 @@ public sealed class SparksRollNativeTests
         Assert.Contains(triggers,t=>t.SequenceEqual(new[]{(AnimationTrigger)(soft==0?0x211:0x205)}));
         if(soft==0)Assert.Contains(triggers,t=>t.SequenceEqual(new[]{(AnimationTrigger)0x216,(AnimationTrigger)0x212}));else Assert.Contains(triggers,t=>t.SequenceEqual(new[]{(AnimationTrigger)0x23F}));
         var dock=Assert.Single(f.Rig.SentSince(0).OfType<DockWithObject>());Assert.Equal((byte)5,dock.DockAction);Assert.Equal((byte)0,dock.DockingMethod);Assert.False(dock.Field8);
-        Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:false}&&target==scene.Target);
-        f.Rig.Engine.DrainAppDelivery();Assert.Empty(app);Assert.Empty(raw); // Roll's M1-034 undefined full-public fields are withheld.
+        Assert.Contains(local,r=>r.Result==0&&r.ObjectInteraction is {Word0:var target,Count:1,Flag:false,IsPayloadDefined:true}&&target==scene.Target);
+        f.Rig.Engine.DrainAppDelivery();Assert.Contains(app,r=>r.Result==0&&r.ObjectInteraction?.Word0==scene.Target);Assert.NotEmpty(raw);
         if(soft==0){Assert.Equal(new ushort[]{0x83,0x84},sparks.Select(s=>s.Tag));Assert.Equal(new byte[]{9,0,0,0},sparks[0].Body);Assert.Equal(new byte[]{1},sparks[1].Body);}else Assert.Empty(sparks);
         Assert.Equal(0x55,manager.RequestedSparkId);Assert.Equal(9,manager.ActiveSparkId);
         // Null returns to the unbuilt parent picker; cleanup occurs ONLY on this supplied changed selection.

@@ -247,6 +247,10 @@ stack implements that feature.
   (0x00694820, 0x00694EE4). A true empty entry keeps the engine's first write: NV_NOT_FOUND, or erased flash, which is how an
   empty entry arrives on the operator's robot. Reversible.
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
+- **M8-015 / M12-052 / M15-077, object-interaction completions** (operator, 2026-11-22): deliver the turn-to-cube, ground
+  placement and roll completions with zero in the four undefined ID words. The engine sets the object ID, count and flag
+  at 0x0054B020..0x0054B036, 0x00554AE0..0x00554AFA and 0x005567E0..0x005567EE respectively. Keep those fields and
+  the action metadata from the engine path. Log the zero-fill once per published completion.
 - **M11-047, the border-walk seed order** (operator, 2026-10-14).
   - **The original:** iterates a type set (`unordered_set` of quad-tree node pointers, murmur2 hash) whose order follows
     the phone's heap addresses (bionic malloc, not shipped).

@@ -64,7 +64,10 @@ public sealed record AiHeadActionResult(bool Admitted, uint? EngineResult, strin
 public sealed record AiLiftActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
 
 /// <summary>The terminal scalar from an admitted native cube pickup.</summary>
-public sealed record AiPickupActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
+public sealed record AiPickupActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false)
+{
+    internal uint? PublishedCompletionTag { get; init; }
+}
 
 /// <summary>Result of an outside-AI straight-drive request; OwnerRetired is captured when its original action ends.</summary>
 public sealed record AiDriveActionResult(bool Admitted, uint? EngineResult, string Detail, bool OwnerRetired = false);
@@ -99,7 +102,10 @@ public sealed record AiTurnToFaceActionResult(bool Admitted, uint? EngineResult,
 }
 /// <summary>The result of a queued turn toward an object.</summary>
 public sealed record AiTurnToObjectActionResult(bool Admitted, uint? EngineResult, string Detail,
-    bool OwnerRetired = false, ObjectInteractionCompletion? ObjectInteraction = null);
+    bool OwnerRetired = false, ObjectInteractionCompletion? ObjectInteraction = null)
+{
+    internal uint? PublishedCompletionTag { get; init; }
+}
 
 /// <summary>An advisory view of one robot owner and its last published engine state.</summary>
 public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadAction, EngineRobotState? LastState);
@@ -270,7 +276,10 @@ public sealed class CozmoMotion
         }
         var result = await task.ConfigureAwait(false);
         return new(result.Admitted, result.EngineResult, result.Detail, result.OwnerRetired,
-            result.Admitted ? action.PreparedObjectInteractionCompletion : null);
+            result.Admitted ? action.PreparedObjectInteractionCompletion : null)
+        {
+            PublishedCompletionTag = PublishedInteractionTag(result, owner, action)
+        };
     }
 
     /// <summary>Queues an authored trigger after existing actions; cancellation addresses only this runner.
@@ -371,6 +380,7 @@ public sealed class CozmoMotion
         var engine=_robot.Engine;
         var owner=engine.Robot;
         Task<AiHeadActionResult> task;
+        Manipulation.NativeDriveToRollRunner action;
         string? missing=null;
         using(engine.EnterSynchronousOwner())
         {
@@ -383,13 +393,22 @@ public sealed class CozmoMotion
             uint tag=AllocateAiTag();
             if(tag==0)return new(false,null,"No external action tag is available");
             bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
-            var action=new Manipulation.NativeDriveToRollRunner(manipulation,objectId);
+            action=new Manipulation.NativeDriveToRollRunner(manipulation,objectId);
             action.Unavailable=e=>missing??=e.Message;
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native cube roll ended",true,()=>Current() && AiOwnerReady(engine,owner), motionProfile);
         }
         var result=await task.ConfigureAwait(false);
-        return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired);
+        return new(result.Admitted,result.EngineResult,missing is null?result.Detail:"MISSING: "+missing,result.OwnerRetired)
+        {
+            PublishedCompletionTag = PublishedInteractionTag(result, owner, action)
+        };
     }
+
+    // ActionWatcher D2 (0x0053FA4C) gates the root report on the external interface and INTERRUPTED.
+    private static uint? PublishedInteractionTag(AiHeadActionResult result, EngineRobot? owner, ActionRunner runner) =>
+        result.Admitted && !result.OwnerRetired && result.EngineResult != EngineActionResult.Interrupted &&
+        owner?.HasExternalInterface == true && runner.PreparedObjectInteractionCompletion is { IsPayloadDefined: true }
+            ? runner.Tag : null;
 
     /// <summary>
     /// Queues the pre-dock drive and mount for a located charger.

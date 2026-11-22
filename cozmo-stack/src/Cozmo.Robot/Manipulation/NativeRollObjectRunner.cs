@@ -150,11 +150,10 @@ internal sealed class NativeRollObjectRunner:NativeVisionRunner
         Action.DeepRoll=true;Action.SetSelectedDockAction(DockAction.DeepRollLow);return 0x0300001D;
     }
     public override byte? GetCompletionVariant()=>0;
-    public override ObjectInteractionCompletion GetObjectInteractionCompletion()
-    {
-        SteppedBehavior.ReportMissing("M1-034 proposed Roll own-path GetCompletionUnion005567E0..EE/setter0075C400..410 reads four undefined unused IDs: skip full public payload; defined target/count1/false and scalar/local callback retained");
-        return new(Action.ObjectId,0,0,0,0,1,false,false); // placeholders are unavailable and can never be packed/published.
-    }
+    // 0x005567E0..0x005567EE overwrites the earlier union with target ID and 0x0001 (count/flag).
+    // Setter 0x0075C400..0x0075C410 copies words 1–4 from the unwritten stack slots.
+    public override ObjectInteractionCompletion GetObjectInteractionCompletion() =>
+        ObjectInteractionCompletion.SingleWithZeroFilledWords(Action.ObjectId, "M15-077");
     public override void WatcherEnding()
     {
         if (_ending || DestructionObserved) return;

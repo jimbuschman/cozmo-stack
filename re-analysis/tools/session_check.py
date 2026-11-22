@@ -20,10 +20,6 @@ NOT_EXERCISED = "NOT EXERCISED"
 COMPLETION = "M8-015, E2G 0x5A at 0x0053FAAA–0x0053FAB2"
 BEHAVIOR_REPORT = "M8-012, E2G 0x87 at 0x005A22B4–0x005A24AC"
 REACTION_REPORT = "M8-012, E2G 0x88 at 0x005A20AA–0x005A20D6 and 0x005A2EE8"
-UNDEFINED_INTERACTION_REPORTS = {
-    "roll": "Roll own-path GetCompletionUnion005567E0..EE/setter0075C400..410 reads four undefined unused IDs",
-    "turn-to-cube": "TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: native interaction words are undefined",
-}
 EDGE_TERMINAL_SIGNALS = {
     "Hiking_VisitInterestingEdge.S3": "observe from close",
     "Hiking_VisitInterestingEdge.GatheringAccurateEdge.Done": "edge lost during gathering",
@@ -261,6 +257,12 @@ class Session:
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
         resolved = {
+            "MISSING: M1-034 proposed Roll own-path GetCompletionUnion005567E0..EE/setter0075C400..410 "
+            "reads four undefined unused IDs: skip full public payload; defined target/count1/false and scalar/local callback retained":
+                "2026-11-22 operator decision zero-fills roll ID words 1–4 and publishes the 0x5A",
+            "MISSING: M1-034/M8-015 TurnTowardsObjectAction.GetCompletionUnion 0x0054B020–0x0054B036: "
+            "native interaction words are undefined; retain defined metadata only.":
+                "2026-11-22 operator decision zero-fills turn-to-cube ID words 1–4 and publishes the 0x5A",
             "MISSING: M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump "
             "recipient at 0x004FF052..0x004FF30A remain incomplete":
                 "0x004FF0C6 now prepares obstacle bounds and edge order. The remaining output is diagnostic",
@@ -395,6 +397,12 @@ def action_completion_variant(body):
     return body[offset] if offset < len(body) else None
 
 
+def matches_interaction_completion(body, object_id):
+    offset = 13 + 4 * body[12]
+    return len(body) == offset + 23 and struct.unpack_from("<B5IBB", body, offset) == (
+        0, object_id, 0, 0, 0, 0, 1, 0)
+
+
 def action_check(session, name, prompt, citation, expected, seconds, calls=None):
     citation += "; " + COMPLETION
     candidates = []
@@ -415,7 +423,9 @@ def action_check(session, name, prompt, citation, expected, seconds, calls=None)
             reports = [(at, tag, action_completion_variant(body)) for at, body in session.in_window(0x5A, *window) if len(body) >= 14
                        for tag, action_type, code in [struct.unpack_from("<IiI", body)]
                        if action_type in types and code == result and
-                       (tag in tags if tags else 0 < tag <= 1_000_000)]
+                       (tag in tags if tags else 0 < tag <= 1_000_000) and
+                       (name not in {"roll", "turn-to-cube"} or
+                        matches_interaction_completion(body, call.args.get("objectId")))]
             if not tags and next(active, None):
                 reason = "Overlapping commands could own the same completion."
             elif len(reports) == 1:
@@ -424,11 +434,6 @@ def action_check(session, name, prompt, citation, expected, seconds, calls=None)
                 passed, reason = True, f"Matching local 0x5A action tag {next(iter(tags))}."
             else:
                 reason = f"Native reply matched, with {len(reports)} attributable 0x5A reports in the round window."
-                undefined = UNDEFINED_INTERACTION_REPORTS.get(name)
-                if not reports and undefined and any(undefined in line and (at is None or call.start <= at <= end)
-                                                     for _, at, line in session.missing):
-                    reason = ("Native action returned SUCCESS. The documented M1-034 skip retained the defined result "
-                              "and withheld the full 0x5A interaction payload.")
             if passed and name == "track-face":
                 elapsed = (call.cancelled_at - call.start) if call.cancelled_at is not None else 0.0
                 if call.cancelled_at is None:
