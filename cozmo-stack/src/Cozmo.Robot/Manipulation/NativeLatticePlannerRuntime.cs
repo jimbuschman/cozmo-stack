@@ -143,6 +143,31 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         finally{Monitor.Exit(ContextMutex);}
     }
     internal (LatticeState State,float Penalty) NativeApplyAction(LatticeState state,MotionPrimitive primitive,bool check)=>_backend.Env.ApplyAction(state,primitive.ActionIndex,check);
+    // LatticePlanner slot 0x1C (0x004FF936) forwards to the context's current obstacle buckets.
+    // IPathPlanner 0x00509202 discards the safe prefix and returns only the boolean to PathComponent.
+    internal bool CheckIsPathSafe(IReadOnlyList<PathSegment> path, float heading)
+    {
+        lock (ContextMutex)
+        {
+            var environment = _backend.Env;
+            var primitives = environment.Primitives;
+            return NativePlanDependencies.PathIsSafe(path, new List<PathSegment>(), heading, NativePlanDependencies.Describe,
+                (segment, geometry, state) =>
+                {
+                    float penalty = NativePlanDependencies.ApplyPathSegment(segment, geometry, ref state, true,
+                        EngineF.Bits(0x3727C5AC), primitives.NumAngles, primitives.InverseAngleStep,
+                        ContainedPenalties, _source, _missing);
+                    return (state, penalty);
+                }, _source, _missing);
+
+            IEnumerable<float> ContainedPenalties(int bucket, float x, float y)
+            {
+                foreach (var (polygon, penalty) in environment.Bucket(bucket))
+                    if (polygon.Contains(x, y)) yield return penalty;
+            }
+        }
+    }
+
     private void DoPlanning()
     {
         using var poseLogs=Pose3d.UseSourceLog(_source,_engine is null?null:_engine.Das.ForceFlushNow);

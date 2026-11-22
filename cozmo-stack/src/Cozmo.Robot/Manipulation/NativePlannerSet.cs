@@ -77,6 +77,9 @@ internal sealed class NativePlannerSet : IDisposable
         if((status is 2 or 3) && Current is {} planner && planner.GetCompletePath(CurrentStart,Profile,out var result,out var goal)){path=result;index=goal;}
         return new(status,path,index);
     }
+    internal bool? CheckIsPathSafe(IReadOnlyList<PathSegment> path)
+        => Lattice?.CheckIsPathSafe(path, (float)CurrentStart.AngleAroundZ);
+
     internal bool UseFallback()
     {
         if(Fallback is not {} next)return false;string old=Current?.Name??"";Current=next;Fallback=null;
