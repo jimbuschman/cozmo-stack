@@ -220,8 +220,8 @@ public sealed partial class ObservableObject
         }
         else Markers = markers.Select(m =>
         {
-            var pose=CubeGeometry.IsCube(type)?new Pose3d(m.PoseOnObject):m.PoseOnObject;
-            if(CubeGeometry.IsCube(type))pose.SetParent(_pose);
+            var pose=HasEmbeddedBlockMarkerPose?new Pose3d(m.PoseOnObject):m.PoseOnObject;
+            if(HasEmbeddedBlockMarkerPose)pose.SetParent(_pose);
             return m with{LastObservedTimestamp=null,PoseOnObject=pose};
         }).ToArray();
         foreach (var marker in Markers)
@@ -270,6 +270,7 @@ public sealed partial class ObservableObject
     public bool IsUnique => ObservableMapSlot5C == 1;
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
     private Pose3d _pose=Pose3d.Identity;
+    private bool HasEmbeddedBlockMarkerPose => CubeGeometry.IsCube(Type) || Type == ObjectType.Block_LIGHTCUBE_GHOST;
     private Pose3d? _publicPose;
     private string? _publicPoseSourceName;
     internal Pose3d NativePose=>_pose;
@@ -300,7 +301,7 @@ public sealed partial class ObservableObject
         internal set
         {
             using var mutation=PoseWorld?.EnterPoseMutation();
-            if(Type==ObjectType.Charger_Basic || CubeGeometry.IsCube(Type))
+            if(Type==ObjectType.Charger_Basic || HasEmbeddedBlockMarkerPose)
             {
                 // 0x004EF598..0x004EF5A2 assigns into the object's embedded pose; marker children retain that node.
                 if(_pose.Node is null)_pose=new Pose3d(value); // host fixture may have released its initial wrapper
@@ -523,6 +524,23 @@ public sealed partial class ObservableObject
     public bool IsVisibleFrom(CameraModel camera, double? maxFaceNormalAngleRad = null, double minMarkerImageSizePx = 10, double pad = 0)
         => IsVisibleFrom(camera, maxFaceNormalAngleRad ?? BlockWorld.VisibilityNormalAngleRad, minMarkerImageSizePx, pad, pad, out _);
 
+    // 0x008767D4 returns the highest failed reason, or 0 for early success and an empty list.
+    internal NotVisibleReason IsVisibleFromWithReason(CameraModel? camera, float maximumFaceAngle)
+    {
+        var reason = NotVisibleReason.IsVisible;
+        foreach (var marker in Markers)
+        {
+            if (camera is null) return NotVisibleReason.CameraNotCalibrated; // 0x0087E4C6.
+            using var markerInCamera = new Pose3d("");
+            var current = marker.PoseOnObject.TryWithRespectTo(camera.Pose, markerInCamera)
+                ? MarkerVisibilityInCamera(marker, camera, markerInCamera, maximumFaceAngle, 0, 0, 0, false)
+                : NotVisibleReason.PoseProblem; // 0x0087E504–0x0087E50A.
+            if (current == NotVisibleReason.IsVisible) return current;
+            if (current > reason) reason = current;
+        }
+        return reason;
+    }
+
     /// <summary>
     /// <c>KnownMarker::IsVisibleFrom</c> 0x0087E4A8 for one marker, in the engine's own order and in binary32: the marker's
     /// pose with respect to the camera; behind the camera when its origin's camera-frame Z (<c>Transform3d+0x28</c>, 0x0087E514)
@@ -544,9 +562,16 @@ public sealed partial class ObservableObject
                                              double minMarkerImageSizePx, double xPad, double yPad,
                                              bool requireSomethingBehind = false)
     {
-        float maxAngle = (float)maxFaceNormalAngleRad, minSize = (float)minMarkerImageSizePx;
-        var markerWorld = Pose.Compose(m.PoseOnObject);
-        var markerInCamera = camera.Pose.Inverse().Compose(markerWorld);
+        using var markerWorld = Pose.Compose(m.PoseOnObject);
+        using var inverse = camera.Pose.Inverse();
+        using var markerInCamera = inverse.Compose(markerWorld);
+        return MarkerVisibilityInCamera(m, camera, markerInCamera, (float)maxFaceNormalAngleRad,
+            (float)minMarkerImageSizePx, xPad, yPad, requireSomethingBehind);
+    }
+
+    private static NotVisibleReason MarkerVisibilityInCamera(KnownMarker m, CameraModel camera, Pose3d markerInCamera,
+        float maxAngle, float minSize, double xPad, double yPad, bool requireSomethingBehind)
+    {
         // 0x0087E514..0x0087E520: s0 = Transform3d[+0x28] (translation z); vcmpe s0,#0 / bls: not positive -> 3 (NaN continues).
         if ((float)markerInCamera.Translation.Z <= 0f) return NotVisibleReason.BehindCamera;
 

@@ -66,6 +66,7 @@ public sealed partial class VisionSystem : IDisposable
     }
     private EngineRobot? _groundOwner;
     private CameraCalibration? _groundOuterCalibration;
+    private OccluderList _outerCameraOccluders = new();
     private CameraCalibration? _groundPendingOuter;
     private CameraCalibration? _groundInstalled;
     private NativeGroundPlaneLookup? _groundLookup;
@@ -291,6 +292,7 @@ public sealed partial class VisionSystem : IDisposable
             if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
             if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
             _groundOwner = owner;
+            if (!sameOwner) _outerCameraOccluders = new();
             Pets.BindNativeOwner(owner);
             _nativeWorkerPhysical=false;
             _nativeVisionWhileMoving=false;
@@ -752,6 +754,16 @@ public sealed partial class VisionSystem : IDisposable
         lock (_groundGate)
             return ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
                 ReferenceEquals(_robot.Engine.Robot, owner) ? _groundOuterCalibration : null;
+    }
+
+    // The outer Camera read at 0x00603E38..0x00603E54 uses live pose and the occluder
+    // list refreshed by BlockWorld (0x00624F98 / 0x0062503A).
+    internal CameraModel? BindOuterCameraForVisibility(EngineRobot owner, Pose3d cameraPose)
+    {
+        lock (_groundGate)
+            return ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
+                ReferenceEquals(_robot.Engine.Robot, owner) && _groundOuterCalibration is { } calibration
+                ? new CameraModel(calibration, cameraPose, _outerCameraOccluders) : null;
     }
     // MCP image metadata uses the same frame-time lift occluder as marker visibility.
     // AddLiftOccluder 0x006564D8 reads raw history with interpolation disabled
@@ -2333,16 +2345,15 @@ public sealed partial class VisionSystem : IDisposable
                         else if(StaleFrame())stateComputed=false;
                         else
                         {
-                            CameraCalibration? outer;
-                            lock(_groundGate)outer=ReferenceEquals(_groundOwner,sourceOwner)&&!sourceOwner.Lifetime.Destroying&&ReferenceEquals(_robot.Engine.Robot,sourceOwner)?_groundOuterCalibration:null;
+                            using var nativeCamera=sourceOwner.CopyHistoricalCameraPose(historicalResult);
+                            nativeResultCameraPose.AssignInputValue(nativeCamera);
+                            var outer=BindOuterCameraForVisibility(sourceOwner,nativeResultCameraPose);
                             if(outer is null)
                             {stateComputed=false;MarkerMissing("M11-050 original outer historical camera calibration unavailable; marker handler skipped");}
                             else
                             {
-                                using var nativeCamera=sourceOwner.CopyHistoricalCameraPose(historicalResult);
-                                nativeResultCameraPose.AssignInputValue(nativeCamera);
-                                markerCamera=new CameraModel(outer,nativeResultCameraPose);
-                                NativeMarkerCameraObservedForTest?.Invoke(outer,nativeResultCameraPose);
+                                markerCamera=outer;
+                                NativeMarkerCameraObservedForTest?.Invoke(outer.Calibration,nativeResultCameraPose);
                                 if(StaleFrame())stateComputed=false;
                             }
                         }

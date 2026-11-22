@@ -688,6 +688,8 @@ def behavior_checks(session, personality):
                 citation += "; " + REACTION_REPORT + "; PersonalityHw cube-move, M4-009, 0x00534190–0x005341B0"
                 trigger = "CubeMoved"
                 prompt = "Move the cube to a different spot within Cozmo’s view, keeping it upright."
+            if name in {"AcknowledgeObject", "ReactToCubeMoved"}:
+                citation += "; M15-081, stacked-cube look 0x006038DA–0x00603B50 and FinishIteration 0x00603C74"
             candidates = []
             starts = []
             if trigger is not None:
