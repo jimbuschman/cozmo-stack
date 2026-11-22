@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
+using System.Text.Json;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
@@ -115,6 +116,100 @@ public sealed class M13X1BuilderTests
             LatticeEnvironment.HardPenalty, uint.MaxValue));
         Assert.False(runtime.CheckIsPathSafe(path, 0));
         Assert.Contains("xythetaEnvironment.PathIsSafe", keys);
+    }
+
+    [Fact]
+    public void LatticePreparationPreservesNearCollisionsAndFarSuccessors()
+    {
+        var environment = new LatticeEnvironment(Prims());
+        Assert.True(environment.AddPolygonObstacle([new(-40, -40), new(30, -40), new(30, 40), new(-40, 40)],
+            LatticeEnvironment.HardPenalty, uint.MaxValue));
+        LatticeState near = new(0, 0, 0), far = new(-30, -30, 0);
+        var nearBefore = environment.Successors(near, 0, false).ToArray();
+        var farBefore = environment.Successors(far, 0, true).ToArray();
+        Assert.NotEmpty(farBefore);
+        Assert.True(nearBefore.Length < farBefore.Length);
+
+        environment.PrepareForPlanning(error => throw new InvalidOperationException(error));
+
+        Assert.Equal(nearBefore, environment.Successors(near, 0, false).ToArray());
+        Assert.Equal(farBefore, environment.Successors(far, 0, true).ToArray());
+    }
+
+    [Fact]
+    public void RecordedChargerApproachKeepsItsPlanAfterObstaclePreparation()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_CHARGER_CLIFF_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        // Anchor the search to the first ExecutePath 9 window and the preceding reported objects.
+        var window = RecordedRobotInput.ReadOutbound(bundle, at => at >= 629070, 629090, [0x3D, 0x3F, 0x41])
+            .Select(row => row.Message).ToArray();
+        Assert.Equal(9, Assert.Single(window.OfType<ExecutePath>()).EventId);
+        var line = window.OfType<AppendPathSegmentLine>().First();
+        var turn = Assert.Single(window.OfType<AppendPathSegmentPointTurn>());
+        using var cubePose = ObservedPose(609955, 0);
+        using var chargerPose = ObservedPose(618445, 4);
+        using var preDock = ChargerGeometry.PreDockPose(chargerPose);
+        Assert.Equal(turn.TargetAngleRad, (float)preDock.AngleAroundZ, 5);
+        // The capture records observations, but no map snapshot. Rebuild the type-3
+        // polygons from the reported poses and the engine's bounding-quad routines.
+        var cube = new ObservableObject(0, ObjectType.Block_LIGHTCUBE2, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE2));
+        var obstacles = new[]
+        {
+            Footprint.GetBoundingQuadXY(cube, cubePose, 0),
+            ObjectFootprint.ChargerBoundingQuadXY(chargerPose, 0)
+        };
+        var environment = new LatticeEnvironment(Prims());
+        Assert.True(environment.ImportObstaclePolygons(obstacles.Select(quad =>
+            (IReadOnlyList<P2f>)Enumerable.Range(0, 4).Select(i => new P2f(quad[i].X, quad[i].Y)).ToArray()),
+            tightPadding: false, uint.MaxValue));
+        Assert.Equal(2, environment.ObstacleCount);
+        var planner = new LatticePlanner(environment);
+        planner.SetRunFlag(true);
+        // Search 2 currentRobotState in the stack log and the matching pre-dock pose
+        // converted to drive-centre coordinates (0x005477A0).
+        StateC start = new(-117.798f, 11.8916f, -0.370406f);
+        float heading = (float)preDock.AngleAroundZ;
+        StateC goal = new((float)preDock.Translation.X - 20 * MathF.Cos(heading),
+            (float)preDock.Translation.Y - 20 * MathF.Sin(heading), heading);
+        var before = Assert.IsType<LatticePlan>(planner.ComputePath(start, [goal], maxExpansions: 100_000));
+        environment.PrepareForPlanning(error => throw new InvalidOperationException(error));
+        var after = Assert.IsType<LatticePlan>(planner.ComputePath(start, [goal], maxExpansions: 100_000));
+        Assert.Equal(before.Start, after.Start);
+        Assert.Equal(before.Cost, after.Cost);
+        Assert.Equal(before.Expansions, after.Expansions);
+        Assert.Equal(before.Actions.ToArray(), after.Actions.ToArray());
+        Assert.Equal(before.Penalties.ToArray(), after.Penalties.ToArray());
+        Assert.Equal(line.XStartMm, after.Start.X * environment.Primitives.ResolutionMm);
+        Assert.Equal(line.YStartMm, after.Start.Y * environment.Primitives.ResolutionMm);
+        var segments = new List<PathSegment>();
+        NativePlanDependencies.AppendToPath(environment.Primitives, after, segments, 0,
+            primitive => primitive.CachedPath, NativePlanDependencies.OffsetStart,
+            gap => throw new InvalidOperationException(gap));
+        var end = NativePlanDependencies.GetEndPose(segments.Last(segment => segment is not PathSegment.PointTurn));
+        Assert.Equal(turn.XMm, end.X, 3);
+        Assert.Equal(turn.YMm, end.Y, 3);
+
+        Pose3d ObservedPose(uint timestamp, uint objectId)
+        {
+            foreach (string json in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+            {
+                using var document = JsonDocument.Parse(json);
+                var row = document.RootElement;
+                if (row.GetProperty("atMs").GetDouble() >= 629000) break;
+                if (row.GetProperty("kind").GetString() != "engine-to-game" ||
+                    row.GetProperty("tag").GetString() != "0x44") continue;
+                var payload = new CladReader(Convert.FromHexString(row.GetProperty("bodyHex").GetString()!));
+                uint stamp = payload.U32();
+                payload.U32(); // family
+                payload.U32(); // type
+                if (payload.U32() != objectId || stamp != timestamp) continue;
+                for (int i = 0; i < 4; i++) payload.F32(); // image rectangle
+                var position = new Vec3(payload.F32(), payload.F32(), payload.F32());
+                return new Pose3d(new Rotation3d(payload.F32(), payload.F32(), payload.F32(), payload.F32()), position);
+            }
+            throw new InvalidDataException($"Object {objectId} at firmware timestamp {timestamp} is absent from the capture.");
+        }
     }
 
     [Theory]

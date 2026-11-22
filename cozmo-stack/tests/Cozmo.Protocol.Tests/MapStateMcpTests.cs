@@ -102,6 +102,10 @@ public sealed class MapStateMcpTests(ITestOutputHelper output)
         Assert.Equal(targetX + 4f, arrival.GetProperty("xMm").GetSingle(), 3);
         Assert.Equal(targetY - 5f, arrival.GetProperty("yMm").GetSingle(), 3);
         Assert.Equal(targetYaw + yawError, arrival.GetProperty("headingRad").GetSingle(), 4);
+        Assert.DoesNotContain(diagnostics, line => line.Contains("M13-033", StringComparison.Ordinal) &&
+            !line.Contains("0x00500532", StringComparison.Ordinal) &&
+            !line.Contains("0x0050058A", StringComparison.Ordinal) &&
+            !line.Contains("0x004FFC76", StringComparison.Ordinal));
         output.WriteLine($"goal=({targetX}, {targetY}, {targetYaw}) arrival=({f.X}, {f.Y}, {f.Yaw}) result=0x{expectedResult:X8}");
         foreach (string diagnostic in diagnostics.Distinct()) output.WriteLine(diagnostic);
     }

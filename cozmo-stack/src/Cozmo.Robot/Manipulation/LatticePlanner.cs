@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Vision;
+using Cozmo.Transport;
 
 namespace Cozmo.Robot.Manipulation;
 
@@ -120,6 +121,9 @@ public sealed record MotionPrimitive(int ActionIndex, int StartTheta, short EndX
     public double? TurnInPlaceDirection { get; init; }
 
     internal IReadOnlyList<PathSegment> CachedPath { get; init; } = Array.Empty<PathSegment>();
+
+    // CacheBoundingBox 0x00855868..0x00855900 includes exactly the intermediate positions.
+    internal PlannerBounds Bounds { get; } = PlannerBounds.FromSamples(Intermediate);
 }
 
 /// <summary>
@@ -448,6 +452,25 @@ public static class PolygonF
     }
 }
 
+// The ordered four floats used by CacheBoundingBox (0x00855868) and PrepareForPlanning (0x00850FFC).
+internal readonly record struct PlannerBounds(float MinX, float MaxX, float MinY, float MaxY)
+{
+    internal static readonly PlannerBounds Empty = new(float.MaxValue, EngineF.Bits(0x00800000),
+        float.MaxValue, EngineF.Bits(0x00800000));
+
+    internal PlannerBounds Include(float minX, float maxX, float minY, float maxY) => new(
+        minX < MinX ? minX : MinX, maxX > MaxX ? maxX : MaxX,
+        minY < MinY ? minY : MinY, maxY > MaxY ? maxY : MaxY);
+
+    internal static PlannerBounds FromSamples(IReadOnlyList<IntermediatePose> samples)
+    {
+        var bounds = Empty;
+        foreach (var sample in samples)
+            bounds = bounds.Include(sample.X, sample.X, sample.Y, sample.Y);
+        return bounds;
+    }
+}
+
 /// <summary>
 /// The engine's <c>Anki::FastPolygon</c> built from a polygon (ctor 0x008416F0): the edge vectors (<c>CreateEdgeVectors</c> 0x0084173C: <c>(-dy*inv, dx*inv)</c> with <c>inv = 1.0f / sqrtf(dx*dx + dy*dy)</c>
 /// per edge, binary32), the centre and bounding box (<c>ComputeCenter</c> 0x008418A4), the circumscribed and inscribed radii squared (<c>ComputeCircles</c> 0x00841980, with the squares of the
@@ -457,7 +480,7 @@ public static class PolygonF
 public sealed class FastPolygonF
 {
     private readonly P2f[] _pts;
-    private readonly (float Nx, float Ny, int Index)[] _edges;
+    private (float Nx, float Ny, int Index)[] _edges;
     public float MinX { get; private set; } = float.MaxValue;
     public float MaxX { get; private set; } = -float.MaxValue;
     public float MinY { get; private set; } = float.MaxValue;
@@ -533,6 +556,71 @@ public sealed class FastPolygonF
         }
     }
 
+    // SortEdgeVectors 0x00841CB8. Two rings, one at the circumscribed radius and one
+    // at 0.3*circumscribed + 0.7*inscribed. Match the f32 angle increment and f64 end test.
+    internal void SortEdgeVectors(Action<string> reportError)
+    {
+        if (_edges.Length == 0) return;
+        float outer = MathF.Sqrt(CircumscribedRadiusSquared);
+        float inner = MathF.Sqrt(InscribedRadiusSquared);
+        float middle = (float)(outer * 0.3d + inner * 0.7d);
+        var samples = new List<P2f>();
+        for (float angle = 0; angle <= 6.283195307179586; angle += EngineF.Bits(0x3EC90FDB))
+        {
+            float cos = MathF.Cos(angle), sin = MathF.Sin(angle);
+            samples.Add(new(CenterX + outer * cos, CenterY + outer * sin));
+            samples.Add(new(CenterX + middle * cos, CenterY + middle * sin));
+        }
+
+        var selected = new bool[_edges.Length];
+        var rejected = new bool[samples.Count];
+        var ordered = new List<(float Nx, float Ny, int Index)>(_edges.Length);
+        // 0x00841E3E..0x00841EE4 picks the edge excluding most unclaimed points.
+        // The unsigned >= tie takes the later edge in the current ordering.
+        for (int pass = 0; pass < _edges.Length && pass < 1000; pass++)
+        {
+            int bestEdge = 0, bestCount = 0;
+            for (int edge = 0; edge < _edges.Length; edge++)
+            {
+                if (selected[edge]) continue;
+                int hits = CheckSamples(edge, mark: false);
+                if (hits < bestCount) continue;
+                bestEdge = edge;
+                bestCount = hits;
+            }
+            selected[bestEdge] = true;
+            ordered.Add(_edges[bestEdge]);
+            CheckSamples(bestEdge, mark: true);
+        }
+
+        // At exactly the native loop bound the error path runs before the size test.
+        if (ordered.Count == 1000)
+        {
+            reportError("LoopBoundOverflow");
+            EngineErrorState.StoreAndMaybeBreak();
+        }
+        _edges = ordered.ToArray();
+
+        int CheckSamples(int index, bool mark)
+        {
+            int count = 0;
+            var edge = _edges[index];
+            var start = _pts[edge.Index];
+            for (int i = 0; i < samples.Count; i++)
+            {
+                var sample = samples[i];
+                // CheckTestPoints 0x008420B0 skips both previously rejected and outside-AABB samples.
+                if (rejected[i] || sample.X < MinX || sample.X > MaxX || sample.Y < MinY || sample.Y > MaxY)
+                    continue;
+                float dot = edge.Nx * (sample.X - start.X) + edge.Ny * (sample.Y - start.Y);
+                if (!(dot > 0)) continue;
+                count++;
+                if (mark) rejected[i] = true;
+            }
+            return count;
+        }
+    }
+
     /// <summary><c>FastPolygon::Contains(float, float)</c> 0x00841BA0.</summary>
     public bool Contains(float x, float y)
     {
@@ -601,6 +689,9 @@ public sealed class LatticeEnvironment
 
     private readonly List<(FastPolygonF Poly, float Penalty)>[] _buckets;
     private int _obstacleCount;
+    private PlannerBounds[] _obstacleBounds = Array.Empty<PlannerBounds>();
+    // Direct tool calls may replace buckets without native StartPlanning; use the full walk until prepared.
+    private bool _boundsMatchBuckets;
 
     public LatticeEnvironment(MotionPrimitiveSet prims)
     {
@@ -614,6 +705,30 @@ public sealed class LatticeEnvironment
     public int ObstacleCount => _obstacleCount;
     /// <summary>The C-space polygons of one heading, in the order they were added.</summary>
     public IReadOnlyList<(FastPolygonF Poly, float Penalty)> Bucket(int theta) => _buckets[theta];
+    // PrepareForPlanning 0x00850F74..0x008510BC sorts every heading's polygons, then indexes
+    // the union bounds by obstacle slot. resize 0x008510C0 keeps retained slots (0x00857052).
+    internal void PrepareForPlanning(Action<string> reportError)
+    {
+        foreach (var bucket in _buckets)
+            foreach (var (polygon, _) in bucket)
+                polygon.SortEdgeVectors(reportError);
+
+        int count = _buckets.Length == 0 ? 0 : _buckets[0].Count;
+        int retained = _obstacleBounds.Length;
+        Array.Resize(ref _obstacleBounds, count);
+        if (retained < count)
+            Array.Fill(_obstacleBounds, PlannerBounds.Empty, retained, count - retained);
+        foreach (var bucket in _buckets)
+        {
+            for (int i = 0; i < bucket.Count; i++)
+            {
+                var polygon = bucket[i].Poly;
+                _obstacleBounds[i] = _obstacleBounds[i].Include(polygon.MinX, polygon.MaxX, polygon.MinY, polygon.MaxY);
+            }
+        }
+        _boundsMatchBuckets = true;
+    }
+
     // fidelity: M13-034
     // xythetaEnvironment::ApplyAction 0x00850478..0x0085060C; distinct from SuccessorIterator.
     internal (LatticeState State,float Penalty) ApplyAction(LatticeState state,int actionIndex,bool check)
@@ -649,6 +764,7 @@ public sealed class LatticeEnvironment
     {
         foreach (var b in _buckets) b.Clear();
         _obstacleCount = 0;
+        _boundsMatchBuckets = false;
     }
 
     /// <summary>
@@ -751,6 +867,7 @@ public sealed class LatticeEnvironment
     {
         if ((uint)theta >= (uint)_buckets.Length) { Log?.Invoke($"AddObstacleWithExpansion: theta {theta} is out of range"); theta = 0; }
         _buckets[theta].Add((new FastPolygonF(ExpandCSpace(obstacle, robot)), penalty));
+        _boundsMatchBuckets = false;
     }
 
     /// <summary>
@@ -816,6 +933,7 @@ public sealed class LatticeEnvironment
         for (int t = 0; t < _buckets.Length; t++) _buckets[t] = staged[t];
         TightPadding = tightPadding;
         _obstacleCount = (append ? _obstacleCount : 0) + obstacles.Count;
+        _boundsMatchBuckets = false;
         return true;
     }
 
@@ -921,8 +1039,8 @@ public sealed class LatticeEnvironment
     /// state id, the action index, the total cost <c>soft + (startCost + primitive cost)</c> and the soft part. The collision test is the engine's: a non-turning primitive
     /// (<c>end theta == start theta</c> byte) tests every intermediate pose in the end heading's bucket; a turning one walks the poses last to first, each in its own heading's bucket; a containing
     /// polygon with penalty below 1000.0f adds <c>base + penalty * reciprocal</c> (base 0.0f forward, 1000.0f for a reverse action) and one at or above rejects the primitive. The position is the
-    /// start state's, or the NEW state's in reverse mode (0x008511EE..0x00851214). The engine's bounding-box and <c>Bounds</c> shortcuts (0x00851216..0x00851286, 0x0085131E..) only skip polygons whose
-    /// boxes cannot contain a pose; they are not needed for the result and are not built.
+    /// start state's, or the NEW state's in reverse mode (0x008511EE..0x00851214). The prepared union bounds gate
+    /// the per-polygon walk at 0x00851216..0x00851286; Contains still tests each polygon's own AABB.
     /// </summary>
     // fidelity: M13-003
     public IEnumerable<LatticeSuccessor> Successors(LatticeState s, float startCost, bool reverse)
@@ -941,7 +1059,9 @@ public sealed class LatticeEnvironment
             float soft = 0f; bool hard = false;
             bool nonTurning = prim.EndTheta == prim.StartTheta;
             var inter = prim.Intermediate;
-            if (nonTurning)
+            // 0x00851286 -> 0x008514DC yields the primitive with no soft penalty when the bounds miss.
+            bool checkObstacles = !_boundsMatchBuckets || HasOverlappingObstacleBounds(prim.Bounds, ox, oy);
+            if (checkObstacles && nonTurning)
             {
                 foreach (var (poly, penalty) in _buckets[prim.EndTheta])
                     for (int i = 0; i < inter.Count; i++)
@@ -951,7 +1071,7 @@ public sealed class LatticeEnvironment
                         soft = soft + (baseCost + penalty * inter[i].Reciprocal);
                     }
             }
-            else
+            else if (checkObstacles)
             {
                 for (int i = inter.Count - 1; i >= 0; i--)
                 {
@@ -970,6 +1090,18 @@ public sealed class LatticeEnvironment
             var next = new LatticeState(nx, ny, (byte)prim.EndTheta);
             yield return new LatticeSuccessor(next.Id, prim.ActionIndex, total, soft, prim);
         }
+    }
+
+    private bool HasOverlappingObstacleBounds(PlannerBounds bounds, float x, float y)
+    {
+        float minX = x + bounds.MinX, maxX = x + bounds.MaxX;
+        float minY = y + bounds.MinY, maxY = y + bounds.MaxY;
+        foreach (var obstacle in _obstacleBounds)
+        {
+            if (maxX < obstacle.MinX || minX > obstacle.MaxX || maxY < obstacle.MinY) continue;
+            if (!(minY > obstacle.MaxY)) return true;
+        }
+        return false;
     }
 
     /// <summary>

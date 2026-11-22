@@ -261,6 +261,9 @@ class Session:
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
         resolved = {
+            "MISSING: M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump "
+            "recipient at 0x004FF052..0x004FF30A remain incomplete":
+                "0x004FF0C6 now prepares obstacle bounds and edge order. The remaining output is diagnostic",
             "MISSING: M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and "
             "CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; "
             "normal queue path is not classified SDK-only": "M8-015 Viz label discarded, external SDK mode excluded",
