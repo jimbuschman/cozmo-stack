@@ -218,16 +218,15 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     private readonly SortedSet<int> _targets = new(); // native std::set<int>, +0x14C
     private readonly List<IReactToObjectListener> _listeners = new();
     private uint? _current;
-    private uint _ghostId = ObservableObject.UnassignedId;
-    private bool _ghostIdAllocated;
-    // C3/P1: this retained ghost stays outside BlockWorld. Marker construction is the separate M12-033 frontier.
-    private readonly Pose3d _ghostPose = new("");
+    // 0x00603010..0x00603086 constructs and retains a Block_Cube1x1 of type 4 outside BlockWorld.
+    private readonly ObservableObject _ghost;
+    private readonly Pose3d _ghostPose;
     private readonly object _ghostLifetime = new();
     private int _ghostUsers;
     private int _ghostRetired;
     private long _hostGeneration;
     internal ObjectType GhostType => ObjectType.Block_LIGHTCUBE_GHOST;
-    internal PoseState GhostPoseState { get; private set; } = PoseState.Dirty;
+    internal PoseState GhostPoseState => _ghost.PoseState;
     private bool _beginPending;
     private ManipulationSystem? _nativeManipulation;
     private BehaviorManager? _configuredManager;
@@ -242,7 +241,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     private bool _lookedUp;
     private NativeVerifyObjectRunner? _displayVerify;
     private TriggerLiftSafeAnimationAction? _displayAnimation;
-    // Unit-only supplied inputs for the unresolved shared helpers; production never supplies these delegates.
+    // Tests can drive specific native branches independently of camera geometry and motion.
     internal Func<Pose3d, int>? SuppliedVisibilityReason;
     internal Func<Pose3d, (bool Success, Pose3d? Pose)>? SuppliedClosestMarker;
     internal Func<Pose3d, (int Result, float Angle)>? SuppliedHeadAngle;
@@ -251,6 +250,10 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     public AcknowledgeObjectBehavior(BlockWorld world, CubeLocator? locator = null) : base("AcknowledgeObject", "AcknowledgeObject")
     {
         _world = world;
+        var markers = CubeGeometry.MarkersFor(GhostType);
+        _ghost = new ObservableObject(GhostType, markers) { PoseState = PoseState.Dirty };
+        foreach (var marker in markers) marker.PoseOnObject.Dispose();
+        _ghostPose = _ghost.NativePose;
         _ = locator; // retained host constructor boundary; native turns use ActionList.
     }
 
@@ -299,7 +302,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
     public Phase CurrentPhase { get; private set; }
     public uint? CurrentTarget => _current;
     public IReadOnlyList<uint> PendingTargets { get { lock (_targets) return _targets.Select(x => unchecked((uint)x)).ToList(); } }
-    internal uint GhostId => _ghostId;
+    internal uint GhostId => _ghost.ObjectId;
     // Host lifetime cleanup after the manager has stopped the behavior and unsubscribed its strategy.
     internal long HostGeneration => Interlocked.Read(ref _hostGeneration);
     internal void ReleaseHostGhost()
@@ -309,13 +312,18 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             if (_ghostRetired != 0) return;
             Volatile.Write(ref _ghostRetired, 1);
             Interlocked.Increment(ref _hostGeneration);
-            if (_ghostUsers == 0) _ghostPose.Dispose();
+            if (_ghostUsers == 0) DisposeGhostPoses();
         }
     }
     private bool EnterGhostUse()
     { lock (_ghostLifetime) { if (_ghostRetired != 0) return false; _ghostUsers++; return true; } }
     private void ExitGhostUse()
-    { lock (_ghostLifetime) { _ghostUsers--; if (_ghostRetired != 0 && _ghostUsers == 0) _ghostPose.Dispose(); } }
+    { lock (_ghostLifetime) { _ghostUsers--; if (_ghostRetired != 0 && _ghostUsers == 0) DisposeGhostPoses(); } }
+    private void DisposeGhostPoses()
+    {
+        foreach (var marker in _ghost.Markers) marker.PoseOnObject.Dispose();
+        _ghostPose.Dispose();
+    }
     private bool IsGeneration(long generation) => Volatile.Read(ref _ghostRetired) == 0 && EngineRunning && HostGeneration == generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) =>
         (context?.Robot.Engine ?? _nativeManipulation?.Robot.Engine)?.EnterSynchronousOwner();
@@ -359,7 +367,7 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        if (!_ghostIdAllocated) { _ghostId = ObjectIdSpace.Set(); _ghostIdAllocated = true; } // operator N2: once, process-wide
+        if (_ghost.ObjectId == ObservableObject.UnassignedId) _ghost.ObjectId = ObjectIdSpace.Set(); // 0x00603444..0x0060344E
         _beginPending = true;
         var manager = _configuredManager ?? Context.Robot.Engine.Robot?.BehaviorManagerOwner;
         if (manager is null)
@@ -475,26 +483,73 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             bool backup = _lookedUp;
             if (!backup)
             {
-                if (SuppliedClosestMarker is null) { MissingGhost(generation, "M12-033 closest marker/ghost geometry"); return; }
-                var marker = SuppliedClosestMarker(_ghostPose);
-                if (!IsGeneration(generation)) return;
-                var pose = marker.Success ? marker.Pose : _ghostPose; // L6: actual failure uses ghost pose
-                if (pose is null) { MissingGhost(generation, "M12-033 supplied successful closest-marker pose missing"); return; }
-                if (SuppliedHeadAngle is null) { MissingGhost(generation, "M13-026 head angle input"); return; }
-                var head = SuppliedHeadAngle(pose);
+                if (!TryGetGhostHeadAngle(generation, out var head)) return;
                 if (!IsGeneration(generation)) return;
                 _lookedUp = true;
-                backup = head.Result != 0 || new Radians(head.Angle) > new Radians(BitConverter.UInt32BitsToSingle(0x3F1A266B));
+                backup = head.Result != 0 || head.Angle > BitConverter.UInt32BitsToSingle(0x3F1A266B); // 0x00603ADE..0x00603AF6
             }
+            // 0x00603AFA..0x00603B1A logs the backup choice.
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Behaviors",
+                "BehaviorAcknowledgeObject.LookForStackedCubes.LookingUpToSeeCubeAbove", $"BackingUpFirst={(backup ? 'Y' : 'N')}");
             LookAtGhost(generation, backup, () => LookForStackedCubes(generation));
             return;
         }
         if (_highTarget)
         {
+            // 0x006039C4..0x00603A1A logs and starts the downward look.
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Behaviors",
+                "BehaviorAcknowledgeObject.LookForStackedCubes.LookingDownToSeeCubeBelow", "");
+            if (!IsGeneration(generation)) return;
             SetGhostRelative(target, -height);
             LookAtGhost(generation, false, () => FinishIteration(generation));
         }
         else FinishIteration(generation);
+    }
+
+    private bool TryGetGhostHeadAngle(long generation, out (uint Result, float Angle) head)
+    {
+        head = default;
+        var robot = Context.Robot.Engine.Robot;
+        if (robot is null || _nativeManipulation is not { } m)
+        {
+            MissingGhost(generation, "M13-026 head angle owner");
+            return false;
+        }
+        Pose3d? selected = null;
+        Pose3d? ownedPose = null;
+        if (SuppliedClosestMarker is { } supplied)
+        {
+            var marker = supplied(_ghostPose);
+            selected = marker.Success ? marker.Pose : _ghostPose;
+            if (selected is null) { MissingGhost(generation, "M12-033 supplied successful closest-marker pose missing"); return false; }
+        }
+        else if (ObjectPoseQueries.GetClosestMarkerPose(_ghost, robot.GetCheckedMainPose(), planar: true, out var closest) is not null)
+        {
+            selected = ownedPose = closest; // 0x00603A6C selects the nearest planar marker.
+        }
+        using var retained = ownedPose;
+        if (!IsGeneration(generation)) return false;
+        if (selected is null)
+        {
+            // 0x00603A70..0x00603AB6 uses the ghost pose on marker lookup failure.
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null,
+                "BehaviorAcknowledgeObject.LookForStackedCubes.ClosestMarkerPoseFailed", "");
+            selected = _ghostPose;
+        }
+        if (!IsGeneration(generation)) return false;
+        if (SuppliedHeadAngle is { } suppliedHead)
+        {
+            var result = suppliedHead(selected);
+            head = (unchecked((uint)result.Result), result.Angle);
+        }
+        else
+        {
+            // 0x00603ABA..0x00603AC8 passes 0x3DCCCCCD (0.1f) and the current MAIN pose.
+            uint result = TurnTowardsPose.ComputeHeadAngleToSeePose(m.Vision.Calibration, selected, 0.1f,
+                out float angle, m.Vision.LogLine, robot.GetCheckedMainPose());
+            head = (result, angle);
+        }
+        return true;
     }
 
     private void ReportGhostUnavailable(string detail) =>
@@ -511,19 +566,39 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
         using var root = target.NativePose.FindRoot();
         var p = flat.Translation;
         using var next = new Pose3d(flat.Quaternion, new Vec3((float)p.X, (float)p.Y, (float)p.Z + offset), parent: root);
-        _ghostPose.Assign(next); GhostPoseState = PoseState.Dirty; // G2/P1
+        _ghost.Pose = next;
+        _ghost.PoseState = PoseState.Dirty; // 0x00604054..0x006040C2 calls 0x00506E40
     }
     private bool GhostVisibility(long generation, ObservableObject target, float offset, out bool visible, out bool outside)
     {
         visible = outside = false;
-        if (SuppliedVisibilityReason is null) { MissingGhost(generation, "M11-010 ghost visibility reason"); return false; }
+        var robot = Context.Robot.Engine.Robot;
+        var m = _nativeManipulation;
+        if (SuppliedVisibilityReason is null && (robot is null || m is null))
+        {
+            MissingGhost(generation, "M11-010 ghost camera owner");
+            return false;
+        }
         using var saved = new Pose3d(_ghostPose);
         SetGhostRelative(target, offset);
-        int reason;
-        try { reason = SuppliedVisibilityReason(_ghostPose); }
-        finally { _ghostPose.Assign(saved); GhostPoseState = PoseState.Dirty; }
-        outside = reason == 6;
-        visible = reason is 0 or 7 or 8;
+        NotVisibleReason reason;
+        try
+        {
+            if (SuppliedVisibilityReason is { } supplied) reason = (NotVisibleReason)supplied(_ghostPose);
+            else
+            {
+                using var mutation = _world.EnterPoseMutation();
+                // SetHeadAngle 0x005133EC..0x00513404 writes GetCameraPose(acceptedAngle)
+                // into VisionComponent+0x30, the outer Camera's pose.
+                using var pose = robot!.CopyCurrentCameraPose(m!.Robot.Motion.ObservationHeadAngleRad);
+                var camera = m.Vision.BindOuterCameraForVisibility(robot, pose.Pose);
+                reason = _ghost.IsVisibleFromWithReason(camera, BitConverter.UInt32BitsToSingle(0x3F490FDB));
+            }
+        }
+        finally { _ghostPose.Assign(saved); _ghost.PoseState = PoseState.Dirty; }
+        // 0x00603E70 and table 0x00C73120.
+        outside = reason == NotVisibleReason.OutsideFieldOfView;
+        visible = reason is NotVisibleReason.IsVisible or NotVisibleReason.Occluded or NotVisibleReason.NothingBehind;
         return true;
     }
     private void LookAtGhost(long generation, bool backup, Action continuation)
@@ -534,19 +609,17 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
             supplied(backup, () => { using var owner = EnterHostExecutionOwner(Context); if (IsGeneration(generation)) continuation(); });
             return;
         }
-        if (_nativeManipulation is not { } m) { ReportMissing("M15-081 ghost action owner unavailable; ending behavior"); return; }
+        if (_nativeManipulation is not { } m || m.Robot.Engine.Robot is not { } robot)
+        { MissingGhost(generation, "ghost action owner"); return; }
         var sequence = new GhostLookSequence(m, this, generation);
         sequence.SeedNativeEmptyCompletion();
-        if (backup) sequence.AddAction(new DriveStraightAction(m, -25, 100f, false), false, false);
-        sequence.AddAction(new MissingGhostTurn(m), false, false);
-        sequence.AddAction(new NativeWaitForImagesRunner(m, ConfigImages, (VisionMode)1, 0), false, false);
+        if (backup) sequence.AddAction(new DriveStraightAction(m, -25, 100f, false), false, false); // 0x00604114..0x00604128
+        sequence.AddAction(new NativeTurnTowardsObjectRunner(m, _ghost)
+        {
+            ScopedOwner = robot, ScopedParentCurrent = () => IsGeneration(generation),
+        }, false, false); // 0x00604138..0x00604186
+        sequence.AddAction(new NativeWaitForImagesRunner(m, ConfigImages, (VisionMode)1, 0), false, false); // 0x00604190..0x006041B8
         StartOwnedAction(generation, sequence, _ => { if (IsGeneration(generation)) continuation(); }); // G4: result ignored
-    }
-    private sealed class MissingGhostTurn(ManipulationSystem m) : NativeVisionRunner(m, 0x2C, 5)
-    {
-        protected override string ActionName => "TurnTowardsCustomObject";
-        public override int Init() => throw new NativeActionUnavailable("M12-033 ghost marker geometry/closest marker input unavailable at 0x0054A27C");
-        public override uint CheckIfDone() => EngineActionResult.Running;
     }
     private sealed class GhostLookSequence(ManipulationSystem m, AcknowledgeObjectBehavior owner, long generation)
         : CompoundActionSequential(() => m.Robot.Engine.Timer.SecondsF)

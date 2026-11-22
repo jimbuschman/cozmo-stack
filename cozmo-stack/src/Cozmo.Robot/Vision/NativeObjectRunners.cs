@@ -6,16 +6,24 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
 {
     internal const short AnyCode=32767;
     private readonly uint _id;
+    private readonly ObservableObject? _customObject;
     private readonly short _code;
     private readonly bool _verify,_track;
     private bool _refine=true,_finished;
     private bool _publicRequest;
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     private NativeVerifyObjectRunner? _verification;
-    protected override string ActionName=>"TurnTowardsObject";
+    protected override string ActionName=>_customObject is null ? "TurnTowardsObject" : $"TurnTowardsCustomObject{_customObject.ObjectId}";
     internal NativeTurnTowardsObjectRunner(ManipulationSystem m,uint id,short code,float maximum,bool verify,bool track)
         :base(m,Pose3d.Identity,maximum,0x2C)
     {_id=id;_code=code;_verify=verify;_track=track;}
+    // The ghost caller passes ObjectID(-1), Radians(0), false, false, then UseCustomObject
+    // binds the retained pointer and updates the action name at 0x0054A0A0..0x0054A0D2.
+    internal NativeTurnTowardsObjectRunner(ManipulationSystem m, ObservableObject customObject)
+        : this(m, uint.MaxValue, AnyCode, 0f, false, false)
+    {
+        _customObject = customObject;
+    }
     internal void ConfigurePublicRequest(EngineRobot owner, Func<bool> current)
     {
         _publicRequest = true;
@@ -39,13 +47,35 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
     {
         if(!ScopedCurrent)return unchecked((int)EngineActionResult.Cancelled);
         using var mutation=M.World.EnterPoseMutation();
-        var target=M.World.GetLocatedObjectByIdHelper(_id);
+        var robot = ScopedOwner ?? M.Robot.Engine.Robot;
+        var target = _customObject ?? M.World.GetLocatedObjectByIdHelper(_id);
         if(target is null)
         {
             if (_publicRequest) M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "TurnTowardsObjectAction.Init.ObjectNotFound", $"Object with ID={unchecked((int)_id)} no longer exists in the world.");
             return ScopedCurrent && !DestructionObserved ? 0x03000004 : unchecked((int)EngineActionResult.Cancelled);
         }
-        var main=(ScopedOwner??M.Robot.Engine.Robot!).GetCheckedMainPose();
+        var main=robot!.GetCheckedMainPose();
+        if (_customObject is not null)
+        {
+            // 0x0054A300..0x0054A31A checks the retained custom object's world root.
+            if (!PoseTreeNode.HasSameRoot(target.NativePose.Node, robot.GetNativeOrigin(robot.CurrentOriginId).Node))
+            {
+                M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null,
+                    "TurnTowardsObjectAction.Init.CustomObjectNotInRobotFrame", "");
+                return unchecked((int)ActionResult.BadPose);
+            }
+            // 0x0054A26E..0x0054A282 selects the nearest planar marker on either pass.
+            if (ObjectPoseQueries.GetClosestMarkerPose(target, main, planar: true, out var closest) is null)
+            {
+                M.Robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "TurnTowardsObjectAction.Init.NoValidPose",
+                    $"Could not get a valid closest marker pose of custom object {unchecked((int)target.ObjectId)}");
+                if (DestructionObserved || !ScopedCurrent) return unchecked((int)EngineActionResult.Cancelled);
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return unchecked((int)ActionResult.BadMarker);
+            }
+            using (closest) AssignGoal(closest);
+            return ScopedCurrent ? base.Init() : unchecked((int)EngineActionResult.Cancelled);
+        }
         using var selected=new Pose3d("");using var relative=new Pose3d("");
         float best=float.MaxValue;bool found=false;
         foreach(var marker in target.Markers.ToArray())
@@ -100,7 +130,7 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
     internal override bool RetireNeverAdmittedTree()
     {
         if (!base.RetireNeverAdmittedTree()) return false;
-        if (_publicRequest) GoalPose.Dispose();
+        if (_publicRequest || _customObject is not null) GoalPose.Dispose();
         return true;
     }
     public override void WatcherEnding()

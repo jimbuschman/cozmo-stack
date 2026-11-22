@@ -641,7 +641,7 @@ public sealed record ObjectPoseQueries(Func<ObservableObject, double, Pose3d> ZR
     {
         markerWrtPose = default;
         MarkerType? best = null;
-        double bestD2 = float.MaxValue;                                        // 0x7F7FFFFF (0x00877914)
+        float bestD2 = float.MaxValue;                                         // 0x7F7FFFFF (0x00877914)
         foreach (var m in obj.Markers)
         {
             var wrt=new Pose3d();
@@ -652,8 +652,9 @@ public sealed record ObjectPoseQueries(Func<ObservableObject, double, Pose3d> ZR
                 if(obj.NativePose.HasParent || pose.HasParent)continue;
                 using var flat=obj.Pose.Compose(m.PoseOnObject);wrt=flat.WithRespectTo(pose);
             }
-            double x = wrt.Translation.X, y = wrt.Translation.Y, z = wrt.Translation.Z;
-            double d2 = planar ? x * x + y * y : x * x + y * y + z * z;
+            float x = (float)wrt.Translation.X, y = (float)wrt.Translation.Y, z = (float)wrt.Translation.Z;
+            float d2 = x * x + y * y; // 0x00877848..0x00877858
+            if (!planar) d2 += z * z; // 0x0087786C..0x00877882
             if (d2 < bestD2) { bestD2 = d2; best = m.Code; markerWrtPose?.Dispose();markerWrtPose = wrt; }
             else wrt.Dispose();   // strictly smaller; NaN never is
         }

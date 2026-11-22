@@ -46,6 +46,27 @@ class SessionCheckTests(unittest.TestCase):
         entries = list(evaluate(session))
         return {name: verdict for _, name, verdict in entries}, render(session, entries)
 
+    def test_stacked_ghost_missing_downgrades_acknowledge_and_cube_moved(self):
+        ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
+        cube_moved = enum_members("ReactionTrigger")["CubeMoved"]
+        self.raw(90, 0x0F, bytes(4))
+        self.raw(100, 0x88, bytes((0, cube_moved)))
+        self.raw(110, 0x87, bytes((ids["Wait"], ids["AcknowledgeObject"],
+                                  classes["Wait"], 12, classes["AcknowledgeObject"], 12, 0)))
+        self.raw(180, 0x87, bytes((ids["AcknowledgeObject"], ids["Wait"],
+                                  classes["AcknowledgeObject"], 12, classes["Wait"], 12, 0)))
+        self.raw(190, 0x88, bytes((cube_moved, 0)))
+        marker = ("MISSING: M15-081 M11-010/M12-033/M13-026 stacked-cube look unavailable: "
+                  "M11-010 ghost visibility reason")
+        checks, _ = self.check()
+        for name in ("AcknowledgeObject", "ReactToCubeMoved"):
+            self.assertEqual(PASSED, checks[name].status)
+        self.event(150, "stack-log", line=marker)
+        checks, _ = self.check([marker])
+        for name in ("AcknowledgeObject", "ReactToCubeMoved"):
+            self.assertEqual(SEEN, checks[name].status)
+            self.assertTrue(checks[name].blocked_by_missing)
+
     def test_cube_freeplay_rounds_use_the_native_transition_and_result(self):
         ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
         self.request(10, 1, "freeplay", enabled=True)

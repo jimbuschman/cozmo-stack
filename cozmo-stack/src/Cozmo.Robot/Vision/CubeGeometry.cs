@@ -128,13 +128,15 @@ public static class CubeGeometry
         int baseCode = type switch
         {
             ObjectType.Block_LIGHTCUBE1 => 4, ObjectType.Block_LIGHTCUBE2 => 10, ObjectType.Block_LIGHTCUBE3 => 16,
+            ObjectType.Block_LIGHTCUBE_GHOST => 39, // 0x004E4F3C copies face definitions at 0x00C45D60.
             _ => throw new ArgumentException($"{type} is not a light cube", nameof(type)),
         };
         var list = new List<KnownMarker>(6);
         foreach (var (face, angle, axis, offset) in FaceTable)
         {
             var pose = new Pose3d(angle, axis, offset * CubeSizeMm);
-            list.Add(new KnownMarker((MarkerType)(baseCode + FaceCodeOffset(face)), face, pose, MarkerSizeMm));
+            int code = type == ObjectType.Block_LIGHTCUBE_GHOST ? baseCode : baseCode + FaceCodeOffset(face);
+            list.Add(new KnownMarker((MarkerType)code, face, pose, MarkerSizeMm));
         }
         return list;
     }

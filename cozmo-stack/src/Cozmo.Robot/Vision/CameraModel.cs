@@ -74,9 +74,15 @@ public static class HeadGeometry
 public sealed class CameraModel
 {
     public CameraModel(CameraCalibration calibration, Pose3d pose)
+        : this(calibration, pose, new OccluderList())
+    {
+    }
+
+    internal CameraModel(CameraCalibration calibration, Pose3d pose, OccluderList occluders)
     {
         Calibration = calibration;
         Pose = pose;
+        Occluders = occluders;
     }
 
     public CameraCalibration Calibration { get; }
@@ -91,7 +97,7 @@ public sealed class CameraModel
     /// <c>BlockWorld::UpdateObservedMarkers</c> clears it and <c>BlockWorld::AddAndUpdateObjects</c>
     /// adds one entry per marker actually observed.
     /// </summary>
-    public OccluderList Occluders { get; } = new();
+    public OccluderList Occluders { get; }
 
     /// <summary>A world point in the camera frame.</summary>
     public Vec3 ToCamera(Vec3 world) => Pose.Inverse().Apply(world);
