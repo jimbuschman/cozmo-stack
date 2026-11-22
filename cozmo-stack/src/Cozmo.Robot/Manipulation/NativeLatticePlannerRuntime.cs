@@ -133,7 +133,10 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             if(!_backend.CheckContextGoalsWithIds(_goalContext,new(),new()))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidGoals","Goals may have moved into collision");return 0;}
             _backend.ImportBlockWorldObstaclesWithCarrying(_world,_carried,false);
-            _missing("M13-033 Replanning State/plan text, PrepareForPlanning and conditional EnvDump recipient at 0x004FF052..0x004FF30A remain incomplete");
+            // 0x004FF0C6 prepares the imported obstacles before the search number and run flag change.
+            _backend.Env.PrepareForPlanning(key => _source(EngineLogLevel.Error, null, key,
+                "../../../../coretech/common/basestation/src/math/fastPolygon2d.cpp:277"));
+            // The replanning text (0x004FF08C) and EnvDump (0x004FF272) are diagnostic.
             _searchNum=unchecked(_searchNum+1);Info("LatticePlannerImpl.GetPlan",$"searchNum: {unchecked((int)_searchNum)}");
             _backend.SetRunFlag(true);
             if(!F5){F0=true;Publish(1);_wake.Set();}
