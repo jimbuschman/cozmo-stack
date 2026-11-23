@@ -70,7 +70,7 @@ public sealed partial class CozmoRobot
     /// <summary>Requests named enrollment for the current robot. Activity admission is separate.</summary>
     public void SetFaceToEnroll(string name, int saveId = 0) => SetFaceToEnroll(name, saveId, null);
 
-    internal void SetFaceToEnroll(string name, int saveId, EnrollmentMusicScope? musicScope)
+    internal void SetFaceToEnroll(string name, int saveId, EnrollmentMusicScope? musicScope, Func<bool>? requestCurrent = null)
     {
         ArgumentNullException.ThrowIfNull(name);
         if (Encoding.UTF8.GetByteCount(name) > byte.MaxValue)
@@ -79,7 +79,8 @@ public sealed partial class CozmoRobot
         var request = new NativeEnrollmentRequest(name, 0, saveId, true, true, true, musicScope);
         Engine.PostGameMessage(() =>
         {
-            if (owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot, owner))
+            if (owner is not null && !owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot, owner) &&
+                (requestCurrent is null || requestCurrent()))
                 Engine.AnimationMessages.Deliver(0x87, false, request);
         });
     }

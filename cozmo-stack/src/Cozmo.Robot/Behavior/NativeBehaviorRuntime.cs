@@ -65,6 +65,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private Activity? _selected;
     private int _highLevel=4; // constructor Count, then configured boot selects Selection
     internal float HighLevelEntryTime=>_manager.ParentSwitchTime;
+    internal long? MeetCozmoAdmission => !_retired && _highLevel == 3 ? _admissionEpoch : null;
     // Continuation of the missing parent picker, not an ActivitySparked state/Complete latch.
     internal bool AwaitingParentActivityPick {get;private set;}
     private bool _retired;

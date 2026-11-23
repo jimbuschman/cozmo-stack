@@ -21,12 +21,19 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
     private sealed record Emission(ushort Tag, string Body, uint At, bool NvIdle);
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task CapturedPixelsCompleteTeachRenameAndEraseThroughMcp(bool musicWindow)
+    [InlineData("COZMO_FACE_REPLAY_BUNDLE")]
+    [InlineData("COZMO_MAMBO_REPLAY_BUNDLE")]
+    [InlineData("COZMO_SESSION5_FACE_BUNDLE")]
+    public async Task CapturedPixelsCompleteTeachRenameAndEraseThroughMcp(string capture)
     {
-        string? bundle = Environment.GetEnvironmentVariable(musicWindow ? "COZMO_MAMBO_REPLAY_BUNDLE" : "COZMO_FACE_REPLAY_BUNDLE");
-        if (string.IsNullOrEmpty(bundle)) return;
+        bool musicWindow = capture == "COZMO_MAMBO_REPLAY_BUNDLE";
+        bool sessionFive = capture == "COZMO_SESSION5_FACE_BUNDLE";
+        string? sessionFiveBundle = sessionFive ? Environment.GetEnvironmentVariable(capture) : null;
+        string? bundle = Environment.GetEnvironmentVariable(sessionFive ? "COZMO_FACE_REPLAY_BUNDLE" : capture);
+        if (string.IsNullOrEmpty(bundle) || (sessionFive && string.IsNullOrEmpty(sessionFiveBundle))) return;
+        var requests = sessionFiveBundle is null ? null : ReadSessionFiveFaceRequests(sessionFiveBundle);
+        string originalName = requests?[0].GetProperty("arguments").GetProperty("name").GetString() ?? "Robin";
+        string updatedName = requests?[1].GetProperty("arguments").GetProperty("newName").GetString() ?? "Riley";
         string? messagesSha256 = null;
         var pictures = new List<byte[]>();
         byte[]? calibration = null;
@@ -138,7 +145,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         f.Rig.DefaultTickMs = 0;
         long start = f.Rig.NowNs;
         var wall = Stopwatch.StartNew(); double nextPicture = 0;
-        async Task PumpUntil(Func<bool> done, double seconds)
+        async Task PumpUntil(Func<bool> done, double seconds, bool sendPictures = true)
         {
             double until = wall.Elapsed.TotalSeconds + seconds;
             while (!done() && wall.Elapsed.TotalSeconds < until)
@@ -147,7 +154,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
                 var stream = f.Rig.Robot.Animations.Scheduler.Stream;
                 f.Rig.Data(new AnimationState { NumAudioFramesPlayed = stream.FramesStreamed, NumAnimBytesPlayed = stream.BytesStreamed });
                 f.Motors(RobotStatusFlag.IsBodyAccMode);
-                if (wall.Elapsed.TotalMilliseconds >= nextPicture)
+                if (sendPictures && wall.Elapsed.TotalMilliseconds >= nextPicture)
                 {
                     nextPicture = wall.Elapsed.TotalMilliseconds + 65;
                     byte[] pixels = Volatile.Read(ref stablePicture) ?? pictures[imageIndex % pictures.Count];
@@ -202,7 +209,9 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
                 await Task.Delay(10);
             }
         }
-        int teach = await client.Send("tools/call", new { name = "enroll-face", arguments = new { name = "Robin" } });
+        int teach = requests is null
+            ? await client.Send("tools/call", new { name = "enroll-face", arguments = new { name = originalName } })
+            : await client.Send("tools/call", requests[0]);
         await PumpUntil(() => !reports.IsEmpty, 100);
         output.WriteLine($"phase={behavior.Phase}; phases={string.Join(',', phases)}; faces={string.Join(',', vision.Recognizer.EnrolledFaces.Select(x => x.FaceID + ":" + x.Name))}; counter={vision.Recognizer.EnrollmentCount}; pictures={imageIndex}; audio={audioChunks}");
         foreach (string diagnostic in diagnostics) output.WriteLine(diagnostic);
@@ -212,7 +221,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         foreach (string entry in f.Rig.Log.Where(s => s.Contains("Face", StringComparison.Ordinal) || s.Contains("Enroll", StringComparison.Ordinal)).TakeLast(60)) output.WriteLine(entry);
         Assert.NotEmpty(reports);
         var completion = Assert.Single(reports);
-        Assert.Equal(0, completion.Result); Assert.True(completion.Id > 0); Assert.Equal("Robin", completion.Name);
+        Assert.Equal(0, completion.Result); Assert.True(completion.Id > 0); Assert.Equal(originalName, completion.Name);
         string ExpectedBody(string name, byte? result = null)
         {
             using var bytes = new MemoryStream(); using var writer = new BinaryWriter(bytes);
@@ -222,7 +231,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
             writer.Write(checked((byte)text.Length)); writer.Write(text);
             return Convert.ToHexString(bytes.ToArray());
         }
-        Assert.Equal(ExpectedBody("Robin", 0), Assert.Single(emissions, e => e.Tag == 0x56).Body);
+        Assert.Equal(ExpectedBody(originalName, 0), Assert.Single(emissions, e => e.Tag == 0x56).Body);
         // 5FE462..468: objective EnrolledFaceWithName=5, broadcast=true,
         // before 56. 7285FE -> tag8B; 71BEAE..B6 packs the four-byte enum.
         Assert.Single(emissions, e => e.Tag == 0x8B && e.Body == "05000000");
@@ -234,7 +243,10 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         Assert.False(taught.GetProperty("result").GetProperty("isError").GetBoolean());
         Assert.Equal("enrolled", taughtData.GetProperty("faceOperation").GetProperty("outcome").GetString());
         Assert.Equal(completion.Id, taughtData.GetProperty("faceOperation").GetProperty("faceId").GetInt32());
-        Assert.Equal("Robin", taughtData.GetProperty("faceOperation").GetProperty("name").GetString());
+        Assert.Equal(originalName, taughtData.GetProperty("faceOperation").GetProperty("name").GetString());
+        Assert.Null(f.Runtime.MeetCozmoAdmission);
+        var afterTeach = (await client.Tool("get_state", new { })).GetProperty("result").GetProperty("structuredContent");
+        Assert.True(afterTeach.GetProperty("freeplay").GetProperty("active").GetBoolean()); // Hub G2E 0x92.
         Assert.Contains(3, phases); Assert.Contains(4, phases); Assert.True(audioChunks > 0);
         // The native say-name music reached the platform. The MCP command's
         // app exit then supplies the bank's Stop event with its 500 ms fade.
@@ -250,49 +262,63 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         // actual pixels until that observation arrives. This 30-second guard
         // is harness liveness, not a claimed engine report-order deadline.
         int beforePostEnrollmentObservation = seenFaces.Count;
-        await PumpUntil(() => seenFaces.Skip(beforePostEnrollmentObservation).Any(face => face.FaceId == completion.Id && face.Name == "Robin"), 30);
+        await PumpUntil(() => seenFaces.Skip(beforePostEnrollmentObservation).Any(face => face.FaceId == completion.Id && face.Name == originalName), 30);
         output.WriteLine("post-enroll seen names=" + string.Join(',', seenFaces.Select(face => face.Name).Distinct()));
-        Assert.Contains(seenFaces.Skip(beforePostEnrollmentObservation), face => face.FaceId == completion.Id && face.Name == "Robin");
+        Assert.Contains(seenFaces.Skip(beforePostEnrollmentObservation), face => face.FaceId == completion.Id && face.Name == originalName);
         Assert.True(Assert.Single(emissions, e => e.Tag == 0x56).NvIdle);
         Assert.Contains(emissions, e => e.Tag == 0x47);
         Assert.DoesNotContain(missing, line => line.Contains("M14-006", StringComparison.Ordinal));
-        Assert.Equal("Robin", Assert.Single(vision.Recognizer.EnrolledFaces).Name);
+        Assert.Equal(originalName, Assert.Single(vision.Recognizer.EnrolledFaces).Name);
         if (musicWindow)
         {
             Assert.Empty(faults);
             Assert.DoesNotContain(missing, line => line.Contains("M1-064", StringComparison.Ordinal));
             return;
         }
+        async Task<JsonElement> KnownFaces() => (await client.Tool("get_state", new { }))
+            .GetProperty("result").GetProperty("structuredContent").GetProperty("knownFaces");
         var renamed = new ConcurrentQueue<FaceRenamedReport>();
         f.Rig.Engine.FaceRenamed += renamed.Enqueue;
-        int rename = await client.Send("tools/call", new { name = "rename-face", arguments = new { faceId = completion.Id, oldName = "Robin", newName = "Riley" } });
+        // The recorded album used ID 4. Replay against this fixture's newly allocated ID.
+        int rename = await client.Send("tools/call", new { name = "rename-face",
+            arguments = new { faceId = completion.Id, oldName = originalName, newName = updatedName } });
         await PumpUntil(() => !renamed.IsEmpty, 10);
-        Assert.Equal(new FaceRenamedReport(completion.Id, "Riley"), Assert.Single(renamed));
+        Assert.Equal(new FaceRenamedReport(completion.Id, updatedName), Assert.Single(renamed));
         var renamedReply = await client.Receive(rename);
         output.WriteLine("rename=" + renamedReply.GetProperty("result").GetProperty("structuredContent").GetProperty("report").GetRawText());
         var renameData = renamedReply.GetProperty("result").GetProperty("structuredContent");
         Assert.Equal("renamed", renameData.GetProperty("faceOperation").GetProperty("outcome").GetString());
-        Assert.Equal("Riley", renameData.GetProperty("faceOperation").GetProperty("name").GetString());
+        Assert.Equal(updatedName, renameData.GetProperty("faceOperation").GetProperty("name").GetString());
         Assert.False(Assert.Single(emissions, e => e.Tag == 0x1D).NvIdle);
-        Assert.Equal(ExpectedBody("Riley"), Assert.Single(emissions, e => e.Tag == 0x1D).Body);
-        await PumpUntil(() => seenFaces.Any(face => face.FaceId == completion.Id && face.Name == "Riley"), 30);
-        Assert.Contains(seenFaces, face => face.FaceId == completion.Id && face.Name == "Riley");
+        Assert.Equal(ExpectedBody(updatedName), Assert.Single(emissions, e => e.Tag == 0x1D).Body);
+        var renamedState = await KnownFaces();
+        var renamedFace = Assert.Single(renamedState.EnumerateArray(), f => f.GetProperty("faceId").GetInt32() == completion.Id);
+        Assert.Equal(updatedName, renamedFace.GetProperty("name").GetString());
+        Assert.True(renamedFace.GetProperty("enrolled").GetBoolean());
+        await PumpUntil(() => seenFaces.Any(face => face.FaceId == completion.Id && face.Name == updatedName), 30);
+        Assert.Contains(seenFaces, face => face.FaceId == completion.Id && face.Name == updatedName);
         // E2G 0x1D acknowledges the mutation, independently of Meet's
         // response-speech admission. An existing reaction can retain the turn
         // (MeetCozmoAdmissionTests); do not invent a 30-second speech deadline.
         var erased = new ConcurrentQueue<FaceErasedReport>();
         f.Rig.Engine.FaceErased += erased.Enqueue;
         int erase = await client.Send("tools/call", new { name = "erase-face", arguments = new { faceId = completion.Id } });
-        await PumpUntil(() => !erased.IsEmpty, 10);
+        // Session 5 F4: read state after the erase report before a fresh observation can replace the cached name.
+        await PumpUntil(() => !erased.IsEmpty, 10, sendPictures: false);
         Assert.Equal(completion.Id, Assert.Single(erased).Id);
         var erasedReply = await client.Receive(erase);
         output.WriteLine("erase=" + erasedReply.GetProperty("result").GetProperty("structuredContent").GetProperty("report").GetRawText());
         var eraseData = erasedReply.GetProperty("result").GetProperty("structuredContent");
         Assert.Equal("erased", eraseData.GetProperty("faceOperation").GetProperty("outcome").GetString());
-        Assert.Equal("Riley", eraseData.GetProperty("faceOperation").GetProperty("lastKnownName").GetString());
+        Assert.Equal(updatedName, eraseData.GetProperty("faceOperation").GetProperty("lastKnownName").GetString());
         Assert.Equal("", eraseData.GetProperty("report").GetProperty("name").GetString());
         Assert.False(Assert.Single(emissions, e => e.Tag == 0x57).NvIdle);
         Assert.Equal(ExpectedBody(""), Assert.Single(emissions, e => e.Tag == 0x57).Body);
+        Assert.Contains(f.M.Vision.Faces.Faces, face => face.Id == completion.Id && face.Name == updatedName);
+        var erasedState = await KnownFaces();
+        Assert.DoesNotContain(erasedState.EnumerateArray(), face =>
+            face.GetProperty("faceId").GetInt32() == completion.Id &&
+            (face.GetProperty("enrolled").GetBoolean() || !string.IsNullOrEmpty(face.GetProperty("name").GetString())));
         Assert.True(emissions.FindIndex(e => e.Tag == 0x56) < emissions.FindIndex(e => e.Tag == 0x1D));
         Assert.True(emissions.FindIndex(e => e.Tag == 0x1D) < emissions.FindIndex(e => e.Tag == 0x57));
         await PumpUntil(() => f.Rig.Engine.NvStorage!.IsIdle, 10);
@@ -358,5 +384,32 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         { lock (gate) { var result = done.ToArray(); done.Clear(); return result; } }
         public void Dispose()
         { lock (gate) { if (disposed) return; disposed = true; timer.Dispose(); ready.Dispose(); } }
+    }
+
+    private static JsonElement[] ReadSessionFiveFaceRequests(string bundle)
+    {
+        var requests = new List<JsonElement>();
+        // Replay the captured MCP requests with the established Nov 17 camera fixture.
+        // The Session 5 raw camera slices did not reacquire a face in this isolated rig.
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+        {
+            using var json = JsonDocument.Parse(line);
+            var row = json.RootElement;
+            double at = row.GetProperty("atMs").GetDouble();
+            if (at > 472000) break;
+            if (at < 431000 || row.GetProperty("kind").GetString() != "mcp-input" ||
+                row.GetProperty("method").GetString() != "tools/call") continue;
+            var call = row.GetProperty("params");
+            if (call.GetProperty("name").GetString() is "teach-face" or "rename-face" or "erase-face")
+                requests.Add(call.Clone());
+        }
+
+        Assert.Equal(new[] { "teach-face", "rename-face", "erase-face" },
+            requests.Select(call => call.GetProperty("name").GetString()));
+        Assert.Equal(requests[0].GetProperty("arguments").GetProperty("name").GetString(),
+            requests[1].GetProperty("arguments").GetProperty("oldName").GetString());
+        Assert.Equal(requests[1].GetProperty("arguments").GetProperty("faceId").GetInt32(),
+            requests[2].GetProperty("arguments").GetProperty("faceId").GetInt32());
+        return requests.ToArray();
     }
 }
