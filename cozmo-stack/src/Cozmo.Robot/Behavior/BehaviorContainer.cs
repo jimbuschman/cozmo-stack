@@ -355,6 +355,9 @@ public sealed class BehaviorFactory
         [BehaviorClass.ReactToUnexpectedMovement] = (ctx,json)=>new ReactToUnexpectedMovementBehavior(
             ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual manipulation owner"),
             ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        // 0x0059D132..0x0059D14C constructs the configured recipient later used by the CubeMoved strategy.
+        [BehaviorClass.ReactToCubeMoved] = (ctx, json) =>
+            new AcknowledgeCubeMovedBehavior(ctx.Vision!.Locator, ctx.Manipulation!, ctx.NativeRobot!),
         [BehaviorClass.ReactToReturnedToTreads] = (ctx,json)=>new ReactToReturnedToTreadsBehavior(ctx.Manipulation,ctx.NativeRobot,
             BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.InteractWithFaces] = (ctx,json)=>new NativeInteractWithFaces(ctx,json),
@@ -488,15 +491,24 @@ public sealed class BehaviorFactory
         if (cls == BehaviorClass.PlayAnimWithFace &&
             (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.VC_AlrightyResponse or
                 BehaviorID.VC_HowAreYouDoing_AllGood or BehaviorID.VC_HowAreYouDoing_Energy or
-                BehaviorID.VC_HowAreYouDoing_Play or BehaviorID.VC_HowAreYouDoing_Repair) ||
+                BehaviorID.VC_HowAreYouDoing_Play or BehaviorID.VC_HowAreYouDoing_Repair or
+                BehaviorID.FeedingPlayRequestAtFace or BehaviorID.FeedingPlayRequestAtFace_Severe) ||
              ctx.Manipulation is null || ctx.NativeRobot is null))
         {
-            SteppedBehavior.ReportMissing("PlayAnimWithFace 0x0059CE66 requires a supported voice configuration and the original Robot owners");
+            SteppedBehavior.ReportMissing("PlayAnimWithFace 0x0059CE66 requires a shipped configuration and the original Robot owners");
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.SparksLookInPlace || ctx.Manipulation is null || ctx.NativeRobot is null))
-        {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: only configured SparksLookInPlace with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if (cls == BehaviorClass.ReactToCubeMoved &&
+            (BehaviorConfigLoader.ExtractIdFromConfig(config) != BehaviorID.ReactToCubeMoved ||
+             ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("ReactToCubeMoved factory 0x0059D132 requires its shipped configuration and original owners");
+            status = BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
+        if(cls==BehaviorClass.ExploreLookAroundInPlace && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.SparksLookInPlace or BehaviorID.Hiking_LookInPlace360) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: requires configured SparksLookInPlace or Hiking_LookInPlace360 and actual Robot/manipulation owners");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("LookInPlaceMemoryMap factory: only configured Hiking_LookInPlaceForUnknown with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.PounceOnMotion && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Hiking_PounceOnMotion or BehaviorID.PounceOnMotion_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -598,7 +610,10 @@ public sealed class BehaviorFactory
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
             if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            if(stepped is NativeGuardDogBehavior or NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior)
+            // Init 0x005BCD16 and Resume 0x005BCFAC use the configured unlock ID and live manager spark ID.
+            if(stepped is NativeGuardDogBehavior or NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior or
+                NativeSparksLookInPlace or VisitInterestingEdgeBehavior or NativeRespondToRenameFace or
+                NativePutDownBlockBehavior or DriveOffChargerBehavior or AcknowledgeCubeMovedBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");

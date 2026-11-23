@@ -223,6 +223,105 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
         Assert.Contains("Wait", names[(stagedAt + 1)..scanAt]);
     }
 
+    [Fact]
+    public void ConfiguredScanUsesSelectionAndRemembersOnlyTheCompletedScanLocation()
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var scan = Assert.IsType<NativeSparksLookInPlace>(f.Runtime.Bound["Hiking_LookInPlace360"]);
+        var pump = new DeviceReplies(f);
+
+        Assert.True(scan.ParametersAvailable);
+        f.Robot.CarryingOwner!.SetCarrying(7);
+        Assert.False(scan.IsRunnable(f.Runtime.Context)); // vtable +0x28 at 0x005C1D76.
+        f.Robot.CarryingOwner.UnsetCarrying();
+        Assert.True(scan.IsRunnable(f.Runtime.Context));
+
+        // Keep the shipped random draws but make their timeline reproducible.
+        f.Rig.Engine.ContextRandom.SetSeed(11);
+        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.Hiking_LookInPlace360, 1);
+        pump.Until(() => ReferenceEquals(manager.Current, scan));
+        pump.Until(() => scan.NativeState == 2);
+        var bodyPause = Assert.IsType<TriggerLiftSafeAnimationAction>(scan.OwnedRunner);
+        Assert.Equal(AnimationTrigger.LookInPlaceForFacesBodyPause, bodyPause.Request.Trigger);
+        pump.Until(() => scan.NativeState == 3);
+        Assert.IsType<NativePanTiltRunner>(scan.OwnedRunner);
+        pump.Until(() => scan.NativeState == 4);
+        var headPause = Assert.IsType<TriggerLiftSafeAnimationAction>(scan.OwnedRunner);
+        Assert.Equal(AnimationTrigger.LookInPlaceForFacesHeadMovePause, headPause.Request.Trigger);
+        pump.Until(() => scan.OwnedRunner is NativePanTiltRunner);
+        Assert.Equal(4, scan.NativeState);
+        pump.Until(() => scan.OwnedRunner is TriggerLiftSafeAnimationAction && !ReferenceEquals(headPause, scan.OwnedRunner));
+        Assert.Equal(4, scan.NativeState); // The shipped minimum is two pause/turn pairs.
+        pump.Until(() => scan.NativeState == 5);
+        Assert.IsType<NativePanTiltRunner>(scan.OwnedRunner);
+        pump.Until(() => manager.Current?.Id == "Wait", timeoutSeconds: 180);
+
+        Assert.True(scan.SearchIterations > 1);
+        Assert.False(scan.IsRunnable(f.Runtime.Context));
+        f.Yaw = 0; // Align the live frame so the 300 mm boundary is exact in f32.
+        f.X = 299;
+        f.Motors();
+        Assert.False(scan.IsRunnable(f.Runtime.Context));
+        f.X = 300;
+        f.Motors();
+        Assert.True(scan.IsRunnable(f.Runtime.Context));
+    }
+
+    [Theory]
+    [InlineData(BehaviorID.FeedingPlayRequestAtFace, AnimationTrigger.NeedsMildLowEnergyRequest)]
+    [InlineData(BehaviorID.FeedingPlayRequestAtFace_Severe, AnimationTrigger.NeedsSevereLowEnergyRequest)]
+    public void ConfiguredFeedingRequestTurnsToFaceBeforeItsShippedAnimation(BehaviorID id, AnimationTrigger trigger)
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var request = Assert.IsType<PlayAnimBehavior>(f.Runtime.Bound[id.ToString()]);
+        var pump = new DeviceReplies(f);
+        var priorTransition = manager.DasTransition;
+        IActionRunner? initial = null;
+        manager.DasTransition = next =>
+        {
+            if (ReferenceEquals(next, request)) initial = request.OwnedRunner;
+            priorTransition?.Invoke(next);
+        };
+
+        f.Rig.Robot.ExecuteBehaviorById((byte)id, 1);
+        pump.Until(() => ReferenceEquals(manager.Current, request));
+        var turn = Assert.IsType<NativeLastFaceRunner>(initial);
+        Assert.Equal(0, turn.RequestedId);
+        Assert.Equal(Radians.Pi, turn.MaximumTurn);
+        Assert.False(turn.SayName);
+        pump.Until(() => request.OwnedRunner is TriggerLiftSafeAnimationAction);
+        var clip = Assert.IsType<TriggerLiftSafeAnimationAction>(request.OwnedRunner);
+        Assert.Equal(trigger, clip.Request.Trigger);
+        pump.Until(() => manager.Current?.Id == "Wait");
+        AssertNamedClip(f, clip, trigger);
+    }
+
+    [Fact]
+    public void ConfiguredSparkGateInputsAndCubeMovedReactionShareTheRobotOwners()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        string[] ids = ["SparksLookInPlace", "Hiking_VisitInterestingEdge", "RespondToRenameFace",
+            "SparksPutDownBlock", "Hiking_DriveOffCharger"];
+        Assert.Equal(SteppedBehavior.NoUnlockId, manager.ActiveSparkId);
+        foreach (string id in ids)
+        {
+            var behavior = Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[id]);
+            Assert.Equal(SteppedBehavior.NoUnlockId, behavior.UnlockIdentifier!());
+            Assert.Equal(SteppedBehavior.NoUnlockId, behavior.ActiveSparkIdentifier!());
+        }
+        manager.SetNativeRequestedSpark(13, 0);
+        manager.SwitchToNativeRequestedSpark();
+        foreach (string id in ids)
+            Assert.Equal(13, ((SteppedBehavior)f.Runtime.Bound[id]).ActiveSparkIdentifier!());
+
+        var moved = Assert.Single(manager.Reactions, entry => entry.Strategy.Trigger == ReactionTrigger.CubeMoved);
+        Assert.Same(f.Runtime.Bound["ReactToCubeMoved"], moved.Behavior);
+        Assert.Same(f.Runtime.Container.Behaviors[BehaviorID.ReactToCubeMoved], moved.Behavior);
+    }
+
     private static void ReplayReturnToTreads(Fixture f, string bundle)
     {
         var states = new List<(double At, RobotState State)>();
@@ -303,9 +402,9 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
         internal bool Started(TriggerAnimationAction action) => action.HostAnimationTag != 0 && starts.Contains(action.HostAnimationTag);
         internal bool Ended(TriggerAnimationAction action) => action.HostAnimationTag != 0 && ends.Contains(action.HostAnimationTag);
 
-        internal void Until(Func<bool> condition)
+        internal void Until(Func<bool> condition, double timeoutSeconds = 60)
         {
-            double deadline = f.Rig.Engine.Timer.Seconds + 60;
+            double deadline = f.Rig.Engine.Timer.Seconds + timeoutSeconds;
             while (!condition() && f.Rig.Engine.Timer.Seconds < deadline)
             {
                 f.AnswerInFlightNv();
