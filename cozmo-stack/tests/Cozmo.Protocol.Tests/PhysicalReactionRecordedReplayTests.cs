@@ -22,6 +22,54 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         public override bool CanInterrupt()=>false;
         public override uint CheckIfDone()=>EngineActionResult.Running;
     }
+    [Fact]
+    public void SessionFiveSlopeReplayUsesTheFirmwarePitchAndRawGyro()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION5_SLOPE_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        const double from = 422850, to = 569870; // Nov 23 part 2, 15:19:44–15:22:11 UTC.
+        var packets = RecordedRobotInput.ReadInbound(bundle, at => at >= from, to, [0xF0], discardRetries: true)
+            .Select(row => (row.At, State: Assert.IsType<RobotState>(row.Message))).DistinctBy(row => row.State.Timestamp).ToArray();
+        Assert.Equal(4925, packets.Length);
+
+        using var f = new Fixture(sourceNvEmpty: true, keepNeedsFull: true, bodyHwVersion: 4);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        f.Rig.Tick(4000); // Warm-up exceeds both of the strategy's initialization windows.
+        manager.Activity = null;
+        manager.HostReactionChecksEnabled = false; // Probe the configured predicate exactly once per packet.
+        var strategy = Assert.IsType<PlacedOnSlopeStrategy>(Assert.Single(manager.Reactions,
+            reaction => reaction.Strategy.Trigger == ReactionTrigger.RobotPlacedOnSlope).Strategy);
+
+        // Raw F0 lines 67958 and 67961. The first zero arrives while status is
+        // still 0x310. The later 0x311 is not the writer of the zero pitch.
+        var lastTilt = packets.Single(row => row.State.Timestamp == 570240).State;
+        var firstZero = packets.Single(row => row.State.Timestamp == 570270).State;
+        Assert.InRange(lastTilt.Pose.Pitch, .21f, .23f);
+        Assert.Equal(0u, BitConverter.SingleToUInt32Bits(firstZero.Pose.Pitch));
+        Assert.Equal(0x310u, lastTilt.Status);
+        Assert.Equal(0x310u, firstZero.Status);
+        Assert.Contains(packets, row => row.State.Has(RobotStatusFlag.IsPickedUp));
+
+        double previous = from;
+        foreach (var (at, state) in packets)
+        {
+            state.PoseOriginId = f.Robot.CurrentOriginId;
+            state.PoseFrameId = f.Robot.PoseFrameId;
+            f.Rig.Data(state);
+            f.Rig.Tick(at - previous);
+            previous = at;
+
+            // UFRS passes the three uncorrected gyro floats and makes a
+            // Radians from the pose pitch before the strategy reads those fields.
+            Assert.Equal(new Cozmo.Robot.Vector3(state.Gyro.X, state.Gyro.Y, state.Gyro.Z),
+                f.Rig.Robot.Sensors.OffTreads.RawGyro);
+            Assert.Equal(BitConverter.SingleToUInt32Bits(state.Pose.Pitch),
+                BitConverter.SingleToUInt32Bits(f.Rig.Robot.Sensors.OffTreads.PitchRad));
+            Assert.False(strategy.WantsToRun(f.Rig.Robot, f.Rig.Engine.Timer.SecondsF));
+        }
+    }
+
     [Theory]
     [InlineData("slope",554800,569500)]
     [InlineData("impact-low",67000,76000)]

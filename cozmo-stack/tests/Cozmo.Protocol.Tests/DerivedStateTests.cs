@@ -846,6 +846,10 @@ public class DerivedStateTests
         rig.Stream(1, pitch: 0.5f, flags: RobotStatusFlag.IsPickedUp);
         Assert.False(s.ShouldTrigger(ctx, null, 4.3));
         Assert.True(s.ShouldTrigger(ctx, null, 4.5));
+        // 0x00512978 constructs Radians before storing Robot+0x304.
+        rig.Stream(1, pitch: Radians.TwoPi + 0.5f, flags: RobotStatusFlag.IsPickedUp);
+        Assert.Equal(0.5f, rig.Robot.Sensors.OffTreads.PitchRad);
+        Assert.True(s.ShouldTrigger(ctx, null, 4.6));
     }
 
     [Fact]

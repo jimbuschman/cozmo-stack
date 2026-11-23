@@ -104,7 +104,7 @@ public sealed class OffTreadsClassifier
     public float FilteredAccelMagnitude { get; private set; }
     /// <summary>Robot+0x380..+0x388, 0.1·a + 0.9·old per axis (RS8); 0 from the constructor (gap1 5a).</summary>
     public Vector3 FilteredAccel { get; private set; }
-    /// <summary>Robot+0x304, the pose pitch of the last state (RS4).</summary>
+    /// <summary>Robot+0x304, the Radians value constructed from the last RobotState pose pitch (0x00512974..0x00512982).</summary>
     public float PitchRad { get; private set; }
 
     // ---------------------------------------------------------------- classifier state (A16: only CUTS writes it)
@@ -183,7 +183,7 @@ public sealed class OffTreadsClassifier
     public bool Update(RobotState state, uint nowMs)
     {
         Updates++;
-        PitchRad = state.Pose.Pitch;
+        PitchRad = new Radians(state.Pose.Pitch).Value;
 
         // RS8/RS9 (0x005129A4..0x00512A6E): raw accel and gyro, |a|, then the two filters.
         var a = state.Accel;

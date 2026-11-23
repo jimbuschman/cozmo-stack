@@ -251,13 +251,18 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
     public bool WantsToRun(CozmoRobot robot, double nowSec)
     {
         var sensors = robot.Sensors;
-        var gyro = sensors.OffTreads.RawGyro;                              // M10-013: 0 before the first state
-        float maxGyro = MathF.Max(MathF.Abs(gyro.X), MathF.Max(MathF.Abs(gyro.Y), MathF.Abs(gyro.Z)));
+        // 0x005129B0..0x005129BE copies all three gyro values from the packet.
+        // 0x00614594..0x006145C6 compares in axis order with a strict less-than.
+        var gyro = sensors.OffTreads.RawGyro;
+        float maxGyro = MathF.Abs(gyro.X);
+        float y = MathF.Abs(gyro.Y), z = MathF.Abs(gyro.Z);
+        if (maxGyro < y) maxGyro = y;
+        if (maxGyro < z) maxGyro = z;
         if (maxGyro > GyroQuietRadps) _lastGyroActiveSec = nowSec;
         bool pickedUp = sensors.PickedUp;
         if (pickedUp) _lastPickedUpSec = nowSec;
 
-        float pitchDeg = sensors.OffTreads.PitchRad * BitConverter.UInt32BitsToSingle(0x42652EE1); // 6145FC calls Radians::getDegrees.
+        float pitchDeg = sensors.OffTreads.PitchRad * BitConverter.UInt32BitsToSingle(0x42652EE1); // 0x0051237E copies Robot+0x304; 0x006145FC reads degrees.
         if (!(pitchDeg > MinPitchDeg && pitchDeg < MaxPitchDeg)) return false;
         if (!(nowSec - _lastGyroActiveSec > QuietForSec)) return false;
         if (!(pickedUp || nowSec - _lastPickedUpSec < PutDownWithinSec)) return false;
