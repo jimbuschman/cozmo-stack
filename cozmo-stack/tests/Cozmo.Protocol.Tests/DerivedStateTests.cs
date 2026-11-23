@@ -1302,7 +1302,7 @@ public class DerivedStateTests
         rig.Stream(1);
         Assert.False(strategy.HasLocator);
         Assert.Single(strategy.Tracker.Entries);
-        Assert.True(strategy.Tracker.Entries[0].Moving);   // ObjectMoved marks it moving (gap1 8), located or not
+        Assert.False(strategy.Tracker.Entries[0].Moving);  // 0x0060C344..0x0060C366 clears Moving without a located object.
         // STBI drops an unlocated record and cannot fire; the behaviour never gets a target.
         Assert.False(strategy.ShouldTrigger(ctx, null, 0, behavior));
         Assert.Empty(strategy.Tracker.Entries);

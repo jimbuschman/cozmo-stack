@@ -3,6 +3,7 @@ using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
+using System.Text.Json;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
 
@@ -44,11 +45,11 @@ public sealed class PutDownBlockNativeTests
             Rig.CameraGrayFrame(id,stamp,new byte[320*240]);
             M.Vision.WaitForProcessorIdle();Rig.Engine.VisionUpdateAllResultsFailed!();Rig.Tick();
         }
-        internal ObservableObject Carry()
+        internal ObservableObject Carry(uint id = 7, ObjectType type = ObjectType.Block_LIGHTCUBE1)
         {
-            var obj=new ObservableObject(7,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+            var obj=new ObservableObject(id,type,CubeGeometry.MarkersFor(type))
             {Pose=new Pose3d(Rotation3d.Identity,new Vec3(0,0,22),parent:Robot.LiftPose),OriginId=Robot.CurrentOriginId,PoseState=PoseState.Known,NativeCarryingTree=true};
-            M.World.AddLocatedObject(obj);using var relative=new Pose3d("");M.Docking.Carrying.AttachToLift(7,obj.Markers[0],relative,null,null);return obj;
+            M.World.AddLocatedObject(obj);using var relative=new Pose3d("");M.Docking.Carrying.AttachToLift(id,obj.Markers[0],relative,null,null);return obj;
         }
         internal FaceEntry Face(int id,uint time,Vec3 position,bool named=false)
         {
@@ -70,6 +71,113 @@ public sealed class PutDownBlockNativeTests
         }
         public void Dispose()=>Rig.Dispose();
     }
+
+    [Fact]
+    public async Task SessionFiveCubeReactionReplayAllowsTheSightingToInterruptPutDownBlock()
+    {
+        string? bundle = Environment.GetEnvironmentVariable(ReactionLockMcpTests.SessionFiveCubeCapture);
+        if (string.IsNullOrEmpty(bundle)) return;
+        var reports = new Dictionary<string, byte[]>();
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+        {
+            using var doc = JsonDocument.Parse(line);
+            var row = doc.RootElement;
+            double at = row.GetProperty("atMs").GetDouble();
+            if (at == 24988.9008) // cube sighting immediately before the recorded 15:13:06 AcknowledgeObject
+                reports.Add("prior", Convert.FromHexString(row.GetProperty("bodyHex").GetString()!));
+            if (at < ReactionLockMcpTests.SessionFivePutDownSighting) continue;
+            if (at > ReactionLockMcpTests.SessionFivePutDownSighting + 0.2) break;
+            if (row.GetProperty("kind").GetString() != "engine-to-game") continue;
+            string tag = row.GetProperty("tag").GetString()!;
+            if (tag is "0x44" or "0x5A" or "0x88")
+                reports.Add(tag, Convert.FromHexString(row.GetProperty("bodyHex").GetString()!));
+        }
+        var sight = new CladReader(reports["0x44"]);
+        uint timestamp = sight.U32(), family = sight.U32(), type = sight.U32(), id = sight.U32();
+        Assert.Equal(72225u, timestamp);
+        Assert.Equal(1u, id);
+        for (int i = 0; i < 4; i++) sight.F32();
+        var position = new Vec3(sight.F32(), sight.F32(), sight.F32());
+        var rotation = new Rotation3d(sight.F32(), sight.F32(), sight.F32(), sight.F32());
+        var prior = new CladReader(reports["prior"]);
+        uint priorTimestamp = prior.U32();
+        Assert.Equal(23765u, priorTimestamp);
+        for (int i = 0; i < 7; i++) prior.U32(); // family, type, ID and four bounding-box floats
+        var priorPosition = new Vec3(prior.F32(), prior.F32(), prior.F32());
+        var priorRotation = new Rotation3d(prior.F32(), prior.F32(), prior.F32(), prior.F32());
+        var cancelled = new CladReader(reports["0x5A"]);
+        Assert.Equal(3000113u, cancelled.U32());
+        Assert.Equal(-2, cancelled.I32());
+        uint capturedResult = cancelled.U32();
+        Assert.Equal(EngineActionResult.Cancelled, capturedResult);
+        Assert.Equal(new byte[] { 0x16, 8 }, reports["0x88"]);
+
+        using var f = new Fixture();
+        f.InstallNvCalibration();
+        f.Rig.Robot.Animations.LoadFrom(Resources());
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.HostReactionChecksEnabled = false;
+        using var selection = new SelectionUnitScope(manager);
+        var cube = f.Carry(id, (ObjectType)type);
+        Assert.True(await manager.StartAsync(f.Behavior.Id, f.Rig.Engine.Timer.Seconds));
+        var initial = Assert.IsType<CompoundActionSequential>(f.Robot.ActionList.GetCurrentAction());
+        Assert.Collection(initial.Children, c => Assert.IsType<DriveStraightAction>(c),
+            c => Assert.IsAssignableFrom<Cozmo.Robot.Animation.TriggerAnimationAction>(c));
+        var backup = initial.Children[0];
+        var animation = initial.Children[1];
+        Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated));
+        Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, f.Behavior.Id));
+        var paths = new HashSet<ushort>();
+        var driveAnimations = new HashSet<byte>();
+        for (int tick = 0; tick < 40 && animation.State != EngineActionResult.Running; tick++)
+        {
+            f.Motors();
+            foreach (var path in f.Rig.SentSince(0).OfType<ExecutePath>().Where(p => paths.Add(p.EventId)))
+            {
+                f.Rig.Data(new PathFollowingEvent { EventId = path.EventId, EventType = 0 });
+                f.Rig.Tick();
+                f.Rig.Data(new PathFollowingEvent { EventId = path.EventId, EventType = 2 });
+                f.Rig.Tick();
+            }
+            byte animationTag = f.Rig.Robot.Animations.CurrentTag;
+            if (backup.State == EngineActionResult.Running && animationTag != 0 && driveAnimations.Add(animationTag))
+            {
+                f.Rig.Data(new AnimationStarted { AnimId = animationTag });
+                f.Rig.Data(new AnimationEnded { AnimId = animationTag });
+                f.Rig.Tick();
+            }
+        }
+        Assert.True(animation.State == EngineActionResult.Running,
+            $"PutDown compound {initial.State:X8}, backup {backup.State:X8}, " +
+            $"animation {animation.State:X8}, selected {manager.Current?.Id}.");
+
+        // 0x005C7FE2 passes the empty table at 0x00C68B20. The interrupted action is
+        // the drive/animation compound (0x005C8034..0x005C8076). It has no ground-place child.
+        // The captured ObjectPoseConfirmer.SeeingCarriedObject writes the Dirty pose
+        // (0x00505F56) then calls UnSetCarryObject for that ID (0x00505FBC).
+        // 0x006113F2..0x0061141E gates on carried ID, active dock, charger and desired targets.
+        using var pose = new Pose3d(rotation, position, parent: f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
+        cube.Pose = pose;
+        cube.PoseState = PoseState.Dirty;
+        f.M.Docking.Carrying.UnSetCarryObject(id);
+        Assert.False(f.M.Docking.Carrying.IsCarryingObject);
+        cube.LastObservedTimestamp = timestamp;
+        f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp = timestamp;
+        f.Rig.Engine.AnimationMessages.Deliver(0x44, true, new NativeObservedObject(timestamp, family, type, id));
+        var strategy = manager.Reactions.Select(r => r.Strategy).OfType<ObjectPositionUpdatedStrategy>().Single();
+        using var priorPose = new Pose3d(priorRotation, priorPosition, parent: f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId));
+        strategy.RecordObservation(id, priorPose, priorTimestamp, enabled: false);
+        Assert.False(strategy.ShouldReactToTarget(id));
+        strategy.OnObserved(new ObjectObservation(cube, timestamp, [], cube.Pose, cube.PoseState, true, 0));
+        Assert.True(strategy.ShouldReactToTarget(id)); // source delta exceeds the 80 mm / 45 degree pose gate.
+        manager.HostReactionChecksEnabled = true;
+        var reaction = manager.CheckReactions(f.Rig.Engine.Timer.Seconds);
+        Assert.Equal(ReactionTrigger.ObjectPositionUpdated, reaction?.Trigger);
+        Assert.IsType<AcknowledgeObjectBehavior>(manager.Current);
+        Assert.Equal(capturedResult, initial.State);
+        Assert.True(initial.DestructionObserved);
+    }
+
     [Fact]
     public void ConfiguredFactoryUsesOneSignedContextDrawAndRealOwnedSequence()
     {

@@ -924,7 +924,7 @@ public static class ShippedBehaviors
                     : new AcknowledgeCubeMovedBehavior(cubes);
             if (behavior is not null)
                 built.Add((behavior.Id, ReactionTrigger.CubeMoved, behavior,
-                           new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World)));
+                           new CubeMovedReactionStrategy(robot, behavior, cubes, vision, nativeOwner)));
         }
         if (vision is not null)
         {
