@@ -58,36 +58,49 @@ public sealed class CubeMotionTracker
     /// <summary>An object closer than this to the robot is ignored: 50 mm (0x42480000 at 0x0060BE26).</summary>
     public const float IgnoreAreaMm = 50f;
 
-    private readonly Dictionary<uint, Entry> _entries = new();
+    // GetReactionaryIterator (0x0060C280..0x0060C306) appends after all survivors.
+    private readonly List<Entry> _entries = [];
     private readonly object _gate = new();
 
-    public IReadOnlyList<Entry> Entries { get { lock (_gate) return _entries.Values.ToList(); } }
+    public IReadOnlyList<Entry> Entries { get { lock (_gate) return _entries.ToArray(); } }
 
     /// <summary><c>GetReactionaryIterator</c>: the record for an object, created on first sight.</summary>
     public Entry Track(uint objectId)
     {
         lock (_gate)
         {
-            if (!_entries.TryGetValue(objectId, out var e)) _entries[objectId] = e = new Entry { ObjectId = objectId };
-            return e;
+            foreach (var entry in _entries)
+                if (entry.ObjectId == objectId) return entry;
+            var added = new Entry { ObjectId = objectId };
+            _entries.Add(added);
+            return added;
         }
     }
 
-    public void Forget(uint objectId) { lock (_gate) _entries.Remove(objectId); }
+    public void Forget(uint objectId) { lock (_gate) _entries.RemoveAll(entry => entry.ObjectId == objectId); }
 
     // fidelity: M10-003
     /// <summary>
     /// ObjectMoved (0xF) → StartedMoving (gap1 8, 0x60C336..0x60C37C): if not moving, moving = 1, ts = msg.ts,
     /// axis = msg+0x14; if moving and the axis differs, changed = 1.
     /// </summary>
-    public void ObjectMoved(ObjectMoved m)
+    public void ObjectMoved(ObjectMoved m) => ObjectMoved(m, located: true);
+
+    internal void ObjectMoved(ObjectMoved m, bool located)
     {
         var e = Track(m.ObjectID);
         lock (_gate)
         {
+            // 0x0060C344..0x0060C366: a missing located object clears only Moving.
+            if (!located)
+            {
+                e.Moving = false;
+                return;
+            }
             if (e.Moving)
             {
                 if (m.AxisOfAccel != e.UpAxis) e.UpAxisChanged = true;
+                e.UpAxis = m.AxisOfAccel; // 0x0060C35E..0x0060C37A
                 return;
             }
             e.Moving = true;
@@ -106,7 +119,7 @@ public sealed class CubeMotionTracker
     public void ClearAll()
     {
         lock (_gate)
-            foreach (var e in _entries.Values) { e.UpAxisChanged = false; e.MovedTimestamp = 0; e.Moving = false; e.Observed = false; }
+            foreach (var e in _entries) { e.UpAxisChanged = false; e.MovedTimestamp = 0; e.Moving = false; e.Observed = false; }
     }
 
     /// <summary><c>ObjectObserved</c> (0x0060C314): seeing a located object clears its movement and marks it observed.</summary>
@@ -166,17 +179,30 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
     private readonly CozmoRobot _robot;
     private readonly ICubeLocator? _locator;
     private readonly AcknowledgeCubeMovedBehavior _behavior;
-    private readonly Cozmo.Robot.Vision.BlockWorld? _world;
+    private readonly BlockWorld? _world;
+    private readonly VisionSystem? _vision;
+    private readonly EngineRobot? _nativeOwner;
     private readonly IDisposable[] _movementSignals = [];
+    private readonly IDisposable? _observationSignal;
 
     /// <param name="world">The world model whose <c>ObjectObserved</c> is the engine's RobotObservedObject (tag 0x44).</param>
     public CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator? locator,
-                                     Cozmo.Robot.Vision.BlockWorld? world = null)
+                                     BlockWorld? world = null)
+        : this(robot, behavior, locator, world, null, null) { }
+
+    internal CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator locator,
+                                       VisionSystem? vision, EngineRobot? nativeOwner)
+        : this(robot, behavior, locator, vision?.World, vision, nativeOwner) { }
+
+    private CubeMovedReactionStrategy(CozmoRobot robot, AcknowledgeCubeMovedBehavior behavior, ICubeLocator? locator,
+                                      BlockWorld? world, VisionSystem? vision, EngineRobot? nativeOwner)
     {
         _robot = robot;
         _behavior = behavior;
         _locator = locator;
         _world = world;
+        _vision = vision;
+        _nativeOwner = vision is null ? null : nativeOwner;
         if (_world is null) robot.MessageInternal += OnMovementSignal;
         else
         {
@@ -187,9 +213,10 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
             [
                 messages.SubscribeMessage(0x0F, true, OnMovementSignal),
                 messages.SubscribeMessage(0x10, true, OnMovementSignal),
-                messages.SubscribeMessage(0x11, true, OnMovementSignal)
+                messages.SubscribeMessage(0x11, true, OnMovementSignal),
             ];
-            _world.ObjectObserved += OnWorldObserved;
+            if (_nativeOwner is null) _world.ObjectObserved += OnWorldObserved;
+            else _observationSignal = messages.SubscribeMessage(0x44, true, OnNativeObserved);
         }
     }
 
@@ -204,7 +231,9 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
     /// <summary>Whether a world model is attached. Without one nothing is located and the reaction cannot fire.</summary>
     public bool HasLocator => _locator is not null;
 
-    private bool Located(uint id) => _locator?.IsLocated(id) ?? false;
+    private bool Located(uint id) => _nativeOwner is null
+        ? _locator?.IsLocated(id) ?? false
+        : _world!.GetLocatedObjectByIdHelper(id) is not null;
     private bool Handling => IsReactionTriggerEnabled(ReactionTrigger.ObjectPositionUpdated);
 
     private void OnMovementSignal(object? message)
@@ -212,14 +241,22 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
         if (!Handling) return;
         switch (message)
         {
-            case ObjectMoved moved: Tracker.ObjectMoved(moved); break;
+            case ObjectMoved moved: Tracker.ObjectMoved(moved, Located(moved.ObjectID)); break;
             case ObjectStoppedMoving stopped: Tracker.ObjectStopped(stopped.ObjectID); break;
             case CubeUpAxisEvent axis: Tracker.ObjectUpAxisChanged(unchecked((uint)axis.ObjectID)); break;
             case ObjectUpAxisChanged axis: Tracker.ObjectUpAxisChanged(axis.ObjectID); break;
         }
     }
 
-    private void OnWorldObserved(Cozmo.Robot.Vision.ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
+    private void OnWorldObserved(ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
+
+    private void OnNativeObserved(object? message)
+    {
+        // Strategy forwards the local 0x44 to its tracker at 0x0060BEF6..0x0060BF0C.
+        // AcknowledgeCubeMoved also subscribes directly (0x006021E0..0x006021EE).
+        if (message is NativeObservedObject observation && ReferenceEquals(_robot.Engine.Robot, _nativeOwner))
+            ObjectObserved(observation.ObjectId);
+    }
 
     /// <summary>RobotObservedObject (0x44): if located, clear and observed = 1. The behaviour's own sighting handler runs as well.</summary>
     public void ObjectObserved(uint objectId)
@@ -230,19 +267,49 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        uint robotTs = _robot.State.Latest?.Timestamp ?? 0;
+        uint robotTs = _nativeOwner is null ? _robot.State.Latest?.Timestamp ?? 0 : _nativeOwner.StoredState?.Timestamp ?? 0;
         foreach (var e in Tracker.Entries)
         {
             bool located = Located(e.ObjectId);
             if (!located) { Tracker.Forget(e.ObjectId); continue; }
-            if (!CubeMotionTracker.OutsideIgnoreArea(_locator!.DistanceFromRobotMm(e.ObjectId))) continue;
+            if (!CubeMotionTracker.OutsideIgnoreArea(DistanceFromRobot(e.ObjectId))) continue;
             if (!Tracker.HasMovedLongEnough(e, located, robotTs) && !Tracker.UpAxisHasChanged(e, located)) continue;
-            if (_locator.IsVisibleFromCamera(e.ObjectId)) continue;
+            if (VisibleFromCamera(e.ObjectId)) continue;
             Tracker.Reset(e.ObjectId);
             _behavior.TargetObjectId = e.ObjectId;
             return rc.RunningOrRunnable(behavior);
         }
         return false;
+    }
+
+    private float? DistanceFromRobot(uint id)
+    {
+        if (_nativeOwner is null) return _locator!.DistanceFromRobotMm(id);
+        // 0x0060BE0E..0x0060BE22: ComputeDistanceBetween(object pose, live Robot::GetPose).
+        using var mutation = _world!.EnterPoseMutation();
+        var obj = _world.GetLocatedObjectByIdHelper(id);
+        float squared = 0;
+        return obj is not null && PlacementProducerGeometry.TryDistanceSquared(obj.NativePose, _nativeOwner.GetCheckedMainPose(), ref squared)
+            ? MathF.Sqrt(squared) : null;
+    }
+
+    private bool VisibleFromCamera(uint id)
+    {
+        if (_nativeOwner is null) return _locator!.IsVisibleFromCamera(id);
+        // 0x0060BCF4..0x0060BD08: outer camera, pi/4, min size 0, no behind test, zero pads.
+        // Robot::SetHeadAngle writes the current head pose into this camera at 0x005133EC..0x00513404.
+        using var mutation = _world!.EnterPoseMutation();
+        var obj = _world.GetLocatedObjectByIdHelper(id);
+        if (obj is null) return false;
+        using var pose = _nativeOwner.CopyCurrentCameraPose(_robot.Motion.ObservationHeadAngleRad);
+        var camera = _vision!.BindOuterCameraForVisibility(_nativeOwner, pose.Pose);
+        if (camera is null)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "ObservableObject.IsVisibleFrom.CameraNotCalibrated", "");
+            return false; // 0x008766CA..0x00876704
+        }
+        // 0x0087E4FC..0x0087E50A transforms each marker through its parent chain to the camera.
+        return obj.Markers.Count != 0 && obj.IsVisibleFromWithReason(camera, MathF.PI / 4f) == NotVisibleReason.IsVisible;
     }
 
     protected override void SetupForceTriggerBehavior(ReactionContext rc, IBehavior behavior)
@@ -274,7 +341,8 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
         if (_world is null) _robot.MessageInternal -= OnMovementSignal;
         else
         {
-            _world.ObjectObserved -= OnWorldObserved;
+            if (_nativeOwner is null) _world.ObjectObserved -= OnWorldObserved;
+            _observationSignal?.Dispose();
             foreach (var signal in _movementSignals) signal.Dispose();
         }
     }
@@ -319,7 +387,10 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     public Phase CurrentPhase { get; private set; }
 
     protected override bool IsRunnableInternal(BehaviorContext context) => TargetObjectId is not null;
-    // BehaviorAcknowledgeCubeMoved vptr+0x28 (0x0102B768) returns true at 0x006027F8.
+    // BehaviorAcknowledgeCubeMoved vptr+0x20/+0x24/+0x28 (0x0102B760..68)
+    // resolve to 0x005BF04C, 0x0059EC12 and 0x006027F8 respectively.
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+    protected override bool RunnableGate24(BehaviorContext context) => false;
     protected override bool RunnableGate28(BehaviorContext context) => true;
     protected override bool KeepsRunningWithoutAction => CurrentPhase == Phase.TurningToLastLocation || HasCurrentAction;
 
