@@ -293,8 +293,13 @@ class Session:
                 "SHORT-PLANNER-1 binds the safety dispatch at 0x00649FB6; this marker records the older build",
             "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt":
                 "0x0085C7C8 prints segments after AppendToPath",
-            **{f"MISSING: M13-033 PrintPlan {address} -> 0x00855E7C output remains unbuilt":
-                "0x00855E7C formats the plan for logging" for address in ("0x00500532", "0x0050058A")},
+            "MISSING: M13-033 LatticePlanner.PlanMismatch sError stream 0x005003D0 and its error side effects remain unported":
+                "0x005003D0 forwards the mismatch text to the DAS error logger via 0x0080D29C",
+            "MISSING: M13-033 RobotPositionError event/format at 0x004FFDCC..0x004FFE2A remains unported":
+                "0x004FFDE4 emits a DAS event before the existing plan clear and failure status",
+            **{f"MISSING: M13-033 PrintPlan{label} {address} -> 0x00855E7C output remains unbuilt":
+                "0x00855E7C formats the plan for debug logging" for label, address in
+                (("(total)", "0x0050048E"), ("(new)", "0x005004D8"), ("", "0x00500532"), ("", "0x0050058A"))},
             "MISSING: M8-007/M8-015 TracksLockedBecause Warning0x00540530: MovementComponent.WhoIsLocking "
             "native string recipient0x00540506 is not bound; no invented owner-description text":
                 "0x00540506 supplies warning text to 0x00540530; the existing TRACKS_LOCKED result is retained",
@@ -307,6 +312,11 @@ class Session:
         for index, line in enumerate(source(self.path / "stack-log.txt").splitlines(), 1):
             if line in resolved:
                 self.resolved_markers.append((index, line, resolved[line]))
+            elif re.fullmatch(
+                r"MISSING: M13-033 stdout: FaceAndApproachPlanner: deltaTheta of -?[0-9]+\.[0-9]{6} above threshold, doing backup!",
+                line,
+            ):
+                self.resolved_markers.append((index, line, "0x004F37A8 prints before the existing backup geometry"))
             elif MISSING.search(line):
                 occurrences = self.timed_missing[line]
                 occurrence = counts[line]
