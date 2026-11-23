@@ -145,10 +145,10 @@ public sealed class NativeRespondToPyramidBaseTests(ITestOutputHelper output)
     public void StopFromConstructorDiagnosticDoesNotAdmitStaleAction()
     {
         using var f=new Fixture(preloadAnimations:true,pumpAnimations:true);var owner=Owner(f);bool stopped=false;
-        void OnMissing(string text){if(stopped || !text.Contains("M8-021 trigger DAS"))return;stopped=true;owner.Stop(BehaviorStopReason.Interrupted);}
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=OnMissing;
+        void GroupResolved(EngineLogEntry entry){if(stopped || entry.Name != "GetResponseForAnimationTrigger.Found")return;stopped=true;owner.Stop(BehaviorStopReason.Interrupted);}
+        f.Rig.Engine.LogEntry+=GroupResolved;
         try {using var scope=new BehaviorScope();owner.StartAsync(f.Runtime.Context,scope,default).GetAwaiter().GetResult();}
-        finally {SteppedBehavior.MissingReported-=OnMissing;}
+        finally {f.Rig.Engine.LogEntry-=GroupResolved;}
         Assert.True(stopped);Assert.Null(owner.OwnedRunner);Assert.False(owner.EngineRunning);
     }
     [Fact]

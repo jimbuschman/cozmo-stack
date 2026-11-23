@@ -440,13 +440,13 @@ public sealed class CubeLiftWorkoutNativeTests
         f.Robot.CarryingOwner!.SetCarrying(7);
         using var firstScope=new BehaviorScope();using var secondScope=new BehaviorScope();
         IActionRunner? replacement=null;uint tag=0;bool entered=false;
-        void Missing(string message)
+        void GroupResolved(EngineLogEntry entry)
         {
-            if(entered||!message.Contains("M8-021 trigger DAS"))return;
+            if(entered||entry.Name != "GetResponseForAnimationTrigger.Found")return;
             entered=true;behavior.Stop(BehaviorStopReason.Interrupted);f.Robot.CarryingOwner.SetCarrying(8);
             Begin(f,behavior,secondScope);replacement=behavior.OwnedRunner;tag=behavior.CurrentRunnerTag;
         }
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
+        f.Rig.Engine.LogEntry+=GroupResolved;
         try
         {
             Begin(f,behavior,firstScope);
@@ -454,7 +454,7 @@ public sealed class CubeLiftWorkoutNativeTests
             Assert.Equal(tag,behavior.CurrentRunnerTag);Assert.Equal(8u,behavior.Target);
             behavior.Stop(BehaviorStopReason.Interrupted);
         }
-        finally{SteppedBehavior.MissingReported-=Missing;}
+        finally{f.Rig.Engine.LogEntry-=GroupResolved;}
     }
     [Fact]
     public void PickupHelperDiagnosticReentryRetiresOldHelperBeforeReplacementRun()
@@ -463,13 +463,13 @@ public sealed class CubeLiftWorkoutNativeTests
         Assert.True(f.Runtime.PickupTargets!.Refresh());
         using var firstScope=new BehaviorScope();using var secondScope=new BehaviorScope();
         IActionRunner? replacement=null;uint tag=0;bool entered=false;
-        void Missing(string message)
+        void GroupResolved(EngineLogEntry entry)
         {
-            if(entered||!message.Contains("M8-021 trigger DAS"))return;
+            if(entered||entry.Name != "GetResponseForAnimationTrigger.Found")return;
             entered=true;behavior.Stop(BehaviorStopReason.Interrupted);f.Robot.CarryingOwner!.SetCarrying(7);
             Begin(f,behavior,secondScope);replacement=behavior.OwnedRunner;tag=behavior.CurrentRunnerTag;
         }
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
+        f.Rig.Engine.LogEntry+=GroupResolved;
         try
         {
             Begin(f,behavior,firstScope);
@@ -477,7 +477,7 @@ public sealed class CubeLiftWorkoutNativeTests
             Assert.Equal(tag,behavior.CurrentRunnerTag);Assert.Equal(0,f.Runtime.AI.Helpers.StackCount);
             behavior.Stop(BehaviorStopReason.Interrupted);
         }
-        finally{SteppedBehavior.MissingReported-=Missing;}
+        finally{f.Rig.Engine.LogEntry-=GroupResolved;}
     }
     [Fact]
     public void StageDiagnosticReentryCannotOverwriteReplacementStageOrAction()

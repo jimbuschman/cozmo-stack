@@ -127,6 +127,30 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Same(node,f.Native.LiftPose.Node);Assert.NotEqual(original,f.Native.LiftPose.Transform);
         Assert.InRange(obj.Pose.Translation.Z,110.999,111.001);Assert.Equal(0,broadcasts);
     }
+    [Fact]
+    public void NativeCarriedTreeFollowsMainPoseWithoutReapplyingTheRawHistorySample()
+    {
+        using var f = new Fixture();
+        f.Rig.Data(f.Rig.MakeState(x: 30, origin: f.Native.CurrentOriginId, frame: f.Native.PoseFrameId));
+        f.Rig.Tick();
+        var cube = f.Add(7, new Vec3(170, 0, 22));
+        Assert.Equal(0u, f.M.Docking.SetObjectAsAttachedToLift(cube.ObjectId, cube.Markers[0].Code));
+        Assert.Same(f.Native.LiftPose.Node, cube.NativePose.Node!.Parent);
+        var origin = f.Native.GetNativeOrigin(f.Native.CurrentOriginId);
+        using var corrected = new Pose3d(Rotation3d.Identity, new Vec3(80, 0, 0), parent: origin);
+        f.Native.SetPose(corrected);
+        var carriedBefore = cube.Pose.Translation;
+        f.M.Docking.UpdateCarriedObjectPose();
+        Assert.Equal(80, f.Native.GetCheckedMainPose().Translation.X);
+        Assert.Equal(carriedBefore, cube.Pose.Translation);
+
+        f.Rig.Data(f.Rig.MakeState(x: 90, origin: f.Native.CurrentOriginId, frame: f.Native.PoseFrameId));
+        f.Rig.Tick();
+        Assert.Equal(90, f.Native.GetCheckedMainPose().Translation.X);
+        Assert.Equal(carriedBefore.X + 10, cube.Pose.Translation.X, 4);
+        Assert.Same(f.Native.LiftPose.Node, cube.NativePose.Node!.Parent);
+    }
+
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiftObservationBroadcastPrecedesConfirmerAndKeepsTheArgumentPose()

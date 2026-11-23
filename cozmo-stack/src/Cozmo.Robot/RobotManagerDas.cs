@@ -17,6 +17,11 @@ internal sealed partial class RobotManager
     internal IReadOnlySet<AnimationTrigger> DasBlacklistedTriggers
     { get { lock (_dasBlacklistGate) return new HashSet<AnimationTrigger>(_dasBlacklistedTriggers); } }
 
+    internal bool IsDasAnimationTriggerBlacklisted(AnimationTrigger trigger)
+    {
+        lock (_dasBlacklistGate) return _dasBlacklistedTriggers.Contains(trigger);
+    }
+
     // The loader's +0x220 starts null. Parse false retains the parser's partial root.
     internal static FirmwareJsonValue ReadDasEventConfig(string? resourceRoot, CozmoEngine engine)
     {

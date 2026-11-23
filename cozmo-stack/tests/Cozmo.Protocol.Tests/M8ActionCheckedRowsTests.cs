@@ -123,6 +123,27 @@ public sealed class M8ActionCheckedRowsTests
         Assert.Contains(logs,e=>e.Key=="IAction.Update.PreconditionsMet"&&e.Level==EngineLogLevel.Debug&&e.Channel=="Actions");
         Assert.Contains(logs,e=>e.Key=="IActionRunner.Update.ActionCompleted"&&e.Text==$"probe [{unchecked((int)action.Tag)}] succeeded with state SUCCESS.");
     }
+    [Theory]
+    [InlineData(0x04000001u, "DID_NOT_REACH_PREACTION_POSE")]
+    [InlineData(0x0300001Du, "VISUAL_OBSERVATION_FAILED")]
+    [InlineData(0x03000005u, "BAD_POSE")]
+    [InlineData(0x0300000Cu, "NO_ANIM_NAME")]
+    [InlineData(0x03000001u, "ANIM_ABORTED")]
+    [InlineData(0x06000000u, "(null)")]
+    public void NativeResultNameIsLoggedWithoutChangingTheCompletionValue(uint result, string name)
+    {
+        var logs = new List<Entry>();
+        var list = List(logs);
+        var action = new Probe { Result = result };
+        var reports = new List<RobotCompletedAction>();
+        list.GameSend = reports.Add;
+        list.QueueAction(QueueActionPosition.AtEnd, action);
+        list.Update();
+        Assert.Contains(logs, entry => entry.Key == "IActionRunner.Update.ActionCompleted" &&
+            entry.Text.EndsWith($"failed with state {name}."));
+        Assert.Equal(result, Assert.Single(reports).Result);
+    }
+
     [Fact]
     public void TimeoutReadsTheVirtualTimeoutAgainForItsLog()
     {

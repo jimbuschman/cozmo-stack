@@ -4,7 +4,7 @@ namespace Cozmo.Robot.Animation;
 
 // fidelity: M5-063, M8-020, M8-021
 // ActionList runner for the checked driving calls. Playback uses the existing streamer.
-// The unported concrete-action callback/union/DAS portions stay visible, never source-complete.
+// The retained playback clip and the selected completion name follow separate native fields.
 internal class TriggerAnimationAction : ActionRunner
 {
     private readonly CozmoRobot _robot;
@@ -55,11 +55,7 @@ internal class TriggerAnimationAction : ActionRunner
         if(liftSafe && robot.Engine.Robot is {} owner && owner.CarryingOwner is {} carrying &&
             (carrying.CarriedObjectId??uint.MaxValue)!=uint.MaxValue && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
         _directClip=directClip;
-        if (directClip is null)
-        {
-            SetAnimGroupFromTrigger(request.Trigger);
-            Missing("M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs");
-        }
+        if (directClip is null) SetAnimGroupFromTrigger(request.Trigger);
     }
     // SetFaceAction's child is PlayAnimationAction with an owned live clip, not a trigger lookup.
     internal TriggerAnimationAction(CozmoRobot robot, AnimationClip clip, Func<bool> ownerCurrent, Action<string>? missing = null, bool diagnosticReported = false)
@@ -192,7 +188,11 @@ internal class TriggerAnimationAction : ActionRunner
         if (!ScopedCurrent()) { _d5?.Dispose(); _d5=null; _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
         RetainedSubscription.Replace(ref _aborted, _robot.Engine.AnimationMessages.SubscribeMessage(0x5F, true, p => Aborted((uint)p!)));
         if (!ScopedCurrent()) { _aborted?.Dispose(); _aborted=null; _d5?.Dispose(); _d5=null; _cb?.Dispose(); _cb=null; _ca?.Dispose(); _ca=null; return unchecked((int)EngineActionResult.Cancelled); }
-        PlaybackAdmitted?.Invoke(_ticket, _clip);
+        // 0x0054449A..0x005445BC: successful trigger Init, live manager blacklist, selected +0x78 name.
+        if (_directClip is null && !_robot.Engine.Robots.IsDasAnimationTriggerBlacklisted(Request.Trigger))
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.play_animation", _clip,
+                new Dictionary<string, string> { ["$data"] = $"{Request.Trigger}:{_group}" });
+        if (!_destroyed && !DestructionObserved && ScopedCurrent()) PlaybackAdmitted?.Invoke(_ticket, _clip);
         return 0;
     }
     // fidelity: M8-020 — 0x005452F0..0x0054534E.

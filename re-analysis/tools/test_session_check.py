@@ -299,6 +299,25 @@ class SessionCheckTests(unittest.TestCase):
         for index in range(1, 6):
             self.assertIn(f"- M{index} (0x", report)
 
+    def test_shared_action_logging_resolves_while_a_carry_pose_gap_stays_visible(self):
+        lines = (
+            "MISSING: M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x03000005",
+            "MISSING: M8-017 sequential failure full EnumToString result at 0x0054F8C4 is not recovered for 0x03000001",
+            "MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs",
+            "MISSING: M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here",
+        )
+        self.request(100, 1, "head")
+        self.completion(108, 1, 0x12)
+        self.reply(110, 1, engineResult=0, admitted=True)
+        for at, line in enumerate(lines, 101):
+            self.event(at, "stack-log", line=line)
+        checks, report = self.check(lines)
+        self.assertEqual(PASSED, checks["head"].status)
+        self.assertIn("- M1 (0x005405CA", report)
+        self.assertIn("- M2 (0x005405CA", report)
+        self.assertIn("- M3 (0x005445BC", report)
+        self.assertIn("- M4 (unattributed)", report)
+
     def test_recognition_requires_the_taught_identity_name_and_window(self):
         self.request(100, 1, "teach-face", name="Guest")
         self.raw(200, 0x56, struct.pack("<BiB", 0, 21, 5) + b"Guest")

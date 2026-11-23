@@ -31,8 +31,9 @@ public class NativeBouncerFactoryTests
     [Fact]
     public async Task StaleTriggerConstructorRetiresTagWithoutTouchingReplacementOrPublishingCompletion()
     {
-        // Supplied face and admission; real TriggerAnimationAction constructor/MISSING callback and owned action queue.
+        // Supplied face and admission; real TriggerAnimationAction constructor/group-resolution log and owned action queue.
         using var rig=new Rig(); var robot=rig.Robot.Engine.Robot!;
+        rig.Robot.Animations.LoadFrom(PickupPyramidNativeExecutionTests.Resources());
         using var doc=JsonDocument.Parse("{\"behaviorClass\":\"Bouncer\",\"behaviorID\":\"Bouncer\"}");
         var source=new BehaviorFactoryContext { Vision=rig.Vision,Manipulation=rig.M,NativeRobot=robot,Features=new FeatureGates(new[] { ("Bouncer",true) }) };
         using var behavior=new NativeBouncerBehavior(source,doc.RootElement,()=>new[]{7});
@@ -46,14 +47,19 @@ public class NativeBouncerFactoryTests
         using var replacement=new BehaviorScope(motion:rig.Robot.Motion);
         int reports=0; using var subscription=rig.Robot.Engine.AnimationMessages.SubscribeMessage(0x5A,true,_=>reports++);
         bool reentered=false;
-        behavior.TriggerMissingForTest=_=>
+        void GroupResolved(EngineLogEntry entry)
         {
-            if(reentered)return; reentered=true;
+            if(reentered || entry.Name != "GetResponseForAnimationTrigger.Found")return; reentered=true;
             behavior.Stop(BehaviorStopReason.Interrupted); first.Dispose();
             behavior.StartAsync(context,replacement,CancellationToken.None).GetAwaiter().GetResult();
-        };
-        await behavior.StartAsync(context,first,CancellationToken.None);
-        behavior.Update(context,0);
+        }
+        rig.Robot.Engine.LogEntry += GroupResolved;
+        try
+        {
+            await behavior.StartAsync(context,first,CancellationToken.None);
+            behavior.Update(context,0);
+        }
+        finally { rig.Robot.Engine.LogEntry -= GroupResolved; }
         Assert.True(reentered); Assert.True(behavior.EngineRunning);
         Assert.Equal(1,rig.Robot.Animations.Scheduler.IdleStack.Count(item=>item.Lock==behavior.Id));
         uint tag=Assert.IsType<uint>(behavior.LastStaleRetiredTag);

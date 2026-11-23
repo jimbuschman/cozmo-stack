@@ -1120,9 +1120,10 @@ public class CoreReviewTests
         Assert.Same(rig.Robot.Engine.Robot!.CarryingOwner, replacement.Docking.Carrying);
         Assert.True(rig.Vision.IsCarryingObject!(cube.ObjectId));
         Assert.Contains(cube.ObjectId, rig.Vision.CarriedObjects!());
-        var oldCallback = (Delegate)typeof(DockingSystem).GetField("_carriedPose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(original.Docking)!;
         var callbacks = (Delegate?)typeof(VisionSystem).GetField("FrameProcessed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(rig.Vision);
-        Assert.Contains(oldCallback, callbacks?.GetInvocationList() ?? Array.Empty<Delegate>());
+        // Vision publication does not own the native carried pose or the robot's main pose.
+        Assert.DoesNotContain(callbacks?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            callback => ReferenceEquals(callback.Target, original.Docking));
         replacement.Docking.Carrying.UnsetCarrying();
 
         // The explicit owner mutation clears carrying; constructing a facade does not.

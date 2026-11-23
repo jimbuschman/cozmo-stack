@@ -73,11 +73,11 @@ public sealed class M11DelocalizationB8Tests
     }
 
     /// <summary>
-    /// M11-069 / M12-027, check item 4: the native runs Delocalize, ComputeLiftPose and the carried-pose write on one thread
+    /// M11-069 / M12-027: the native runs Delocalize, ComputeLiftPose and the main-pose writer on one thread
     /// (Robot::Update). Here all three take EngineRobot.PoseTreeGate: while another thread holds it, none of them proceeds.
     /// </summary>
     [Fact]
-    public void M11_069_DelocalizeLiftPoseAndTheCarriedPoseWriteShareOneGate()
+    public void M11_069_DelocalizeLiftPoseAndTheMainPoseWriterShareOneGate()
     {
         using var rig = new Rig();
         var r = rig.Robot.Engine.Robot!;
@@ -101,7 +101,7 @@ public sealed class M11DelocalizationB8Tests
         }
         Blocks(() => r.ComputeLiftPose(0.1f));
         Blocks(() => r.Delocalize(false));
-        if (attached) Blocks(() => rig.M.Docking.UpdateCarriedObjectPose());
+        if (attached) Blocks(() => r.UpdateCurrPoseFromHistory());
     }
 
     /// <summary>
