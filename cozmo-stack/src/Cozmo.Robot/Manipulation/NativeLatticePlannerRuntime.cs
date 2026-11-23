@@ -187,18 +187,50 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             var end=prefix.States().Last();
             if(end!=plan.Start)
             {
-                _missing("M13-033 LatticePlanner.PlanMismatch sError stream 0x005003D0 and its error side effects remain unported");
-                _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","totalPlan_:");_missing("M13-033 PrintPlan(total) 0x0050048E -> 0x00855E7C output remains unbuilt");
-                _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","new plan:");_missing("M13-033 PrintPlan(new) 0x005004D8 -> 0x00855E7C output remains unbuilt");
-                Publish(0);
+                // 0x005003D0 -> 0x0080D29C -> 0x0080D1BC forwards the string to the DAS error logger.
+                _source(EngineLogLevel.Error, null, "LatticePlanner.PlanMismatch",
+                    $"trying to append a plan with a mismatching state!\nendState = {FormatState(end)}\nnext plan start = {FormatState(plan.Start)}\n");
+                _source(EngineLogLevel.Debug, "Planner", "LatticePlannerImpl", "totalPlan_:");
+                PrintPlan(prefix); // 0x0050048E
+                _source(EngineLogLevel.Debug, "Planner", "LatticePlannerImpl", "new plan:");
+                PrintPlan(plan); // 0x005004D8
+                Publish(0); // 0x005004DE, then fall through to the append and final status below.
             }
         }
         _chosenGoal=unchecked((byte)_backend.ChosenGoalId); // 0x005004F0: success-tail snapshot at +0x100.
-        _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","old plan");_missing("M13-033 PrintPlan 0x00500532 -> 0x00855E7C output remains unbuilt");
-        _total=NativePlanDependencies.Append(_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0),plan);
-        _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","new plan");_missing("M13-033 PrintPlan 0x0050058A -> 0x00855E7C output remains unbuilt");
+        var old = _total ?? new LatticePlan(default, Array.Empty<MotionPrimitive>(), 0, 0);
+        _source(EngineLogLevel.Debug, "Planner", "LatticePlannerImpl", "old plan");
+        PrintPlan(old); // 0x00500532
+        _total = NativePlanDependencies.Append(old, plan);
+        _source(EngineLogLevel.Debug, "Planner", "LatticePlannerImpl", "new plan");
+        PrintPlan(plan); // 0x0050058A reads the backend plan again.
         Publish(2);
     }
+
+    // State stream insertion 0x0084FCBC..0x0084FD16 writes signed x/y and an unsigned heading index.
+    private static string FormatState(LatticeState state) => FormattableString.Invariant($"[{state.X},{state.Y},{state.Theta}]");
+
+    private void PrintPlan(LatticePlan plan)
+    {
+        const string key = "xythetaEnvironment.PrintPlan";
+        var state = plan.Start;
+        var env = _backend.Env;
+        var primitives = env.Primitives;
+        _source(EngineLogLevel.Debug, "Unnamed", key, "plan start: " + FormatState(state)); // 0x00855F70..0x00855FAC
+        for (int i = 0; i < plan.Actions.Count; i++)
+        {
+            int action = plan.Actions[i].ActionIndex;
+            float x = primitives.ResolutionMm * state.X;
+            float y = primitives.ResolutionMm * state.Y;
+            float heading = primitives.Angles[state.Theta];
+            string name = primitives.Actions[action].Name;
+            // 0x00856046..0x008560AA unpacks the current state and prints the stored step penalty.
+            _source(EngineLogLevel.Debug, "Unnamed", key,
+                FormattableString.Invariant($"{i,2}: ({x:F6}, {y:F6}, {heading:F6} [{state.Theta}]) --> {name} (penalty = {plan.Penalties[i]:F6})"));
+            state = env.ApplyAction(state, action, check: false).State; // 0x008560D0..0x008560E2 uses a local StateID.
+        }
+    }
+
     private void Worker()
     {
         if (F1) return; // OV09 W1: an exit request observed at thread entry precedes pending work.
@@ -223,7 +255,16 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         if(_status is 0 or 1 || _total is null)return false;
         var nearest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,LatticePlanner.ToStateC(start));
         Info("LatticePlanner.GetCompletePath.Offset",FormattableString.Invariant($"Robot is {nearest.Distance:F6} from the plan, at index {nearest.Index}"));
-        if(nearest.Distance>=20f){_missing("M13-033 RobotPositionError event/format at 0x004FFDCC..0x004FFE2A remains unported");_total=null;Publish(0);return false;}
+        if (nearest.Distance >= 20f)
+        {
+            // 0x004FFDE4 -> 0x0080D004 emits DAS "%04d %f" with the index and distance.
+            _source(EngineLogLevel.Event, null, "LatticePlanner.GetCompletePath.RobotPositionError",
+                FormattableString.Invariant($"{nearest.Index:D4} ") + LibcxxPrintf.FormatFixedFloat(nearest.Distance));
+            // 0x004FFE0A..0x004FFE2A clears actions before publishing error status.
+            _total = _total with { Actions = Array.Empty<MotionPrimitive>(), Penalties = Array.Empty<float>() };
+            Publish(0);
+            return false;
+        }
         _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","total path:");
         _missing("M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt");
         var raw = new List<PathSegment>();

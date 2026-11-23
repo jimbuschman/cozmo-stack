@@ -30,6 +30,25 @@ public sealed class M13X1BuilderTests
         planner.ComputePath(Pose3d.Identity,new[]{Pose3d.Identity});planner.GetCompletePath(Pose3d.Identity,PathMotionProfile.Default,out var retained,out _);Assert.Equal(first,retained);
     }
     [Fact]
+    public void FaceAndApproachBackupPrintsTheSignedAngleAndKeepsTheReverseSegment()
+    {
+        using var rig = new Rig();
+        var lines = new List<string>();
+        rig.Robot.Engine.StackLogLine += lines.Add;
+        var planner = rig.Robot.Motion.Path.NativeFace;
+        using var start = At(0, 0);
+        using var target = At(-20, 15);
+        Assert.Equal(1, planner.ComputePath(start, [target]));
+        Assert.Contains("FaceAndApproachPlanner: deltaTheta of 2.498091 above threshold, doing backup!", lines);
+        Assert.DoesNotContain(lines, line => line.StartsWith("MISSING:") && line.Contains("doing backup"));
+        Assert.True(planner.GetCompletePath(start, PathMotionProfile.Default, out var path, out _));
+        var reverse = path.OfType<PathSegment.Line>().ToArray();
+        Assert.NotEmpty(reverse);
+        Assert.All(reverse, segment => Assert.True(segment.SpeedMmps < 0));
+        Assert.Equal((-20f, 15f), (reverse[^1].ToX, reverse[^1].ToY));
+    }
+
+    [Fact]
     public void MinimalBackupRecipeAndLogsUseUpdatedCursor()
     {
         var logs=new List<(string Key,string Text)>();var p=new NativeShortPlanner(true,(_,_,k,t)=>logs.Add((k,t)),_=>{});

@@ -279,6 +279,26 @@ class SessionCheckTests(unittest.TestCase):
         for marker in ("M1 (M8-015", "M2 (M8-015", "M3 (M12-052"):
             self.assertIn(marker, report)
 
+    def test_planner_diagnostics_resolve_without_masking_other_planner_gaps(self):
+        lines = (
+            "MISSING: M13-033 stdout: FaceAndApproachPlanner: deltaTheta of -2.498092 above threshold, doing backup!",
+            "MISSING: M13-033 LatticePlanner.PlanMismatch sError stream 0x005003D0 and its error side effects remain unported",
+            "MISSING: M13-033 PrintPlan(total) 0x0050048E -> 0x00855E7C output remains unbuilt",
+            "MISSING: M13-033 PrintPlan(new) 0x005004D8 -> 0x00855E7C output remains unbuilt",
+            "MISSING: M13-033 RobotPositionError event/format at 0x004FFDCC..0x004FFE2A remains unported",
+            "MISSING: M13-033 lattice asset/context input is absent",
+        )
+        self.request(100, 1, "go-to-pose")
+        self.completion(108, 1, 12)
+        self.reply(110, 1, engineResult=0, admitted=True)
+        for at, line in enumerate(lines, 101):
+            self.event(at, "stack-log", line=line)
+        checks, report = self.check(lines)
+        self.assertEqual(SEEN, checks["go-to-pose"].status)
+        self.assertEqual([6], checks["go-to-pose"].missing)
+        for index in range(1, 6):
+            self.assertIn(f"- M{index} (0x", report)
+
     def test_recognition_requires_the_taught_identity_name_and_window(self):
         self.request(100, 1, "teach-face", name="Guest")
         self.raw(200, 0x56, struct.pack("<BiB", 0, 21, 5) + b"Guest")

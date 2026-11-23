@@ -30,7 +30,8 @@ internal sealed partial class PathComponent
     {
         SourceLogSink source=(level,channel,key,text)=>_robot.Engine.EmitSourceLog(level,channel,key,text);
         Action<string> missing=text=>_robot.Engine.EmitStackLog("MISSING: "+text);
-        NativeFace=new(false,source,missing);NativeMinimal=new(true,source,missing);
+        NativeFace=new(false,source,missing,_robot.Engine.EmitStackLog);
+        NativeMinimal=new(true,source,missing);
     }
     internal Func<bool>? PlannerPathIsSafe;
     internal Func<bool>? PlannerSkipSafetyCheck;

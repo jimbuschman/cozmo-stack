@@ -15,7 +15,7 @@ internal interface INativePathPlanner
 }
 
 // Checked short-planner calls generate their own geometry; no StraightLinePlanner substitution.
-internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Action<string> missing) : INativePathPlanner
+internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Action<string> missing,Action<string>? standardOutput=null) : INativePathPlanner
 {
     private Pose3d _goal;
     private byte _goalIndex;
@@ -70,7 +70,8 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
             float speed=30;
             if(line && (double)MathF.Abs(initial)>BitConverter.Int64BitsToDouble(0x3FF0C152382DAF40))
             {
-                missing($"M13-033 stdout: FaceAndApproachPlanner: deltaTheta of {F(initial)} above threshold, doing backup!");
+                // printf at 0x004F37A8, before the backup geometry at 0x004F37AC.
+                standardOutput?.Invoke($"FaceAndApproachPlanner: deltaTheta of {LibcxxPrintf.FormatFixedFloat(initial)} above threshold, doing backup!");
                 initial=EngineF.Rescale(initial+EngineF.Pi);final=EngineF.Rescale(final+EngineF.Pi);travel=EngineF.Rescale(travel+EngineF.Pi);speed=-30;
             }
             if(line){if(firstTurn)Turn(x,y,travel,initial,1.5f);Line(x,y,gx,gy,speed);if(endTurn)Turn(gx,gy,gyaw,final,1.5f);_path=output;}

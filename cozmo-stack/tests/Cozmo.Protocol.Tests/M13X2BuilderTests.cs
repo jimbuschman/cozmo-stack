@@ -149,9 +149,14 @@ public sealed class M13X2BuilderTests
             Assert.Empty(path);
             // FindClosest on an empty plan: index 0, FLT_MAX (0x008569A4..0x008569BA); "%f" of FLT_MAX, at index 0 (0x004FFBF2).
             Assert.Contains(entries,e=>e.Level==EngineLogLevel.Info&&e.Text=="Robot is 340282346638528859811704183484516925440.000000 from the plan, at index 0");
-            // RobotPositionError sEvent (0x004FFDE4) is unported and must surface as a MISSING.
-            Assert.Contains(missing,s=>s.StartsWith("MISSING: ")&&s.Contains("RobotPositionError"));
+            // RobotPositionError sEvent at 0x004FFDE4 sends the zero-padded index and the binary32 distance.
+            var error = Assert.Single(entries, entry => entry.Name == "LatticePlanner.GetCompletePath.RobotPositionError");
+            Assert.Equal(EngineLogLevel.Event, error.Level);
+            Assert.Equal("0000 340282346638528859811704183484516925440.000000", error.Text);
+            Assert.Empty(error.Data);
+            Assert.DoesNotContain(missing,s=>s.StartsWith("MISSING: ")&&s.Contains("RobotPositionError"));
             // Clear, then status 0 (0x004FFE2A).
+            Assert.Empty(runtime.TotalPlan!.Actions);
             Assert.Equal(new[]{0},published.Skip(before).ToArray());Assert.Equal(0,runtime.CheckPlanningStatus);
         }
     }

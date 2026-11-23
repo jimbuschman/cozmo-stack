@@ -297,6 +297,47 @@ public sealed class M13PlannerOwnershipTests
     }
 
     [Fact]
+    public void MismatchingRetainedPrefixLogsBothPlansAndPreservesStatusWrites()
+    {
+        using var rig = new M4ControlTests.Rig();
+        using var start = At(0);
+        using var goal = At(200);
+        var backend = Backend();
+        var logs = new List<(EngineLogLevel Level, string Key, string Text)>();
+        using var runtime = Runtime(backend, rig, (level, _, key, text) => logs.Add((level, key, text)));
+        var statuses = new List<int>();
+        runtime.StatusPublished += statuses.Add;
+        var prims = backend.Env.Primitives;
+        var action = prims.ByAngle[0].First(p => p.EndX > 0 && p.EndY == 0 && p.EndTheta == 0);
+        var prefix = new LatticePlan(new(10, 0, 0), [action], 0, 0) { Penalties = [0.25f] };
+        bool priorError = Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+            lock (runtime.ContextMutex)
+            {
+                Assert.Equal(1, runtime.ComputePath(start, [goal]));
+                // Supply a mismatching retained prefix before the real asynchronous search consumes the start.
+                typeof(NativeLatticePlannerRuntime).GetField("_total", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .SetValue(runtime, prefix);
+            }
+            Wait(runtime);
+            var log = Assert.Single(logs, line => line.Key == "LatticePlanner.PlanMismatch");
+            Assert.Equal(EngineLogLevel.Error, log.Level);
+            Assert.Equal($"trying to append a plan with a mismatching state!\nendState = [{10 + action.EndX},0,0]\nnext plan start = [0,0,0]\n",
+                log.Text);
+            Assert.Equal(new[] { "plan start: [10,0,0]", "plan start: [0,0,0]", "plan start: [10,0,0]", "plan start: [0,0,0]" },
+                logs.Where(line => line.Key == "xythetaEnvironment.PrintPlan" && line.Text.StartsWith("plan start:")).Select(line => line.Text));
+            Assert.Contains(logs, line => line is (EngineLogLevel.Debug, "xythetaEnvironment.PrintPlan", _) &&
+                line.Text == $" 0: (100.000000, 0.000000, 0.000000 [0]) --> {prims.Actions[action.ActionIndex].Name} (penalty = 0.250000)");
+            Assert.Equal(new[] { 1, 1, 0, 2 }, statuses);
+            Assert.Equal(prefix.Start, runtime.TotalPlan!.Start);
+            Assert.False(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+        }
+        finally { Cozmo.Transport.EngineErrorState.ErrorFlagSet = priorError; }
+    }
+
+    [Fact]
     public void PendingAndRunningRequestsRejectBeforeReplacingOwnedInputs()
     {
         // reach: unit (actual mutex and a deterministic worker observation barrier; direct runtime requests).
