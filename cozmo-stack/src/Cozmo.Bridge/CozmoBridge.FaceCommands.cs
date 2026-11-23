@@ -10,6 +10,26 @@ public sealed partial class CozmoBridge
     private Task<CommandResult> TeachFace(string name, int saveId, CancellationToken token)
     {
         var music = new EnrollmentMusicScope();
+        EngineRobot? enrollmentOwner = null;
+        long? meetAdmission = null;
+        var engine = Robot.Engine;
+        void CloseEnrollment()
+        {
+            music.Close();
+            if (enrollmentOwner is not { } owner || !ReferenceEquals(engine.Robot, owner) || owner.Lifetime.Destroying ||
+                meetAdmission is not { } admission || owner.NativeBehaviorRuntime is not { } runtime ||
+                runtime.MeetCozmoAdmission != admission) return;
+
+            // Host app input for closing the Meet Cozmo view. FaceEnrollmentGame.cs:178–185
+            // leads through GameBase.cs:779–805 and ChallengeManager.cs:224–232 to
+            // NeedsHub_2018.cs:265–302, 321–330, 507–510. The Hub first resets
+            // to Selection/Wait (Robot.cs:643–662), then enters Freeplay
+            // (Robot.cs:1767–1784). The host supplies both activity steps at close:
+            // G2E 0x92 (0x005A4FA2), 0x93 Wait/-1 (0x0060AAAE), then 0x92 Freeplay.
+            if (Robot.DeliverHostFreeplayInput(owner, false))
+                Robot.DeliverHostFreeplayInput(owner, true);
+        }
+
         return RequestFaceReport<FaceEnrollmentCompletedReport>(
             handler => Robot.Engine.FaceEnrollmentCompleted += handler,
             handler => Robot.Engine.FaceEnrollmentCompleted -= handler,
@@ -18,10 +38,20 @@ public sealed partial class CozmoBridge
                 (report.Name == name && (saveId == 0 || report.Id == saveId)),
             () =>
             {
-                // The app stages a named enrollment request and selects the Meet activity.
-                // G2E 0x87 (0x00737CEE..0x00737D3A), E2G 0x56 (0x005FE520..0x005FE528).
-                Robot.ActivateHighLevelActivity("MeetCozmoFindFaces");
-                Robot.SetFaceToEnroll(name, saveId, music);
+                enrollmentOwner = engine.Robot;
+                var owner = enrollmentOwner;
+                // The app selects the Meet activity before G2E 0x87
+                // (0x00737CEE..0x00737D3A). Keep the admission scoped to this request.
+                engine.PostGameMessage(() =>
+                {
+                    if (owner is null || token.IsCancellationRequested || owner.Lifetime.Destroying ||
+                        !ReferenceEquals(engine.Robot, owner) || owner.NativeBehaviorRuntime is not { } runtime) return;
+                    runtime.AdmitHostActivity("MeetCozmoFindFaces");
+                    meetAdmission = runtime.MeetCozmoAdmission;
+                    if (ReferenceEquals(engine.Robot, owner) && meetAdmission.HasValue)
+                        Robot.SetFaceToEnroll(name, saveId, music,
+                            () => !token.IsCancellationRequested && runtime.MeetCozmoAdmission == meetAdmission);
+                });
             },
             report => new CommandResult("completed", null, report.Result, Enum.GetName((FaceEnrollmentResultName)report.Result),
                 Detail: report.Result == 0 ? "Face enrolled." : $"Enrollment ended: {Enum.GetName((FaceEnrollmentResultName)report.Result) ?? report.Result.ToString()}.", Report: report)
@@ -31,7 +61,12 @@ public sealed partial class CozmoBridge
                 FaceOperation = new { operation = "enroll", outcome = report.Result == 0 ? "enrolled" : "failed",
                     faceId = report.Id, name = report.Name, requestedName = name },
             },
-            TimeSpan.FromMinutes(2), token, Robot.CancelFaceEnrollment, () => Robot.Engine.PostGameMessage(music.Close));
+            TimeSpan.FromMinutes(2), token, Robot.CancelFaceEnrollment,
+            reported =>
+            {
+                if (reported) engine.InvokeEngineRequest(() => { CloseEnrollment(); return true; });
+                else engine.PostGameMessage(CloseEnrollment);
+            });
     }
 
     private Task<CommandResult> RenameFace(int id, string oldName, string newName, CancellationToken token) =>
@@ -67,7 +102,7 @@ public sealed partial class CozmoBridge
 
     private async Task<CommandResult> RequestFaceReport<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe,
         Predicate<T> matches, Action request, Func<T, CommandResult> result, TimeSpan timeout, CancellationToken token,
-        Action? cancel = null, Action? onExit = null)
+        Action? cancel = null, Action<bool>? onExit = null)
     {
         await faceRequests.WaitAsync(token).ConfigureAwait(false);
         try
@@ -84,10 +119,12 @@ public sealed partial class CozmoBridge
             }
 
             subscribe(Receive);
+            bool reported = false;
             try
             {
                 request();
                 var report = await completion.Task.WaitAsync(timeout, token).ConfigureAwait(false);
+                reported = true;
                 return result(report);
             }
             catch (TimeoutException)
@@ -103,7 +140,7 @@ public sealed partial class CozmoBridge
             finally
             {
                 unsubscribe(Receive);
-                onExit?.Invoke();
+                onExit?.Invoke(reported);
             }
         }
         finally { faceRequests.Release(); }

@@ -19,6 +19,10 @@ public sealed partial class CozmoBridge
     private static TaskCompletionSource NewEventSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool disposed;
     private event Action? Disposing;
+    private readonly IDisposable faceRenameRecipient;
+    private readonly IDisposable faceEraseRecipient;
+    private EngineRobot? faceMutationOwner;
+    private readonly Dictionary<int, (FaceEntry Face, uint Timestamp, string? Name)> faceMutations = new();
 
     /// <summary>Subscribes to public reports. The caller retains ownership of the robot and connection.</summary>
     public CozmoBridge(CozmoRobot robot, int eventCapacity = 1024,
@@ -33,6 +37,14 @@ public sealed partial class CozmoBridge
         engine.RobotObservedFace += OnFace;
         engine.RobotChangedObservedFaceId += OnFaceIdChanged;
         engine.RobotDeletedFace += OnFaceLost;
+        faceRenameRecipient = engine.AnimationMessages.SubscribeMessage(0x1D, true, payload =>
+        {
+            if (payload is FaceRenamedReport report) RecordFaceMutation(report.Id, report.Name);
+        });
+        faceEraseRecipient = engine.AnimationMessages.SubscribeMessage(0x57, true, payload =>
+        {
+            if (payload is NativeErasedEnrolledFace report) RecordFaceMutation(report.Id, null);
+        });
         engine.RobotObservedObject += OnObject;
         Robot.Cubes.MovementBroadcast += OnCubeMoved;
         Robot.Cubes.TapBroadcast += OnCubeTapped;
@@ -94,9 +106,22 @@ public sealed partial class CozmoBridge
         uint? carried = connected ? Robot.Carrying.CarriedObjectId : null;
         var activity = connected ? Robot.GetActivityObservation() : null;
         var world = Robot.Vision.World;
-        var faces = connected
-            ? Robot.Vision.Faces.Faces.Select(f => new KnownFace(f.Id, f.Name, f.LastObservedTimestamp, Relative: Relative(f.HeadPose))).ToDictionary(f => f.FaceId)
-            : new Dictionary<int, KnownFace>();
+        var faces = new Dictionary<int, KnownFace>();
+        if (connected)
+        {
+            var observed = Robot.Vision.Faces.Faces;
+            var mutations = SnapshotFaceMutations(observed);
+            foreach (var face in observed)
+            {
+                string? name = face.Name;
+                if (mutations.TryGetValue(face.Id, out var mutation))
+                {
+                    if (mutation is null) continue;
+                    name = mutation;
+                }
+                faces.Add(face.Id, new(face.Id, name, face.LastObservedTimestamp, Relative: Relative(face.HeadPose)));
+            }
+        }
         if (connected)
         {
             foreach (var face in Robot.Vision.Recognizer.EnrolledFaces.Where(f => !string.IsNullOrEmpty(f.Name)))
@@ -165,6 +190,46 @@ public sealed partial class CozmoBridge
                 .Where(trigger => library?.HasAnimationForTrigger(trigger) == true).Select(trigger => trigger.ToString()),
             clips = library?.ClipNames ?? Array.Empty<string>(),
         }, Json);
+    }
+
+    // Both album mutations leave FaceWorld's observation entry intact. The
+    // app applies 0x1D/0x57 to its projection (Robot.cs:629–635 and 504–512).
+    // Use the synchronous native reports from 0x00657B74..7C / 0x00657AB6..BE
+    // to identify the exact cached sighting superseded by the album operation.
+    private void RecordFaceMutation(int id, string? name)
+    {
+        var owner = Robot.Engine.Robot;
+        var observed = Robot.Vision.Faces.Faces;
+        lock (eventGate)
+        {
+            if (disposed || owner is null || !ReferenceEquals(Robot.Engine.Robot, owner)) return;
+            PruneFaceMutations(owner, observed);
+            if (observed.FirstOrDefault(face => face.Id == id) is { } face)
+                faceMutations[id] = (face, face.LastObservedTimestamp, name);
+        }
+    }
+
+    private Dictionary<int, string?> SnapshotFaceMutations(IReadOnlyList<FaceEntry> observed)
+    {
+        lock (eventGate)
+        {
+            PruneFaceMutations(Robot.Engine.Robot, observed);
+            return faceMutations.ToDictionary(entry => entry.Key, entry => entry.Value.Name);
+        }
+    }
+
+    private void PruneFaceMutations(EngineRobot? owner, IReadOnlyList<FaceEntry> observed)
+    {
+        if (!ReferenceEquals(owner, faceMutationOwner))
+        {
+            faceMutationOwner = owner;
+            faceMutations.Clear();
+            return;
+        }
+        foreach (var (id, mutation) in faceMutations.ToArray())
+            if (!observed.Any(face => ReferenceEquals(face, mutation.Face) && face.Id == id &&
+                face.LastObservedTimestamp == mutation.Timestamp))
+                faceMutations.Remove(id);
     }
 
     private void OnFace(RobotObservedFaceReport report)
@@ -373,6 +438,8 @@ public sealed partial class CozmoBridge
             if (disposed) return;
             Volatile.Write(ref disposed, true);
             events.Clear();
+            faceMutations.Clear();
+            faceMutationOwner = null;
             eventAvailable.TrySetResult();
         }
 
@@ -382,6 +449,8 @@ public sealed partial class CozmoBridge
         engine.RobotObservedFace -= OnFace;
         engine.RobotChangedObservedFaceId -= OnFaceIdChanged;
         engine.RobotDeletedFace -= OnFaceLost;
+        faceRenameRecipient.Dispose();
+        faceEraseRecipient.Dispose();
         engine.RobotObservedObject -= OnObject;
         Robot.Cubes.MovementBroadcast -= OnCubeMoved;
         Robot.Cubes.TapBroadcast -= OnCubeTapped;
