@@ -147,7 +147,17 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
         else found=M.Vision.Faces.CopyNativeLastFace(owner.GetNativeOrigin(owner.CurrentOriginId),false,cached);
         FacePoseAvailable = found && cached.TryWithRespectTo(owner.GetCheckedMainPose(),relative);
         if(FacePoseAvailable != true)
-        {if(RequireVerifiedFace)return unchecked((int)0x0300000E);_faceState=3;return 0;}
+        {
+            if(RequireVerifiedFace)
+            {
+                // 0x0054BE6C..0x0054BEAE distinguishes a missing pose from the later image-wait failure.
+                EmitSource(EngineLogLevel.Info,"Actions","TurnTowardsFaceAction.Init.NoFacePose",
+                    "Required face pose, don't have one, failing");
+                return unchecked((int)0x0300000E);
+            }
+            _faceState=3;
+            return 0;
+        }
         SetChild(null);_verified.Reset();_best=float.MaxValue;_faceState=0;AssignGoal(relative);
         if(owner.HasExternalInterface)
         {
@@ -232,7 +242,15 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
             if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
             Unlock();if(result!=0)return result;
             if(_verified.Id!=0)FineTune();
-            else {_faceState=1;SetChild(new NativeWaitForImagesRunner(M,_imagesToWait,(VisionMode)2,0) { ScopedOwner = _actualOwner });}
+            else
+            {
+                // 0x0054C664..0x0054C66A logs the image budget before installing the wait.
+                EmitSource(EngineLogLevel.Debug,"Unnamed","TurnTowardsFaceAction.CheckIfDone.NoFaceObservedYet",
+                    $"Will wait no more than {_imagesToWait} frames");
+                if (DestructionObserved || !ScopedCurrent) return EngineActionResult.Cancelled;
+                _faceState=1;
+                SetChild(new NativeWaitForImagesRunner(M,_imagesToWait,(VisionMode)2,0) { ScopedOwner = _actualOwner });
+            }
             return EngineActionResult.Running;
         }
         if(_faceState==1)
