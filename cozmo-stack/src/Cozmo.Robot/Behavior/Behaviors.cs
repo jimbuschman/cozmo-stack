@@ -914,11 +914,17 @@ public static class ShippedBehaviors
         if (cubes is null && vision is not null) cubes = vision.Locator;
         if (cubes is not null)
         {
-            var behavior = m is not null && nativeOwner is not null
-                ? new AcknowledgeCubeMovedBehavior(cubes, m, nativeOwner)
-                : new AcknowledgeCubeMovedBehavior(cubes);
-            built.Add((behavior.Id, ReactionTrigger.CubeMoved, behavior,
-                       new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World)));
+            // The configured reaction map resolves its container entry at 0x005A17C4 and checks the pair at 0x005A17CC..0x005A17D6.
+            AcknowledgeCubeMovedBehavior? behavior;
+            if (nativePhysical is not null)
+                behavior = nativePhysical.GetValueOrDefault("ReactToCubeMoved") as AcknowledgeCubeMovedBehavior;
+            else
+                behavior = m is not null && nativeOwner is not null
+                    ? new AcknowledgeCubeMovedBehavior(cubes, m, nativeOwner)
+                    : new AcknowledgeCubeMovedBehavior(cubes);
+            if (behavior is not null)
+                built.Add((behavior.Id, ReactionTrigger.CubeMoved, behavior,
+                           new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World)));
         }
         if (vision is not null)
         {
