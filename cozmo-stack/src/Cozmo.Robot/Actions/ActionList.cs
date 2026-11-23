@@ -91,6 +91,39 @@ internal sealed class ActionList : IDisposable
             return _queues.Values.Any(q => ReferenceEquals(q.Current, runner) || q.HasPendingReference(runner));
     }
 
+    internal (uint Tag, int Type, bool Current)[] GetHostActions(object caller)
+    {
+        using var executionLease = _enterOwner?.Invoke();
+        lock (_gate)
+        {
+            var actions = new List<(uint, int, bool)>();
+            foreach (var queue in _queues.Values)
+            {
+                if (queue.Current is ActionRunner current && ReferenceEquals(current.HostCaller, caller))
+                    actions.Add((current.Tag, current.Type, true));
+                foreach (var pending in queue.Pending)
+                    if (pending is ActionRunner action && ReferenceEquals(action.HostCaller, caller))
+                        actions.Add((action.Tag, action.Type, false));
+            }
+            return actions.ToArray();
+        }
+    }
+
+    internal bool CancelHostAction(uint tag, object caller)
+    {
+        using var executionLease = _enterOwner?.Invoke();
+        lock (_gate)
+        {
+            bool Owned(IActionRunner? runner) =>
+                runner is ActionRunner action && action.Tag == tag && ReferenceEquals(action.HostCaller, caller);
+
+            if (!_queues.Values.Any(queue => Owned(queue.Current) || queue.Pending.Any(Owned))) return false;
+            // Unity Robot.cs:1346–1351 sends G2E 0x70 with the u32 tag. The handler
+            // at 0x00528CF0..0x00528D06 invokes ActionList::Cancel(tag) directly.
+            return Cancel(tag);
+        }
+    }
+
     /// <summary>
     /// A3 ActionList Clear 0x0053D916..0x0053D93A: the clearing re-entry flag returns immediately; otherwise set
     /// it, destroy the map nodes/queues, reset the map/count, clear the flag. No delayed tick is needed to empty

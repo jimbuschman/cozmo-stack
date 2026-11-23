@@ -143,7 +143,7 @@ public sealed class ChargerReactionEndReplayTests(ITestOutputHelper output)
             var reaction = why.GetProperty("snapshot").GetProperty("reaction");
             Assert.Equal("PlacedOnCharger", reaction.GetProperty("trigger").GetString());
             Assert.Equal("ReactToOnCharger", reaction.GetProperty("behavior").GetString());
-            Assert.Contains("Pick Cozmo up", why.GetProperty("hint").GetString());
+            Assert.Contains("Call wake", why.GetProperty("hint").GetString());
         }
     }
 
@@ -174,6 +174,57 @@ public sealed class ChargerReactionEndReplayTests(ITestOutputHelper output)
         Assert.Null(manager.CurrentReactionTrigger);
         Assert.False(robot.ActionList.ExternalActionsDisabled);
         Assert.Equal(-1f, robot.Idle.DisconnectDeadline);
+        Assert.DoesNotContain(manager.GetReactionLocks(), row => row.Id == "ReactToOnCharger_behaviorLock");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task McpWakeEndsChargerSleepAndRetainsTheExplicitFreeplayMode(bool freeplay)
+    {
+        using var fixture = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
+        var rig = fixture.Rig;
+        var robot = fixture.Robot;
+        var manager = robot.BehaviorManagerOwner!;
+        using var bridge = new CozmoBridge(rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+
+        var prime = rig.Robot.Motion.QueueAiHeadAngleAsync(0.25f);
+        for (int i = 0; i < 360; i++) fixture.Motors();
+        Assert.True((await prime).Admitted);
+
+        const RobotStatusFlag contacts = RobotStatusFlag.IsOnCharger | RobotStatusFlag.IsCharging |
+            RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsBodyAccMode;
+        for (int i = 0; i < 3; i++) rig.State(contacts, robot.CurrentOriginId, head: fixture.Head);
+        Assert.Equal(ReactionTrigger.PlacedOnCharger, manager.CurrentReactionTrigger);
+        Assert.True(robot.Idle.DisconnectDeadline > 0);
+
+        // Supply the shipped Hiking parent choice as an input, as in the ordinary
+        // Freeplay fixtures. Its scorer still selects the configured drive-off.
+        if (freeplay) fixture.Runtime.FreeplayObserver.ForcedActivity = "Hiking";
+        // Match the capture's explicit request to enable Freeplay before the off request.
+        var on = Data(await client.Tool("freeplay", new { enabled = true }));
+        Assert.True(on.GetProperty("freeplay").GetProperty("enabled").GetBoolean());
+        if (!freeplay)
+        {
+            var off = Data(await client.Tool("freeplay", new { enabled = false }));
+            Assert.False(off.GetProperty("freeplay").GetProperty("enabled").GetBoolean());
+        }
+        Assert.Equal(ReactionTrigger.PlacedOnCharger, manager.CurrentReactionTrigger);
+        Assert.True(robot.ActionList.ExternalActionsDisabled);
+
+        var wake = Data(await client.Tool("wake", new { }));
+        Assert.Equal("submitted", wake.GetProperty("status").GetString());
+        for (int i = 0; i < 8; i++) rig.State(contacts, robot.CurrentOriginId, head: fixture.Head);
+
+        Assert.True(rig.Robot.Sensors.OnChargerContacts);
+        Assert.Null(manager.CurrentReactionTrigger);
+        Assert.False(robot.ActionList.ExternalActionsDisabled);
+        Assert.Equal(-1f, robot.Idle.DisconnectDeadline);
+        Assert.Equal(-1f, robot.Idle.FaceOffDeadline);
+        Assert.Equal(freeplay, rig.Robot.GetFreeplayObservation().Enabled);
+        if (freeplay) Assert.Same(fixture.Runtime.Bound["Hiking_DriveOffCharger"], manager.Current);
         Assert.DoesNotContain(manager.GetReactionLocks(), row => row.Id == "ReactToOnCharger_behaviorLock");
     }
 

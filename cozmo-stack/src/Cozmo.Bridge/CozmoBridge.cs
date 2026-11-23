@@ -136,6 +136,10 @@ public sealed partial class CozmoBridge
             activity = activity?.Activity,
             highLevelActivity = activity?.HighLevelActivity,
             freeplay = Robot.GetFreeplayObservation(),
+            activeActions = connected && Robot.Engine.Robot is { } actionOwner
+                ? actionOwner.ActionList.GetHostActions(eventCaller)
+                    .Select(action => new { actionTag = action.Tag, actionType = RobotActionType.NameOf(action.Type), current = action.Current }).ToArray()
+                : [],
             behavior = activity?.Behavior,
             reaction = activity?.Reaction,
             reactionLocks = connected ? Robot.Engine.Robot?.BehaviorManagerOwner?.GetReactionLocks() ?? [] : [],

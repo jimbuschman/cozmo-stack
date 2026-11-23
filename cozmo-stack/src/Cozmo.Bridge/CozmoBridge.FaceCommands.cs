@@ -112,8 +112,6 @@ public sealed partial class CozmoBridge
     private Task<CommandResult> SetFreeplay(bool enabled, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        if (!Robot.Engine.IsReadyDelivered) return Task.FromResult(CommandResult.NotReady());
-        Robot.SetEnableFreeplayActivity(enabled);
-        return Task.FromResult(CommandResult.Posted());
+        return Task.FromResult(Robot.TryApplyHostFreeplaySetting(enabled) ? CommandResult.Posted() : CommandResult.NotReady());
     }
 }

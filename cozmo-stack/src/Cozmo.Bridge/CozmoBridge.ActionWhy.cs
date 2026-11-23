@@ -184,7 +184,7 @@ public sealed partial class CozmoBridge
                         ["source"] = "ActionQueue.QueueAction.ExternalActionsDisabled 0x0053D94C..0x0053D9A2",
                     };
                     hint = reaction is { Trigger: ReactionTrigger.PlacedOnCharger, Behavior: "ReactToOnCharger" }
-                        ? "ReactToOnCharger is holding action admission. Pick Cozmo up and set him back on his treads, then retry once the reaction clears. Sliding him off the charger leaves the reaction active."
+                        ? "ReactToOnCharger is holding action admission. Call wake, then retry once the reaction clears. Sliding him off the charger leaves the reaction active."
                         : $"The {reaction.Trigger} reaction is holding action admission. Retry after it clears.";
                 }
                 if (truncated) hint = "Animation was cut off by robot buffer; see playbackIssues for the captured evidence.";

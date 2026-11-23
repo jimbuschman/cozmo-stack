@@ -606,10 +606,10 @@ public class ControlTests
     public void M4_008_A4_A11_TheDasReportGateAndItsMaps()
     {
         using var rig = new Rig();
-        var logs = new List<string>();
-        rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
+        var logs = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        rig.Robot.Engine.CaptureSourceLogs(logs.Enqueue);
         void Power(uint active, uint missed, byte cv = 140) => rig.Send(new ObjectPowerLevel { ObjectID = active, MissedPackets = missed, BatteryLevel = cv });
-        int Reports() { lock (logs) return logs.Count(l => l.StartsWith("debug: [Unnamed] RobotToEngine.ObjectPowerLevel.Report:")); }
+        int Reports() => logs.Count(l => l.StartsWith("debug: [Unnamed] RobotToEngine.ObjectPowerLevel.Report:"));
         void At(float seconds) => rig.Robot.Cubes.Seconds = () => seconds;
 
         At(100.9f);
