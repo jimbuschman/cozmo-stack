@@ -16,6 +16,7 @@ namespace Cozmo.Protocol.Tests;
 public sealed class ChargerMountCliffReplayTests
 {
     private static string? Bundle => Environment.GetEnvironmentVariable("COZMO_CHARGER_CLIFF_BUNDLE");
+    private static string? SessionFive => Environment.GetEnvironmentVariable("COZMO_SESSION5_CHARGER_BUNDLE");
 
     [Theory]
     [InlineData(false, 677360, 677875, 14)]
@@ -86,11 +87,14 @@ public sealed class ChargerMountCliffReplayTests
         Assert.Empty(f.Rig.SentSince(mark).OfType<EnableStopOnCliff>());
     }
 
-    [Fact]
-    public async Task RecordedUnexpectedMovementPreemptsTheBackupPath()
+    [Theory]
+    [InlineData(false, 602292, 610500, 615450, 615620, 619040, 621950, UnexpectedMovementType.TurnedInOppositeDirection)]
+    [InlineData(true, 922300, 922400, 927225, 927280, 931270, 933423, UnexpectedMovementType.TurnedButStopped)]
+    public async Task RecordedUnexpectedMovementPreemptsTheBackupPath(bool sessionFive, double alignFrom, double alignTo,
+        double resultFrom, double resultTo, double reverseFrom, double reverseTo, UnexpectedMovementType expected)
     {
-        if (Bundle is not { Length: > 0 } bundle) return;
-        var input = RecordedRobotInput.ReadInbound(bundle, at => at >= 619040, 621950, [0xF0])
+        if ((sessionFive ? SessionFive : Bundle) is not { Length: > 0 } bundle) return;
+        var input = RecordedRobotInput.ReadInbound(bundle, at => at >= reverseFrom, reverseTo, [0xF0])
             .Select(row => (row.At, State: Assert.IsType<RobotState>(row.Message))).ToArray();
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
         Setup(f, atPreDock: true);
@@ -102,7 +106,7 @@ public sealed class ChargerMountCliffReplayTests
         int mark = f.Rig.Mark();
         int request = await client.Send("tools/call", new { name = "mount-charger", arguments = new { chargerId = 4 } });
         var root = Assert.IsType<NativeDriveToMountChargerRunner>(f.Robot.ActionList.GetCurrentAction());
-        AdvancePastAlignment(f, root, bundle, 602292, 610500, 615450, 615620);
+        AdvancePastAlignment(f, root, bundle, alignFrom, alignTo, resultFrom, resultTo);
         WaitFor(f, mark, sent => sent.OfType<ExecutePath>().Any());
         var path = Assert.Single(f.Rig.SentSince(mark).OfType<ExecutePath>());
         Assert.Equal(-30, Assert.Single(f.Rig.SentSince(mark).OfType<AppendPathSegmentLine>()).Speed.SpeedMmps);
@@ -124,50 +128,57 @@ public sealed class ChargerMountCliffReplayTests
         var result = Data(await client.Receive(request));
         Assert.Equal(EngineActionResult.Cancelled, result.GetProperty("engineResult").GetUInt32());
         var movement = Assert.Single(reports);
-        Assert.Equal(UnexpectedMovementType.TurnedInOppositeDirection, movement.Type);
+        Assert.Equal(expected, movement.Type);
         Assert.Equal(UnexpectedMovementSide.Back, movement.Side);
         Assert.Equal(ReactionTrigger.UnexpectedMovement, f.Robot.BehaviorManagerOwner.CurrentReactionTrigger);
         Assert.Contains(f.Rig.SentSince(mark), message => message is StopAllMotors);
     }
 
-    [Fact]
-    public async Task CompletedApproachRechecksTheNewChargerPoseAndRejectsItsYOffset()
+    [Theory]
+    [InlineData(false, 633490, 634580, 633540, 633580, 9, 635415, 636425)]
+    [InlineData(true, 554580, 558423, 556940, 556965, 8, 554345, 558195)]
+    public async Task CompletedApproachRechecksTheNewChargerPoseAndRejectsItsYOffset(bool sessionFive,
+        double poseFrom, double poseTo, double terminalFrom, double terminalTo, int pathId,
+        uint initialPoseTimestamp, uint finalPoseTimestamp)
     {
-        if (Bundle is not { Length: > 0 } bundle) return;
+        if ((sessionFive ? SessionFive : Bundle) is not { Length: > 0 } bundle) return;
         var poses = new Dictionary<uint, (Rotation3d Rotation, Vec3 Position)>();
         foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
         {
             using var doc = JsonDocument.Parse(line);
             var row = doc.RootElement;
             double at = row.GetProperty("atMs").GetDouble();
-            if (at > 634580) break;
-            if (at < 633490 || row.GetProperty("kind").GetString() != "engine-to-game" ||
+            if (at > poseTo) break;
+            if (at < poseFrom || row.GetProperty("kind").GetString() != "engine-to-game" ||
                 row.GetProperty("tag").GetString() != "0x44") continue;
             var r = new CladReader(Convert.FromHexString(row.GetProperty("bodyHex").GetString()!));
             uint timestamp = r.U32();
             uint family = r.U32(), type = r.U32(), id = r.U32();
-            if (family != 4 || type != (uint)ObjectType.Charger_Basic || id != 4) continue;
+            if (family != 4 || type != (uint)ObjectType.Charger_Basic || id != (sessionFive ? 0u : 4u)) continue;
             for (int i = 0; i < 4; i++) r.F32();
             var position = new Vec3(r.F32(), r.F32(), r.F32());
             poses.Add(timestamp, (new Rotation3d(r.F32(), r.F32(), r.F32(), r.F32()), position));
         }
         var terminal = Assert.IsType<PathFollowingEvent>(Assert.Single(RecordedRobotInput.ReadInbound(bundle,
-            at => at >= 633540, 633580, [0xC6], discardRetries: true)).Message);
-        Assert.Equal((9, (byte)PathEventType.Completed), ((int)terminal.EventId, terminal.EventType));
+            at => at >= terminalFrom, terminalTo, [0xC6], discardRetries: true)).Message);
+        Assert.Equal((pathId, (byte)PathEventType.Completed), ((int)terminal.EventId, terminal.EventType));
         using var f = new Fixture(preloadAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
         Setup(f, atPreDock: false);
         var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
         var charger = f.M.World.GetLocatedObjectByIdHelper(4)!;
         // Capture MAIN at DriveToObject.CheckIfDone. The preceding firmware
         // path completed, then the final comparison uses the refreshed pose.
-        var original = poses[635415];
+        var original = poses[initialPoseTimestamp];
         using var earlier = new Pose3d(original.Rotation, original.Position, parent: origin);
         using var goal = ChargerGeometry.PreDockPose(earlier);
-        Assert.InRange(goal.Translation.Y, -24.20, -24.18);
-        var newest = poses[636425];
+        if (!sessionFive) Assert.InRange(goal.Translation.Y, -24.20, -24.18);
+        var newest = poses[finalPoseTimestamp];
         charger.Pose = new Pose3d(newest.Rotation, newest.Position, parent: origin);
-        using var main = new Pose3d(Rotation3d.FromAngleAxis(2.8665168f, new Vec3(0, 0, 1)),
-            new Vec3(24.9391556f, -24.0526562f, -.24527323f), parent: origin);
+        // Session 5 events.jsonl line 28468 contains the MAIN read before the action ends.
+        float yaw = sessionFive ? 3.019374132156372f : 2.8665168f;
+        var translation = sessionFive ? new Vec3(197.58929443359375, 29.135700225830078, 1.370034098625183)
+            : new Vec3(24.9391556f, -24.0526562f, -.24527323f);
+        using var main = new Pose3d(Rotation3d.FromAngleAxis(yaw, new Vec3(0, 0, 1)), translation, parent: origin);
         f.Robot.SetPose(main);
 
         using var bridge = new CozmoBridge(f.Rig.Robot);
@@ -182,11 +193,37 @@ public sealed class ChargerMountCliffReplayTests
         Assert.Equal((uint)ActionResult.DidNotReachPreActionPose, result.GetProperty("engineResult").GetUInt32());
         var why = result.GetProperty("why");
         var check = why.GetProperty("snapshot").GetProperty("poseCheck");
-        Assert.Equal(30.09600257873535, check.GetProperty("offsetYmm").GetDouble(), 5);
-        Assert.Equal(21.4231014251709, check.GetProperty("thresholdYmm").GetDouble(), 5);
+        if (sessionFive)
+            Assert.Equal(2.22314453125, check.GetProperty("offsetXmm").GetDouble(), 5);
+        Assert.Equal(sessionFive ? 40.81589126586914 : 30.09600257873535, check.GetProperty("offsetYmm").GetDouble(), 5);
+        Assert.Equal(sessionFive ? 21.42310333251953 : 21.4231014251709, check.GetProperty("thresholdYmm").GetDouble(), 5);
         Assert.False(check.GetProperty("yawTested").GetBoolean());
-        Assert.Contains("8.67 mm outside", why.GetProperty("hint").GetString());
+        Assert.Contains(sessionFive ? "19.39 mm outside" : "8.67 mm outside", why.GetProperty("hint").GetString());
         Assert.Equal(-1, f.Rig.Robot.Cubes.ChargerObjectId); // align child never entered
+    }
+
+    [Fact]
+    public async Task RecordedTooHighFirmwareResultEndsAlignmentWithoutAReverseOrRetry()
+    {
+        if (SessionFive is not { Length: > 0 } bundle) return;
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
+        Setup(f, atPreDock: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        int mark = f.Rig.Mark();
+        int request = await client.Send("tools/call", new { name = "mount-charger", arguments = new { chargerId = 4 } });
+        var root = Assert.IsType<NativeDriveToMountChargerRunner>(f.Robot.ActionList.GetCurrentAction());
+        var firmwareResult = AdvancePastAlignment(f, root, bundle, 570870, 570950, 573240, 573275, success: false);
+        Assert.Equal(6, firmwareResult.Field2); // DOCK_FAILURE_TOO_HIGH, DockingResultFromString 0x007C0D34..0x007C0D4A.
+        Assert.Equal(0, firmwareResult.Field3);
+        for (int i = 0; i < 5 && !root.DestructionObserved; i++) f.Motors();
+        Assert.True(root.DestructionObserved);
+        var result = Data(await client.Receive(request));
+        // 0x00553514..0x005535A0 fails alignment on the clear success byte.
+        // Mount CheckIfDone returns that child error before configuring the backup.
+        Assert.Equal(0x04000003u, result.GetProperty("engineResult").GetUInt32());
+        Assert.Empty(f.Rig.SentSince(mark).OfType<ExecutePath>());
     }
 
     [Fact]
@@ -279,8 +316,8 @@ public sealed class ChargerMountCliffReplayTests
         });
     }
 
-    private static void AdvancePastAlignment(Fixture f, NativeDriveToMountChargerRunner root, string bundle,
-        double alignFrom, double alignTo, double resultFrom, double resultTo)
+    private static PickAndPlaceResult AdvancePastAlignment(Fixture f, NativeDriveToMountChargerRunner root, string bundle,
+        double alignFrom, double alignTo, double resultFrom, double resultTo, bool success = true)
     {
         // Use a supplied in-position pre-dock boundary. The actual queued
         // mount still performs alignment, turns, raises its lift and reverses.
@@ -304,11 +341,12 @@ public sealed class ChargerMountCliffReplayTests
         Assert.Equal(captured.ToBytes(), Assert.Single(f.Rig.SentSince(mark).OfType<DockWithObject>()).ToBytes());
         var result = Assert.IsType<PickAndPlaceResult>(Assert.Single(
             RecordedRobotInput.ReadInbound(bundle, at => at >= resultFrom, resultTo, [0xB8], discardRetries: true)).Message);
-        Assert.True(result.Field1);
+        Assert.Equal(success, result.Field1);
         f.Motors(RobotStatusFlag.IsPickingOrPlacing);
         result.Field0 = f.Robot.StoredState!.Timestamp;
         f.Rig.Data(result);
         f.Motors();
+        return result;
     }
 
     private static void WaitFor(Fixture f, int mark, Func<IReadOnlyList<RobotMessage>, bool> done)
