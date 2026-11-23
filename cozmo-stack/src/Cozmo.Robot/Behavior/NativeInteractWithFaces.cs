@@ -78,9 +78,9 @@ internal sealed class NativeInteractWithFaces : SteppedBehavior, IDisposable
     private int SelectTarget()
     {
         using var mutation=_m.World.EnterPoseMutation();
-        var ids=_m.Vision.Faces.GetNativeFaceIds(_owner)
-            .Where(id=>_m.Vision.Faces.GetNativeFace(_owner,id) is { } face && face.LastObservedTimestamp>=_lastImage).ToArray();
-        if(ids.Length>1 && ids.Any(id=>_m.Vision.Faces.GetNativeFace(_owner,id)?.NativeTrackingTranslation is null))
+        // 0x005C23DC passes the saved image timestamp to FaceWorld before ranking.
+        var ids=_m.Vision.Faces.GetNativeFaceIds(_owner,_lastImage);
+        if(ids.Count>1 && ids.Any(id=>_m.Vision.Faces.GetNativeFace(_owner,id)?.NativeTrackingTranslation is null))
             throw new InvalidOperationException("native face geometry unavailable for multi-target ranking");
         return BestFaceToTrack.GetNative(ids,_m,_owner,surchargeUnnamed:true);
     }
@@ -118,7 +118,14 @@ internal sealed class NativeInteractWithFaces : SteppedBehavior, IDisposable
             try { _target=SelectTarget(); }
             catch(InvalidOperationException error) { ReportMissing("InteractWithFaces retry target unavailable: "+error.Message); Finish(); return; }
             if(!Current(generation))return;
-            if(_target!=prior)Verify(generation); else Finish();
+            if(_target!=prior)
+            {
+                // 0x005C2CF4..0x005C2CFA reports the previous and reselected IDs before retry.
+                _owner.Engine.EmitSourceLog(EngineLogLevel.Info,"Behaviors","BehaviorInteractWithFaces.InitialReactionFailed.TryAgain",
+                    $"tracking face {prior} failed, but will try again with face {_target}");
+                if(Current(generation))Verify(generation);
+            }
+            else Finish();
         },()=>Current(generation));
     }
     private void Drive(long generation)

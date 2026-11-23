@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Cozmo.Conformance;
 using Cozmo.Protocol;
 using Cozmo.Robot;
@@ -371,6 +372,130 @@ public sealed class MeetCozmoAdmissionTests
         }
         else Assert.Null(completion.Next);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InteractWithFacesVerifiesTheSelectedIdentityDuringTheRecordedImageWait(bool reacquired)
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION5_SOCIALIZE_BUNDLE");
+        if (string.IsNullOrEmpty(bundle) || !OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio assets missing"), "AudioAssets.zip");
+        var options = new CozmoEngineOptions
+        {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath = "",
+            SpeechSoundBankDirectory = banks, SpeechAudioArchivePath = archive, LabLocaleLanguage = "en"
+        };
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+            sourceNvEmpty: true, engineOptions: options, keepNeedsFull: true);
+        var sink = new Sink();
+        f.Robot.CannedSpeechSinkForTest = () => sink;
+
+        var robot = RecordedRobotInput.ReadInbound(bundle, at => at >= 897719, 897720, [0xF0])
+            .Select(row => (RobotState)row.Message).Single(state => state.Timestamp == 901200);
+        f.X = robot.Pose.X;
+        f.Y = robot.Pose.Y;
+        f.Yaw = robot.Pose.Angle;
+        f.Head = robot.HeadAngle;
+        f.Lift = robot.LiftAngle;
+        f.Motors(RobotStatusFlag.IsBodyAccMode);
+
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.Activity = null; // The recorded chooser has already selected this configured Freeplay behavior.
+        manager.HostReactionChecksEnabled = false;
+        var interact = Assert.IsType<NativeInteractWithFaces>(f.Runtime.Bound["InteractWithFaces"]);
+        var messages = new List<(double At, ushort Tag, byte[] Body)>();
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+        {
+            using var doc = JsonDocument.Parse(line);
+            var row = doc.RootElement;
+            double at = row.GetProperty("atMs").GetDouble();
+            if (at > 903860) break;
+            if (at < 891484.7 || row.GetProperty("kind").GetString() != "engine-to-game") continue;
+            ushort tag = Convert.ToUInt16(row.GetProperty("tag").GetString()![2..], 16);
+            if (tag == 0x46 || (at >= 898985 && tag is 0x43 or 0x47 or 0x4B))
+                messages.Add((at, tag, Convert.FromHexString(row.GetProperty("bodyHex").GetString()!)));
+        }
+
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        void See(byte[] body, uint? timestamp = null, bool publish = true)
+        {
+            var read = new CladReader(body);
+            int id = read.I32();
+            uint recordedTimestamp = read.U32();
+            uint observed = timestamp ?? recordedTimestamp;
+            var point = new Vec3(read.F32(), read.F32(), read.F32());
+            var rotation = new Rotation3d(read.F32(), read.F32(), read.F32(), read.F32());
+            Assert.Equal(27u, read.U32());
+            var rect = new FaceRect(read.F32(), read.F32(), read.F32(), read.F32());
+            string name = read.String8();
+            using var pose = new Pose3d(rotation, point, parent: origin);
+            var face = new TrackedFace(new DetectedFace(id, rect, new Vec2(120, 110), new Vec2(160, 110), Name: name), observed)
+            {
+                HeadPose = pose, NativeTrackingTranslation = point, NativeTrackingRotation = rotation
+            };
+            Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, f.Robot.GetCheckedMainPose(), false,
+                origin.Node!, true, requireNativePose: true, expectedOwner: f.Robot));
+            if (publish) f.Rig.Engine.AnimationMessages.Deliver(0x46, true, new NativeObservedFace(id, observed));
+        }
+
+        // Part 2 events.jsonl: 57520 is the last named report. 57888 is the
+        // new unnamed track immediately before the chooser starts InteractWithFaces.
+        var named = Assert.Single(messages.Where(m => m.Tag == 0x46 && new CladReader(m.Body).I32() == 1)).Body;
+        var guest = messages.First(m => m.Tag == 0x46 && BitConverter.ToUInt32(m.Body, 4) == 901155).Body;
+        See(named, publish: false);
+        See(guest, publish: false);
+        f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp = 901155;
+        Assert.True(await manager.StartAsync(interact.Id, f.Rig.Engine.Timer.SecondsF));
+        var turn = Assert.IsType<NativeLastFaceRunner>(Assert.Single(Assert.IsType<CompoundActionSequential>(interact.OwnedRunner).Children));
+        Assert.Equal(1, turn.RequestedId); // 0x005C23EA supplies the unnamed-face surcharge.
+
+        for (int i = 0; i < 24 && turn.FaceState != 1; i++) f.Motors(RobotStatusFlag.IsBodyAccMode);
+        Assert.True(turn.FacePoseAvailable);
+        Assert.Equal(1, turn.FaceState);
+        f.Motors(RobotStatusFlag.IsBodyAccMode); // Start the 0x43 recipient.
+        int frameCount = 0;
+        foreach (var (_, tag, body) in messages.Where(m => m.At <= 899705.1 &&
+            (m.Tag != 0x46 || BitConverter.ToUInt32(m.Body, 4) >= 902300)))
+        {
+            if (tag == 0x46) { See(body); continue; }
+            Assert.Equal(0x43, tag); // No 0x47 remap or 0x4B expiry within the recorded image wait.
+            var read = new CladReader(body);
+            uint timestamp = read.U32();
+            int count = read.U8();
+            var modes = Enumerable.Range(0, count).Select(_ => read.U32()).ToArray();
+            Assert.Contains(2u, modes);
+            if (reacquired && frameCount == 0) See(named, timestamp); // Positive control using the earlier named observation.
+            f.Rig.Robot.CameraSettings.LastProcessedImageTimestamp = timestamp;
+            f.Rig.Engine.AnimationMessages.Deliver(0x43, true, new ProcessedImageReport(timestamp, modes, read.U8()));
+            frameCount++;
+        }
+        Assert.Equal(10, frameCount);
+        f.Motors(RobotStatusFlag.IsBodyAccMode);
+        if (reacquired)
+        {
+            for (int i = 0; i < 24 && turn.ChildForTest is not SayTextAction; i++)
+                f.Motors(RobotStatusFlag.IsBodyAccMode);
+            Assert.Equal("Jim", Assert.IsType<SayTextAction>(turn.ChildForTest).Text);
+            Assert.Equal(1, turn.VerifiedId);
+        }
+        else
+        {
+            Assert.Equal(0x0300000Eu, turn.State);
+            Assert.Equal(-1, interact.Target);
+            var retry = Assert.IsType<NativeLastFaceRunner>(Assert.Single(Assert.IsType<CompoundActionSequential>(interact.OwnedRunner).Children));
+            Assert.Equal(-1, retry.RequestedId);
+            f.Motors(RobotStatusFlag.IsBodyAccMode); // Install the second turn's 0x46 recipient.
+            var retrySighting = messages.First(m => m.At > 899765.343 && m.Tag == 0x46).Body;
+            Assert.Equal(-1, new CladReader(retrySighting).I32());
+            See(retrySighting);
+            for (int i = 0; i < 24 && retry.ChildForTest is not TriggerLiftSafeAnimationAction; i++)
+                f.Motors(RobotStatusFlag.IsBodyAccMode);
+            var fallback = Assert.IsType<TriggerLiftSafeAnimationAction>(retry.ChildForTest);
+            Assert.Equal(AnimationTrigger.InteractWithFacesInitialUnnamed, fallback.Request.Trigger);
+        }
+    }
+
     [Fact]
     public void PublicMeetSelectsDistinctConfiguredScannerAndDuplicateKeepsRun()
     {
