@@ -3,12 +3,14 @@ using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot;
 
 public sealed record GoingToSleepReport(bool TriggeredFromVoiceCommand);
-/// <summary>ReactionTrigger is null when the cancel came from the dialog's cancel button (host wake).</summary>
-public sealed record ChargerSleepCancelledReport(byte? ReactionTrigger);
+public sealed record ChargerSleepCancelledReport(byte ReactionTrigger);
 
 public sealed partial class EngineRobot
 {
     internal CozmoRobot? ChargerSleepAppRecipient;
+    // Host input for PauseManager.AllowFreeplayOnResume (default true, PauseManager.cs:132).
+    // The LLM's explicit Freeplay preference fills the role of the app's screen/game override.
+    internal bool AllowFreeplayOnWake = true;
 }
 
 public sealed partial class CozmoEngine
@@ -35,49 +37,39 @@ public sealed partial class CozmoEngine
     {
         if (trigger is not { } next || next == ReactionTrigger.PlacedOnCharger ||
             owner.ChargerSleepAppRecipient is not { } facade) return;
+        PostWakeAppInputs(owner, facade, next);
+    }
+
+    internal bool RequestHostWake(CozmoRobot facade)
+    {
+        using var lease = EnterSynchronousOwner();
+        if (!IsReadyDelivered || Robot is not { } owner || owner.Lifetime.Destroying) return false;
+        PostWakeAppInputs(owner, facade);
+        return true;
+    }
+
+    private void PostWakeAppInputs(EngineRobot owner, CozmoRobot facade, ReactionTrigger? trigger = null)
+    {
+        bool hadSleepNotice = owner.ChargerSleepAppRecipient is not null;
         owner.ChargerSleepAppRecipient = null;
-        PostAppSleepCancel(owner, facade, (byte)next);
-    }
 
-    /// <summary>
-    /// Host replacement for the sleep dialog's cancel button: PauseManager.cs:392 binds cancel_sleep_button of the
-    /// engine-triggered dialog (opened by HandleGoingToSleep, 320-333) to HandleEngineTriggeredSleepCancel (403-411),
-    /// which runs StopIdleTimeout (365-379), the same inputs as the reaction path. Completes false when no GoingToSleep
-    /// notice is pending, because the app then shows no dialog.
-    /// </summary>
-    public Task<bool> CancelChargerSleepAsync()
-    {
-        var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        Post(() =>
-        {
-            if (Robot is not { } owner || owner.Lifetime.Destroying || owner.ChargerSleepAppRecipient is not { } facade)
-            {
-                done.TrySetResult(false);
-                return;
-            }
-            owner.ChargerSleepAppRecipient = null;
-            PostAppSleepCancel(owner, facade, null);
-            done.TrySetResult(true);
-        });
-        return done.Task;
-    }
-
-    private void PostAppSleepCancel(EngineRobot owner, CozmoRobot facade, byte? trigger)
-    {
         bool Current() => ReferenceEquals(Robot, owner) && !owner.Lifetime.Destroying;
         PostGameMessage(() =>
         {
             if (!Current()) return;
-            facade.Lights.Cubes.EnableCubeSleep(false);
+            // The pending 0x2D notice supplies the host's _StartedIdleTimeout condition.
+            if (hadSleepNotice) facade.Lights.Cubes.EnableCubeSleep(false);
             if (!Current()) return;
+            // G2E 0x54 sets both deadlines to -1 at 0x0052D06C..76 and releases the
+            // reaction via its 0x00606E70 recipient and 0x00606E5C update.
             owner.DeliverCancelIdleTimeout();
             if (!Current()) return;
             owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("pause_manager");
             if (!Current()) return;
             // Robot.cs:667-670 forwards RobotResumeFromIdle to SetEnableFreeplayActivity.
-            // PauseManager initializes AllowFreeplayOnResume to true at line 132.
-            facade.SetEnableFreeplayActivity(true);
-            QueueAppEvent(ChargerSleepCancelled, new ChargerSleepCancelledReport(trigger));
+            facade.DeliverHostFreeplayInput(owner, owner.AllowFreeplayOnWake);
+            if (trigger is { } reason)
+                QueueAppEvent(ChargerSleepCancelled, new ChargerSleepCancelledReport((byte)reason));
         });
     }
 }

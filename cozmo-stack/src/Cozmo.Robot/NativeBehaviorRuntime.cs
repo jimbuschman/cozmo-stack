@@ -33,6 +33,29 @@ public sealed partial class CozmoRobot
             ExecuteBehaviorByExecutableType(0x0B, -1);
     }
 
+    internal bool TryApplyHostFreeplaySetting(bool enabled)
+    {
+        return Engine.InvokeEngineRequest(() =>
+        {
+            if (!Engine.IsReadyDelivered || Engine.Robot is not { Lifetime.Destroying: false } owner) return false;
+            owner.AllowFreeplayOnWake = enabled;
+            return DeliverHostFreeplayInput(owner, enabled);
+        });
+    }
+
+    internal bool DeliverHostFreeplayInput(EngineRobot owner, bool enabled)
+    {
+        if (!ReferenceEquals(Engine.Robot, owner) || owner.Lifetime.Destroying ||
+            owner.NativeBehaviorRuntime is not { IsRetired: false } runtime) return false;
+
+        // Robot.cs:1767–1776 sends G2E 0x92 at 0x005A4FA2 first, then G2E 0x93
+        // Wait/-1 at 0x0060AAAE when disabling. Run both receivers on the engine owner.
+        runtime.AdmitHostActivity(enabled ? "Freeplay" : "Selection");
+        if (!enabled && ReferenceEquals(Engine.Robot, owner) && !owner.Lifetime.Destroying)
+            Engine.AnimationMessages.Deliver(0x93, false, new Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage(0x0B, -1).PackBody());
+        return ReferenceEquals(Engine.Robot, owner) && !owner.Lifetime.Destroying;
+    }
+
     /// <summary>Explicit host/app activity admission. Construction selects the native Selection activity.
     /// Specialized activity bodies that are not implemented retain the prior activity and report MISSING.</summary>
     public void ActivateHighLevelActivity(string activityId)

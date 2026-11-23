@@ -279,7 +279,7 @@ public sealed class AiFreeplayControlTests(ITestOutputHelper output)
         var on = Response(await client.Tool("freeplay", new { enabled = true }));
         Assert.Equal("submitted", on.GetProperty("status").GetString());
         Assert.True(on.GetProperty("requestedEnabled").GetBoolean());
-        Assert.False(on.GetProperty("freeplay").GetProperty("active").GetBoolean());
+        Assert.True(on.GetProperty("freeplay").GetProperty("active").GetBoolean());
         f.Rig.Tick();
         Assert.Same(freeplay, manager.Activity);
         var playing = await State();
@@ -335,6 +335,7 @@ public sealed class AiFreeplayControlTests(ITestOutputHelper output)
         var off = Response(await client.Tool("freeplay", new { enabled = false }));
         Assert.Equal("submitted", off.GetProperty("status").GetString());
         Assert.False(off.GetProperty("requestedEnabled").GetBoolean());
+        Assert.False(off.GetProperty("freeplay").GetProperty("active").GetBoolean());
         for (int i = 0; i < 20; i++) f.Motors();
         var stopped = await State();
         Assert.False(stopped.GetProperty("enabled").GetBoolean());

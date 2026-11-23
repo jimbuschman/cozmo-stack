@@ -36,47 +36,6 @@ public sealed class ChargerSleepReplayTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task WakeRunsTheSleepDialogCancelOnlyWhileANoticeIsPending()
-    {
-        using var fixture = new Fixture(sourceNvEmpty: true);
-        var rig = fixture.Rig;
-        using var bridge = new CozmoBridge(rig.Robot);
-        await using var client = new McpServerTests.Client(bridge);
-        await client.Initialize();
-        int cancels = 0;
-        fixture.Robot.CancelIdleTimeoutDelivered += () => cancels++;
-
-        async Task<JsonElement> Wake()
-        {
-            int call = await client.Send("tools/call", new { name = "wake", arguments = new { } });
-            for (int i = 0; i < 3; i++) rig.Tick();
-            return (await client.Receive(call)).GetProperty("result").GetProperty("structuredContent");
-        }
-
-        // No GoingToSleep notice: the app shows no dialog (PauseManager.cs:320-333), so nothing is sent.
-        Assert.Equal("no-sleep-pending", (await Wake()).GetProperty("status").GetString());
-        Assert.Equal(0, cancels);
-
-        rig.Engine.BroadcastGoingToSleep(fixture.Robot, rig.Robot, false);
-        rig.Engine.StartIdleTimeout(30f, 60f);
-        rig.Tick();
-        Assert.True(fixture.Robot.Idle.DisconnectDeadline > 0);
-        Assert.Equal("submitted", (await Wake()).GetProperty("status").GetString());
-        // StopIdleTimeout (365-379): CancelIdleTimeout clears both deadlines.
-        Assert.Equal(1, cancels);
-        Assert.Equal(-1f, fixture.Robot.Idle.FaceOffDeadline);
-        Assert.Equal(-1f, fixture.Robot.Idle.DisconnectDeadline);
-        var events = (await client.Tool("read_events", new { since = 0 })).GetProperty("result")
-            .GetProperty("structuredContent").GetProperty("events").EnumerateArray().ToArray();
-        var cancelled = Assert.Single(events.Where(e => e.GetProperty("type").GetString() == "sleep-cancelled"));
-        Assert.Equal(JsonValueKind.Null, cancelled.GetProperty("payload").GetProperty("reactionTrigger").ValueKind);
-
-        // The notice is consumed: a second wake has nothing to cancel.
-        Assert.Equal("no-sleep-pending", (await Wake()).GetProperty("status").GetString());
-        Assert.Equal(1, cancels);
-    }
-
-    [Fact]
     public async Task CapturedPickupCancelsTheArmedChargerDisconnect()
     {
         string? bundle = Environment.GetEnvironmentVariable("COZMO_CHARGER_SLEEP_BUNDLE");

@@ -5,6 +5,29 @@ namespace Cozmo.Bridge;
 
 public sealed partial class CozmoBridge
 {
+    private Task<CommandResult> Wake(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        return Task.FromResult(Robot.Engine.RequestHostWake(Robot) ? CommandResult.Posted() : CommandResult.NotReady());
+    }
+
+    private Task<CommandResult> CancelAction(uint tag, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        if (owner is null || !engine.IsReadyDelivered) return Task.FromResult(CommandResult.NotReady());
+        var result = engine.InvokeEngineRequest(() =>
+        {
+            token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(engine.Robot, owner) || owner.Lifetime.Destroying) return CommandResult.NotReady();
+            return owner.ActionList.CancelHostAction(tag, eventCaller)
+                ? CommandResult.Posted() with { Report = new { actionTag = tag } }
+                : new CommandResult("not-admitted", false, null, null, "No active action with this tag belongs to this caller.");
+        });
+        return Task.FromResult(result);
+    }
+
     private async Task<CommandResult> PutDown(CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
