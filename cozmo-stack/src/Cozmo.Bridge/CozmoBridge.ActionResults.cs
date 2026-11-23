@@ -5,12 +5,6 @@ namespace Cozmo.Bridge;
 
 public sealed partial class CozmoBridge
 {
-    private Task<CommandResult> Wake(CancellationToken token)
-    {
-        token.ThrowIfCancellationRequested();
-        return Task.FromResult(Robot.Engine.RequestHostWake(Robot) ? CommandResult.Posted() : CommandResult.NotReady());
-    }
-
     private Task<CommandResult> CancelAction(uint tag, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
