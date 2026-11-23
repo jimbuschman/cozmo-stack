@@ -88,6 +88,27 @@ Robot acceptance now comes from ordinary MCP sessions, scored by `re-analysis/to
 engine-sourced round expectations (operator 2026-11-20; combined table
 `re-analysis/jobs/trial-m13/session-check-1/combined.md`, four sessions 2026-11-19/20).
 
+**2026-11-23 (session 5: bundles 20261123-084806 and -091241, notes `Downloads\runs\20261123-llm-session-5-notes.md`,
+scored with session_check.py):**
+- **Passed on the robot: A 14 of 16, B 31 of 40.**
+  - A newly passed: speech, teach/rename/erase, go to a place, roll, stack.
+  - A not passed: mount the charger (CHARGER-MOUNT-REVERSE-1); face turn/track (track not run; cancel tool in
+    LLM-WAKE-CANCEL-1).
+  - B newly passed: OnFace, OnSide, Shaken, Frustration; PlayAnimOnNeedsChange, DriveInDesperation; Wait,
+    VisitInterestingEdge; RespondToRenameFace; PutDownBlock, StackBlocks, DriveOffCharger, ReactToCubeMoved,
+    AcknowledgeObject (stacked branch not exercised).
+  - B reopened: InteractWithFaces (the checker passes the entry, but the named branch was never reached:
+    TurnTowardsLastFacePose NO_FACE; INTERACT-FACES-NO-FACE-1).
+  - B not passed (9): PlacedOnSlope (PLACED-ON-SLOPE-INPUTS-1), InteractWithFaces, ExpressNeeds, EarnedSparks,
+    PlayAnimWithFace, PlayArbitraryAnim, ExploreLookAroundInPlace, SearchForFace, DriveToFace.
+- **Finished** additionally needs no MISSING on the path. The 2026-11-23 sweep queued every on-path MISSING site
+  (error branches included) as 18 Codex jobs; a passed item becomes finished when the jobs on its path merge and,
+  where a job changes behaviour, a session rechecks it. Hit live in session 5 on passed items: reaction gates
+  vtable+0x24/+0x28 for Cliff/OnBack/Impact/MotorCalibration (REACTION-GATES-NATIVE-1), Pounce live motion producer
+  M11-098/M15-107 and factory guard (IDLE-BEHAVIOUR-INPUTS-1), pyramid container M12-043 in PlayAlone/StackBlocks
+  (FREEPLAY-ACTIVITY-INPUTS-1), needs cache M13-039 (SEVERE-NEEDS-OWNER-1), cube lights M11-004/M4-040/M4-018 and
+  world checks M11-037/M11-069 (CUBE-WORLD-LIGHTS-1), pickup completion M1-034 (DOCK-ERRORS-1).
+
 **2026-11-21:** 16 command items (A) and 40 behaviour classes (B; PickUpCube moved to D by the operator 2026-11-21).
 - **A, finished (passed in a session, no MISSING on the path, main path spot-read):** 9. Events; charger seen; the
   connection for an LLM; colour camera; reaction locks and wait until accepted; head/lift/drive/turn; play an
