@@ -114,4 +114,16 @@ public sealed partial class CozmoBridge
         token.ThrowIfCancellationRequested();
         return Task.FromResult(Robot.TryApplyHostFreeplaySetting(enabled) ? CommandResult.Posted() : CommandResult.NotReady());
     }
+
+    // The app's sleep-dialog cancel (PauseManager.cs:392, 403-411, 365-379), supplied by the host.
+    private async Task<CommandResult> Wake(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!Robot.Engine.IsReadyDelivered) return CommandResult.NotReady();
+        bool pending = await Robot.Engine.CancelChargerSleepAsync().WaitAsync(token).ConfigureAwait(false);
+        return pending
+            ? CommandResult.Posted()
+            : new CommandResult("no-sleep-pending", false, null, null,
+                "No going-to-sleep notice is pending; the app shows no sleep dialog, so there is nothing to cancel");
+    }
 }

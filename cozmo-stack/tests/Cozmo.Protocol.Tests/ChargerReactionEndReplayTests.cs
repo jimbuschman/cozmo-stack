@@ -214,9 +214,10 @@ public sealed class ChargerReactionEndReplayTests(ITestOutputHelper output)
         Assert.Equal(ReactionTrigger.PlacedOnCharger, manager.CurrentReactionTrigger);
         Assert.True(robot.ActionList.ExternalActionsDisabled);
 
-        var wake = Data(await client.Tool("wake", new { }));
-        Assert.Equal("submitted", wake.GetProperty("status").GetString());
+        int wakeRequest = await client.Send("tools/call", new { name = "wake", arguments = new { } });
         for (int i = 0; i < 8; i++) rig.State(contacts, robot.CurrentOriginId, head: fixture.Head);
+        var wake = Data(await client.Receive(wakeRequest));
+        Assert.Equal("submitted", wake.GetProperty("status").GetString());
 
         Assert.True(rig.Robot.Sensors.OnChargerContacts);
         Assert.Null(manager.CurrentReactionTrigger);
