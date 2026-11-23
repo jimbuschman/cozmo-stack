@@ -3,7 +3,8 @@ using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot;
 
 public sealed record GoingToSleepReport(bool TriggeredFromVoiceCommand);
-public sealed record ChargerSleepCancelledReport(byte ReactionTrigger);
+/// <summary>ReactionTrigger is null when the cancel came from the dialog's cancel button (host wake).</summary>
+public sealed record ChargerSleepCancelledReport(byte? ReactionTrigger);
 
 public sealed partial class EngineRobot
 {
@@ -35,7 +36,34 @@ public sealed partial class CozmoEngine
         if (trigger is not { } next || next == ReactionTrigger.PlacedOnCharger ||
             owner.ChargerSleepAppRecipient is not { } facade) return;
         owner.ChargerSleepAppRecipient = null;
+        PostAppSleepCancel(owner, facade, (byte)next);
+    }
 
+    /// <summary>
+    /// Host replacement for the sleep dialog's cancel button: PauseManager.cs:392 binds cancel_sleep_button of the
+    /// engine-triggered dialog (opened by HandleGoingToSleep, 320-333) to HandleEngineTriggeredSleepCancel (403-411),
+    /// which runs StopIdleTimeout (365-379), the same inputs as the reaction path. Completes false when no GoingToSleep
+    /// notice is pending, because the app then shows no dialog.
+    /// </summary>
+    public Task<bool> CancelChargerSleepAsync()
+    {
+        var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Post(() =>
+        {
+            if (Robot is not { } owner || owner.Lifetime.Destroying || owner.ChargerSleepAppRecipient is not { } facade)
+            {
+                done.TrySetResult(false);
+                return;
+            }
+            owner.ChargerSleepAppRecipient = null;
+            PostAppSleepCancel(owner, facade, null);
+            done.TrySetResult(true);
+        });
+        return done.Task;
+    }
+
+    private void PostAppSleepCancel(EngineRobot owner, CozmoRobot facade, byte? trigger)
+    {
         bool Current() => ReferenceEquals(Robot, owner) && !owner.Lifetime.Destroying;
         PostGameMessage(() =>
         {
@@ -49,7 +77,7 @@ public sealed partial class CozmoEngine
             // Robot.cs:667-670 forwards RobotResumeFromIdle to SetEnableFreeplayActivity.
             // PauseManager initializes AllowFreeplayOnResume to true at line 132.
             facade.SetEnableFreeplayActivity(true);
-            QueueAppEvent(ChargerSleepCancelled, new ChargerSleepCancelledReport((byte)next));
+            QueueAppEvent(ChargerSleepCancelled, new ChargerSleepCancelledReport(trigger));
         });
     }
 }

@@ -123,6 +123,8 @@ public sealed partial class CozmoBridge : IDisposable
             [Text("id", "Lock ID to remove.", 255)], (b, a, ct) => b.ChangeReactionLock(a.Text("id"), null, ct)),
         new("freeplay", "Enable or disable Freeplay. Success: submitted means the app message was posted. The reply includes the requested setting and the currently observed Freeplay state. Failure: not-admitted when the robot is not ready, or an error; inspect why. There is no native action result for this setting.", [Boolean("enabled", "True enables Freeplay.")],
             (b, a, ct) => b.SetFreeplay(a.Flag("enabled"), ct)),
+        new("wake", "Wake Cozmo from the going-to-sleep state on the charger, as the app's sleep-dialog Cancel button did: cancels the idle timeout, removes the pause lock and re-enables Freeplay, which can then drive him off the charger. Success: submitted, confirmed later by the sleep-cancelled event. Failure: no-sleep-pending when no going-to-sleep notice is pending, or not-admitted when the robot is not ready.", [],
+            (b, a, ct) => b.Wake(ct)),
         new("set_needs_mode", "Choose full needs (refill/pause) or real native needs. Success: confirmed returns keepFull/loaded/applied/paused and levels; applied shows whether the input reached loaded needs. Failure: an error result; inspect why. This setting has no native action result.",
             [Text("mode", "Needs mode.", choices: ["full", "real"])],
             (b, a, ct) => b.SetNeedsMode(a.Text("mode"), ct)),
