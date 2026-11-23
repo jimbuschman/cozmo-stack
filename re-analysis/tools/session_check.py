@@ -293,6 +293,12 @@ class Session:
                 "SHORT-PLANNER-1 binds the safety dispatch at 0x00649FB6; this marker records the older build",
             "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt":
                 "0x0085C7C8 prints segments after AppendToPath",
+            "MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs":
+                "0x005445BC is the DAS event; the existing action callbacks and completion name have separate owners",
+            "MISSING: M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only":
+                "0x008744E6–0x0087465C resets prior cache validity; the captured path already retained the decoded frame and its valid flags",
+            "MISSING: M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted":
+                "0x0087D048 and 0x0087D250 update diagnostics; VisionSystem checks the independent decode result at 0x006B4C70",
             "MISSING: M13-033 LatticePlanner.PlanMismatch sError stream 0x005003D0 and its error side effects remain unported":
                 "0x005003D0 forwards the mismatch text to the DAS error logger via 0x0080D29C",
             "MISSING: M13-033 RobotPositionError event/format at 0x004FFDCC..0x004FFE2A remains unported":
@@ -317,6 +323,12 @@ class Session:
                 line,
             ):
                 self.resolved_markers.append((index, line, "0x004F37A8 prints before the existing backup geometry"))
+            elif re.fullmatch(
+                r"MISSING: M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x[0-9A-F]{8}"
+                r"|MISSING: M8-017 sequential failure full EnumToString result at 0x0054F8C4 is not recovered for 0x[0-9A-F]{8}",
+                line,
+            ):
+                self.resolved_markers.append((index, line, "0x005405CA and 0x0054F8C4 use the name only in the diagnostic"))
             elif MISSING.search(line):
                 occurrences = self.timed_missing[line]
                 occurrence = counts[line]

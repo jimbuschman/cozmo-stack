@@ -281,6 +281,7 @@ public sealed partial class VisionSystem : IDisposable
     internal void BindNativeGroundOwner(EngineRobot owner)
     {
         RetainedSubscription? oldSubscription,oldMovingSubscription;
+        LifetimeProfiler? retiredProfiler = null;
         var imu=new NativeImageImuHistory();
         lock (_groundGate)
         {
@@ -290,7 +291,11 @@ public sealed partial class VisionSystem : IDisposable
             oldSubscription=_nativeImuSubscription;_nativeImuSubscription=null;
             oldMovingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;_nativeImu=imu;
             if(_nativeInitialization is {} displaced)_retiredMotionStates.Enqueue(displaced);
-            if (_groundOwner is not null) _groundPendingOuter = _constructedCalibration;
+            if (_groundOwner is not null)
+            {
+                _groundPendingOuter = _constructedCalibration;
+                if (!sameOwner) retiredProfiler = ReplaceLifetimeProfiler();
+            }
             _groundOwner = owner;
             if (!sameOwner) _outerCameraOccluders = new();
             Pets.BindNativeOwner(owner);
@@ -327,6 +332,7 @@ public sealed partial class VisionSystem : IDisposable
             if(ReferenceEquals(_groundOwner,owner)&&!owner.Lifetime.Destroying)
             {_nativeVisionWhileMovingSubscription=movingSubscription;movingSubscription=null;}
         movingSubscription?.Dispose();
+        retiredProfiler?.Dispose();
     }
 
     internal void SetNativeOuterCalibration(CameraCalibration calibration,EngineRobot? expectedOwner=null)
@@ -401,7 +407,7 @@ public sealed partial class VisionSystem : IDisposable
         _robot = robot;
         _stockFaceDetector = CreateStockFaceDetector();
         FaceDetector = _stockFaceDetector;
-        LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
+        LifetimeProfiler = CreateLifetimeProfiler();
         QualityProcessor.SourceLog = (l,c,k,t) => robot.Engine.EmitSourceLog(l,c,k,t);
 
         Calibration = calibration;
@@ -624,17 +630,19 @@ public sealed partial class VisionSystem : IDisposable
     /// </summary>
     // 0x00511162..16C / 0x0065258E: the destroyed VisionComponent owns its LUT.
     // A newer, already-bound owner must survive this retained-facade reset.
-    private (EngineRobot? Owner,int Removal)? RetireDestroyedGroundOwner()
+    private (EngineRobot? Owner, int Removal, LifetimeProfiler Profiler)? RetireDestroyedGroundOwner()
     {
         RetainedSubscription? subscription=null,movingSubscription=null;
         EngineRobot? retiredOwner;
+        LifetimeProfiler retiredProfiler;
         int removal;
         lock (_groundGate)
         {
             if (_groundOwner is { Lifetime.Destroying: false }) return null;
             retiredOwner=_groundOwner;
             removal=Interlocked.Increment(ref _removals);
-            if(retiredOwner is null)return (null,removal);
+            retiredProfiler = ReplaceLifetimeProfiler();
+            if (retiredOwner is null) return (null, removal, retiredProfiler);
             subscription=_nativeImuSubscription;_nativeImuSubscription=null;_nativeImu=null;
             movingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;
             _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;_nativeWorkerPhysical=false;
@@ -648,12 +656,13 @@ public sealed partial class VisionSystem : IDisposable
             _groundEpoch++; // host stale-work token; intentionally monotonic across owners
         }
         subscription?.Dispose();movingSubscription?.Dispose();
-        return (retiredOwner,removal);
+        return (retiredOwner, removal, retiredProfiler);
     }
     internal void ResetToConstructed()
     {
         if(RetireDestroyedGroundOwner() is not { } retired)return;
-        var (retiringOwner,removal)=retired;
+        var (retiringOwner, removal, profiler) = retired;
+        using var retiredProfiler = profiler;
         DiscardPreparedResults(retiringOwner,discardAll:false);
         bool StillRetired(){lock(_groundGate)return _groundOwner is null && removal==Volatile.Read(ref _removals);}
         // fidelity: M11-061, M4-017, M1-025, M4-027
@@ -1827,13 +1836,16 @@ public sealed partial class VisionSystem : IDisposable
     }
     private static void ReportDecodeThrow(CameraFrame f,Jpeg.OpenCvException e)
         => SteppedBehavior.ReportMissing($"M1-034/M11-058 decode throw: skipped image {f.ImageId} ({e.Message}); native cleanup unwinds to terminate at 0x004E39F8; no Toc, cache Reset, rollback or Processor completion");
-    // Host diagnostic snapshot only; native persistent cache/tree ownership is still M11-033/M11-078.
+    // M11-033: this snapshot retains its decoded buffer through all frame consumers.
+    // 0x008744E6..0x0087465C invalidates older size entries before installing the full image.
+    // Per-frame caches make prior entries unavailable by construction.
     internal ImageCache EncodedFrameCache {get;private set;}=new();
     private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal,VisionPoseData? capturedPose=null,bool queueForEngine=false,EngineRobot? sourceOwner=null,NativeGroundFrame? ground=null)
     {
         var cache = new ImageCache(); // retain per-call host buffers so separate host entries cannot corrupt a frame
-        SteppedBehavior.ReportMissing("M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only");
-        SteppedBehavior.ReportMissing("M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted");
+        if (RemovedSince(removal)) return null;
+        var profiler = LifetimeProfiler;
+        long decodeStart = profiler.TicDecodeJpeg(); // 0x006B4B76
         // fidelity: M3-018
         // VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68 calls EncodedImage::IsColor at 0x006B4B7C
         // (the encoding byte). The engine's VERIFY(false) log for encoding 0 is emitted here, once per
@@ -1843,11 +1855,12 @@ public sealed partial class VisionSystem : IDisposable
         if(decoded.PolicySkipped)return null; // M1-034/M3-037: skip the whole decode, including cache Reset/publication.
         cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
         EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
+        profiler.TocDecodeJpeg(decodeStart); // 0x006B4C6C; native runs Toc even on a returned decode failure.
         if(!decoded.Ok)return DecodeReturnedFailure();
         return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose,queueForEngine,sourceOwner,ground,f);
         VisionFrameResult? DecodeReturnedFailure()
         {
-            // Reset already ran; the unbuilt native Toc above belongs only to this normal-return tail.
+            // Reset and Toc already ran on the native normal-return tail.
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.UpdateVisionSystem.UpdateFailed","");
             return null;
         }
@@ -2806,7 +2819,7 @@ public sealed partial class VisionSystem : IDisposable
         // fidelity: M11-078, M11-090 — checked leaves do not establish the missing constructed recipient graph.
         SteppedBehavior.ReportMissing("M11-078/M11-090 Vision teardown: native result lists/deque 0x006586EC..0x00658A92/0x006B9F68..0x006BA092, ImageCache null-before-tree 0x006B1E9C..0x006B2142, Camera/ImageCache/CLAHE, FaceRecognizer trees, Block/MarkerlessObject and ProtoHandle reset/remove need their owned native recipients; host caches/GC are not those owners. Capture finalizers and allocator recipients remain unread; SDK CustomObject is unreachable");
         if (!_stockRecognizer) Recognizer.Shutdown();
-        SteppedBehavior.ReportMissing("M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted");
+        SteppedBehavior.ReportMissing("M11-055 Vision profiler timers outside the checked DecodeJPEG path remain unbound");
         LifetimeProfiler.Dispose();
         if (_robot.Lights.DetachVisionSystem(this))
         {

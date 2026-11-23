@@ -175,19 +175,19 @@ public sealed class NativeNeedsExpressionAdmissionTests
         finally {getIn.RobotState355=null;f.Rig.Robot.Sensors.SetOnChargerPlatform(false);f.Robot.CarryingOwner.UnsetCarrying();}
     }
     [Fact]
-    public void ActualConstructorMissingCallbackCannotQueueAnimationAfterStop()
+    public void TriggerResolutionCallbackCannotQueueAnimationAfterStop()
     {
-        using var f=new Fixture();var getIn=Get(f,"Needs_SevereLowPlayGetIn");using var scope=new BehaviorScope();
+        using var f=new Fixture(preloadAnimations:true);var getIn=Get(f,"Needs_SevereLowPlayGetIn");using var scope=new BehaviorScope();
         getIn.StartAsync(f.Runtime.Context,scope,default).GetAwaiter().GetResult();
         var face=Assert.IsType<NativeLastFaceRunner>(getIn.OwnedRunner);int callbacks=0;
-        void Missing(string line){if(line.Contains("M8-021 trigger DAS") && callbacks++==0)getIn.Stop(BehaviorStopReason.Interrupted);}
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
+        void GroupResolved(EngineLogEntry entry){if(entry.Name == "GetResponseForAnimationTrigger.Found" && callbacks++==0)getIn.Stop(BehaviorStopReason.Interrupted);}
+        f.Rig.Engine.LogEntry+=GroupResolved;
         try
         {
             face.State=0x03000018;f.Robot.ActionList.Update();
             Assert.Equal(1,callbacks);Assert.False(getIn.EngineRunning);Assert.Null(getIn.OwnedRunner);
         }
-        finally {SteppedBehavior.MissingReported-=Missing;}
+        finally {f.Rig.Engine.LogEntry-=GroupResolved;}
     }
     [Fact]
     public void NoExternalInterfaceInstallsNoNewGetInCompletionLease()

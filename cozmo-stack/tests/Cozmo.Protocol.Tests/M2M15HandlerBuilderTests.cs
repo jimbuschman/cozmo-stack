@@ -46,6 +46,31 @@ public sealed class M2M15HandlerBuilderTests
         public void Dispose(){M.Dispose();Vision.Dispose();Rig.Dispose();Directory.Delete(Root,true);}
     }
 
+    [Fact]
+    public void TriggerDasUsesTheSelectedNameAndLiveManagerBlacklist()
+    {
+        using var f = new Fixture();
+        var action = f.Start();
+        var entry = Assert.Single(f.Logs, item => item.Name == "robot.play_animation");
+        Assert.Equal(EngineLogLevel.Event, entry.Level);
+        Assert.Equal("a", entry.Text);
+        Assert.Equal($"{(AnimationTrigger)0x207}:a", entry.Data["$data"]);
+        Assert.Equal("a", action.GetAnimationCompletionName());
+        action.WatcherEnding();
+
+        string config = "{\"blacklisted_animation_triggers\":[\"" + ((AnimationTrigger)0x207) + "\"]}";
+        Assert.True(Json.TryParseFirst(System.Text.Encoding.UTF8.GetBytes(config), out var document));
+        using (document) f.Robot.Engine.Robots.LoadDasBlacklistedAnimationTriggers(document.RootElement);
+        f.Logs.Clear();
+        var blocked = f.Start();
+        Assert.DoesNotContain(f.Logs, item => item.Name == "robot.play_animation");
+        Assert.Equal("a", blocked.GetAnimationCompletionName());
+        f.Send(new AnimationStarted { AnimId = f.Tag });
+        f.Send(new AnimationEnded { AnimId = f.Tag });
+        Assert.Equal(EngineActionResult.Success, blocked.CheckIfDone());
+        blocked.WatcherEnding();
+    }
+
     // reach: unit (substitutes direct action Init/registration; native scheduler join MISSING at M8-020 0x00543F20 / M12-017 0x005521AC).
     [Theory] [InlineData(0)] [InlineData(1)] [InlineData(2)]
     public void AnimationEndRequiresStartAndMatchingByteTagAndDecrementsOnlyFiniteLoops(int loops)

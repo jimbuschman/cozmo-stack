@@ -65,7 +65,11 @@ public sealed class ImageCache
     {
         if (GrayValid && Gray is not null) return Gray;
         if (!RgbValid || Rgb is null) throw new InvalidOperationException("ImageCache has no valid image");
-        return FillGray(Rgb, Width, Height);
+        // 0x008746C8..0x008746CE writes the converted full-size image and its validity byte.
+        var converted = FillGray(Rgb, Width, Height);
+        Gray = converted;
+        GrayValid = true;
+        return converted;
     }
 
     /// <summary>

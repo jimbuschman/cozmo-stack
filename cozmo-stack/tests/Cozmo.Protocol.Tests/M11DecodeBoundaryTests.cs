@@ -53,6 +53,33 @@ public sealed class M11DecodeBoundaryTests
         }
         finally{EngineErrorState.ErrorFlagSet=old;}
     }
+    [Fact]
+    public void DecodeProfilerCountsNormalReturnsAndLeavesThrowsOutOfDas()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var vision = robot.Vision;
+        vision.Calibration = Cal();
+        vision.LifetimeProfiler.ConfigureVisionPeriods(0, 0);
+        var entries = new List<EngineLogEntry>();
+        robot.Engine.LogEntry += entries.Add;
+
+        Assert.Null(vision.ProcessFrame(Frame(5)));
+        Assert.DoesNotContain(entries, entry => entry.Name?.Contains("DecodeJPEG") == true ||
+            entry.Text.StartsWith("DecodeJPEG averaged"));
+        Assert.Null(vision.ProcessFrame(Frame(3, 102)));
+        var info = Assert.Single(entries, entry => entry.Name == "VisionSystem.Profiler");
+        Assert.Contains("over 1 calls", info.Text);
+        const string prefix = "robot.vision.profiler.VisionSystem.Profiler.DecodeJPEG.";
+        var events = entries.Where(entry => entry.Name?.StartsWith(prefix) == true).ToArray();
+        Assert.Equal(new[] { prefix + "OverallTime_ms", prefix + "RecentTime_ms" }, events.Select(entry => entry.Name));
+        Assert.All(events, entry =>
+        {
+            Assert.Equal(EngineLogLevel.Event, entry.Level);
+            Assert.Equal("1", entry.Data["$data"]);
+            Assert.True(long.TryParse(entry.Text, out long milliseconds) && milliseconds >= 0);
+        });
+    }
+
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]

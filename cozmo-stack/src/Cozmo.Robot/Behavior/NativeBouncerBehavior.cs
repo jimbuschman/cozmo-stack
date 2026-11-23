@@ -17,7 +17,6 @@ internal sealed class NativeBouncerBehavior : SteppedBehavior, NativeBouncerCont
     private SmartFaceID _target = new();
     private readonly NativeBouncerController _controller;
     internal NativeBouncerController Controller => _controller;
-    internal Action<string>? TriggerMissingForTest;
     internal uint? LastStaleRetiredTag { get; private set; }
     private long _generation;
     private int _retired;
@@ -103,7 +102,7 @@ internal sealed class NativeBouncerBehavior : SteppedBehavior, NativeBouncerCont
     void NativeBouncerController.IActionOwner.StartTrigger(int trigger,Action completed)
     {
         long version=CaptureHostExecutionVersion();
-        var action=new TriggerAnimationAction(_manipulation.Robot,new((AnimationTrigger)trigger,1,true,0,60f,false),TriggerMissingForTest);
+        var action=new TriggerAnimationAction(_manipulation.Robot,new((AnimationTrigger)trigger,1,true,0,60f,false));
         if(!HostExecutionVersionCurrent(version))
         { if(action.RetireStaleConstructor(()=>HostExecutionVersionCurrent(version)))LastStaleRetiredTag=action.Tag; return; }
         StartActing(action,_=>completed());

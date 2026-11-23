@@ -436,9 +436,8 @@ public abstract class ActionRunner : IActionRunner
         {
             if(TimeoutWarningEnabled)
             {
-                string? name=KnownResultName(result);
-                if(name is null)Behavior.SteppedBehavior.ReportMissing("M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x"+result.ToString("X8"));
-                else EmitSource(EngineLogLevel.Info,"Actions","IActionRunner.Update.ActionCompleted",FormattableString.Invariant($"{ActionName} [{TagForLog}] {(result==0?"succeeded":result==0x02000000?"was cancelled":"failed")} with state {name}."));
+                string name = NativeResultName(result) ?? "(null)"; // 0x005405CA feeds the log's %s only.
+                EmitSource(EngineLogLevel.Info,"Actions","IActionRunner.Update.ActionCompleted",FormattableString.Invariant($"{ActionName} [{TagForLog}] {(result==0?"succeeded":result==0x02000000?"was cancelled":"failed")} with state {name}."));
             }
             Prep();
         }
@@ -515,11 +514,55 @@ public abstract class ActionRunner : IActionRunner
         return result;
     }
 
-    // Checked names from M8 check1 §7 / OV18 full result constants; other names remain explicit gaps.
-    protected static string? KnownResultName(uint result)=>result switch
+    // 0x007586AC..0x0075881E: ActionResult EnumToString; abort/retry tables at 0x007586D4/0x00758710.
+    protected static string? NativeResultName(uint result) => result switch
     {
-        0=>"SUCCESS",0x01000000=>"RUNNING",0x02000000=>"CANCELLED_WHILE_RUNNING",0x02000001=>"NOT_STARTED",
-        0x03000018=>"TIMEOUT",0x03000019=>"TRACKS_LOCKED",0x04000000=>"RETRY",_=>null
+        0x00000000 => "SUCCESS",
+        0x01000000 => "RUNNING",
+        0x02000000 => "CANCELLED_WHILE_RUNNING",
+        0x02000001 => "NOT_STARTED",
+        0x03000000 => "ABORT",
+        0x03000001 => "ANIM_ABORTED",
+        0x03000002 => "BAD_MARKER",
+        0x03000003 => "BAD_MESSAGE_TAG",
+        0x03000004 => "BAD_OBJECT",
+        0x03000005 => "BAD_POSE",
+        0x03000006 => "BAD_TAG",
+        0x03000007 => "FAILED_SETTING_CALIBRATION",
+        0x03000008 => "FOLLOWING_PATH_BUT_NOT_TRAVERSING",
+        0x03000009 => "INTERRUPTED",
+        0x0300000A => "INVALID_OFF_TREADS_STATE",
+        0x0300000B => "MISMATCHED_UP_AXIS",
+        0x0300000C => "NO_ANIM_NAME",
+        0x0300000D => "NO_DISTANCE_SET",
+        0x0300000E => "NO_FACE",
+        0x0300000F => "NO_GOAL_SET",
+        0x03000010 => "NO_PREACTION_POSES",
+        0x03000011 => "NOT_CARRYING_OBJECT_ABORT",
+        0x03000012 => "NULL_SUBACTION",
+        0x03000013 => "PATH_PLANNING_FAILED_ABORT",
+        0x03000014 => "PICKUP_OBJECT_UNEXPECTEDLY_MOVING",
+        0x03000015 => "PICKUP_OBJECT_UNEXPECTEDLY_NOT_MOVING",
+        0x03000016 => "SEND_MESSAGE_TO_ROBOT_FAILED",
+        0x03000017 => "STILL_CARRYING_OBJECT",
+        0x03000018 => "TIMEOUT",
+        0x03000019 => "TRACKS_LOCKED",
+        0x0300001A => "UNEXPECTED_DOCK_ACTION",
+        0x0300001B => "UNKNOWN_TOOL_CODE",
+        0x0300001C => "UPDATE_DERIVED_FAILED",
+        0x0300001D => "VISUAL_OBSERVATION_FAILED",
+        0x04000000 => "RETRY",
+        0x04000001 => "DID_NOT_REACH_PREACTION_POSE",
+        0x04000002 => "FAILED_TRAVERSING_PATH",
+        0x04000003 => "LAST_PICK_AND_PLACE_FAILED",
+        0x04000004 => "MOTOR_STOPPED_MAKING_PROGRESS",
+        0x04000005 => "NOT_CARRYING_OBJECT_RETRY",
+        0x04000006 => "NOT_ON_CHARGER",
+        0x04000007 => "PATH_PLANNING_FAILED_RETRY",
+        0x04000008 => "PLACEMENT_GOAL_NOT_FREE",
+        0x04000009 => "STILL_ON_CHARGER",
+        0x0400000A => "UNEXPECTED_PITCH_ANGLE",
+        _ => null,
     };
 
     /// <summary>

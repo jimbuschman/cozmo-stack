@@ -122,7 +122,12 @@ public sealed partial class VisionSystem
             float dasMs=Json.AsFloat(das)*1000f;
             if(!float.IsFinite(infoMs)||!float.IsFinite(dasMs)||(double)infoMs>=9223372036854775808d||(double)infoMs< -9223372036854775808d||(double)dasMs>=9223372036854775808d||(double)dasMs< -9223372036854775808d)
             {SteppedBehavior.ReportMissing("M11-059 profiler period exceptional f32-to-i64 conversion unavailable");return Missing();}
-            state.SetProfiler((long)infoMs,(long)dasMs);
+            lock (_groundGate)
+            {
+                if (!Current()) return Missing();
+                state.SetProfiler((long)infoMs, (long)dasMs);
+                LifetimeProfiler.ConfigureVisionPeriods((long)infoMs, (long)dasMs); // 0x006B0EE6..0x006B0F2A
+            }
             string path=engine.Options.ResourcesPath is {} resources?Path.Combine(resources,"config","engine","vision"):string.Empty;
             state.ReplaceFace(path,root);
             if(suppliedConfig is null && _stockRecognizer && ReferenceEquals(FaceDetector,_stockFaceDetector))

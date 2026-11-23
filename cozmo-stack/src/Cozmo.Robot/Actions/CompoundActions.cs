@@ -395,9 +395,9 @@ public class CompoundActionSequential : CompoundAction
             ChildLog(child, EngineLogLevel.Info, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Ignoring failure for {n}[{unchecked((int)child.Tag)}] moving to next action");
             return MoveToNext(now);
         }
-        if (KnownResultName(result) is {} resultName)
-            ChildLog(child, EngineLogLevel.Debug, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Current action {n}[{unchecked((int)child.Tag)}] failed with {resultName} deleting");
-        else Behavior.SteppedBehavior.ReportMissing("M8-017 sequential failure full EnumToString result at 0x0054F8C4 is not recovered for 0x" + result.ToString("X8"));
+        // 0x0054F8C4 formats the name for Debug before deleting the child; the scalar result is returned unchanged.
+        string resultName = NativeResultName(result) ?? "(null)";
+        ChildLog(child, EngineLogLevel.Debug, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Current action {n}[{unchecked((int)child.Tag)}] failed with {resultName} deleting");
         StoreCompletionUnionAndDelete(child);
         return result;
     }

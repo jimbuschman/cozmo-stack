@@ -58,6 +58,9 @@ public class ImageCacheTests
         var converted = cache.GetGray();
         Assert.Equal(76, converted.Pixels[0]);
         Assert.Equal(29, converted.Pixels[1]);
+        Assert.True(cache.GrayValid);
+        Assert.True(cache.RgbValid);
+        Assert.Same(converted, cache.GetGray());
     }
 
     /// <summary>

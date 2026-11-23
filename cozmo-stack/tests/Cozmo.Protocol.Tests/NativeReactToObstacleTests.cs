@@ -65,10 +65,10 @@ public sealed class NativeReactToObstacleTests
     {
         using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);
         var react=Assert.IsType<PlayAnimBehavior>(f.Runtime.Bound["ReactToObstacle"]);bool stopped=false;
-        void OnMissing(string text){if(stopped || !text.Contains("M8-021 trigger DAS"))return;stopped=true;react.Stop(BehaviorStopReason.Interrupted);}
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=OnMissing;
+        void GroupResolved(EngineLogEntry entry){if(stopped || entry.Name != "GetResponseForAnimationTrigger.Found")return;stopped=true;react.Stop(BehaviorStopReason.Interrupted);}
+        f.Rig.Engine.LogEntry+=GroupResolved;
         try {using var scope=new BehaviorScope();react.StartAsync(f.Runtime.Context,scope,default).GetAwaiter().GetResult();}
-        finally {SteppedBehavior.MissingReported-=OnMissing;}
+        finally {f.Rig.Engine.LogEntry-=GroupResolved;}
         Assert.True(stopped);Assert.False(react.EngineRunning);Assert.Null(react.OwnedRunner);
     }
     [Fact]

@@ -264,17 +264,12 @@ public sealed class DockingSystem : IDisposable
         _carriedObjects = () => Carrying.CarriedObjectId is { } id
             ? new HashSet<uint> { id } : new HashSet<uint>();
         vision.CarriedObjects = _carriedObjects;
-        // The engine parents the carried object to the lift, so it follows for free; here the chain is
-        // recomposed whenever a new state arrives.
-        _carriedPose = _ => UpdateSharedRobotPose(); // M12-027: no per-frame carried-object pose writes/broadcasts.
-        vision.FrameProcessed += _carriedPose;
     }
 
     private readonly Action<bool> _nativeUnset;
     private readonly Func<uint?> _dockTarget;
     private readonly Func<uint, bool> _isCarrying;
     private readonly Func<IReadOnlySet<uint>> _carriedObjects;
-    private readonly Action<VisionFrameResult> _carriedPose;
 
     public CarryingComponent Carrying { get; }
     public List<RobotMessage> Sent { get; } = new();
@@ -518,34 +513,14 @@ public sealed class DockingSystem : IDisposable
         return completed && Current();
     }
 
-    private void UpdateSharedRobotPose()
-    {
-        using var frameMutation=_vision.World.EnterPoseMutation();
-        if (Carrying.CarriedObjectId is not {} id || Carrying.DockMarker is null
-            || _vision.World.GetObjectById(id) is not { NativeCarryingTree: true }) return;
-            if(_robot.Engine.Robot is {} r)
-            {
-                // B-M11-8 item 4: the same gate as Delocalize and ComputeLiftPose, so the origin check and the write below
-                // cannot interleave with a Delocalize's reset of MainPose (the native runs all three in Robot::Update).
-                LogCallbackDeferral.RunGated(r.PoseTreeGate,()=> // log callbacks run after the gate is released
-                {
-                    if(r.PoseHistory.Latest is {} latest&&r.PoseHistory.OriginId==r.CurrentOriginId) // = _vision.History (item 5)
-                    {
-                        // Preserve the existing raw-pose adapter as an input; native input/root binding remains M11-066.
-                        Behavior.SteppedBehavior.ReportMissing("M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here");
-                        r.MainPose.Node!.Transform=latest.RobotPose.Transform;
-                        r.MainPose.SetParent(r.GetNativeOrigin(r.CurrentOriginId));
-                    }
-                });
-            }
-    }
-
     public void UpdateCarriedObjectPose()
     {
         using var frameMutation=_vision.World.EnterPoseMutation();
         if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
         if (_vision.World.GetObjectById(id) is not { } obj) return;
-        if(obj.NativeCarryingTree) { UpdateSharedRobotPose(); return; }
+        // 0x00512D74 -> 0x00513664 updates MAIN via the normal odometry/history join.
+        // The native attachment at 0x00533850 already parents the object to that live lift tree.
+        if (obj.NativeCarryingTree) return;
         if (_vision.History.Latest is not { } state) return;
         // fidelity: M12-008
         // The pose it was attached at keeps its rotation (SetObjectAsAttachedToLift step 6); an object marked as carried
@@ -1099,8 +1074,8 @@ public sealed class DockingSystem : IDisposable
                     LastAttachResult = attach;
                     if (attach != 0) Log?.Invoke($"SetObjectAsAttachedToLift returned {attach} (discarded by HandlePickAndPlaceResult, M12-008)");
                     if (!Current()) break;
-                    // The engine parents the object on top of the carried one to it at once (SetParent 0x00633006..0x00633010); the per-tick
-                    // recomposition is this stack's substitute for the pose tree (M12-027), so run it now rather than at the next frame.
+                    // Native parent links are already installed, including the carried top at 0x00633006..0x00633010.
+                    // Only host objects without that tree use the explicit pose update.
                     UpdateCarriedObjectPose();
                 }
                 if (result.Succeeded && result.Status == BlockStatus.BlockPlaced)
@@ -1143,7 +1118,6 @@ public sealed class DockingSystem : IDisposable
         _robot.Engine.PickAndPlaceRoute -= OnNativePickAndPlace;
         _vision.DockingMarkersProcessed -= OnFrame;
         _vision.NativeDockingMarkersProcessed -= OnNativeFrame;
-        _vision.FrameProcessed -= _carriedPose;
         if (ReferenceEquals(_vision.IsCarryingObject, _isCarrying)) _vision.IsCarryingObject = null;
         if (ReferenceEquals(_vision.World.DockingObjectId, _dockTarget)) _vision.World.DockingObjectId = null;
         if (ReferenceEquals(_vision.CarriedObjects, _carriedObjects)) _vision.CarriedObjects = null;

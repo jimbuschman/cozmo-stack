@@ -124,13 +124,13 @@ public sealed class NativeExpressNeedsAdmissionTests
         behavior.Dispose();Assert.Equal(before-1,rig.Engine.AnimationMessages.SubscriberCountForTest(0x5A,true));
     }
     [Fact]
-    public void RealConstructorMissingCallbackStopRetiresUnqueuedFaceSubscriptions()
+    public void TriggerResolutionCallbackStopRetiresUnqueuedFaceSubscriptions()
     {
-        using var f=new Fixture();var behavior=Get(f,"Needs_MildLowPlayRequest");using var scope=new BehaviorScope();
+        using var f=new Fixture(preloadAnimations:true);var behavior=Get(f,"Needs_MildLowPlayRequest");using var scope=new BehaviorScope();
         int beforeChanged=f.Rig.Engine.AnimationMessages.SubscriberCountForTest(0x47,true);
         int beforeDeleted=f.Rig.Engine.AnimationMessages.SubscriberCountForTest(0x4B,true);int callbacks=0;
-        void Missing(string line){if(line.Contains("M8-021 trigger DAS") && callbacks++==0)behavior.Stop(BehaviorStopReason.Interrupted);}
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
+        void GroupResolved(EngineLogEntry entry){if(entry.Name == "GetResponseForAnimationTrigger.Found" && callbacks++==0)behavior.Stop(BehaviorStopReason.Interrupted);}
+        f.Rig.Engine.LogEntry+=GroupResolved;
         try
         {
             behavior.StartAsync(f.Runtime.Context,scope,default).GetAwaiter().GetResult();
@@ -138,7 +138,7 @@ public sealed class NativeExpressNeedsAdmissionTests
             Assert.Equal(beforeChanged,f.Rig.Engine.AnimationMessages.SubscriberCountForTest(0x47,true));
             Assert.Equal(beforeDeleted,f.Rig.Engine.AnimationMessages.SubscriberCountForTest(0x4B,true));
         }
-        finally {SteppedBehavior.MissingReported-=Missing;}
+        finally {f.Rig.Engine.LogEntry-=GroupResolved;}
     }
     [Fact]
     public void ActualOrdinaryParentSelectsEligibleExpressInterlude()
