@@ -886,25 +886,28 @@ public static class ShippedBehaviors
                     DriveStraight = m is null ? null : (distance, speed, ct) => new Cozmo.Robot.Manipulation.DriveStraightAction(m, distance, speed).RunAsync(ct),
                 },
                 strategies[ReactionTrigger.CliffDetected]),
-            ("ReactToPickup", ReactionTrigger.RobotPickedUp,
-                new ReactToPickupBehavior(vision)
-                {
-                    // CarryingComponent::SetCarriedObjectAsUnattached(true): the manipulation system's wiring on the sensors (ManipulationSystem.cs:47)
-                    SetCarriedObjectAsUnattached = () => robot.Sensors.UnattachCarriedObjectIfCarrying?.Invoke(),
-                },
-                strategies[ReactionTrigger.RobotPickedUp]),
-            ("ReactToRobotOnBack", ReactionTrigger.RobotOnBack, new ReactToRobotOnBackBehavior(), strategies[ReactionTrigger.RobotOnBack]),
             ("ReactToRobotOnFace", ReactionTrigger.RobotOnFace, new ReactToRobotOnFaceBehavior(), strategies[ReactionTrigger.RobotOnFace]),
             ("ReactToRobotOnSide", ReactionTrigger.RobotOnSide, new ReactToRobotOnSideBehavior(), strategies[ReactionTrigger.RobotOnSide]),
             ("ReactToPlacedOnSlope", ReactionTrigger.RobotPlacedOnSlope, nativeSlope??new ReactToPlacedOnSlopeBehavior(), strategies[ReactionTrigger.RobotPlacedOnSlope]),
             ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, nativeReturnedToTreads??new ReactToReturnedToTreadsBehavior(m), strategies[ReactionTrigger.ReturnedToTreads]),
             ("ReactToRobotShaken", ReactionTrigger.RobotShaken, new ReactToRobotShakenBehavior(), strategies[ReactionTrigger.RobotShaken]),
             ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, nativeUnexpected??new ReactToUnexpectedMovementBehavior(robot), strategies[ReactionTrigger.UnexpectedMovement]),
-            ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(m), strategies[ReactionTrigger.MotorCalibration]),
             ("ReactToFrustrationMinor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Minor(frustration), frustration),
             ("ReactToImpact", ReactionTrigger.RobotFalling, nativeImpact??new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),
             ("ReactToOnCharger", ReactionTrigger.PlacedOnCharger, nativeOnCharger ?? new ReactToOnChargerBehavior(), strategies[ReactionTrigger.PlacedOnCharger]),
         };
+        if (nativePhysical is null || nativeOwner is null)
+        {
+            // Standalone reaction tables supply their own dependency seams. The
+            // native manager instead looks up the configured objects at 0x005A17CC.
+            var pickup = new ReactToPickupBehavior(vision)
+            {
+                SetCarriedObjectAsUnattached = () => robot.Sensors.UnattachCarriedObjectIfCarrying?.Invoke(),
+            };
+            built.Add((pickup.Id, ReactionTrigger.RobotPickedUp, pickup, strategies[ReactionTrigger.RobotPickedUp]));
+            built.Add(("ReactToRobotOnBack", ReactionTrigger.RobotOnBack, new ReactToRobotOnBackBehavior(), strategies[ReactionTrigger.RobotOnBack]));
+            built.Add(("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(m), strategies[ReactionTrigger.MotorCalibration]));
+        }
         if (m is not null)
         {
             var major = new FrustrationStrategy(maxConfidence: -0.9f, cooldownSec: 0f, clockSec);
@@ -966,7 +969,8 @@ public static class ShippedBehaviors
         {
             // 005A17CC: register the strategy against the behavior owned by the configured container.
             if (nativePhysical is not null && nativeOwner is not null &&
-                e.Trigger is ReactionTrigger.RobotOnFace or ReactionTrigger.RobotOnSide or ReactionTrigger.RobotShaken or ReactionTrigger.Frustration)
+                e.Trigger is ReactionTrigger.RobotPickedUp or ReactionTrigger.RobotOnBack or ReactionTrigger.MotorCalibration or
+                    ReactionTrigger.RobotOnFace or ReactionTrigger.RobotOnSide or ReactionTrigger.RobotShaken or ReactionTrigger.Frustration)
             {
                 if (nativePhysical.TryGetValue(e.BehaviorId, out var candidate))
                 {

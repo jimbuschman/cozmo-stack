@@ -17,18 +17,34 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
 {
     // Vtable 0x0102C5E0 +8+0x20 -> 0x00608A0C: true, consulted during set-down reaction scanning.
     protected override bool RunnableGate20(BehaviorContext context)=>true;
+    // 0x0102C60C/10 -> 0x0059EC12 (false), 0x00608A10 (true).
+    protected override bool RunnableGate24(BehaviorContext context)=>false;
+    protected override bool RunnableGate28(BehaviorContext context)=>true;
+    protected override bool KeepsRunningWithoutAction => _physical is not null && HasCurrentAction;
+    private readonly PhysicalReactionOwner? _physical;
     internal Func<bool?>? ReadHiccups { get; set; }
     private long _generation;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
-    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version && (_physical?.CanRun ?? true);
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
-    protected override void OnStop(BehaviorStopReason reason) => Interlocked.Increment(ref _generation);
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Interlocked.Increment(ref _generation);
+        _physical?.Advance();
+    }
     /// <summary>The cliff-sensor test: <c>(raw &gt;&gt; 4) &gt; 0x18</c>, i.e. raw ≥ 400, means calibrate rather than flip.</summary>
     public const int CliffRawCalibrateAt = 400;
 
-    public ReactToRobotOnBackBehavior() : base("ReactToRobotOnBack", "ReactToRobotOnBack") { }
+    public ReactToRobotOnBackBehavior() : this("ReactToRobotOnBack") { }
+    private ReactToRobotOnBackBehavior(string id) : base(id, "ReactToRobotOnBack") { }
+    internal ReactToRobotOnBackBehavior(ManipulationSystem m, EngineRobot owner, string id) : this(id)
+    {
+        _physical = new(m, owner); // 0x006087B8 calls the configured IBehavior constructor.
+        BindActionCompletionOwner(m.Robot, owner);
+    }
+    internal void RetireNativePhysical() { _physical?.Retire(); RetireActionCompletionOwner(); }
 
     protected override void OnStart() => FlipDownIfNeeded();
 
@@ -45,17 +61,30 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
             Finish();
             return;
         }
-        var raw = sensors.CliffSensorsRaw;
-        int front = raw is { Length: > 0 } ? raw[0] : 0;
+        // 0x006087F2..0x006087FE reads the stored sample in the configured reaction.
+        // Standalone callers retain the optional live-sample seam.
+        int front = _physical is null ? sensors.CliffSensorsRaw?.FirstOrDefault() ?? 0 : sensors.CliffDataRawStored[0];
         if ((front >> 4) <= 0x18)
         {
             // 0x00608806..0x00608830 reads the current Robot's AIWhiteboard+0x74.
             bool? hiccups = ReadHiccups is { } read ? read() : false;
             if (hiccups is null) return;
-            PlayTrigger(hiccups.Value ? AnimationTrigger.HiccupRobotOnBack : AnimationTrigger.FlipDownFromBack, DelayThenFlipDown);
+            var trigger = hiccups.Value ? AnimationTrigger.HiccupRobotOnBack : AnimationTrigger.FlipDownFromBack;
+            if (_physical is { } physical)
+                physical.Start(this, physical.Animation(trigger), _ => DelayThenFlipDown(), physical.Version); // 0x0060881A..0x00608838
+            else PlayTrigger(trigger, DelayThenFlipDown);
         }
         else
         {
+            if (_physical is { } physical)
+            {
+                long version = physical.Version;
+                physical.Robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToRobotOnBack.FlipDownIfNeeded.CalibratingHead",
+                    front.ToString(System.Globalization.CultureInfo.InvariantCulture)); // 0x00608858..0x0060885E
+                if (physical.CurrentAt(version))
+                    physical.Start(this, new NativeHeadCalibrationRunner(physical.M, physical.Robot), _ => DelayThenFlipDown(), version); // 0x0060888C..0x006088A2
+                return;
+            }
             Log($"cliff sensor 0 reads {front} (>= {CliffRawCalibrateAt}): calibrating the head instead of flipping");
             CalibrateHead(DelayThenFlipDown);
         }
@@ -73,7 +102,12 @@ public sealed class ReactToRobotOnBackBehavior : SteppedBehavior
             Finish();
             return;
         }
-        Wait(0.5, FlipDownIfNeeded);
+        if (_physical is { } physical)
+        {
+            var wait = new NativeTimedWaitRunner(physical.M, .5f) { ScopedOwner = physical.Robot };
+            physical.Start(this, wait, _ => FlipDownIfNeeded(), physical.Version); // 0x006089B6..0x006089D8
+        }
+        else Wait(0.5, FlipDownIfNeeded);
     }
 }
 
@@ -390,6 +424,9 @@ public sealed partial class ReactToImpactBehavior : SteppedBehavior
 
     // BehaviorReactToImpact vptr+0x20 at 0x0102BEB0 resolves to 0x005BF04C.
     protected override bool RunnableGate20(BehaviorContext context) => false;
+
+    // vptr+0x24 at 0x0102BEB4 resolves to 0x0059EC12.
+    protected override bool RunnableGate24(BehaviorContext context) => false;
 
     // vptr+0x28 at 0x0102BEB8 resolves to 0x00606482.
     protected override bool RunnableGate28(BehaviorContext context) => false;
@@ -866,59 +903,102 @@ public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 {
     // vptr+0x20 at 0x0102BFEC resolves to the base false body 0x005BF04C.
     protected override bool RunnableGate20(BehaviorContext context) => false;
+    // 0x0102BFF0/F4 -> 0x0059EC12 (false), 0x006068BE (true).
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => true;
 
+    private readonly EngineRobot? _nativeOwner;
+    private CozmoSensors? _calibrationSource;
     private long _generation;
     protected override bool KeepsRunningWithoutAction => HasCurrentAction;
     protected override IDisposable? EnterHostExecutionOwner(BehaviorContext? context) => context?.Robot.Engine.EnterSynchronousOwner();
     protected override void HostRunStarting() => Interlocked.Increment(ref _generation);
     protected override long CaptureHostExecutionVersion() => Interlocked.Read(ref _generation);
-    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version;
+    protected override bool HostExecutionVersionCurrent(long version) => Interlocked.Read(ref _generation) == version &&
+        (_nativeOwner is null || !_nativeOwner.Lifetime.Destroying && ReferenceEquals(_nativeOwner.Engine.Robot, _nativeOwner));
     protected override bool HostStopContinuationCurrent(long version) => Interlocked.Read(ref _generation) == unchecked(version + 1);
     public const double TimeoutSec = 5.0;
 
     private Cozmo.Robot.Manipulation.ManipulationSystem? _manipulation;
     internal void BindManipulation(Cozmo.Robot.Manipulation.ManipulationSystem manipulation) => _manipulation = manipulation;
     private Action? _completionLease;
-    public ReactToMotorCalibrationBehavior(Cozmo.Robot.Manipulation.ManipulationSystem? manipulation = null) : base("ReactToMotorCalibration", "ReactToMotorCalibration")
+    public ReactToMotorCalibrationBehavior(ManipulationSystem? manipulation = null) : this(manipulation, null, "ReactToMotorCalibration") { }
+    internal ReactToMotorCalibrationBehavior(ManipulationSystem? manipulation, EngineRobot? owner, string id) : base(id, "ReactToMotorCalibration")
     {
         _manipulation = manipulation;
+        _nativeOwner = owner; // 0x0060658C..0x006065BA: configured base, then tag 0x1E.
+        if (owner is not null && owner.HasExternalInterface && manipulation is not null)
+        {
+            _calibrationSource = manipulation.Robot.Sensors;
+            _calibrationSource.MotorCalibrationReportedInternal += OnCalibration;
+        }
     }
 
     /// <summary>Whether the last run saw both motors calibrated before the timeout.</summary>
     public bool Completed { get; private set; }
-    private Action<Cozmo.Protocol.MotorCalibration>? _calibrationHandler;
+    private void OnCalibration(Cozmo.Protocol.MotorCalibration _)
+    {
+        if (!EngineRunning) return;
+        var robot = Context.Robot;
+        using var execution = robot.Engine.EnterSynchronousOwner();
+        long epoch = CaptureHostExecutionVersion();
+        var state = robot.State;
+        if (!EngineRunning || !HostExecutionVersionCurrent(epoch) || !state.HeadCalibrated || !state.LiftCalibrated) return;
+        robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "BehaviorReactToMotorCalibration.HandleWhileRunning.Stop", string.Empty); // 0x00606766..0x0060676C
+        if (!EngineRunning || !HostExecutionVersionCurrent(epoch)) return;
+        Completed = true;
+        StopActing(true, false);
+    }
+
+    private void ReleaseCalibrationSource()
+    {
+        if (_calibrationSource is { } source) source.MotorCalibrationReportedInternal -= OnCalibration;
+        _calibrationSource = null;
+    }
+
+    internal void RetireNativePhysical()
+    {
+        Interlocked.Increment(ref _generation);
+        ReleaseCalibrationSource();
+        RetireActionCompletionOwner();
+    }
 
     protected override void OnStart()
     {
         // fidelity: M7-014
+        long epoch = CaptureHostExecutionVersion();
+        Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToMotorCalibration.InitInternalReactionary.Start", string.Empty); // 0x0060660E..0x00606612
+        if (!HostExecutionVersionCurrent(epoch)) return;
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToMotorCalibration);
+        if (!HostExecutionVersionCurrent(epoch)) return;
         _completionLease = AcquireActionCompletionOwner(Context.Robot);
         Completed = false;
-        long epoch = CaptureHostExecutionVersion();
-        _calibrationHandler = _ =>
+        if (_nativeOwner is null)
         {
-            using var owner = Context.Robot.Engine.EnterSynchronousOwner();
-            var state = Context.Robot.State;
-            if (!EngineRunning || !HostExecutionVersionCurrent(epoch) || !state.HeadCalibrated || !state.LiftCalibrated) return;
-            Completed = true;
-            StopActing(true, false);
-        };
-        Context.Robot.Sensors.MotorCalibrationReportedInternal += _calibrationHandler;
+            _calibrationSource = Context.Robot.Sensors;
+            _calibrationSource.MotorCalibrationReportedInternal += OnCalibration;
+        }
         if (_manipulation is null)
         {
             ReportMissing("M7-019 ReactToMotorCalibration WaitAction requires the manipulation/action-list owner");
             InitFailed = true;
             return;
         }
-        StartActing(new Cozmo.Robot.Manipulation.NativeTimedWaitRunner(_manipulation, (float)TimeoutSec), _ => { });
+        var wait = new NativeTimedWaitRunner(_manipulation, (float)TimeoutSec) { ScopedOwner = _nativeOwner };
+        StartActing(wait, result =>
+        {
+            if (!HostExecutionVersionCurrent(epoch) || (result.Result & 0xFF000000u) == 0x02000000u) return; // 0x00606906..0x00606910
+            var state = Context.Robot.State;
+            if (state.HeadCalibrated && state.LiftCalibrated) return;
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "BehaviorReactToMotorCalibration.Timeout",
+                $"Calibration didn't complete (lift: {(state.LiftCalibrated ? 1 : 0)}, head: {(state.HeadCalibrated ? 1 : 0)})"); // 0x00606924..0x00606944
+        }, () => HostExecutionVersionCurrent(epoch));
     }
 
     protected override void OnStop(BehaviorStopReason reason)
     {
         Interlocked.Increment(ref _generation);
-        if (_calibrationHandler is { } handler)
-            Context.Robot.Sensors.MotorCalibrationReportedInternal -= handler;
-        _calibrationHandler = null;
+        if (_nativeOwner is null) ReleaseCalibrationSource();
         _completionLease?.Invoke(); _completionLease = null;
     }
 }

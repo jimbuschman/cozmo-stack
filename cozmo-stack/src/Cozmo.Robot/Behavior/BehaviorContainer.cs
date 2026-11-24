@@ -345,6 +345,14 @@ public sealed class BehaviorFactory
         [BehaviorClass.ReactToImpact] = (ctx,json)=>new ReactToImpactBehavior(
             ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToImpact actual manipulation owner"),
             ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToImpact actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        // Robot and config are the constructor inputs at 0x0059D19E..0x0059D1A2,
+        // 0x0059D1FE..0x0059D202, and 0x0059D27E..0x0059D282.
+        [BehaviorClass.ReactToMotorCalibration] = (ctx,json) => new ReactToMotorCalibrationBehavior(
+            ctx.Manipulation!, ctx.NativeRobot!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToPickup] = (ctx,json) => new ReactToPickupBehavior(
+            ctx.Manipulation!, ctx.NativeRobot!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+        [BehaviorClass.ReactToRobotOnBack] = (ctx,json) => new ReactToRobotOnBackBehavior(
+            ctx.Manipulation!, ctx.NativeRobot!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.ReactToPlacedOnSlope] = (ctx,json)=>new ReactToPlacedOnSlopeBehavior(
             ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual manipulation owner"),
             ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
@@ -590,6 +598,7 @@ public sealed class BehaviorFactory
             status=BehaviorCreateStatus.NotImplemented; return null;
         }
         if (cls is BehaviorClass.ReactToCliff or BehaviorClass.ReactToImpact or BehaviorClass.ReactToPlacedOnSlope or BehaviorClass.ReactToUnexpectedMovement or
+            BehaviorClass.ReactToPickup or BehaviorClass.ReactToRobotOnBack or BehaviorClass.ReactToMotorCalibration or
             BehaviorClass.ReactToRobotOnFace or BehaviorClass.ReactToRobotOnSide or BehaviorClass.ReactToRobotShaken or BehaviorClass.ReactToFrustration
             && (ctx.Manipulation is null || ctx.NativeRobot is null))
         {
@@ -619,6 +628,7 @@ public sealed class BehaviorFactory
                 stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
             }
             if(stepped is ReactToReturnedToTreadsBehavior or ReactToCliffBehavior or ReactToImpactBehavior or
+                ReactToPickupBehavior or ReactToRobotOnBackBehavior or ReactToMotorCalibrationBehavior or
                 ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior or AcknowledgeFaceBehavior or
                 NativeInteractWithFaces or NativeFindFacesSocialize or NativeSearchForFaceBehavior or NativeDriveToFaceBehavior or
                 NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior ||

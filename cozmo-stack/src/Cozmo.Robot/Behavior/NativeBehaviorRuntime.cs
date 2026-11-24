@@ -581,6 +581,8 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         foreach(var candidate in Bound.Values.OfType<ReactToCliffBehavior>())candidate.RetireNativePhysical();
         foreach(var candidate in Bound.Values.OfType<ReactToImpactBehavior>())candidate.RetireNativePhysical();
         foreach(var candidate in Bound.Values.OfType<ReactToPlacedOnSlopeBehavior>())candidate.RetireNativePhysical();
+        foreach(var candidate in Bound.Values.OfType<ReactToRobotOnBackBehavior>())candidate.RetireNativePhysical();
+        foreach(var candidate in Bound.Values.OfType<ReactToMotorCalibrationBehavior>())candidate.RetireNativePhysical();
         foreach(var candidate in Bound.Values.OfType<ReactToRobotOnFaceBehavior>())candidate.RetireNativePhysical();
         foreach(var candidate in Bound.Values.OfType<ReactToRobotOnSideBehavior>())candidate.RetireNativePhysical();
         foreach(var candidate in Bound.Values.OfType<ReactToRobotShakenBehavior>())candidate.RetireNativePhysical();
