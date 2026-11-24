@@ -259,6 +259,20 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false":
+                "The only writer at 0x0063A2EA is the phone-app input excluded by the operator in M4-040. The runtime keeps the constructor value at 0x0063710A.",
+            "MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen":
+                "The retained ObjectInfo ID now reaches the located-object lookup and exact Known-state gate at 0x00637DB4..0x00637DC4.",
+            "MISSING: M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed":
+                "The shipped app supplies no G2E145 and the constructor's -1 interval gates the stream. G2E144 controls only DrawMap, which is bx lr at 0x0067EA5A.",
+            "MISSING: M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt.":
+                "SESSION5-API-REPORTS-1 binds cube state to the Robot-owned connected-object table. The host radio-slot registry is separate from the 0x00533B3C..0x00533D2C world-ID publication.",
+            "MISSING: M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt":
+                "The predicate reads the owned object, world and robot poses and native quads, then the 0x0062B6DE modifier propagates Dirty.",
+            "MISSING: M11-037 CheckForUnobservedObjects pads 0x00621E8C..0x00622102 use the retained flat camera/object adapter; complete native object/camera pose-owner binding is unbuilt":
+                "The pad and marker projections use owned poses and the outer camera written by state at 0x00513404 and marker history at 0x00654F58.",
+            "MISSING: M11-043 UpdateObjectOrigins UnknownOriginID guard 0x00620554..0x00620570: the VERIFY key and format are not in the inventory; returned 1 with nothing changed":
+                "The defined invalid-origin guard logs BlockWorld.UpdateObjectOrigins.OriginFail at 0x0062056A before returning 1.",
             "MISSING: MovementComponent.EventHandler.DriveWheels / MoveHead / MoveLift / DriveArc / TurnInPlaceAtSpeed disabled-direct-drive engine log calls; checked argument/level rows absent":
                 "The supported handlers use the native Info text at 0x0063ED9A, 0x0063F50E and 0x0063F752",
             "MISSING: MovementComponent.UnlockAllTracks for track 0x80: EnumToString returns NULL (0x007BC2B0); the phone libc's %s of NULL is not shipped":
@@ -379,6 +393,16 @@ class Session:
         for index, line in enumerate(stack_lines, 1):
             if line in resolved:
                 self.resolved_markers.append((index, line, resolved[line]))
+            elif (index > 1 and line ==
+                  "MISSING: M11-069 AIComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)"
+                  and stack_lines[index - 2].endswith("New origin: Origin1. NumOrigins=1")):
+                self.resolved_markers.append((index, line, "The constructor calls the whiteboard owned by the constructing Robot (0x00510D6E to 0x0056A686)."))
+            elif (1 < index < len(stack_lines) and line ==
+                  "MISSING: M4-018 | StopLightAnim 0x00638F9C: type-only caller has no native ObjectID"
+                  and ("IActionRunner.PrepForCompletion.AlreadyPrepped: DriveToObject [" in stack_lines[index - 2]
+                       or "IActionRunner.Cancel: Cancelling action DriveToObject[" in stack_lines[index - 2])
+                  and "StopLignAnim.Result: did not find anim 'DrivingTo'." in stack_lines[index]):
+                self.resolved_markers.append((index, line, "DriveToObject cleanup preserves its ObjectID for StopLightAnimAndResumePrevious at 0x005589CC..0x005589CE."))
             elif (index == 8918 and stack_lines[8900] ==
                   "info: [Actions] IActionRunner.Cancel: Cancelling action DriveToPickupObject[24]" and
                   stack_lines[8901] == pickup_undefined and line ==

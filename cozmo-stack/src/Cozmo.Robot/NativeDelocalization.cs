@@ -28,11 +28,18 @@ public sealed partial class EngineRobot
     //00513AB8..B16: readonly Robot ctor geometry reconstructed with checked P2 operations.
     //The final parent is this result's SAME owned computed history pose, never MAIN/current origin.
     internal Pose3d CopyHistoricalCameraPose(HistRobotState state)
+        => CopyCameraRelativeToRobot(state.Pose,state.State.HeadAngle);
+
+    // Robot::SetHeadAngle (0x005133EC..0x00513404) installs the current camera with the live robot as its ancestor.
+    internal Pose3d CopyLiveOuterCameraPose(float acceptedHeadAngle)
+        => CopyCameraRelativeToRobot(MainPose,acceptedHeadAngle);
+
+    private static Pose3d CopyCameraRelativeToRobot(Pose3d robotPose,float headAngle)
     {
         using var neck=new Pose3d(Rotation3d.Identity,HeadGeometry.NeckPositionMm);
         using var headcam=new Pose3d(HeadGeometry.DefaultHeadCamRotation,HeadGeometry.EngineHeadCamPositionMm);
-        var camera=HeadGeometry.GetCameraPose(headcam,state.State.HeadAngle);
-        camera.PreComposeWith(neck);camera.SetParent(state.Pose);return camera;
+        var camera=HeadGeometry.GetCameraPose(headcam,headAngle);
+        camera.PreComposeWith(neck);camera.SetParent(robotPose);return camera;
     }
     // Current outer camera uses accepted head angle and the live MAIN node, not history.
     internal sealed class CurrentCameraScope : IDisposable
@@ -219,7 +226,7 @@ public sealed partial class EngineRobot
         if(!Current())return;
         foreach(var stage in new[]{"FaceWorld","AIComponent","BehaviorManager","MovementComponent"})
         {
-            Engine.DelocalizationComponentHook?.Invoke(stage); // FaceWorld gets newId too (0x00510D68); its body has no observable output.
+            Engine.DelocalizationComponentHook?.Invoke(this,stage); // 0x00510D6E uses this Robot before insertion as well.
             if(!Current())return;
         }
         if(HasExternalInterface)
@@ -334,7 +341,7 @@ public sealed partial class CozmoEngine
 {
     internal BlockWorld? DelocalizationWorld;
     internal Action? ClearDelocalizationCliffs,DelocalizationConfigurationHook,DelocalizationCubeHook;
-    internal Action<string>? DelocalizationComponentHook;
+    internal Action<EngineRobot,string>? DelocalizationComponentHook;
     internal uint NativeUiDeliveryCount;
     /// <summary>Engine-to-app union tag and body; RobotDelocalized is tag 0x32 with an empty body.</summary>
     public event Action<ushort,ReadOnlyMemory<byte>>? EngineToGameMessage;

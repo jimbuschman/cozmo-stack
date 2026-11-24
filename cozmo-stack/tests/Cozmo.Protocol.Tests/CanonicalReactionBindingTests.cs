@@ -46,6 +46,21 @@ public sealed class CanonicalReactionBindingTests
     }
 
     [Fact]
+    public void ConstructorDelocalizationNotifiesItsWhiteboardBeforeRobotPublication()
+    {
+        using var rig = new M4ControlTests.Rig(Resources());
+        int renders = 0;
+        rig.Engine.BeforeConstructorDelocalizeForTest = owner =>
+        {
+            Assert.Null(rig.Engine.Robot);
+            owner.NativeBehaviorRuntime!.Manipulation!.Whiteboard.ClearQuadRenderForTest =
+                operation => { if (operation == "erase") ++renders; };
+        };
+        rig.ToSynced();
+        Assert.Equal(1, renders); // 0x00510324 -> 0x00510D6E -> 0x0056A690.
+    }
+
+    [Fact]
     public void ConstructorPopulatesRetainedRowsAfterDelocalizeWithoutReplayingAnEmptyMapLock()
     {
         using var rig = new M4ControlTests.Rig(Resources());

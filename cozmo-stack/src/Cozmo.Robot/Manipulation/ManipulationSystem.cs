@@ -42,7 +42,8 @@ public sealed class ManipulationSystem : IDisposable
             // (0x005128FC) returns that Robot's current PoseOriginList entry on each call.
             if (nativeOwner is not null)
                 Whiteboard.ClearQuadWorldOrigin = () =>
-                    !_disposed && !nativeOwner.Lifetime.Destroying && ReferenceEquals(robot.Engine.Robot, nativeOwner) &&
+                    !_disposed && !nativeOwner.Lifetime.Destroying &&
+                    (ReferenceEquals(robot.Engine.Robot, nativeOwner) || robot.Engine.Robot is null) &&
                     nativeOwner.TryGetNativeOriginOwner(nativeOwner.CurrentOriginId, out var origin) ? origin : null;
             void onTreads(OffTreadsState from, OffTreadsState to)
             {
@@ -105,9 +106,8 @@ public sealed class ManipulationSystem : IDisposable
         // Cube.ObjectId is the radio slot (activeID); the carried object and the dock target are BlockWorld ObjectIDs (M11-013, M11-041), so the slot is translated to the connected object's ObjectID first.
         robot.Cubes.ExcludeFromMovedBroadcast = c => c.ObjectId is { } slot && vision.World.ConnectedObjectIdForActiveId(slot) is { } id
             && (Docking.Carrying.IsCarryingObjectId(id) || Docking.DockTargetObjectId == id);
-        // LC3: the default-layer choice prefers the carried object over Visible and Connected (the carried ObjectID is a world ID: its type is the connected object's).
-        robot.Lights.Cubes.IsCarried = t => Docking.Carrying.CarriedObjectId is { } id
-            && vision.World.ConnectedObjects.FirstOrDefault(o => o.ObjectId == id)?.Type == t;
+        // LC3 compares the stored ObjectID directly to CarryingComponent+8 (0x00637DCA..0x00637DDA).
+        robot.Lights.Cubes.IsCarried = (_,id) => Docking.Carrying.CarriedObjectId == id;
         }
         // Retire only the exact callbacks installed by this owner; later replacements remain usable.
         var hostHook0=vision.World.SetObjectPoseChanged;

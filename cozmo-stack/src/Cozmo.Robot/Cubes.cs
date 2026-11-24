@@ -652,12 +652,9 @@ public sealed class CozmoCubes
                 }
                 case ObjectConnectionState s:
                 {
-                    // fidelity: M4-009
-                    // Retained host view: ByObjectId/ConnectionChanged expose radio slots,
-                    // including synthetic slots7..9 used by older fixtures. They do not
-                    // supply the native ObjectID. CozmoRobot owns the source gate/world/
-                    // pool/Recvd/E2G path; ConnectionStateBroadcast exposes its world ID.
-                    callouts.Add(() => Behavior.SteppedBehavior.ReportMissing("M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt."));
+                    // fidelity: M4-009, M11-041 — this host registry tracks radio slots.
+                    // The migrated connection event comes from the Robot-owned BlockWorld
+                    // result at 0x00533B3C..0x00533D2C through ConnectionStateBroadcast.
                     bool isNew = !_byFactoryId.ContainsKey(s.FactoryID);
                     var c = Track(s.FactoryID);
                     c.Type = s.ObjectType;

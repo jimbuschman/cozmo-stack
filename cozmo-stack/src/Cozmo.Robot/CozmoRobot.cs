@@ -460,12 +460,12 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.DelocalizationCubeHook=Lights.Cubes.OnRobotDelocalized;
         LocalizationWorld.ActiveObjectPoseStateChanged=Lights.Cubes.OnActiveObjectPoseStateChanged;
         // fidelity: M11-069
-        Engine.DelocalizationComponentHook=stage=>
+        Engine.DelocalizationComponentHook=(native,stage)=>
         {
             // B-M11-8 item 1: FaceWorld::OnRobotDelocalized (0x004F55E4..0x004F563A) only erases each face's viz object
             // (0x004F5614) and stores the sentinel; VizManager produces no output (V1-V6), so nothing observable happens.
             if(stage=="FaceWorld")return;
-            if(stage=="AIComponent" && Engine.Robot is {} native && native.NativeBehaviorRuntime?.Manipulation is {} manipulation)
+            if(stage=="AIComponent" && native.NativeBehaviorRuntime?.Manipulation is {} manipulation)
             {
                 // 0x00569F4E -> veneer 0x008CB6CC -> AIWhiteboard::OnRobotDelocalized (0x0056A686):
                 // the existing zombie-object cleanup, render and beacon clear are the entire AI callback.
@@ -957,6 +957,8 @@ public sealed partial class CozmoRobot : IDisposable
         // HandleMotorCalibration writes the calibrated flags after the source event and any carry detach.
         if (m is not MotorCalibration) Route(() => State.Handle(m));
         Route(() => Motion.Handle(m));
+        if (m is RobotState && sourceOwner is not null && _vision is not null && State.HeadCalibrated)
+            Route(() => _vision.StoreLiveOuterMarkerCamera(sourceOwner, Motion.ObservationHeadAngleRad)); // 0x0051295A, before the pose-origin gate.
         Route(() => Camera.Handle(m));
         // fidelity: M3-021
         if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));

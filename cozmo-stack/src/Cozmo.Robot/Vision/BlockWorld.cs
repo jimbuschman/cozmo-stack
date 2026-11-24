@@ -482,14 +482,21 @@ public sealed partial class ObservableObject
     /// </summary>
     public bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad, double minMarkerImageSizePx,
                               double xPad, double yPad, out NotVisibleReason reason, out bool hasNothingBehind)
+        => IsVisibleFrom(camera, maxFaceNormalAngleRad, minMarkerImageSizePx, xPad, yPad,
+            out reason, out hasNothingBehind, ownedMarkerPoses: false);
+
+    internal bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad, double minMarkerImageSizePx,
+                                double xPad, double yPad, out NotVisibleReason reason, out bool hasNothingBehind,
+                                bool ownedMarkerPoses)
     {
         reason = NotVisibleReason.PoseProblem;
         hasNothingBehind = false;
         var worst = NotVisibleReason.PoseProblem;
         foreach (var m in Markers)
         {
-            var r = MarkerVisibility(m, camera, maxFaceNormalAngleRad, minMarkerImageSizePx, xPad, yPad,
-                                     requireSomethingBehind: true);
+            var r = ownedMarkerPoses
+                ? OwnedMarkerVisibility(m, camera, (float)maxFaceNormalAngleRad, (float)minMarkerImageSizePx, xPad, yPad, true)
+                : MarkerVisibility(m, camera, maxFaceNormalAngleRad, minMarkerImageSizePx, xPad, yPad, requireSomethingBehind: true);
             if (r == NotVisibleReason.NothingBehind) hasNothingBehind = true;
             if (r == NotVisibleReason.IsVisible) { reason = r; return true; }
             if (r > worst) worst = r;
@@ -531,14 +538,20 @@ public sealed partial class ObservableObject
         foreach (var marker in Markers)
         {
             if (camera is null) return NotVisibleReason.CameraNotCalibrated; // 0x0087E4C6.
-            using var markerInCamera = new Pose3d("");
-            var current = marker.PoseOnObject.TryWithRespectTo(camera.Pose, markerInCamera)
-                ? MarkerVisibilityInCamera(marker, camera, markerInCamera, maximumFaceAngle, 0, 0, 0, false)
-                : NotVisibleReason.PoseProblem; // 0x0087E504–0x0087E50A.
+            var current = OwnedMarkerVisibility(marker, camera, maximumFaceAngle, 0, 0, 0, false);
             if (current == NotVisibleReason.IsVisible) return current;
             if (current > reason) reason = current;
         }
         return reason;
+    }
+
+    private static NotVisibleReason OwnedMarkerVisibility(KnownMarker marker, CameraModel camera,
+        float maxAngle, float minSize, double xPad, double yPad, bool requireSomethingBehind)
+    {
+        using var markerInCamera = new Pose3d("");
+        return marker.PoseOnObject.TryWithRespectTo(camera.Pose, markerInCamera)
+            ? MarkerVisibilityInCamera(marker, camera, markerInCamera, maxAngle, minSize, xPad, yPad, requireSomethingBehind)
+            : NotVisibleReason.PoseProblem; // 0x0087E504..0x0087E50A.
     }
 
     /// <summary>
@@ -871,8 +884,14 @@ public sealed partial class BlockWorld
     }
     // fidelity: M4-037
     internal SourceLogSink? SourceLog;
-    // M11-013: explicit lower recipient input; GetCodeName/GetNameForCode has no checked port in this clone.
-    internal Func<short,string?>? MarkerCodeNameInput;
+    // M11-013: Marker::GetCodeName 0x0087E1D0 -> GetNameForCode 0x0087E0D4.
+    private Func<short,string?>? _markerCodeNameForTest;
+    internal Func<short,string?>? MarkerCodeNameInput
+    {
+        get => _markerCodeNameForTest ?? GetMarkerCodeName;
+        set => _markerCodeNameForTest = value;
+    }
+    private string GetMarkerCodeName(short code) => MarkerLibrary.GetCodeName(code, PublicSafeSourceSink);
     internal string RootName(ObservableObject obj) => obj.PoseNameNode?.FindRoot(SourceLog).Name ?? PoseOriginNames.NameOf(obj.OriginId);
 
 
@@ -884,8 +903,8 @@ public sealed partial class BlockWorld
         Maps.Dispose();
         Maps = new SourceMapComponent();
         BindMapInputs();
-        // fidelity: M11-075 — no phantom subscriptions with an unproved native lifetime.
-        Behavior.SteppedBehavior.ReportMissing("M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed");
+        // fidelity: M11-075 — 0x006807EA writes the Viz-render flag (DrawMap 0x0067EA5A is bx lr).
+        // The shipped app sends no frequency input (G2E145); the constructor's -1 interval gates the stream.
     }
     // 0x0067ED98 / 0x0067EFCE: borrow the existing live robot-pose and camera-time owners.
     // Robot::GetPose returns the main pose even when its diagnostic verifies fail.
@@ -1935,7 +1954,7 @@ public sealed partial class BlockWorld
             {
                 camera.Occluders.Clear();                                          // 0x0062503A
                 AddLiftOccluder(camera, pd);                                       // 0x00625046
-                forgotten.AddRange(CheckForUnobservedObjects(camera, lastImage, pd.Moving, pd.RotatingTooFast,worldRotatingGate));   // 0x0062504E
+                forgotten.AddRange(CheckForUnobservedObjects(camera, lastImage, pd.Moving, pd.RotatingTooFast, worldRotatingGate, nativeComputedPose is not null));   // 0x0062504E
             }
         }
         else
@@ -1956,7 +1975,7 @@ public sealed partial class BlockWorld
             }
             if (r7)
             {
-                forgotten.AddRange(CheckForUnobservedObjects(camera, ts, pd.Moving, pd.RotatingTooFast,worldRotatingGate));   // 0x006250CA
+                forgotten.AddRange(CheckForUnobservedObjects(camera, ts, pd.Moving, pd.RotatingTooFast, worldRotatingGate, nativeComputedPose is not null));   // 0x006250CA
                 UpdatePoseOfStackedObjects();                                      // 0x006250D0
             }
         }
@@ -1971,23 +1990,64 @@ public sealed partial class BlockWorld
 
     /// <summary>
     /// The tail's dirty pass (0x006250E8..0x0062519C): <c>FindLocatedObjectHelper</c> with the default filter, the predicate
-    /// <c>BlockWorld::CheckForCollisionWithRobot</c> 0x0062593C and the modify function <c>MarkObjectDirty(obj, true)</c>, skipped when
-    /// the byte at <c>DockingComponent+4</c> is non-zero. NOT BUILT (M11-042, RECOVERABLE_GAP): the predicate's first test is
-    /// <c>ObservableObject</c> vtable +0x58 == 0, whose body is unread, and the byte's meaning is unread. This stub makes the missing
-    /// pass visible through <see cref="UnbuiltCollisionDirtyPassRuns"/>.
+    /// <c>BlockWorld::CheckForCollisionWithRobot</c> 0x0062593C and the modify function <c>MarkObjectDirty(obj, true)</c>
+    /// at 0x0062B6DE. DockingComponent+4 skips the pass while picking or placing (0x006250DC..0x006250E4).
     /// </summary>
-    // fidelity: M11-042
-    // When this pass is built, its carried test (0x0062597A..0x00625982) must call the engine body CarryingComponent::IsCarryingObject 0x00633F88 (the
-    // shared IsCarryingObject binding: carried OR on-top), not the carried-only read (census CARRIED-ONTOP-BINDING-CENSUS-1 C13).
+    // fidelity: M11-037, M11-042
     private void CollisionDirtyPass()
     {
         if (PickingOrPlacing?.Invoke() == true) return;
-        UnbuiltCollisionDirtyPassRuns++;
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt");
+        if (NativeSnapshotOwner?.Invoke() is not { Lifetime.Destroying: false } owner)
+        {
+            UnbuiltCollisionDirtyPassRuns++;
+            if (NativeSnapshotOwner is not null)
+                Missing("M11-037 CheckForCollisionWithRobot 0x0062593C: native Robot/world pose owner unavailable");
+            return;
+        }
+        var filter = new BlockWorldFilter();
+        filter.Predicates.Add(obj => CheckForCollisionWithRobot(obj, owner));
+        FindLocatedObjectHelper(filter, obj => MarkObjectDirty(obj, true), false);
     }
 
-    /// <summary>How many frames reached the collision dirty pass that this stack does not build (M11-042).</summary>
+    /// <summary>How many frames reached the collision dirty pass without a bound native robot.</summary>
     public int UnbuiltCollisionDirtyPassRuns { get; private set; }
+
+    private bool CheckForCollisionWithRobot(ObservableObject obj, EngineRobot owner)
+    {
+        // ObservableObject +0x58 excludes Charger (0x004EA67E) and MarkerlessObject (0x00502DD4).
+        // ActiveCube returns zero at 0x004E02AA. SDK/custom and app play pieces are outside this world.
+        if (!CubeGeometry.IsCube(obj.Type) || obj.LastObservedTimestamp >= _lastImageTimestamp ||
+            obj.PoseState != PoseState.Known || Carrying(obj.ObjectId) || DockingObjectId?.Invoke() == obj.ObjectId)
+            return false;
+
+        var origin = owner.GetNativeOrigin(owner.CurrentOriginId);
+        using var objectInWorld = new Pose3d("");
+        var typeName = CubeConnections.ObjectTypeName(obj.Type);
+        int objectId = unchecked((int)obj.ObjectId);
+        if (!obj.NativePose.TryWithRespectTo(origin, objectInWorld))
+        {
+            using var root = obj.NativePose.FindRoot();
+            Source(EngineLogLevel.Warning, null, "BlockWorld.CheckForCollisionWithRobot.BadOrigin",
+                $"Could not get {typeName} {objectId} pose (origin: {root.Name}) w.r.t. robot origin ({origin.Name})");
+            return false;
+        }
+
+        using var objectAtRoot = obj.NativePose.GetWithRespectToRoot(); // 0x006259EA -> 0x004DF628.
+        float halfHeight = (float)CubeGeometry.DimInParentFrameZ(obj, objectAtRoot.Rotation) * 0.5f;
+        var robotPose = owner.GetCheckedMainPose(); // 0x00625A18
+        float robotZ = (float)robotPose.Translation.Z;
+        float z = (float)objectInWorld.Translation.Z;
+        if (!(z >= robotZ - halfHeight && z <= halfHeight + (robotZ + 67.7f))) return false;
+        if (!obj.TryObservableBoundingQuad50(objectInWorld, 0f, out var objectQuad)) return false;
+
+        using var robotQuadPose = owner.GetCheckedMainPose().GetWithRespectToRoot(); // 0x00625A6A..0x00625A82.
+        var robotQuad = ObjectFootprint.RobotBoundingQuadXY(robotQuadPose, -10f);
+        if (!robotQuad.Intersects(objectQuad!)) return false;
+
+        Source(EngineLogLevel.Info, "BlockWorld", "BlockWorld.CheckForCollisionWithRobot.ObjectRobotIntersection",
+            $"Marking object {typeName} {objectId} as 'dirty', because it intersects robot {owner.NativeRobotId}'s bounding quad.");
+        return true;
+    }
 
     /// <summary>
     /// <c>BlockConfigurationManager::Update(Robot)</c> 0x616D7C (C3.2/Q2.2). The engine gates it on
@@ -2904,11 +2964,15 @@ public sealed partial class BlockWorld
     /// yPad, hasNothingBehind)</c> and <c>MarkObjectUnobserved</c> runs when it is visible, or when it is not, hasNothingBehind is set and its
     /// pose is Dirty (0x00622106..0x0062218E). The objects that leave the world are returned.
     ///
-    /// NOT BUILT (visible): the xPad and yPad terms (0x0062206E..0x006220DA: the length of the camera-to-object translation, <c>GetMaxLocalizationDistance_mm</c>,
-    /// <c>(2.0 - d/max)</c>, and fields at calib+4/+8 and node+0x18/+0x1C whose names are unread), so both pads are 0 (<see cref="PaddingIsBuilt"/> is false).
+    /// The pads use the camera-relative distance, the first marker's dimensions and the outer camera's focal lengths
+    /// (0x00621F36..0x006220DA).
     /// </summary>
     // fidelity: M11-004, M11-007, M11-008, M11-010, M11-037, M11-042
     public IReadOnlyList<ObservableObject> CheckForUnobservedObjects(CameraModel camera, uint timestamp, bool robotMoving, bool rotatingTooFast, Func<uint,bool>? worldRotatingGate=null)
+        => CheckForUnobservedObjects(camera, timestamp, robotMoving, rotatingTooFast, worldRotatingGate, ownedPoses: false);
+
+    private IReadOnlyList<ObservableObject> CheckForUnobservedObjects(CameraModel camera, uint timestamp,
+        bool robotMoving, bool rotatingTooFast, Func<uint,bool>? worldRotatingGate, bool ownedPoses)
     {
         using var frameMutation=EnterPoseMutation();
         var forgotten = new List<ObservableObject>();
@@ -2934,12 +2998,26 @@ public sealed partial class BlockWorld
             var o = GetLocatedObjectByIdHelper(id);
             if (o is null) continue;
             if (o.Markers.Count == 0) continue;
-            // Retained flat camera/object input adapter; the complete native marker/pose binding remains explicit.
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 CheckForUnobservedObjects pads 0x00621E8C..0x00622102 use the retained flat camera/object adapter; complete native object/camera pose-owner binding is unbuilt");
-            using var inverse = camera.Pose.Inverse(); using var relative = inverse.Compose(o.Pose);
+            using var relative = new Pose3d("");
+            if (ownedPoses)
+            {
+                if (!o.NativePose.TryWithRespectTo(camera.Pose, relative))
+                {
+                    Source(EngineLogLevel.Error, null, "BlockWorld.CheckForUnobservedObjects.ObjectNotInCameraPoseOrigin",
+                        $"Object {unchecked((int)id)} (PosePath:{o.NativePose.GetNamedPathToRoot(false)})");
+                    EngineErrorState.StoreAndMaybeBreak(); // 0x00621FEC..0x00621FFC.
+                    continue;
+                }
+            }
+            else
+            {
+                using var inverse = camera.Pose.Inverse();
+                using var flat = inverse.Compose(o.Pose);
+                relative.AssignInputValue(flat);
+            }
             var (xPad,yPad) = ObservationPads(relative.Translation, camera.Calibration, o.Markers[0]);
             bool visible = o.IsVisibleFrom(camera, VisibilityNormalAngleRad, MinVisibleMarkerSizePx, xPad, yPad,
-                                           out var reason, out bool hasNothingBehind);
+                                           out var reason, out bool hasNothingBehind, ownedPoses);
             bool dirtyWithNothingBehind = !visible && hasNothingBehind && o.PoseState == PoseState.Dirty;
             if (!visible && !dirtyWithNothingBehind) continue;
             EmitPublicLog($"object {o.ObjectId} unobserved (shouldBeVisible:{visible} hasNothingBehind:{hasNothingBehind} reason:{reason})");
@@ -3505,8 +3583,10 @@ public sealed partial class BlockWorld
         // 0x00620554 cmp r0,r4 / cmpne r0,r5 against PoseOriginList::UnknownOriginID (GOT 0x0103E978 -> 0x00C97B20, value 0) -> VERIFY, return 1.
         if (oldOriginId == UnknownOriginId || newOriginId == UnknownOriginId)
         {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-043 UpdateObjectOrigins UnknownOriginID guard 0x00620554..0x00620570: the VERIFY key and format are not in the inventory; returned 1 with nothing changed");
-            EngineErrorState.ErrorFlagSet = true;
+            Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObjectOrigins.OriginFail",
+                "VERIFY(PoseOriginList::UnknownOriginID != oldOriginID && PoseOriginList::UnknownOriginID != newOriginID): Old and new origin IDs must not be Unknown");
+            EngineErrorState.ErrorFlagSet = true; // 0x0062056A, sVerifyFailedReturnFalse.
+            NativeForceFlush?.Invoke();
             return 1;
         }
         using var diagnostics = Pose3d.UseSourceLog((l,c,k,t)=>Source(l,c,k,t),NativeForceFlush);

@@ -67,6 +67,8 @@ public sealed partial class VisionSystem : IDisposable
     private EngineRobot? _groundOwner;
     private CameraCalibration? _groundOuterCalibration;
     private OccluderList _outerCameraOccluders = new();
+    private Pose3d? _outerMarkerCameraPose;
+    private Pose3d? _outerMarkerHistoryParent;
     private CameraCalibration? _groundPendingOuter;
     private CameraCalibration? _groundInstalled;
     private NativeGroundPlaneLookup? _groundLookup;
@@ -297,7 +299,14 @@ public sealed partial class VisionSystem : IDisposable
                 if (!sameOwner) retiredProfiler = ReplaceLifetimeProfiler();
             }
             _groundOwner = owner;
-            if (!sameOwner) _outerCameraOccluders = new();
+            if (!sameOwner)
+            {
+                _outerCameraOccluders = new();
+                _outerMarkerCameraPose?.Dispose();
+                _outerMarkerCameraPose = null;
+                _outerMarkerHistoryParent?.Dispose();
+                _outerMarkerHistoryParent = null;
+            }
             Pets.BindNativeOwner(owner);
             _nativeWorkerPhysical=false;
             _nativeVisionWhileMoving=false;
@@ -646,6 +655,10 @@ public sealed partial class VisionSystem : IDisposable
             subscription=_nativeImuSubscription;_nativeImuSubscription=null;_nativeImu=null;
             movingSubscription=_nativeVisionWhileMovingSubscription;_nativeVisionWhileMovingSubscription=null;
             _groundOwner=null;_groundOuterCalibration=null;_groundInstalled=null;_groundLookup=null;_nativeWorkerPhysical=false;
+            _outerMarkerCameraPose?.Dispose();
+            _outerMarkerCameraPose = null;
+            _outerMarkerHistoryParent?.Dispose();
+            _outerMarkerHistoryParent = null;
             _nativeVisionWhileMoving=false;
             if(_nativeInitialization is {} retired)_retiredMotionStates.Enqueue(retired);
             _nativeInitialization=null;_nativeInitializationEpoch++;
@@ -773,6 +786,51 @@ public sealed partial class VisionSystem : IDisposable
             return ReferenceEquals(_groundOwner, owner) && !owner.Lifetime.Destroying &&
                 ReferenceEquals(_robot.Engine.Robot, owner) && _groundOuterCalibration is { } calibration
                 ? new CameraModel(calibration, cameraPose, _outerCameraOccluders) : null;
+    }
+
+    private CameraModel? BindOuterMarkerCamera(EngineRobot owner, Pose3d framePose, bool updatePose,
+        out Pose3d? historicalParentLease)
+    {
+        historicalParentLease = null;
+        lock (_groundGate)
+        {
+            if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying ||
+                !ReferenceEquals(_robot.Engine.Robot, owner) || _groundOuterCalibration is not { } calibration)
+                return null;
+            _outerMarkerCameraPose ??= new Pose3d("");
+            // The nonempty result assigns the historical pose at 0x00654F58. The empty-list branch
+            // 0x00654D76 -> 0x00654DF4 uses the last pose installed by history or Robot::SetHeadAngle.
+            if (updatePose)
+            {
+                _outerMarkerCameraPose.AssignInputValue(framePose);
+                _outerMarkerHistoryParent?.Dispose();
+                // The captured history result's local wrapper retires after the frame.
+                _outerMarkerHistoryParent = framePose.Node?.Parent is { } parent ? Pose3d.WrapExisting(parent) : null;
+            }
+            else
+            {
+                framePose.AssignInputValue(_outerMarkerCameraPose);
+                if (_outerMarkerHistoryParent?.Node is { } retained)
+                    historicalParentLease = Pose3d.WrapExisting(retained);
+            }
+            return new CameraModel(calibration, framePose, _outerCameraOccluders);
+        }
+    }
+
+    internal void StoreLiveOuterMarkerCamera(EngineRobot owner, float acceptedHeadAngle)
+    {
+        using var tree = LogCallbackDeferral.EnterGated(owner.PoseTreeGate);
+        if (owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) return;
+        using var camera = owner.CopyLiveOuterCameraPose(acceptedHeadAngle);
+        lock (_groundGate)
+        {
+            if (!ReferenceEquals(_groundOwner, owner) || owner.Lifetime.Destroying ||
+                !ReferenceEquals(_robot.Engine.Robot, owner)) return;
+            _outerMarkerCameraPose ??= new Pose3d("");
+            _outerMarkerCameraPose.AssignInputValue(camera); // 0x00513404, VisionComponent+0x30.
+            _outerMarkerHistoryParent?.Dispose();
+            _outerMarkerHistoryParent = null;
+        }
     }
     // MCP image metadata uses the same frame-time lift occluder as marker visibility.
     // AddLiftOccluder 0x006564D8 reads raw history with interpolation disabled
@@ -2323,6 +2381,15 @@ public sealed partial class VisionSystem : IDisposable
             using var historicalResult=new HistRobotState();
             using var nativeResultCameraPose=new Pose3d("");
             var markerCamera=processingCamera;
+            Pose3d? emptyFrameParent = null;
+            if (markerMode && queueForEngine && sourceMarkers.Count == 0 && sourceOwner is not null)
+            {
+                var outer = BindOuterMarkerCamera(sourceOwner, nativeResultCameraPose, updatePose: false, out emptyFrameParent);
+                if (outer is null)
+                {stateComputed=false;MarkerMissing("M11-050 original outer camera unavailable for empty marker result");}
+                else markerCamera = outer;
+            }
+            using var emptyFrameCameraParentLease = emptyFrameParent;
             // fidelity: M11-036, M11-050
             if (markerMode && sourceMarkers.Count > 0)
             {
@@ -2360,7 +2427,7 @@ public sealed partial class VisionSystem : IDisposable
                         {
                             using var nativeCamera=sourceOwner.CopyHistoricalCameraPose(historicalResult);
                             nativeResultCameraPose.AssignInputValue(nativeCamera);
-                            var outer=BindOuterCameraForVisibility(sourceOwner,nativeResultCameraPose);
+                            var outer=BindOuterMarkerCamera(sourceOwner,nativeResultCameraPose,updatePose: true,out _);
                             if(outer is null)
                             {stateComputed=false;MarkerMissing("M11-050 original outer historical camera calibration unavailable; marker handler skipped");}
                             else
