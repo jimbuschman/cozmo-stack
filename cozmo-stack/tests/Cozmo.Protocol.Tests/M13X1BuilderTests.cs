@@ -316,7 +316,9 @@ public sealed class M13X1BuilderTests
         var prefix=new LatticePlan(new(99,99,0),Array.Empty<MotionPrimitive>(),0,0);StateC end=default;int checkedCount=0;
         (LatticeState State,float Penalty) Apply(LatticeState state,MotionPrimitive p,bool check)
         {if(check)checkedCount++;return (NativePlanDependencies.Advance(state,p),checkedCount==3?0.875f:0.75f);}
-        Assert.False(NativePlanDependencies.PlanIsSafe(old,0,40,prims,Apply,ref prefix,ref end));
+        var diagnostics = new List<string>();
+        Assert.False(NativePlanDependencies.PlanIsSafe(old,0,40,prims,Apply,ref prefix,ref end,diagnostics.Add));
+        Assert.Equal("Collision along plan action 2 (starting from 0) Penalty increased from 0.250000 to 0.875000", Assert.Single(diagnostics));
         Assert.Equal(3,checkedCount);Assert.Single(prefix.Actions);Assert.Equal(new[]{0.25f},prefix.Penalties);
         Assert.Equal(10*prims.ResolutionMm,end.X);
         checkedCount=0;Assert.True(NativePlanDependencies.PlanIsSafe(old,3,40,prims,Apply,ref prefix,ref end));

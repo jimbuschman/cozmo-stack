@@ -257,6 +257,13 @@ class Session:
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
         resolved = {
+            "MISSING: M1-034/M13-033 empty IPathPlanner goal-vector dereference 0x00508A60..0x00508A8E skipped":
+                "M1-034 logs the skipped unchecked goal lookup at 0x00508A7E..0x00508A8E",
+            **{f"MISSING: M13-034 CoreTechPrint: ERROR ({name}): Exceeded path size":
+               "The native append limit and return are retained and CoreTechPrint text is emitted"
+               for name in ("AppendLine", "AppendPointTurn", "AppendSegment")},
+            "MISSING: M1-034/M12-002 Dole empty-path unchecked segment read 0x00507F10 skipped, prior counter retained":
+                "The empty-path underflow at 0x00507E7E reaches an undefined segment read at 0x00507F2A..0x00507F3C. The M1-034 skip is logged",
             "MISSING: M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA":
                 "M1-034 skips the unchecked external-interface dereference from 0x005A20BA..0x005A20D6. The policy skip is logged",
             "MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / "
@@ -335,6 +342,17 @@ class Session:
         for index, line in enumerate(source(self.path / "stack-log.txt").splitlines(), 1):
             if line in resolved:
                 self.resolved_markers.append((index, line, resolved[line]))
+            elif re.fullmatch(
+                r"MISSING: M13-034 CoreTechPrint: ERROR: can't look up prim for angle [0-9]+ and action id -?[0-9]+",
+                line,
+            ):
+                self.resolved_markers.append((index, line, "0x00855E74 logs the invalid lookup and retains the appended prefix"))
+            elif re.fullmatch(
+                r"MISSING: M13-034 stdout collision diagnostic 0x00850D84: action [0-9]+, starting from [0-9]+, "
+                r"old penalty [^;]+, new penalty [^;]+; printf formatting unbuilt",
+                line,
+            ):
+                self.resolved_markers.append((index, line, "0x00850D84 reports the collision before the existing unsafe return"))
             elif re.fullmatch(
                 r"MISSING: M13-033 stdout: FaceAndApproachPlanner: deltaTheta of -?[0-9]+\.[0-9]{6} above threshold, doing backup!",
                 line,

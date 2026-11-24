@@ -22,6 +22,56 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         public override bool CanInterrupt()=>false;
         public override uint CheckIfDone()=>EngineActionResult.Running;
     }
+    [Theory]
+    [InlineData(126543.91, 124065u, 124215u, UnexpectedMovementType.TurnedInOppositeDirection, 12)]
+    [InlineData(670020.53, 670245u, 670545u, UnexpectedMovementType.TurnedButStopped, 11)]
+    [InlineData(726360.21, 727005u, 727155u, UnexpectedMovementType.TurnedInOppositeDirection, 11)]
+    public void SessionFivePathStallRewindsThroughTheActualRobotOwner(double at, uint startStamp,
+        uint fireStamp, UnexpectedMovementType type, int count)
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION5_PATH_STALL_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        double from = at - 1800, to = at + 250;
+        var input = RecordedRobotInput.ReadInbound(bundle, time => time >= from, to, [0xF0], discardRetries: true)
+            .Select(row => (row.At, State: Assert.IsType<RobotState>(row.Message)))
+            .DistinctBy(row => row.State.Timestamp).ToArray();
+        var stallOutput = RecordedRobotInput.ReadOutbound(bundle, time => time >= at, at + 150, [0x45, 0x3C]).ToArray();
+        var expected = Assert.Single(stallOutput.Select(row => row.Message).OfType<AbsoluteLocalizationUpdate>(),
+            correction => correction.Timestamp == fireStamp);
+        Assert.Equal(new RobotMessageId[] { RobotMessageId.AbsLocalizationUpdate, RobotMessageId.ClearPath },
+            stallOutput.Where(row => row.At == stallOutput.First(item => ReferenceEquals(item.Message, expected)).At)
+                .Select(row => row.Message.Id));
+
+        using var f = new Fixture(sourceNvEmpty: true, keepNeedsFull: true);
+        var rig = f.Rig;
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.Activity = null;
+        manager.HostReactionChecksEnabled = false; // Isolate movement/history from the recorded roll/pickup action.
+        var reports = new List<UnexpectedMovementReport>();
+        rig.Robot.Sensors.UnexpectedMovementDetectedInternal += reports.Add;
+        int mark = rig.Mark();
+        double previous = from;
+        foreach (var (time, state) in input)
+        {
+            state.PoseOriginId = f.Robot.CurrentOriginId;
+            state.PoseFrameId = f.Robot.PoseFrameId;
+            rig.Data(state);
+            rig.Tick(time - previous);
+            previous = time;
+        }
+        var report = Assert.Single(reports, value => value.Timestamp == fireStamp);
+        Assert.Equal(type, report.Type);
+        Assert.Equal(startStamp, report.StartTimestamp);
+        Assert.Equal(count, report.Count);
+        Assert.Equal(UnexpectedMovementSide.Front, report.Side);
+        var actual = Assert.Single(rig.SentSince(mark).OfType<AbsoluteLocalizationUpdate>(),
+            correction => correction.Timestamp == fireStamp);
+        Assert.InRange(actual.PoseX, expected.PoseX - .01f, expected.PoseX + .01f);
+        Assert.InRange(actual.PoseY, expected.PoseY - .01f, expected.PoseY + .01f);
+        Assert.InRange(actual.PoseAngleRad, expected.PoseAngleRad - .0001f, expected.PoseAngleRad + .0001f);
+        Assert.Contains(f.M.World.LocatedObjects, item => item.Type == ObjectType.CollisionObstacle);
+    }
+
     [Fact]
     public void SessionFiveSlopeReplayUsesTheFirmwarePitchAndRawGyro()
     {

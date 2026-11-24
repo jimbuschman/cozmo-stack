@@ -363,6 +363,33 @@ public sealed class M13PlannerOwnershipTests
     }
 
     [Fact]
+    public void PlannerRunModeMessageSwitchesTheNextPlanBetweenCallerAndWorker()
+    {
+        using var rig = new M4ControlTests.Rig();
+        rig.ToSynced();
+        using var start = At(0);
+        using var goal = At(200);
+        var modes = new List<string>();
+        using var runtime = new NativeLatticePlannerRuntime(Backend(), rig.Robot.Vision.World, () => null,
+            (_, channel, key, text) => { if (channel == "Planner" && key == "LatticePlanner.IsSync") modes.Add(text); },
+            _ => { }, rig.Engine);
+
+        rig.Engine.AnimationMessages.Deliver(0x7B, false, new byte[] { 1 });
+        Assert.Equal(1, runtime.ComputePath(start, new[] { goal }));
+        Assert.Equal(2, runtime.CheckPlanningStatus);
+        Assert.False(runtime.F0);
+
+        rig.Engine.AnimationMessages.Deliver(0x7B, false, new byte[] { 0 });
+        lock (runtime.ContextMutex)
+        {
+            Assert.Equal(1, runtime.ComputePath(start, new[] { goal }));
+            Assert.True(runtime.F0);
+        }
+        Wait(runtime);
+        Assert.Equal(new[] { "true", "false" }, modes);
+    }
+
+    [Fact]
     public void FullCopiesShareParentsAndReplacementAssignsAppendsShrinksAndSkipsSelfVector()
     {
         // reach: unit (substitutes parented inputs and synchronous mode, real ComputePath/pose lifetimes).

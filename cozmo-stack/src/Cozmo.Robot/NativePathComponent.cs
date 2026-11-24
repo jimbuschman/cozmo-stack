@@ -31,7 +31,7 @@ internal sealed partial class PathComponent
         SourceLogSink source=(level,channel,key,text)=>_robot.Engine.EmitSourceLog(level,channel,key,text);
         Action<string> missing=text=>_robot.Engine.EmitStackLog("MISSING: "+text);
         NativeFace=new(false,source,missing,_robot.Engine.EmitStackLog);
-        NativeMinimal=new(true,source,missing);
+        NativeMinimal=new(true,source,missing,_robot.Engine.EmitStackLog);
     }
     internal Func<bool>? PlannerPathIsSafe;
     internal Func<bool>? PlannerSkipSafetyCheck;
@@ -168,7 +168,13 @@ internal sealed partial class PathComponent
         if(end>=DoleSegmentCount)end=unchecked(DoleSegmentCount-1);
         _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter",$"should dole from {start} to {end} (totalSegments = {DoleSegmentCount})");
         if(current is not null&&!current())return;
-        if(DoleSegmentCount==0){MissingOnce("M1-034/M12-002 Dole empty-path unchecked segment read 0x00507F10 skipped, prior counter retained");return;}
+        if (DoleSegmentCount == 0)
+        {
+            // 0x00507E7E underflows the empty end to UINT_MAX. The first
+            // iteration then reads through the empty path at 0x00507F2A..0x00507F3C.
+            _robot.Engine.EmitStackLog("M1-034/M12-002 Dole skipped the unchecked empty-path read at 0x00507F2A..0x00507F3C; retained the segment counter");
+            return;
+        }
         for(int i=start;unchecked((uint)i)<=end && i<_dolerPath.Count;i++)
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter",$"doling out basestation idx {i} :  ");

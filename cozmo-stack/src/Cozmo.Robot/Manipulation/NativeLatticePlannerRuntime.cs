@@ -23,7 +23,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     internal volatile bool F0,F1,F3;
     internal bool F2=>_backend.RunFlag;
     internal bool F4=>true; // Only ctor writes 1; the other goal loop is unreachable.
-    internal bool F5;
+    internal volatile bool F5;
     private volatile int _status;
     private uint _searchNum;
     private byte _chosenGoal;
@@ -41,11 +41,23 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     {
         _engine=engine;_backend=backend;_world=world;_carried=carried;_source=source;_missing=missing;
         backend.NativeRuntime=this;backend.SetRunFlag(true);
-        _runModeSubscription=engine?.AnimationMessages.SubscribeMessage(0x7B,false,_=>missing("M13-033 PlannerRunMode 0x7B callback argument/enum decoding is unported; F5 remains its checked asynchronous default"));
+        _runModeSubscription=engine?.AnimationMessages.SubscribeMessage(0x7B,false,HandleRunMode);
         _worker=new Thread(Worker){IsBackground=true,Name="cozmo-lattice-planner"};_worker.Start();
     }
     private void Publish(int value){_status=value;StatusPublished?.Invoke(value);}
     private void Info(string key,string text)=>_source(EngineLogLevel.Info,"Planner",key,text);
+    private void HandleRunMode(object? payload)
+    {
+        // PlannerRunMode.cs and 0x00736D7C unpack one bool. The handler at
+        // 0x005008E4 forwards it to SetIsSynchronous (0x004FFF34..0x004FFF5C).
+        if (Volatile.Read(ref _disposed) != 0) return;
+        bool synchronous;
+        if (payload is bool value) synchronous = value;
+        else if (payload is byte[] { Length: 1 } bytes) synchronous = bytes[0] != 0;
+        else return;
+        F5 = synchronous;
+        Info("LatticePlanner.IsSync", synchronous ? "true" : "false");
+    }
     public int ComputePath(Pose3d start,IReadOnlyList<Pose3d> goals)
     {
         bool held=Monitor.TryEnter(ContextMutex);
@@ -122,7 +134,8 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
                 var retained=_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
                 var prefix=new LatticePlan(retained.Start,Array.Empty<MotionPrimitive>(),0,0);StateC endpoint=default;
                 // StartPlanning calls PlanIsSafe at 0x004FF424 only when force is false.
-                if(NativePlanDependencies.PlanIsSafe(retained,nearest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,_missing))return 2;
+                if(NativePlanDependencies.PlanIsSafe(retained,nearest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,
+                    WriteStandardOutput))return 2;
                 Info("LatticePlanner.GetPlan.OldPlanUnsafe",$"old plan unsafe! Will replan, starting from {nearest.Index}, keeping {prefix.Actions.Count} actions from oldPlan.");
                 _total=prefix;if(prefix.Actions.Count!=0)selectedStart=endpoint;
             }
@@ -161,7 +174,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
                         EngineF.Bits(0x3727C5AC), primitives.NumAngles, primitives.InverseAngleStep,
                         ContainedPenalties, _source, _missing);
                     return (state, penalty);
-                }, _source, _missing);
+                }, _source, WriteStandardOutput);
 
             IEnumerable<float> ContainedPenalties(int bucket, float x, float y)
             {
@@ -269,7 +282,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         _missing("M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt");
         var raw = new List<PathSegment>();
         NativePlanDependencies.AppendToPath(_backend.Env.Primitives, _total, raw, nearest.Index,
-            primitive => primitive.CachedPath, NativePlanDependencies.OffsetStart, _missing);
+            primitive => primitive.CachedPath, NativePlanDependencies.OffsetStart, _missing, WriteStandardOutput);
         if (raw.Count != 0)
         {
             // 0x004FFCBA..0x004FFD14: take the endpoint before popping each trailing turn.
@@ -287,11 +300,17 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             float speed = delta > 0 ? 2f : -2f;
             Info("LatticePlanner.ReplanIfNeeded.FinalAngleCorrection",FormattableString.Invariant($"LatticePlanner: Final angle off by {delta:F6} rad. DesiredAng = {desired:F6}, endAngle = {endpoint.Theta:F6}, rotSpeed = {speed:F6}. Adding point turn."));
             NativePathBuffer.Append(raw, new PathSegment.PointTurn(endpoint.X, endpoint.Y, desired,
-                EngineF.Bits(0x3DB2B8C2), speed, 10, 10, true), _missing, "AppendPointTurn");
+                EngineF.Bits(0x3DB2B8C2), speed, 10, 10, true), WriteStandardOutput, "AppendPointTurn");
         }
-        path = NativePathBuffer.ApplyMotionProfile(raw, profile, _source, _missing);
+        path = NativePathBuffer.ApplyMotionProfile(raw, profile, _source, WriteStandardOutput);
         return true;
     }
+    private void WriteStandardOutput(string text)
+    {
+        if (_engine is { } engine) engine.EmitStackLog(text);
+        else StackDiagnostics.Write(text);
+    }
+
     public void Dispose()
     {
         if(Interlocked.Exchange(ref _disposed,1)!=0)return;F1=true;_wake.Set();
