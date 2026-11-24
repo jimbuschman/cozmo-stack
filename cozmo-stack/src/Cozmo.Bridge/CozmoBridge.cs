@@ -133,17 +133,25 @@ public sealed partial class CozmoBridge
             uint origin = world.CurrentOriginId;
             var located = world.LocatedObjects.Where(o => o.OriginId == origin && CubeGeometry.IsCube(o.Type))
                 .ToDictionary(o => o.ObjectId);
-            foreach (var cube in Robot.Cubes.DiscoveredCubes.OrderBy(c => c.FactoryId))
+            var connectedFactories = new HashSet<uint>();
+            // The native 0x54 report enumerates the connected BlockWorld objects
+            // (0x0061E91C). A slot advertisement alone cannot supply a world ID.
+            foreach (var cube in world.ConnectedObjects.Where(c => CozmoCubes.IsLightCube(c.Type)))
             {
-                uint? worldId = cube.ObjectId is { } slot && cube.Connected ? world.ConnectedObjectIdForActiveId(slot) : null;
-                ObservableObject? observed = null;
-                if (worldId is { } id) located.Remove(id, out observed);
-                cubes.Add(new(cube.FactoryId, cube.ObjectId, worldId, cube.Type.ToString(), cube.Connected,
+                connectedFactories.Add(cube.FactoryId);
+                located.Remove(cube.ObjectId, out var observed);
+                cubes.Add(new(cube.FactoryId, (uint)cube.ActiveId, cube.ObjectId, cube.Type.ToString(), true,
                     observed?.PoseState.ToString(), observed?.LastObservedTimestamp, observed is null ? null : Relative(observed.NativePose)));
             }
+            foreach (var cube in Robot.Cubes.DiscoveredCubes.Where(c => !connectedFactories.Contains(c.FactoryId)))
+                cubes.Add(new(cube.FactoryId, cube.ObjectId, null, cube.Type.ToString(), false, null, null, null));
+            cubes.Sort((a, b) => Nullable.Compare(a.FactoryId, b.FactoryId));
             foreach (var cube in located.Values.OrderBy(o => o.ObjectId))
+            {
+                if (Robot.Cubes.IsDisconnectedCubePose(cube.ObjectId)) continue;
                 cubes.Add(new(cube.FactoryId == 0 ? null : cube.FactoryId, cube.ActiveId < 0 ? null : (uint)cube.ActiveId,
                     cube.ObjectId, cube.Type.ToString(), false, cube.PoseState.ToString(), cube.LastObservedTimestamp, Relative(cube.NativePose)));
+            }
         }
 
         return JsonSerializer.SerializeToElement(new

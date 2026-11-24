@@ -998,8 +998,10 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectConnectionState.Recvd", $"FactoryID 0x{factoryId:x}, connected {connected}");
         // 0x006C05EE..0x006C0608 constructs and clears the Viz message. No send,
         // persistent state, log or callback; managed temporary storage is elided.
+        var worldReport = id == -1 ? null : new ObjectConnectionStateMessage(unchecked((uint)id), factoryId, type, connected);
+        if (worldReport is not null) Cubes.RecordWorldConnection(worldReport);
         Cubes.Handle(hostReport); // host view is ready before synchronous game recipients read it
-        if (id != -1) Cubes.BroadcastConnectionState(new ObjectConnectionStateMessage(unchecked((uint)id), factoryId, type, connected));
+        if (worldReport is not null) Cubes.BroadcastConnectionState(worldReport);
     }
 
     // fidelity: M1-025, M1-015
