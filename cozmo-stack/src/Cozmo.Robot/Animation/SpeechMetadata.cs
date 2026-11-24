@@ -25,14 +25,21 @@ internal sealed class SpeechMetadata
             if (!Intents.Contains(item.Name) || metadata._entries.ContainsKey(item.Name)) continue;
             var value = item.Value;
             string styleName = value.TryGetProperty("style", out var style) ? style.GetString() ?? "" : "";
-            byte styleId = styleName switch
+            // SayTextVoiceStyle.cs defines the closed enum used by 0x00561710..0x00561736.
+            byte? styleId = styleName switch
             {
                 "Unprocessed" => 0,
                 "CozmoProcessing_Name" => 1,
                 "CozmoProcessing_Name_Question" => 2,
-                _ => 3,
+                "CozmoProcessing_Sentence" => 3,
+                _ => null,
             };
-            metadata._entries.Add(item.Name, new Entry(styleId, ReadTraits(value, "durationTraits"), ReadTraits(value, "pitchTraits")));
+            if (styleId is null)
+            {
+                StackDiagnostics.Write($"M1-034 M14-006: SayText intent '{item.Name}' has unknown voice style '{styleName}'; entry skipped");
+                continue;
+            }
+            metadata._entries.Add(item.Name, new Entry(styleId.Value, ReadTraits(value, "durationTraits"), ReadTraits(value, "pitchTraits")));
         }
         return metadata;
     }

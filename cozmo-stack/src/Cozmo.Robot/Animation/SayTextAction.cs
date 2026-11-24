@@ -17,6 +17,7 @@ internal sealed class SayTextAction : ActionRunner
     private readonly bool _direct;
     private readonly bool _fitName;
     private readonly byte _voiceStyle;
+    private readonly uint _voiceSwitch;
     private AnimationTrigger? _cannedTrigger;
     private int _cannedTracks;
     private Task<CannedSpeechLease>? _cannedOpening;
@@ -46,11 +47,19 @@ internal sealed class SayTextAction : ActionRunner
         _direct = direct;
         _fitName = fitName;
         _voiceStyle = style;
+        // SayTextAction::Init 0x00561710..0x00561736 looks up the closed style table at 0x00C573B0.
+        _voiceSwitch = style switch
+        {
+            0 => 0x334C99DCu,
+            1 => 0x2F8B3BF4u,
+            2 => 0x2F8B3BF4u,
+            3 => 0x36089802u,
+            _ => 0u,
+        };
         Pitch = pitch;
         SourceLog = (level, channel, key, message) => robot.Engine.EmitSourceLog(level, channel, key, message);
         Log = robot.Engine.EmitStackLog;
-        if (style < 4) _operation = _speech.CreateSpeech(text, style, durationScalar);
-        else robot.Engine.EmitStackLog("M14-006: SayText voice style is outside the supported engine styles");
+        if (_voiceSwitch != 0) _operation = _speech.CreateSpeech(text, style, durationScalar);
     }
 
     protected override string ActionName => "SayText";
@@ -75,6 +84,13 @@ internal sealed class SayTextAction : ActionRunner
         _speech.DrainErrors(_robot.Engine.EmitStackLog);
         if (DestructionObserved) return unchecked((int)EngineActionResult.Running);
         if (_retired || _owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, _owner)) return 0x03000000;
+        // Lookup miss takes the native InvalidStyle error branch (0x00561758..0x005617AA).
+        if (_voiceSwitch == 0)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "SayTextAction.Init.InvalidStyle", $"Invalid voice style {_voiceStyle}");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return 0x03000000;
+        }
         byte state = _speech.GetOperationState(_operation);
         if (state == 0) return 0x03000000;
         if (state != 2) return 0x01000000;
@@ -148,7 +164,7 @@ internal sealed class SayTextAction : ActionRunner
                 child.SetSpeechPath(_cannedSession.Path, _owner, authored: true);
                 child.Watcher = Watcher;
                 _child = child;
-                _configuration = _cannedSession.Configure(Pitch);
+                _configuration = _cannedSession.Configure(_voiceSwitch, Pitch);
             }
             if (_cannedSession.Failure is { } cannedFailure)
             {
@@ -196,8 +212,7 @@ internal sealed class SayTextAction : ActionRunner
             if (!Current()) return DestructionObserved ? EngineActionResult.Running : 0x03000000;
             // SayTextAction::Init 0x00561728..0x00561754 uses the style's switch and the intent pitch,
             // independent of the presence of a fitted animation (style table at 0x00C573B0).
-            uint voiceSwitch = _voiceStyle == 1 ? 0x2F8B3BF4u : 0x36089802u;
-            _configuration = _session.Configure(voiceSwitch, Pitch);
+            _configuration = _session.Configure(_voiceSwitch, Pitch);
         }
         if (_session.Failure is { } failure)
         {
