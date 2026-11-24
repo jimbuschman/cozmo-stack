@@ -29,6 +29,32 @@ public enum MarkerType : ushort
 /// </summary>
 public sealed class MarkerLibrary
 {
+    // Marker::GetNameForCode 0x0087E0D4: 40 pointers at 0x01038220, plus the two literal results.
+    private static readonly string[] CodeNames =
+    {
+        "MARKER_ARROW", "MARKER_BULLSEYE2", "MARKER_CHARGER", "MARKER_INVALID",
+        "MARKER_LIGHTCUBEI_BACK", "MARKER_LIGHTCUBEI_BOTTOM", "MARKER_LIGHTCUBEI_FRONT",
+        "MARKER_LIGHTCUBEI_LEFT", "MARKER_LIGHTCUBEI_RIGHT", "MARKER_LIGHTCUBEI_TOP",
+        "MARKER_LIGHTCUBEJ_BACK", "MARKER_LIGHTCUBEJ_BOTTOM", "MARKER_LIGHTCUBEJ_FRONT",
+        "MARKER_LIGHTCUBEJ_LEFT", "MARKER_LIGHTCUBEJ_RIGHT", "MARKER_LIGHTCUBEJ_TOP",
+        "MARKER_LIGHTCUBEK_BACK", "MARKER_LIGHTCUBEK_BOTTOM", "MARKER_LIGHTCUBEK_FRONT",
+        "MARKER_LIGHTCUBEK_LEFT", "MARKER_LIGHTCUBEK_RIGHT", "MARKER_LIGHTCUBEK_TOP",
+        "MARKER_SDK_2CIRCLES", "MARKER_SDK_2DIAMONDS", "MARKER_SDK_2HEXAGONS", "MARKER_SDK_2TRIANGLES",
+        "MARKER_SDK_3CIRCLES", "MARKER_SDK_3DIAMONDS", "MARKER_SDK_3HEXAGONS", "MARKER_SDK_3TRIANGLES",
+        "MARKER_SDK_4CIRCLES", "MARKER_SDK_4DIAMONDS", "MARKER_SDK_4HEXAGONS", "MARKER_SDK_4TRIANGLES",
+        "MARKER_SDK_5CIRCLES", "MARKER_SDK_5DIAMONDS", "MARKER_SDK_5HEXAGONS", "MARKER_SDK_5TRIANGLES",
+        "MARKER_STAR5", "MARKER_UNKNOWN",
+    };
+
+    internal static string GetCodeName(short code, SourceLogSink? source)
+    {
+        if ((ushort)code < CodeNames.Length) return CodeNames[code];
+        if (code == (short)MarkerType.Any) return "MARKER_ANY"; // 0x0087E0EA..0x0087E0F4.
+        source?.Invoke(EngineLogLevel.Error, null, "Marker.GetNameForCode", $"Could not look up name for code={code}");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0087E104..0x0087E142.
+        return "UNKNOWN";
+    }
+
     public const int GridSize = 32;
     public const int NumProbes = 1024;
     public const int NumFractionalBits = 15;

@@ -134,7 +134,7 @@ public class M4ControlTests
 
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void B10_TransitionGateDefaultsFalseAndMissingIngressIsReportedOnce()
+    public void B10_TransitionGateKeepsConstructorValueWithoutPhoneAppInput()
     {
         string res=CubeLightResources();
         try
@@ -145,11 +145,77 @@ public class M4ControlTests
             var lights=rig.Robot.Lights.Cubes;
             lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Sleep",2);
             lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Connected",2);
-            Assert.Single(stack,l=>l.Contains("EnableCubeLightsStateTransitionMessages ingress"));
+            Assert.DoesNotContain(stack,l=>l.Contains("EnableCubeLightsStateTransitionMessages ingress"));
             Assert.DoesNotContain(stack,l=>l.Contains("SendTransitionMessage.NullObject") || l.Contains("game payload"));
             Assert.DoesNotContain(entries,e=>e.Name=="CubeLightComponent.SendTransitionMessage.NullObject");
         }
         finally {Directory.Delete(res,true);}
+    }
+
+    [Fact]
+    public void DefaultCubeLightsUseKnownWorldPoseAndCleanupRetainsTheWorldId()
+    {
+        string resources = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(resources);
+            rig.ToSynced();
+            rig.State();
+            const ObjectType type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 4, type: type);
+            var world = rig.Robot.LocalizationWorld;
+            uint id = world.ConnectedObjectIdForActiveId(4)!.Value;
+            var owner = rig.Engine.Robot!;
+            using var pose = new Pose3d(Rotation3d.Identity, new Vec3(150, 0, 22),
+                parent: owner.GetNativeOrigin(owner.CurrentOriginId));
+            var cube = new ObservableObject(type, CubeGeometry.MarkersFor(type))
+                { ObjectId = id, OriginId = owner.CurrentOriginId, Pose = pose, PoseState = PoseState.Known };
+            world.AddLocatedObject(cube);
+            var lights = rig.Robot.Lights.Cubes;
+            lights.PickNextAnimForDefaultLayer(type);
+            Assert.Equal("visible", lights.TopPatternName(type)); // 0x00637DB4..0x00637DC4.
+            cube.PoseState = PoseState.Dirty;
+            lights.PickNextAnimForDefaultLayer(type);
+            Assert.Equal("connected", lights.TopPatternName(type));
+
+            rig.Data(new ObjectConnectionState { ObjectID = 4, FactoryID = 0x1004, ObjectType = type, Connected = false });
+            rig.Tick();
+            Assert.Null(world.ConnectedObjectIdForActiveId(4));
+            var entries = new List<EngineLogEntry>();
+            rig.Engine.LogEntry += entries.Add;
+            lights.StopNativeDrivingTo(id);
+            Assert.Contains(entries, e => e.Name == "CubeLightComponent.StopLightAnim" &&
+                e.Text == $"Stopping DrivingTo on object {id} on layer Engine."); // 0x005589CC and 0x00638F9C.
+        }
+        finally { Directory.Delete(resources, true); }
+    }
+
+    [Theory]
+    [InlineData(99u, 0, PoseState.Dirty)]
+    [InlineData(100u, 0, PoseState.Known)]
+    [InlineData(99u, 300, PoseState.Known)]
+    public void MarkerFrameCollisionUsesLastImageAgeAndNativeRobotFootprint(
+        uint lastObserved, int cubeX, PoseState expected)
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.State();
+        var owner = rig.Engine.Robot!;
+        var world = rig.Robot.LocalizationWorld;
+        world.LastImageTimestamp = () => 100;
+        using var pose = new Pose3d(Rotation3d.Identity, new Vec3(cubeX, 0, 22),
+            parent: owner.GetNativeOrigin(owner.CurrentOriginId));
+        var cube = new ObservableObject(ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        {
+            ObjectId = 7, OriginId = owner.CurrentOriginId, Pose = pose,
+            PoseState = PoseState.Known, LastObservedTimestamp = lastObserved
+        };
+        world.AddLocatedObject(cube);
+        // A moving frame skips unobserved-object handling. The collision predicate has its own gates.
+        var frame = new VisionPoseData(101, owner.MainPose, 0, 0, true, false);
+        var camera = new CameraModel(CameraCalibration.Nominal(), frame.CameraPose);
+        world.UpdateObservedMarkers(Array.Empty<ObservedMarker>(), camera, 101, frame);
+        Assert.Equal(expected, cube.PoseState);
     }
 
     // B-M3M4-6: world _gate must be released before the configuration subscriber takes _updateGate.
@@ -2386,7 +2452,7 @@ public class M4ControlTests
             Assert.Null(cubes.TopPatternName(a)); Assert.Null(cubes.TopPatternName(b));
             var picks = new List<(ObjectType Type, string? OtherTop)>();
             bool nested = false;
-            cubes.IsCarried = t =>
+            cubes.IsCarried = (t, _) =>
             {
                 picks.Add((t, cubes.TopPatternName(t == a ? b : a)));
                 if (!nested) { nested = true; cubes.EnableGameLayerOnly(false); }
@@ -2797,7 +2863,7 @@ public class M4ControlTests
             rig.Tick();
             var cubes = rig.Robot.Lights.Cubes;
             Assert.Equal("wakeUp", cubes.TopPatternName(type));                 // LC1: WakeUp on connection
-            cubes.IsCarried = _ => true;                                        // S1 must ignore this
+            cubes.IsCarried = (_, _) => true;                                   // S1 must ignore this
             cubes.EnableCubeSleep(true, skipAnimation: false);
             cubes.PickNextAnimForDefaultLayer(type);
             Assert.Equal("sleep", cubes.TopPatternName(type));                  // 0x21 Sleep, not Carrying
@@ -2832,7 +2898,7 @@ public class M4ControlTests
             var cubes = rig.Robot.Lights.Cubes;
             rig.Tick(); rig.Tick();                                   // WakeUp (100 ms) ends; the default layer is Connected
             Assert.Equal("connected", cubes.TopPatternName(type));
-            cubes.IsCarried = _ => true;                              // the next default pick would be Carrying
+            cubes.IsCarried = (_, _) => true;                         // the next default pick would be Carrying
             cubes.IsLocalized = () => false;                          // robot+0x2C4 = 0: delocalized
             cubes.OnRobotDelocalized();                               // the RobotDelocalized handler sets +0x21
             cubes.Update();                                           // held: the default layer is not re-picked
@@ -2876,7 +2942,7 @@ public class M4ControlTests
             off.Update(rig.MakeState(), 33);                           // back OnTreads: commit, flag = 1
             Assert.Equal(1, off.Robot2C4);
 
-            cubes.IsCarried = _ => true;
+            cubes.IsCarried = (_, _) => true;
             rig.Engine.Robot!.Delocalize(false);                     // D1..D21: flag reset, then E2G cube-light subscriber.
             Assert.Equal(0, off.Robot2C4);
             cubes.Update();                                            // the wired IsLocalized reads 0: held
@@ -2906,7 +2972,7 @@ public class M4ControlTests
             var lights = rig.Robot.Lights.Cubes;
             rig.Tick(); rig.Tick();                                  // WakeUp (100 ms) ends; the default layer is Connected
             Assert.Equal("connected", lights.TopPatternName(type));
-            lights.IsCarried = _ => true;                            // the next default pick would be Carrying
+            lights.IsCarried = (_, _) => true;                       // the next default pick would be Carrying
             vision.World.OnRobotDelocalized();
             lights.OnRobotDelocalized();
             Assert.False(lights.IsLocalized!());

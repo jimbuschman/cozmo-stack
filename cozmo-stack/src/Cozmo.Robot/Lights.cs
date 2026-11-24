@@ -914,9 +914,9 @@ public sealed class CubeLightComponent
     /// held while robot+0x2C4 is 0 and applied by <see cref="Update"/> when it returns to 1 (C11.2 L6).
     /// </summary>
     private bool _refreshRequested;
-    // comp+0x20: ctor 0x0063710A; only game-message writer 0x0063A2EA. No ingress is wired in this stack.
+    // fidelity: M4-040 — the excluded phone-app input is the only writer (0x0063A2EA).
+    // The standalone owner keeps the constructor value (0x0063710A).
     private bool _transitionMessagesEnabled;
-    private int _transitionIngressMissingReported;
 
     internal CubeLightComponent(CozmoRobot robot, CubeLightAnimations animations)
     {
@@ -927,12 +927,9 @@ public sealed class CubeLightComponent
     public CubeLightAnimations Animations { get; }
 
     /// <summary>
-    /// The default-layer inputs the engine reads from other components (LC3 PickNextAnimForDefaultLayer). IsCarried
-    /// is wired by the M12 manipulation layer (CarryingComponent). MISSING interface: the located object's +0x24
-    /// pose state (M11 BlockWorld) is not wired (M11-004 owns the BlockWorld by-id helpers); until it is, IsVisible stays unset and the default layer reports MISSING.
+    /// The carrying recipient reads the native ObjectID (0x00637DCA..0x00637DDA).
     /// </summary>
-    internal Func<ObjectType, bool>? IsCarried { get; set; }
-    internal Func<ObjectType, bool>? IsVisible { get; set; }
+    internal Func<ObjectType, uint, bool>? IsCarried { get; set; }
 
     /// <summary>
     /// robot+0x2C4, the robot-is-localized flag (C11.2 L6): the RobotDelocalized refresh is held while this is
@@ -1113,17 +1110,10 @@ public sealed class CubeLightComponent
     internal void StopNativeInteracting(uint id,Func<bool> current)=>StopLightAnimForObjectId(id,"Interacting",EngineLayer,true,current); // 0x00638F40..0x00638F4E.
     internal bool PlayNativeDrivingTo(uint id)=>PlayLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0);
     internal bool PlayNativeDrivingTo(uint id,Func<bool> current)=>PlayLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero),0,current);
-    internal void StopNativeDrivingTo(uint id,Func<bool> current)=>StopLightAnimForObjectId(id,"DrivingTo",EngineLayer,false,current);
-    internal void StopNativeDrivingTo(uint id)
-    {
-        ObjectType? type=null;lock(_gate)foreach(var entry in _infos)if(entry.Value.ObjectId==id){type=entry.Key;break;}
-        if(type is {} value)StopLightAnim("DrivingTo",EngineLayer,value);
-    }
-    internal void StopNativeInteracting(uint id)
-    {
-        ObjectType? type=null;lock(_gate)foreach(var entry in _infos)if(entry.Value.ObjectId==id){type=entry.Key;break;}
-        if(type is {} value)StopLightAnim("Interacting",EngineLayer,value);
-    }
+    // 0x005589C0..0x005589CE passes the action's ObjectID to StopLightAnimAndResumePrevious.
+    internal void StopNativeDrivingTo(uint id,Func<bool>? current=null)
+        =>StopLightAnimForObjectId(id,"DrivingTo",EngineLayer,true,current);
+    internal void StopNativeInteracting(uint id) => StopLightAnimForObjectId(id,"Interacting",EngineLayer,true);
     internal bool PlayLightAnimForObjectId(uint id,string trigger,int layer,bool modifier,CubeLightModifier lights,int offset,Func<bool>? current=null,Action? completed=null)
     {
         ObjectType? type=null;
@@ -1499,15 +1489,21 @@ public sealed class CubeLightComponent
     /// </summary>
     internal void StopLightAnim(string trigger, int layer, ObjectType? type = null, bool pickDefaultLayer = true)
     {
-        int? id = type is null ? -1 : TryObjectId(type.Value) is { } value ? unchecked((int)value) : null;
-        StopLightAnimCore(trigger,layer,id,pickDefaultLayer);
+        if (type is null)
+        {
+            StopLightAnimCore(trigger,layer,-1,pickDefaultLayer);
+            return;
+        }
+        uint? id;
+        lock (_gate) id = _infos.TryGetValue(type.Value, out var info) ? info.ObjectId : null;
+        id ??= TryObjectId(type.Value);
+        if (id is { } value) StopLightAnimForObjectId(value,trigger,layer,pickDefaultLayer);
     }
     private void StopLightAnimForObjectId(uint id,string? trigger,int layer,bool pickDefaultLayer,Func<bool>? current=null)
         =>StopLightAnimCore(trigger,layer,unchecked((int)id),pickDefaultLayer,current);
-    private void StopLightAnimCore(string? trigger,int layer,int? id,bool pickDefaultLayer,Func<bool>? current=null)
+    private void StopLightAnimCore(string? trigger,int layer,int id,bool pickDefaultLayer,Func<bool>? current=null)
     {
-        if (id is { } objectId) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {objectId} on layer {LayerName(layer)}.");
-        else Log("MISSING: M4-018 | StopLightAnim 0x00638F9C: type-only caller has no native ObjectID");
+        SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {id} on layer {LayerName(layer)}.");
         if(current is not null&&!current())return;
         bool found = false;
         lock (_gate)
@@ -1684,19 +1680,25 @@ public sealed class CubeLightComponent
     /// </summary>
     internal void PickNextAnimForDefaultLayer(ObjectType type)
     {
+        uint id;
+        lock (_gate)
+        {
+            if (!_infos.TryGetValue(type, out var info)) return;
+            id = info.ObjectId;
+        }
         if (_sleepEnabled)
         {
-            PlayLightAnimCore(type,_sleepSkipFade?"SleepNoFade":"Sleep",StateLayer,0,false,null,0,null);
+            PlayLightAnimCore(type,_sleepSkipFade?"SleepNoFade":"Sleep",StateLayer,0,false,null,0,id);
             return;
         }
-        // MISSING: M11-004 | the located object's +0x24 == 1 (IsVisible) and the located object itself are M11-004's (BlockWorld's ById helpers); with no hook the
-        // default layer never reads Visible.
-        if (IsVisible is null)
-            Behavior.SteppedBehavior.ReportMissing("M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen");
-        string trigger = IsCarried?.Invoke(type) == true ? "Carrying"
-                       : IsVisible?.Invoke(type) == true ? "Visible"
-                       : "Connected";
-        PlayLightAnimCore(type,trigger,StateLayer,0,false,null,0,null);
+        // 0x00637DB4..0x00637DC4: any-family lookup in the current origin and exact pose-state byte 1.
+        var world = _robot.LocalizationWorld;
+        bool known;
+        using (world.EnterPoseMutation())
+            known = world.GetLocatedObjectByIdHelper(id)?.PoseState == PoseState.Known;
+        bool carried = IsCarried?.Invoke(type,id) ?? (_robot.Carrying.CarriedObjectId == id);
+        string trigger = carried ? "Carrying" : known ? "Visible" : "Connected";
+        PlayLightAnimCore(type,trigger,StateLayer,0,false,null,0,id);
     }
 
     // fidelity: M4-018
@@ -1709,22 +1711,11 @@ public sealed class CubeLightComponent
     /// </summary>
     private uint? TryObjectId(ObjectType type) => _robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o => o.Type == type)?.ObjectId;
     private static string LayerName(int layer) => layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
-    private void SendTransitionMessage(uint? objectId)
+    private void SendTransitionMessage(uint id)
     {
         bool enabled;
         lock (_gate) enabled = _transitionMessagesEnabled;
-        if (!enabled)
-        {
-            if (Interlocked.Exchange(ref _transitionIngressMissingReported, 1) == 0)
-                // fidelity: M4-040 — app transition ingress is unavailable; native flag stays false.
-                Log("MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false");
-            return;
-        }
-        if (objectId is not { } id)
-        {
-            Log("MISSING: M4-018 | SendTransitionMessage.NullObject 0x00638150: type-only caller has no native ObjectID");
-            return;
-        }
+        if (!enabled) return;
         if (_robot.VisionModeRecipient?.World.ConnectedObjects.Any(o => o.ObjectId == id) != true)
         {
             SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.SendTransitionMessage.NullObject", $"Got null object using id {unchecked((int)id)}");

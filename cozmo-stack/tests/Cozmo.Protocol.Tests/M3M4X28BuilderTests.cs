@@ -76,7 +76,7 @@ public sealed class M3M4X28BuilderTests
     {
         using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         rig.ToSynced();rig.State();uint before=vision.World.CurrentOriginId;
-        FrameCannotSplitHandler(vision.World,pause=>rig.Engine.DelocalizationComponentHook=stage=>{if(stage=="FaceWorld")pause();},
+        FrameCannotSplitHandler(vision.World,pause=>rig.Engine.DelocalizationComponentHook=(_,stage)=>{if(stage=="FaceWorld")pause();},
             ()=>rig.Engine.Robot!.Delocalize(false));
         Assert.Equal(before+1,vision.World.CurrentOriginId);
     }
