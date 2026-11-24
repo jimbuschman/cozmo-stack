@@ -421,6 +421,29 @@ public sealed partial class AIWhiteboard
         }
     }
 
+    // AIWhiteboard::~AIWhiteboard 0x0056A33E..0x0056A376: beacons, possible objects,
+    // failure trees +38/+2C/+20/+14, and subscriptions (the host callbacks are detached by its owner).
+    internal void RetireNativeStorage()
+    {
+        for (int i = _beacons.Count - 1; i >= 0; --i)
+        {
+            var beacon = _beacons[i];
+            _beacons.RemoveAt(i);
+            beacon.Pose.Dispose();
+        }
+        PossibleObjectStorage.Erase(PossibleObjectStorage.Head, null);
+        lock (_failureGate)
+        {
+            for (int i = _failureTables.Length - 1; i >= 0; --i)
+            {
+                foreach (var entries in _failureTables[i].Values)
+                    foreach (var entry in entries) entry.Pose.Dispose();
+                _failureTables[i].Clear();
+            }
+        }
+        ClearQuadWorldOrigin = null;
+    }
+
     /// <summary><c>OnRobotDelocalized</c>: beacons live in the old origin, so they are dropped.</summary>
     public void OnRobotDelocalized() => RemoveZombiePossibleObjectsAndClearBeacons();
 }

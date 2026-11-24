@@ -189,6 +189,7 @@ public sealed class ManipulationSystem : IDisposable
     }
     private readonly List<Action> _installedCallbacks=new();
     private readonly bool _ownsSharedServices,_ownsWhiteboard,_standalone;
+    internal bool NativeWhiteboardRetirementBound;
     private Func<double> _clockSec;
     private readonly Action<string> _dockingLogForwarder;
     private bool _disposed;
@@ -409,7 +410,7 @@ public sealed class ManipulationSystem : IDisposable
         foreach(var detach in _installedCallbacks)detach();
         _installedCallbacks.Clear();
         if(_standalone)Whiteboard.RetireStandaloneStorage();
-        else if(_ownsWhiteboard)Whiteboard.ClearAllBeacons(); // public handles do not retire the native shared owner
+        else if(_ownsWhiteboard && !NativeWhiteboardRetirementBound)Whiteboard.ClearAllBeacons(); // the native AI+18 owner retires at 0x00569D1C
         NativePlanners?.Stop();NativePlanners?.Dispose();
         if(_ownsSharedServices && World.MapClearQuad==Whiteboard.ProcessClearQuad)World.MapClearQuad=null;
         if(_ownsSharedServices)Follower.Dispose();

@@ -8,6 +8,8 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
     private sealed class Entry
     {internal float Last=-1f;internal uint Best=uint.MaxValue;internal IReadOnlyList<uint> Valid=Array.Empty<uint>();internal bool Available=true;internal int Rebuilds;}
     private readonly Dictionary<int,Entry> _entries=new(){{0,new()},{2,new()},{3,new()},{4,new()},{5,new()},{6,new()},{7,new()},{8,new()},{9,new()},{10,new()},{11,new()}};
+    // 0x00569D1E..0x00569D2C destroys the intention cache, including its retained ID sets.
+    internal void RetireNativeStorage() => _entries.Clear();
     internal IReadOnlyList<uint> ValidIds=>_entries[0].Valid;
     internal uint Best=>_entries[0].Best;
     internal bool Available=>_entries[0].Available;

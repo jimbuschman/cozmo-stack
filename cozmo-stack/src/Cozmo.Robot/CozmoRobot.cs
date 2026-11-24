@@ -255,7 +255,8 @@ public sealed partial class CozmoRobot : IDisposable
         severe.Subscribe(Engine,native.HasExternalInterface);
         if(_severeNeedsConstructed||Engine.AIComponentUpdate is null)Engine.AIComponentUpdate=_severeNeedsUpdate;
         _severeNeedsConstructed=true;
-        ai.BindDestructionRecipient(0x30,()=>{severe.Dispose();ai.NativeTeardown.Destroy(0x30);});
+        // 0x00572A30 retires the severe-needs handle vector. The managed owner retains its actual wake subscription.
+        ai.BindDestructionRecipient(0x30,severe.Dispose);
         native.Lifetime.Bind(0x264,_=>ai.DestroyDirect()); // tracker storage retires at +2C; no second ForceUpdate
     }
     public ReliableTransport Transport { get; }
@@ -513,6 +514,8 @@ public sealed partial class CozmoRobot : IDisposable
         {
             Motion.BindRobotLifetime(robot);
             Animations.BindRobotLifetime(robot);
+            robot.Lifetime.Bind(0x394, _ => Camera.RetireEncodedImageStorage());
+            robot.Lifetime.Bind(0x47C, _ => Cubes.Connections.RetireAdvertisementTable());
         };
         // fidelity: M4-011
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.

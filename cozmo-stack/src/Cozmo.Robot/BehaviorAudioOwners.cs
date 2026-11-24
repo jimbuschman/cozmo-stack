@@ -61,12 +61,15 @@ public sealed partial class EngineRobot
         {
             var manager=BehaviorManagerOwner;BehaviorManagerOwner=null;manager?.Dispose();
             var runtime=NativeBehaviorRuntime;NativeBehaviorRuntime=null;runtime?.Dispose();
+            RetireManagerDelocalization();
+            RetireDevContainer(0);
             Lifetime.Missing(address,0x44); // retain the existing per-Robot remaining-owner diagnostic
             var client=BehaviorAudioA;BehaviorAudioA=null;client?.Dispose();
         });
         Lifetime.Bind(0x48,address=>
         {
             var client=BehaviorAudioB;BehaviorAudioB=null;client?.Dispose();
+            RetireSystemManagerDelocalization(); RetireDevContainer(1);
             Lifetime.Missing(address,0x48);
         });
         Lifetime.Bind(0x40,address=>{Lifetime.Missing(address,0x40);BehaviorPublicState.Retire();});

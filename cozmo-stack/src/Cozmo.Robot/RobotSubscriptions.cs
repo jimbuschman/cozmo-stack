@@ -90,6 +90,24 @@ internal sealed class SubscriptionSignal<T>
             }
         }
     }
+
+    // The native embedded signal destructor walks its owned callback list (0x00511098..0x005110B6).
+    internal void Retire()
+    {
+        lock (_gate)
+        {
+            foreach (var sentinel in _signals.Values)
+            {
+                for (var node = sentinel.Next; node != sentinel; node = node.Next)
+                {
+                    node.Callback = null;
+                    node.Linked = false;
+                }
+                sentinel.Next = sentinel.Prev = sentinel;
+            }
+            _signals.Clear();
+        }
+    }
 }
 
 // fidelity: M1-046
@@ -110,6 +128,12 @@ public sealed partial class EngineRobot
 {
     private readonly SubscriptionSignal<RobotMessage> _robotMessages = new();
     private readonly SubscriptionSignal<byte> _idleMessages = new();
+    private void RetireRobotSignalStorage()
+    {
+        _robotMessages.Retire();
+        _idleMessages.Retire();
+        CancelIdleTimeoutDelivered = null;
+    }
     private readonly SubscriptionOwners _messagingHandles = new(), _idleHandles = new(), _traceHandles = new();
     private bool _lastStateHandled;
     private List<(RobotMessageId Tag,Action<RobotMessage> Call)>? _pendingImpl;

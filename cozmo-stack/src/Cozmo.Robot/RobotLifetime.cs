@@ -51,8 +51,9 @@ internal sealed class RobotLifetime
     }
     private void Member(int offset, uint address)
     {
-        Action<uint>? callback;lock(_ownerGate)_owners.TryGetValue(offset,out callback);
-        if(callback is null)Missing(address,offset);else callback(address);
+        bool known;Action<uint>? callback;
+        lock(_ownerGate)known=_owners.TryGetValue(offset,out callback);
+        if(!known)Missing(address,offset);else callback?.Invoke(address);
     }
     internal void Destroy()
     {
@@ -148,6 +149,18 @@ public sealed partial class EngineRobot
         Lifetime.Bind(-1,_=>Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.destructor",unchecked((int)NativeRobotId).ToString(System.Globalization.CultureInfo.InvariantCulture)));
         var actions = ActionList;
         Lifetime.Bind(0x250, _ => actions.Dispose());
+        // 0x00511180..0x005111AC: the old Robot's five history trees retire before its origins.
+        Lifetime.Bind(0x390, _ => PoseHistory.RetireNativeStorage());
+        // 0x00511392..0x005113BE: inline pose wrappers, in the native order.
+        Lifetime.Bind(0x2F0, _ => LogCallbackDeferral.RunGated(PoseTreeGate, LiftPose.Dispose));
+        Lifetime.Bind(0x2E4, _ => LogCallbackDeferral.RunGated(PoseTreeGate, LiftPivot.Dispose));
+        // The head camera and neck are computed as temporary poses by CopyCurrentCameraPose.
+        Lifetime.Bind(0x2D8, null);
+        Lifetime.Bind(0x2CC, null);
+        Lifetime.Bind(0x2A4, _ => LogCallbackDeferral.RunGated(PoseTreeGate, ForwardPose.Dispose));
+        Lifetime.Bind(0x298, _ => LogCallbackDeferral.RunGated(PoseTreeGate, MainPose.Dispose));
+        // 0x005115F0 -> 0x00511098: finally retire callbacks in the embedded Robot signals.
+        Lifetime.Bind(4, _ => RetireRobotSignalStorage());
         // fidelity: M12-040 — raw releases 0x005113FA..0x00511418; no component reset/send/dtor.
         Lifetime.Bind(0x284, _ => { CarryingOwner = null; Engine.DockingCarryingOwnerObservedForTest?.Invoke("drop Carrying"); });
         Lifetime.Bind(0x280, _ => { DockingOwner = null; Engine.DockingCarryingOwnerObservedForTest?.Invoke("drop Docking"); });

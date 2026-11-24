@@ -53,40 +53,47 @@ public sealed partial class EngineRobot
     internal CheckedDevBehaviorSet[] DevBehaviors { get; private set; } = Array.Empty<CheckedDevBehaviorSet>();
     internal void ReleaseCheckedDevStorage()
     {
-        foreach(var set in DevBehaviors)
-        {
-            // Host cleanup only: native shared-owner/tree destruction position is M8-016, not this loop.
-            set.Factory.Logger.Dispose();
-            set.Docking.Logger.Dispose();
-            set.Lift.Logger.Dispose();
-            set.Lift.ReleaseSubscriptionStorage();
-        }
+        foreach(var set in DevBehaviors) set.Retire();
+        DevBehaviors = Array.Empty<CheckedDevBehaviorSet>();
     }
+    internal void RetireDevContainer(int index)
+    { if ((uint)index < DevBehaviors.Length) DevBehaviors[index].Retire(); }
     private void InitCheckedDevSubscribers()
     {
         DevBehaviors = new[] { new CheckedDevBehaviorSet(this, 0), new CheckedDevBehaviorSet(this, 1) };
         for (int i=0;i<2;i++)
         {
             var set=DevBehaviors[i]; string suffix=$"[{i}]";
-            AddMessage(RobotMessageId.FactoryTestParam, m=>set.Factory.Handle(m), "FactoryTest"+suffix);
-            AddMessage(RobotMessageId.ActiveObjectAvailable, m=>set.Factory.Handle(m), "FactoryTest"+suffix);
-            AddMessage(RobotMessageId.PickAndPlaceResult, m=>set.Factory.Handle(m), "FactoryTest"+suffix);
-            AddMessage(RobotMessageId.FirmwareVersion, m=>set.Factory.Handle(m), "FactoryTest"+suffix);
-            AddMessage(RobotMessageId.FactoryFirmwareVersion, m=>set.Factory.Handle(m), "FactoryTest"+suffix);
-            AddMessage(RobotMessageId.DockingStatus, m=>set.Docking.Handle((DockingStatus)m), "DockingTestSimple"+suffix);
-            AddMessage(RobotMessageId.LiftLoad, m=>set.Lift.Handle((LiftLoad)m), "LiftLoadTest"+suffix);
+            AddMessage(RobotMessageId.FactoryTestParam, m=>set.Factory.Handle(m), "FactoryTest"+suffix, owners:set.Handles);
+            AddMessage(RobotMessageId.ActiveObjectAvailable, m=>set.Factory.Handle(m), "FactoryTest"+suffix, owners:set.Handles);
+            AddMessage(RobotMessageId.PickAndPlaceResult, m=>set.Factory.Handle(m), "FactoryTest"+suffix, owners:set.Handles);
+            AddMessage(RobotMessageId.FirmwareVersion, m=>set.Factory.Handle(m), "FactoryTest"+suffix, owners:set.Handles);
+            AddMessage(RobotMessageId.FactoryFirmwareVersion, m=>set.Factory.Handle(m), "FactoryTest"+suffix, owners:set.Handles);
+            AddMessage(RobotMessageId.DockingStatus, m=>set.Docking.Handle((DockingStatus)m), "DockingTestSimple"+suffix, owners:set.Handles);
+            AddMessage(RobotMessageId.LiftLoad, m=>set.Lift.Handle((LiftLoad)m), "LiftLoadTest"+suffix, owners:set.Handles);
         }
     }
 }
 // fidelity: M7-027
 internal sealed class CheckedDevBehaviorSet
 {
+    internal readonly SubscriptionOwners Handles = new();
+    private bool _retired;
     internal CheckedFactoryTest Factory { get; }
     internal CheckedDockingTest Docking { get; }
     internal CheckedLiftLoadTest Lift { get; }
     internal CheckedDevBehaviorSet(EngineRobot robot,int instance)
     {
         Factory=new(robot);Docking=new(robot);Lift=new(robot,instance);
+    }
+    internal void Retire()
+    {
+        if (_retired) return;
+        _retired = true;
+        // Container destruction is invoked at 0x005A0DB2 or 0x005A58B4. The exact per-class
+        // shared-owner order remains M8-016; detach the concrete host callbacks with their container.
+        Handles.Retire(); Lift.ReleaseSubscriptionStorage();
+        Factory.Logger.Dispose(); Docking.Logger.Dispose(); Lift.Logger.Dispose();
     }
 }
 // fidelity: M7-027 — checked handler fields only; no guessed activation/update/logger lifecycle.
@@ -206,7 +213,7 @@ internal sealed class CheckedLiftLoadTest
         // No production hub producer delivers 0x35/0x95. Report the unbuilt bodies at construction, not inside unreachable callbacks.
         _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x35,true,_=>{}));
         _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x95,false,_=>{}));
-        robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown");
+        robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] IBehavior base constructor 0x005D3F18 and 0x35/0x95 callback bodies remain unread; concrete callbacks retire with their owning container");
     }
     internal void ReleaseSubscriptionStorage()=>_externalSubscriptions.Retire();
     internal void Handle(LiftLoad m)
@@ -274,6 +281,8 @@ internal sealed class CheckedRollingLogger
             else Behavior.SteppedBehavior.ReportMissing("M7-028 RollingFileLogger Dispatch handle release 0x00801E7C..0x00801E82 has no supplied recipient");
         }
         if(!(FileBuffer?.Close()??false))StreamState|=4; // unconditional close, including the native never-opened filebuf
-        Behavior.SteppedBehavior.ReportMissing("M7-028 RollingFileLogger native filebuf/ios/string storage destruction 0x0080E0CC..0x0080E11E and M8-016 native shared-owner release position remain unbuilt; queue recipients are explicit native inputs, not a port of Dispatch internals");
+        // 0x0080E0CC..0x0080E11E destroys the already-closed stream and string members, then the
+        // base Dispatch slot. The shipped dev logger never opens a file or starts a queue (M7-028).
+        FileBuffer = null; StopDispatch = null; ReleaseDispatch = null;
     }
 }

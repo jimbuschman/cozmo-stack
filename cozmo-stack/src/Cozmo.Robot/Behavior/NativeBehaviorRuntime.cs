@@ -108,9 +108,14 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         AI.BindDestructionRecipient(0x1C,()=>
         {
             if(ReferenceEquals(robot.EightiesMusicInput,_workoutMusic))robot.EightiesMusicInput=null;
+            // 0x00569D08..0x00569D0C: configuration vector and its allocation are managed values.
+            if (AI.Workout is { } workout) { workout.TriggerEmotionEvent = null; workout.ClockSec = null; }
             AI.Workout=null;
-            AI.NativeTeardown.Destroy(0x1C); // remaining native recursive finalizer is still M15-045
         });
+        AI.BindDestructionRecipient(0x10, AI.Helpers.RetireNativeStorage);
+        AI.BindDestructionRecipient(0x8, AI.Analyzer.RetireNativeStorage);
+        // RequestGame at 0x00569CFA is deferred under SCOPE.md D; no host instance is constructed.
+        AI.BindDestructionRecipient(0x20, null);
         Tracker=new(()=>unchecked((ulong)facade.Engine.Timer.Nanoseconds))
         {SourceLog=(l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t)};
         AI.Tracker=Tracker;
@@ -127,6 +132,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             Manipulation=new(facade,vision,robot){ClockSec=()=>facade.Engine.Timer.SecondsF};
             if(facade.Engine.Options.ResourcesPath is {} plannerResources)Manipulation.LoadNativePlanner(plannerResources);
             PickupTargets=new NativePickupTargetCache(Manipulation,robot,RequirePyramidSnapshot);
+            AI.BindDestructionRecipient(0x14, PickupTargets.RetireNativeStorage);
+            AI.BindDestructionRecipient(0x18, Manipulation.Whiteboard.RetireNativeStorage);
+            Manipulation.NativeWhiteboardRetirementBound = true;
             PyramidTargetInput=PickupTargets.GetBest;
             PyramidBaseStrongInput=()=>RequirePyramidSnapshot().Bases;
             PyramidFullStrongInput=()=>RequirePyramidSnapshot().Pyramids;
