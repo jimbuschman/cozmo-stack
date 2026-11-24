@@ -35,6 +35,18 @@ internal sealed class SayTextAction : ActionRunner
     internal void SetCannedTrigger(AnimationTrigger trigger, int tracksToLock = 0)
     { _cannedTrigger = trigger; _cannedTracks = tracksToLock; }
 
+    // SayTextVoiceStyle -> Cozmo voice switch, the {style, switch} rows at 0x00C573B0 that Init reads
+    // at 0x0056172A (ldr r2,[r0,#0xC]): Unprocessed, CozmoProcessing_Name, CozmoProcessing_Name_Question,
+    // CozmoProcessing_Sentence. Any other value has no row.
+    internal static uint? VoiceSwitchForStyle(byte style) => style switch
+    {
+        0 => 0x334C99DCu,
+        1 => 0x2F8B3BF4u,
+        2 => 0x2F8B3BF4u,
+        3 => 0x36089802u,
+        _ => null,
+    };
+
     internal SayTextAction(CozmoRobot robot, EngineRobot owner, string text, byte style, float durationScalar, float pitch, bool direct = false,
         TextToSpeechComponent? speechForTest = null, Func<float[], Task<IDirectSpeechSession>>? openForTest = null, bool fitName = false)
         : base(0x20, 0)
@@ -48,14 +60,7 @@ internal sealed class SayTextAction : ActionRunner
         _fitName = fitName;
         _voiceStyle = style;
         // SayTextAction::Init 0x00561710..0x00561736 looks up the closed style table at 0x00C573B0.
-        _voiceSwitch = style switch
-        {
-            0 => 0x334C99DCu,
-            1 => 0x2F8B3BF4u,
-            2 => 0x2F8B3BF4u,
-            3 => 0x36089802u,
-            _ => 0u,
-        };
+        _voiceSwitch = VoiceSwitchForStyle(style) ?? 0u;
         Pitch = pitch;
         SourceLog = (level, channel, key, message) => robot.Engine.EmitSourceLog(level, channel, key, message);
         Log = robot.Engine.EmitStackLog;

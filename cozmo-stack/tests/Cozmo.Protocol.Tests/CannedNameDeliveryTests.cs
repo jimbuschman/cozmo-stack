@@ -11,6 +11,8 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class CannedNameDeliveryTests
 {
+    [System.Runtime.InteropServices.DllImport("winmm.dll")] private static extern uint waveOutGetNumDevs();
+
     [Fact]
     public void OrdinaryAuthoredMissingSelectedClipFailsAndRetiresAction()
     {
@@ -180,6 +182,9 @@ public sealed class CannedNameDeliveryTests
     public void StockGreetingPlaysNameThroughSharedNativeAudio(bool initialGreeting, bool cancelBeforeSpeech, bool audioOnly)
     {
         if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        // The audio-only route plays through the direct WinMM sink (WinMmPcmSink), not the canned test sink;
+        // a machine with no Windows output device cannot run it.
+        if (audioOnly && waveOutGetNumDevs() == 0) return;
         string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
         string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("audio archive missing"), "AudioAssets.zip");
         var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
