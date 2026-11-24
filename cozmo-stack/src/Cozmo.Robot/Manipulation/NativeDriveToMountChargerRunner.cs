@@ -256,14 +256,7 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
             return align.UpdateNativeDockVerification(owner, Verify, Live);
         }
 
-        private uint Verify()
-        {
-            var dock = owner.DockingOwner!;
-            uint result = AlignWithObjectAction.VerifyResult((byte)DockAction.Align, dock.Active, dock.Success ? (byte)1 : (byte)0,
-                M.Robot.Motion.Path.IsActive, out var log);
-            if (log is not null) EmitSource(EngineLogLevel.Info, "Actions", "AlignWithObjectAction.Verify", log);
-            return result;
-        }
+        private uint Verify() => align.VerifyNative(owner);
 
         private void ReleasePreparation()
         {

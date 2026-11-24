@@ -543,7 +543,7 @@ public sealed class DockingSystem : IDisposable
 
     /// <summary>
     /// <c>DockingComponent+5</c>: the PickAndPlaceResult <c>success</c> byte <c>HandlePickAndPlaceResult</c> 0x00533780 stores before it branches on blockStatus
-    /// (0x00533790..0x0053379A, M12-008). No reader is in the inventory.
+    /// (0x00533790..0x0053379A, M12-008). AlignWithObjectAction::Verify reads it at 0x00553518.
     /// </summary>
     // fidelity: M12-008
     public bool DockingSuccessByte { get => _native.Success; private set => _native.Success = value; }
@@ -1052,7 +1052,7 @@ public sealed class DockingSystem : IDisposable
                 Log?.Invoke($"PickAndPlaceResult: {result}");
                 if (!Current()) break;
                 // HandlePickAndPlaceResult 0x00533780 stores [msg+4] (success) into DockingComponent+5 (0x00533790..0x0053379A) before it branches on blockStatus (M12-008).
-                // Nothing in the inventory reads that byte, so it is stored here and consumed by nothing.
+                // The native dock verification paths consume this byte, including AlignWithObjectAction at 0x00553518.
                 // fidelity: M12-008
                 DockingSuccessByte = result.Succeeded;
                 // The dock in progress; a result that arrives with no dock running has neither an object nor a marker, so the attach below cannot

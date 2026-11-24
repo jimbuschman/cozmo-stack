@@ -1,3 +1,4 @@
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -83,5 +84,40 @@ public sealed class AiMountChargerControlTests
         var result = await f.Rig.Robot.Motion.QueueAiMountChargerAsync(uint.MaxValue);
         Assert.False(result.Admitted);
         Assert.Null(result.EngineResult);
+    }
+
+    [Fact]
+    public void AlignmentVerificationReadsRobotStateAndB8RatherThanLiftAnimationReport()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        var owner = f.Robot;
+        var dock = owner.DockingOwner!;
+        var align = new AlignWithObjectAction(f.M, 27, 120, AlignmentType.Custom);
+        using var subscription = f.M.Docking.RegisterActionHandlers(owner, align, DockAction.Align);
+        f.Motors(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickingOrPlacing);
+        Assert.Equal(1, dock.Active); // 0x00512AA0
+        Assert.False(dock.Success);
+
+        f.Rig.Data(new MovingLiftPostDock { Field0 = (byte)DockAction.Align });
+        f.Rig.Tick();
+        Assert.Equal(1, dock.Active);
+        Assert.False(dock.Success); // 0xC5 has no result-byte write.
+        Assert.Equal(0x04000003u, align.VerifyNative(owner));
+
+        f.Rig.Data(new PickAndPlaceResult { Field0 = owner.StoredState!.Timestamp, Field1 = true });
+        f.Rig.Tick();
+        Assert.True(dock.Success); // 0x0053379A
+        Assert.Equal(0x04000003u, align.VerifyNative(owner)); // active branch precedes success.
+        f.Motors(RobotStatusFlag.IsBodyAccMode);
+        Assert.Equal(0, dock.Active);
+        Assert.Equal(0u, align.VerifyNative(owner));
+
+        var logs = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Add;
+        align.SetSelectedDockAction(DockAction.PickupLow);
+        Assert.Equal(0x0300001Au, align.VerifyNative(owner));
+        Assert.Contains(logs, entry => entry.Level == EngineLogLevel.Warning && entry.Name == "AlignWithObjectAction.Verify.ReachedDefaultCase" &&
+            entry.Text.EndsWith("Don't know how to verify unexpected dockAction DA_PICKUP_LOW.", StringComparison.Ordinal));
     }
 }
