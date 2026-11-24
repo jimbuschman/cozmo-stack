@@ -1622,7 +1622,11 @@ public static class ActivityTreeLoader
         if (e.TryGetProperty("desiredActivityNames", out var dn))
             desired = (dn.GetProperty("faceAndCubeActivityName").GetString()!, dn.GetProperty("faceOnlyActivityName").GetString()!, dn.GetProperty("cubeOnlyActivityName").GetString()!, dn.GetProperty("noFaceNoCubeActivityName").GetString()!);
         var normalChooser=e.TryGetProperty("behaviorChooser",out var bc) ? BuildChooser(bc,bound,penalty,random,owner) : e.TryGetProperty("universalChooser",out var uc) ? BuildChooser(uc,bound,penalty,random,owner) : null;
-        if(owner is not null && normalChooser is ScoringChooser ordinary)ordinary.EnableOrdinaryUnbuiltBoundary(owner);
+        // Singing's unconstructed song objects are absent from the configured container.
+        // Scoring reload skips a null FindBehaviorByID (0x0060A032..0x0060A074).
+        // The factory still reports the missing Singing class; Freeplay can repick
+        // after the empty song chooser instead of retaining an unrelated behavior.
+        if(owner is not null && id!="Singing" && normalChooser is ScoringChooser ordinary)ordinary.EnableOrdinaryUnbuiltBoundary(owner);
         if(owner is not null && id=="MeetCozmo" && normalChooser is ScoringChooser meetChooser)meetChooser.EnableMeetPristineBoundary();
         var interludeChooser=e.TryGetProperty("interludeBehaviorChooser",out var ic) ? BuildChooser(ic,bound,penalty,random,owner) : null;
         if(owner is not null && (id is "Socialize" or "PlayAlone" or "Hiking" or "NothingToDo") && interludeChooser is StrictPriorityChooser ordinaryInterlude)

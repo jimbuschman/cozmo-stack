@@ -104,11 +104,13 @@ public sealed class KeepNeedsFullTests(ITestOutputHelper output)
             Assert.False(rejected.GetProperty("admitted").GetBoolean());
             var mode=await BridgeCommandTests.Invoke(bridge,"set_needs_mode","""{"mode":"real"}""");
             Assert.Equal("confirmed",mode.GetProperty("status").GetString());
+            Assert.True(mode.GetProperty("report").GetProperty("applied").GetBoolean());
             Assert.False(mode.GetProperty("report").GetProperty("paused").GetBoolean());
             var result=await BridgeCommandTests.Invoke(bridge,"set_needs","""{"repair":0,"energy":0.6,"play":0.7}""");
             Assert.Equal(new[]{(float)f.Rig.Engine.Needs.Config.MinimumNeedLevel,.6f,.7f},Levels(f.Rig.Engine));
             Assert.Equal(JsonValueKind.Null,result.GetProperty("engineResult").ValueKind);
             Assert.Equal("confirmed",result.GetProperty("status").GetString());
+            Assert.True(result.GetProperty("report").GetProperty("applied").GetBoolean());
             var full=await BridgeCommandTests.Invoke(bridge,"set_needs_mode","""{"mode":"full"}""");
             Assert.True(full.GetProperty("report").GetProperty("applied").GetBoolean());
             Assert.Equal(new[]{1f,1f,1f},Levels(f.Rig.Engine));

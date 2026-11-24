@@ -115,9 +115,11 @@ public sealed class NeedsPersonalityMcpTests(ITestOutputHelper output)
                     await Set(need, 1);
                     await AssertBracket(lower, "Full", cursor);
                     PumpUntil(() => f.Runtime.AI.SevereNeeds.Selected == 3 &&
+                        f.Runtime.SelectedNeedsActivity != need &&
                         manager.Current?.Id.StartsWith($"Needs_SevereLow{need}", StringComparison.Ordinal) != true);
                     var recovered = Data(await client.Tool("get_state", new { })).GetProperty("needs");
                     Assert.Equal(JsonValueKind.Null, recovered.GetProperty("selectedSevereNeed").ValueKind);
+                    Assert.Equal(JsonValueKind.Null, recovered.GetProperty("expressedSevereNeed").ValueKind);
                 }
 
                 long rewardCursor = bridge.CurrentEventCursor();

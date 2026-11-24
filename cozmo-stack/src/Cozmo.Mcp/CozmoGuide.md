@@ -92,7 +92,7 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `isOnCharger`, `isCharging` | Latest native contact/charging state, or null when unavailable. |
 | `activity`, `highLevelActivity`, `behavior`, `reaction` | Latest activity and reaction observations; null when unavailable. |
 | `reactionLocks` | Current named locks, each with its `id` and mapped `triggers`. Cozmo and the caller can both hold locks. |
-| `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. Loaded needs include `brackets` for all three levels and `selectedSevereNeed` when the engine is expressing one. |
+| `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. Loaded needs include `brackets` for all three levels. `selectedSevereNeed` follows the selected severe activity, or the current expression when that activity has ended. `expressedSevereNeed` reports the current expression, which can start or clear while the activity is still running. |
 | `knownFaces` | Signed `faceId`, `name`, `lastObservedTimestamp`, `enrolled`, `relative`. Enrolled names can remain without a current sighting. |
 | `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A located cube need not have a current radio connection. |
 | `knownChargers` | Command `worldObjectId`, `poseState`, `lastObservedTimestamp`, `relative`, in the current origin. |

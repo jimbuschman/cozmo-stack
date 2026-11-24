@@ -500,7 +500,13 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         SteppedBehavior.ReportMissing("M15-006 Sparked desired returned null: native Freeplay PickNewActivityForSpark 0x005AE70A..005AE760 is unbuilt; actual selected owner/manager activity/state retained at parent continuation. OnDeselected requires a changed selected candidate (0x005ADE02); explicit supplied next admission may resume this boundary; no fallback or repeated Complete");
     }
 
-    internal FreeplayDecision Observe()=>new(_facade.Engine.Timer.SecondsF,_selected?.Id=="Freeplay"?_observer?.Current?.Id:_selected?.Id,_manager.Current?.Id,"native engine observation");
+    private Activity? CurrentActivity => _selected?.Id == "Freeplay" ? _observer?.Current : _selected;
+    internal FreeplayDecision Observe()=>new(_facade.Engine.Timer.SecondsF,CurrentActivity?.Id,_manager.Current?.Id,"native engine observation");
+
+    // ActivityFreeplay stores the current child at 0x005ADE08, then selects it at 0x005ADE1E.
+    // The child's shipped Needs strategy identifies its need through the full GetIn/State lifetime.
+    internal NeedId? SelectedNeedsActivity => CurrentActivity is { Type: "NeedsExpression" } activity
+        ? activity.Strategy.Need : null;
     internal string? SelectedActivityId => _selected?.Id;
     private FreeplaySystem? _observer;
     internal FreeplaySystem FreeplayObserver=>_observer??=new FreeplaySystem(_manager,Context,
