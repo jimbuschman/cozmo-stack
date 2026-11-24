@@ -257,6 +257,10 @@ class Session:
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
         resolved = {
+            **{f"MISSING: M13-039 client needs cache +0x{offset:X} read at 0x{address:08X}: "
+               "checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero":
+                   "M1-034 skips the undefined first comparison and uses the first public state as the next baseline"
+               for offset, address in ((0x2C, 0x5924C4), (0x30, 0x592514), (0x34, 0x592560))},
             "MISSING: M7-019 RobotCliffEventFinished tag0x36 native local subscriber continuity after "
             "E2G emit0x00662590 remains unverified; typed bus delivery is built, concrete native recipients are not certified":
                 "The empty 0x36 report and synchronous emit are built. No 0x36 registration was found in the checked "

@@ -236,36 +236,26 @@ public sealed partial class CozmoRobot : IDisposable
         manager.BindReactionDependencies(runtime.Manipulation, runtime.Bound, native);
         BindNativeSevereNeeds(native);
     }
-    private Behavior.SevereNeedsComponent? _boundSevereNeeds;
     private bool _severeNeedsConstructed;
     private volatile bool _connectionReadyForWake;
     private bool _automaticWakeSent;
     private Action? _severeNeedsUpdate;
     // fidelity: M15-072, M15-073 -- the native owner exists even without the host Freeplay handle.
-    internal Behavior.SevereNeedsComponent BindSevereNeedsInputs(bool subscribe=true)
-        =>Engine.InvokeEngineRequest(()=>BindSevereNeedsInputsCore(subscribe));
-    private Behavior.SevereNeedsComponent BindSevereNeedsInputsCore(bool subscribe)
+    private void BindNativeSevereNeeds(EngineRobot native)
     {
-        var severe=Engine.Needs.SevereNeeds;
-        if(!ReferenceEquals(_boundSevereNeeds,severe)){_boundSevereNeeds?.Dispose();_boundSevereNeeds=severe;}
-        severe.Engine=Engine;severe.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
+        _connectionReadyForWake=false;_automaticWakeSent=false;
+        var ai=native.NativeBehaviorRuntime!.AI;
+        var severe=ai.SevereNeeds;
+        severe.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
         severe.PushDriving=(start,loop,end,name)=>Animations.DrivingAnimations.Push(new(start,loop,end),name);
         severe.RemoveDriving=Animations.DrivingAnimations.Remove;
         severe.PushIdle=Animations.Scheduler.PushIdleAnimation;
         severe.RemoveIdle=name=>Animations.Scheduler.RemoveIdleAnimation(name,Engine.Timer.TimeStampMs);
-        if(subscribe&&Engine.Robot is {} native)severe.Subscribe(Engine,native.HasExternalInterface);
-        return severe;
-    }
-    private void BindNativeSevereNeeds(EngineRobot native)
-    {
-        _connectionReadyForWake=false;_automaticWakeSent=false;
-        var severe=BindSevereNeedsInputs(false);severe.ResetForConstruction();
         severe.DisableReactions=native.BehaviorManagerOwner!.DisableReactionsWithLock;
         severe.RemoveReactions=native.BehaviorManagerOwner.RemoveDisableReactionsLock;
         severe.Subscribe(Engine,native.HasExternalInterface);
         if(_severeNeedsConstructed||Engine.AIComponentUpdate is null)Engine.AIComponentUpdate=_severeNeedsUpdate;
         _severeNeedsConstructed=true;
-        var ai=native.NativeBehaviorRuntime!.AI;
         ai.BindDestructionRecipient(0x30,()=>{severe.Dispose();ai.NativeTeardown.Destroy(0x30);});
         native.Lifetime.Bind(0x264,_=>ai.DestroyDirect()); // tracker storage retires at +2C; no second ForceUpdate
     }

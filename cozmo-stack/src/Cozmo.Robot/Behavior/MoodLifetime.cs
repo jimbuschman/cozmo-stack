@@ -1,3 +1,5 @@
+using Cozmo.Protocol;
+
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M7-023
@@ -28,7 +30,7 @@ public sealed partial class MoodState
                 { SteppedBehavior.ReportMissing("M7-023 replacement/shared Mood owner construction is not established; retired or different MoodState is not rebound as the native owner"); return; }
                 _lifetimeOwner=native; _nativeRobot = native; _actionCallbackId = actionCallbackId; native.MoodOwner = this;
                 if (initialized && native.HasExternalInterface && _subscriptions.Count==0)
-                    _subscriptions.Add(native.Engine.AnimationMessages.SubscribeMessage(0xC3, false, UnbuiltMoodMessage));
+                    _subscriptions.Add(native.Engine.AnimationMessages.SubscribeMessage(0xC3, false, HandleMoodMessage));
                 native.Lifetime.Bind(0x440, _ => DestroyForRobot());
             });
         });
@@ -54,7 +56,66 @@ public sealed partial class MoodState
             // Skipped unregister leaves callback-id bytes unchanged; no final mood report or static model teardown.
         });
     }
-    private void UnbuiltMoodMessage(object? payload) => SteppedBehavior.ReportMissing("M7-012 MoodMessage C3 operational handler is outside the M7-023 lifetime rows; native raw-this capture retained without a guessed mood mutation");
+    // fidelity: M7-012, M7-020
+    // The app's MoodMessageUnion.cs writes an 8-bit variant, then the selected
+    // message body. The native handler dispatches these four arms at 0x0067BC66.
+    private void HandleMoodMessage(object? payload)
+    {
+        if (payload is not byte[] { Length: > 0 } bytes || _nativeRobot is not { } owner) return;
+        using var execution = owner.Engine.EnterSynchronousOwner();
+        if (owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot, owner) || !ReferenceEquals(owner.MoodOwner, this)) return;
+        var reader = new CladReader(bytes);
+        byte tag = reader.U8();
+        switch (tag)
+        {
+            case 0:
+                SendEmotionsToGame(); // 0x0067BC76..0x0067BC7E
+                break;
+            case 1 when reader.Remaining >= 5:
+            {
+                byte emotion = reader.U8();
+                float value = reader.F32();
+                if (emotion >= _values.Length) return;
+                // Emotion::SetValue at 0x006796C8 writes the raw float and clears the decay clock.
+                LogCallbackDeferral.RunGated(_lifetimeGate, () =>
+                {
+                    if (_nativeRetired) return;
+                    _values[emotion] = value;
+                    _decaySec[emotion] = 0f;
+                });
+                break;
+            }
+            case 2 when reader.Remaining >= 6:
+            {
+                byte emotion = reader.U8();
+                float delta = reader.F32();
+                string key = reader.String8();
+                if (reader.LastReadFailed || emotion >= _values.Length) return;
+                int nul = key.IndexOf('\0'); // AddToEmotion takes a char* and calls strlen at 0x0067BDE6.
+                if (nul >= 0) key = key[..nul];
+                LogCallbackDeferral.RunGated(_lifetimeGate, () =>
+                {
+                    if (_nativeRetired) return;
+                    // 0x0067BEDC..0x0067BF0A: use the event's graph if the key
+                    // is registered, otherwise the shipped default graph.
+                    float elapsed = RecordEventTime(key, owner.Engine.Timer.SecondsF);
+                    var evt = _model.Event(key);
+                    var graph = evt is null ? _model.DefaultRepetitionPenalty : evt.RepetitionPenalty;
+                    float penalty = graph is null ? 1f : (float)graph.At(elapsed);
+                    Add(emotion, penalty * delta); // 0x0067BE16..0x0067BE22
+                });
+                break;
+            }
+            case 3:
+                string name = reader.String8();
+                if (!reader.LastReadFailed) Trigger(name, owner.Engine.Timer.SecondsF); // 0x0067BCD2..0x0067BCEC
+                break;
+            case > 3:
+                owner.Engine.EmitSourceLog(EngineLogLevel.Error, null, "MoodManager.HandleMoodEvent.UnhandledMessageUnionTag", $"Unexpected tag {tag}");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0067BCFE..0x0067BD38
+                break;
+        }
+    }
     private bool RejectRetiredUse()
     {
         if (!_nativeRetired) return false;

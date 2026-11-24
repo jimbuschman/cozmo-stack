@@ -293,6 +293,29 @@ public sealed class NativePhysicalReactionControlTests
     }
 
     [Fact]
+    public void ReplacementRobotHasItsOwnSevereNeedsAndWakeSubscription()
+    {
+        using var f = NewFixture();
+        var engine = f.Rig.Engine;
+        var first = f.Runtime.AI.SevereNeeds;
+        first.Set(NeedId.Play);
+        Assert.Equal((int)NeedId.Play, first.Selected);
+
+        engine.Robots.RemoveRobot(CozmoEngine.RobotId, false);
+        Assert.Equal(0, engine.AnimationMessages.SubscriberCountForTest(166, false));
+        engine.Robots.AddRobot(CozmoEngine.RobotId, withRic: false);
+        var replacement = engine.Robot!.NativeBehaviorRuntime!.AI.SevereNeeds;
+        Assert.Same(engine.Needs.SevereNeeds, replacement);
+        Assert.NotSame(first, replacement);
+        Assert.Equal(3, replacement.Selected);
+        Assert.Equal(1, engine.AnimationMessages.SubscriberCountForTest(166, false));
+
+        first.Set(NeedId.Energy);
+        Assert.Equal((int)NeedId.Play, first.Selected);
+        Assert.Equal(3, replacement.Selected);
+    }
+
+    [Fact]
     public void UnexpectedRewindPreservesHistoricalParentAndObstacleOffsetsUseNativeFloatBits()
     {
         using var origin=new Pose3d("history-origin");

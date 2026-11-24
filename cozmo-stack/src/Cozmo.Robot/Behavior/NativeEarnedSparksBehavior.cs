@@ -5,7 +5,8 @@ using Cozmo.Robot.Manipulation;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M15-108
-// 005DAE98..005DAF82: actual configured owner; reward production remains independently unavailable.
+// 0x005DAEC2..0x005DAECA reads Needs+0x3D8. Its producer sets the flag at
+// 0x00696410 only after the configured weight and reward admission checks.
 internal sealed class NativeEarnedSparksBehavior : SteppedBehavior,IDisposable
 {
     private readonly EngineRobot _robot;

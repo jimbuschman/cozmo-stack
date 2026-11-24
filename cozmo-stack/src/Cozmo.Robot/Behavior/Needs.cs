@@ -686,7 +686,11 @@ public sealed partial class NeedsManager
     /// </summary>
     private readonly object _gate = new();
     // fidelity: M15-072 -- shared with AI+0x30; no per-need expression flags.
-    internal SevereNeedsComponent SevereNeeds { get; }
+    internal SevereNeedsComponent SevereNeeds { get; private set; }
+
+    // AIComponent constructs a fresh +0x30 child for each Robot (0x00569B2E..0x00569B3E, 0x005729FC).
+    internal SevereNeedsComponent CreateSevereNeedsOwner(EngineRobot robot) =>
+        SevereNeeds = new SevereNeedsComponent { RobotOwner = robot, IsAtBracket = State.IsNeedAtBracket };
     private Dictionary<NeedId, NeedBracketId> _prevBrackets => State.NativePreviousBrackets;
     /// <summary><c>+0x1d5</c>: while set, <c>Update</c> returns at once (0x00695CA4).</summary>
     private bool _paused;
@@ -2216,12 +2220,16 @@ public sealed partial class NeedsManager
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
         SendNeedsStateToGame(action); // 0x00696366, before the reward query.
         if(!NativeCurrent()){SteppedBehavior.ReportMissing("M15-071 original Needs/context changed during action; stale tail skipped");return false;}
+        // The weight is already part of this action's row. A zero-weight action
+        // cannot reach the pending store, regardless of the daily-star result.
+        bool canProducePendingReward = !(MathF.Abs((float)d.FreeplaySparksRewardWeight) <
+            BitConverter.Int32BitsToSingle(0x3727C5AC)); // 0x00696386..0x006963A4
         // fidelity: M15-093, M15-071
         int? dailyResult=nativeRecipient&&!UsesUncertifiedPersistenceTestAdapter?UpdateNativeStars(false):0;
         if(dailyResult is null)
         {
             // The star owner reports which input prevented completion. A retired owner needs no further state writes.
-            if(NativeCurrent())
+            if(canProducePendingReward && NativeCurrent())
             {
                 // A native zero at 0x00696372 can reach the pending store at 0x00696410.
                 Interlocked.Increment(ref _nativePendingHistoryEpoch);_nativePendingKnown=false;_nativeRewardPayloadKnown=false;
@@ -2238,8 +2246,7 @@ public sealed partial class NeedsManager
             else {notificationHistoryKnown=false;nativeEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-093 LocalNotifications.Generate recipient unavailable at 0x00696378");}
             if(!NativeCurrent())return false;
         }
-        float rewardWeight=(float)d.FreeplaySparksRewardWeight;
-        if (dailyResult==0&&!(MathF.Abs(rewardWeight)<BitConverter.Int32BitsToSingle(0x3727C5AC)))
+        if (dailyResult==0 && canProducePendingReward)
         {
             if(nativeRecipient)
             {

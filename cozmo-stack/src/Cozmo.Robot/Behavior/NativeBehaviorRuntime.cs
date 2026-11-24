@@ -86,7 +86,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         _facade=facade;_robot=robot;_manager=manager;Context=context;_vision=vision;
         Context.Mood=robot.MoodOwner;
         AI=new(()=>unchecked((int)robot.CurrentOriginId),facade.Engine.EmitStackLog,
-            (l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),facade.Engine.Needs.SevereNeeds);
+            (l,c,k,t)=>facade.Engine.EmitSourceLog(l,c,k,t),facade.Engine.Needs.CreateSevereNeedsOwner(robot));
         Context.AI=AI;
         if (facade.Engine.Options.ResourcesPath is {} workoutResources)
         {
