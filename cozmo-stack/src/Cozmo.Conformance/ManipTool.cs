@@ -367,8 +367,13 @@ public static class ManipTool
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         var sender = new PathSender(robot);
-        sender.Execute(path);
+        var execution = sender.ExecuteWithResult(path);
         foreach (var msg in sender.Sent) Console.WriteLine($"  -> {msg.Id} {Convert.ToHexString(msg.ToBytes())}");
+        if (execution.Result != 0)
+        {
+            Console.WriteLine($"ExecuteCustomPath failed with result {execution.Result} (last path ID {execution.PathId})");
+            return 2;
+        }
         return 0;
     }
 

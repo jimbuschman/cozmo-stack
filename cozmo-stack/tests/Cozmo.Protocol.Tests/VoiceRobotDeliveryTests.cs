@@ -44,6 +44,34 @@ public sealed class VoiceRobotDeliveryTests
         public void Retire() => Retired = true;
     }
 
+    [Theory]
+    [InlineData("Unprocessed", 0, 0x334C99DCu)]
+    [InlineData("Name_Normal", 1, 0x2F8B3BF4u)]
+    [InlineData("Name_FirstIntroduction_1", 2, 0x2F8B3BF4u)]
+    [InlineData("Text", 3, 0x36089802u)]
+    public void ShippedIntentConfiguresNativeVoiceSwitch(string intent, byte style, uint expectedSwitch)
+    {
+        using var fixture = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true, pumpAnimations: true);
+        var rig = fixture.Rig;
+        var owner = rig.Engine.Robot!;
+        var metadata = SpeechMetadata.Load(PickupPyramidNativeExecutionTests.Resources());
+        Assert.True(metadata.TrySelect(intent, "Cozmo", new EngineRandom(7), out var selected));
+        Assert.Equal(style, selected.Style);
+        var buffer = new SpeechRobotAudioBuffer();
+        var session = new FakeDirect(new WwiseRobotAudioPath(new AudioHost(buffer), new AudioEngine(), new Dispatch(), (_, _) => 0));
+        session.ConfigurationBarrier = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var speech = new TextToSpeechComponent((_, _, _) => new[] { 0.25f });
+        var action = new SayTextAction(rig.Robot, owner, "Cozmo", selected.Style, selected.Duration, selected.Pitch,
+            direct: true, speechForTest: speech, openForTest: _ => Task.FromResult<IDirectSpeechSession>(session));
+        Assert.Equal(0, owner.ActionList.QueueAction(QueueActionPosition.AtEnd, action));
+        Assert.True(SpinWait.SpinUntil(() => { rig.Tick(); return session.Configured is not null; }, TimeSpan.FromSeconds(10)));
+        // 0x00C573B0: all four entries, including the first-introduction question style.
+        Assert.Equal((expectedSwitch, selected.Pitch), session.Configured!.Value);
+        Assert.True(owner.ActionList.Cancel(action.Tag));
+        rig.Tick();
+        Assert.True(session.Retired);
+    }
+
     [Fact]
     public async Task FittedNameUsesShippedFacesAndWaitsForMatchingRobotCompletion()
     {

@@ -238,10 +238,10 @@ internal sealed class CannedSpeechLease : IDirectSpeechSession
             return _path;
         }
     }
-    internal Task Configure(float pitch) => _generation.ConfigureAsync(0x2F8B3BF4, pitch);
+    internal Task Configure(uint voiceSwitch, float pitch) => _generation.ConfigureAsync(voiceSwitch, pitch);
     WwiseRobotAudioPath IDirectSpeechSession.Path => Path;
     Exception? IDirectSpeechSession.Failure => Failure;
-    Task IDirectSpeechSession.Configure(uint voiceSwitch, float pitch) => _generation.ConfigureAsync(voiceSwitch, pitch);
+    Task IDirectSpeechSession.Configure(uint voiceSwitch, float pitch) => Configure(voiceSwitch, pitch);
     void IDirectSpeechSession.Retire() { ClearPending(); Retire(); }
     internal void ClearPending() => _owner.Observe(_generation.ClearPendingAsync());
     internal void Retire()

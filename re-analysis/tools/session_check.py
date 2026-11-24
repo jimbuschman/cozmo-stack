@@ -342,6 +342,17 @@ class Session:
                for name in ("AppendLine", "AppendPointTurn", "AppendSegment")},
             "MISSING: M1-034/M12-002 Dole empty-path unchecked segment read 0x00507F10 skipped, prior counter retained":
                 "The empty-path underflow at 0x00507E7E reaches an undefined segment read at 0x00507F2A..0x00507F3C. The M1-034 skip is logged",
+            **{f"MISSING: M5-063 {text}":
+               "The handler's inline triplet is initialized at 0x004F0724..0x004F0728 and selected at Init 0x004F0FC4, called by both drive actions"
+               for text in ("current start/loop selection is unknown", "current start selection is unknown",
+                            "current loop trigger is unset because Init was not built at its M12-024 caller",
+                            "current end trigger is unset because Init was not built at its M12-024 caller")},
+            "MISSING: M12-024 | M5-063 current driving-animation selection is unavailable; end-call decision stopped":
+                "0x0055A888 selects the triplet at Init; the end-call tail at 0x0055B0AA checks the result without another selection gate",
+            "MISSING: M13-013 | M5-063 driving selection unavailable":
+                "0x005475F6 selects the triplet at Init and 0x005479E0 calls PlayEndAnim after the ShouldPlayAnimation test",
+            "MISSING: M12-002 PathSender host caller must handle ExecuteCustomPath failure; legacy ushort API has no Result output":
+                "The production path and standalone planner caller use ExecuteWithResult (native return 0x0064A488); the legacy ID API logs a failed result",
             "MISSING: M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA":
                 "M1-034 skips the unchecked external-interface dereference from 0x005A20BA..0x005A20D6. The policy skip is logged",
             "MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / "

@@ -68,4 +68,19 @@ public sealed class M12X2BuilderTests
         Assert.Equal(failure==0?PathEventType.Completed:(PathEventType?)null,await run.WaitAsync(TimeSpan.FromSeconds(30),default));
         run.Abort();run.Dispose();Assert.Equal(after,sends);Assert.False(run.Aborted);Assert.False(run.ClearedRobotPath);
     }
+
+    [Fact]
+    public void LegacyPathIdApiLogsNativeExecuteFailureWithoutChangingLastId()
+    {
+        using var rig = new Rig();
+        var path = rig.Robot.Motion.Path;
+        path.Field42 = 9;
+        path.SendPathMessage = message => message is not ExecutePath;
+        var logs = new List<string>();
+        rig.Robot.Engine.StackLogLine += logs.Add;
+        // 0x0064A3CA increments the ID before sending ExecutePath; 0x0064A488 returns the send result.
+        Assert.Equal((ushort)10, rig.M.Paths.Execute(new[] { Line(0) }));
+        Assert.Contains(logs, line => line.Contains("ExecuteCustomPath failed with result 1 (last path ID 10)"));
+        Assert.DoesNotContain(logs, line => line.Contains("PathSender host caller must handle ExecuteCustomPath failure"));
+    }
 }
