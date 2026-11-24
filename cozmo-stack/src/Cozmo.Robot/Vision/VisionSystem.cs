@@ -282,6 +282,18 @@ public sealed partial class VisionSystem : IDisposable
     // The outer VisionComponent camera has its own identity check, separate from the inner marker camera.
     internal void BindNativeGroundOwner(EngineRobot owner)
     {
+        // ~Robot 0x0051116C/0x00511260/0x00511298..0x005112CE/0x005114E8.
+        // Invalidate the VisionComponent first, then retire the separately owned world storage.
+        owner.Lifetime.Bind(0x258, _ => RetireVisionComponent(owner));
+        owner.Lifetime.Bind(0x26C, _ => { if (IsRetiredVisionOwner(owner)) World.ClearConfirmer(); });
+        owner.Lifetime.Bind(0x3C, _ => { if (IsRetiredVisionOwner(owner)) Pets.ResetToConstructed(); });
+        owner.Lifetime.Bind(0x38, _ => { if (IsRetiredVisionOwner(owner)) Faces.ResetToConstructed(); });
+        owner.Lifetime.Bind(0x34, _ =>
+        {
+            owner.RetireConfigurationDelocalization();
+            if (IsRetiredVisionOwner(owner)) World.RetireLocatedStorage();
+        });
+        owner.Lifetime.Bind(0x25C, _ => { if (IsRetiredVisionOwner(owner)) World.Maps.Dispose(); });
         RetainedSubscription? oldSubscription,oldMovingSubscription;
         LifetimeProfiler? retiredProfiler = null;
         var imu=new NativeImageImuHistory();
@@ -671,9 +683,27 @@ public sealed partial class VisionSystem : IDisposable
         subscription?.Dispose();movingSubscription?.Dispose();
         return (retiredOwner, removal, retiredProfiler);
     }
+    private (EngineRobot? Owner, int Removal, LifetimeProfiler Profiler)? _retiredVisionComponent;
+    private bool IsRetiredVisionOwner(EngineRobot owner)
+    {
+        lock (_groundGate)
+            return _groundOwner is null && ReferenceEquals(_retiredVisionComponent?.Owner, owner) &&
+                _retiredVisionComponent?.Removal == Volatile.Read(ref _removals);
+    }
+
+    private void RetireVisionComponent(EngineRobot owner)
+    {
+        lock (_groundGate) if (!ReferenceEquals(_groundOwner, owner)) return;
+        if (RetireDestroyedGroundOwner() is not { } retired) return;
+        DiscardPreparedResults(owner, discardAll: false);
+        lock (_groundGate) _retiredVisionComponent = retired;
+    }
+
     internal void ResetToConstructed()
     {
-        if(RetireDestroyedGroundOwner() is not { } retired)return;
+        (EngineRobot? Owner, int Removal, LifetimeProfiler Profiler)? pending;
+        lock (_groundGate) { pending = _retiredVisionComponent; _retiredVisionComponent = null; }
+        if((pending ?? RetireDestroyedGroundOwner()) is not { } retired)return;
         var (retiringOwner, removal, profiler) = retired;
         using var retiredProfiler = profiler;
         DiscardPreparedResults(retiringOwner,discardAll:false);
@@ -2888,6 +2918,9 @@ public sealed partial class VisionSystem : IDisposable
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         }
         ReportFaceCleanup(_stockFaceDetector);
+        LifetimeProfiler? retiredProfiler;
+        lock (_groundGate) { retiredProfiler = _retiredVisionComponent?.Profiler; _retiredVisionComponent = null; }
+        retiredProfiler?.Dispose();
         if(_robot.Engine.VisionUpdateAllResultsFailed==DrainPreparedResults)_robot.Engine.VisionUpdateAllResultsFailed=null;
         // V3-V7 depend on native recipient ownership, not host reset/GC.
         SteppedBehavior.ReportMissing("M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join");

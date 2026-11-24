@@ -1712,6 +1712,19 @@ public sealed partial class BlockWorld
         Missing("M11-055 / M11-045 MapComponent destructor 0x0067DC00..0x0067DC28: recursive native teardown effects remain unread; managed owner discarded");
     }
 
+    // BlockWorld destructor 0x0061CD78..0x0061CDB4: pose-change list then the located
+    // and connected shared-object maps. The retained host facade's scalar reset comes later.
+    internal void RetireLocatedStorage()
+    {
+        using var mutation = EnterPoseMutation();
+        lock (_gate)
+        {
+            ClearPoseChanges();
+            _located.Clear(); _forgotten.Clear(); _connectedObjects.Clear();
+            NativeOrigin = null; NativeForceFlush = null; _fixtureOrigins.Clear();
+        }
+    }
+
     private static (uint Origin, int Family, int Type, int Id) KeyOf(ObservableObject o) =>
         (o.OriginId, (int)o.Family, (int)o.Type, (int)o.ObjectId);
 
@@ -3763,9 +3776,10 @@ public sealed partial class BlockWorld
         using var frameMutation=EnterPoseMutation();
         lock (_gate)
         {
-            _confirmations.Clear();
             foreach (var o in _located.Values) o.Confirmation = null;
             foreach (var o in _forgotten.Values) o.Confirmation = null;
+            foreach (var entry in _confirmations.Values) entry.Pose.Dispose();
+            _confirmations.Clear();
         }
     }
 

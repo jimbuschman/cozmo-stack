@@ -239,6 +239,22 @@ public sealed class BehaviorHelperComponent
         using (Enter()) { _success = null; _failure = null; _hostCurrent=null; }
     }
 
+    // AIComponent destructor 0x00569D38..0x00569D7C: failure function, success function,
+    // then the owned vector's shared handles from the back. Destruction invokes no completion.
+    internal void RetireNativeStorage()
+    {
+        using (Enter())
+        {
+            _failure = null; _success = null; _hostCurrent = null;
+            while (_stack.Count != 0)
+            {
+                var helper = _stack[^1];
+                _stack.RemoveAt(_stack.Count - 1);
+                helper.Release();
+            }
+        }
+    }
+
     /// <summary><c>ClearStackLifetimeVars</c> 0x0056dcdc is <c>bx lr</c>; the call-site scan finds no caller.</summary>
     public void ClearStackLifetimeVars() { }
 

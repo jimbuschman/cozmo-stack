@@ -20,6 +20,11 @@ public sealed class AIInformationAnalyzer
     private readonly List<InterestingEdgeRegion> _regions=new();
     internal IReadOnlyList<InterestingEdgeRegion> Regions=>_regions;
     internal void BindOriginalMap(Func<MemoryMap?> map,Func<bool> current){_originalMap=map;_originalOwnerCurrent=current;}
+    // AIComponent destroys the BorderRegion vector, then ProcessInfo map (0x00569D94..0x00569DA6).
+    internal void RetireNativeStorage()
+    {
+        _regions.Clear(); _processes.Clear(); _originalMap = null; _originalOwnerCurrent = null;
+    }
     internal bool? ActualBorderResultEmpty()=>_originalOwnerCurrent?.Invoke()==true ? _regions.Count==0 : null;
     internal AIInformationAnalyzer(SourceLogSink? source)
     {

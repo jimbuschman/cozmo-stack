@@ -16,12 +16,19 @@ public sealed class M14LifetimeCheckedRowsTests
         robot.Engine.Robots.RemoveRobot(1,false);Assert.Equal(new[]{0x3C,0x38,0x34,0x268},order);
     }
     [Fact]
-    public void MissingLiveWorldAndSpeechOwnersAreNamedOnTheStackChannelAtRemoval()
+    public void LiveWorldOwnersRetireAndMissingSpeechRecipientStaysVisibleAtRemoval()
     {
         using var robot=CozmoRobot.CreateOffline();var stack=new List<string>();var source=new List<EngineLogEntry>();robot.Engine.StackLogLine+=stack.Add;robot.Engine.LogEntry+=source.Add;
+        var faces=robot.Vision.Faces;var pets=robot.Vision.Pets;
+        Assert.NotNull(faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(1,new FaceRect(0,0,10,10)),1),Pose3d.Identity,false));
+        pets.Update(new[]{new DetectedPet(1,PetType.Unknown,new FaceRect())},1,false);
+        Assert.Single(faces.Faces);Assert.Single(pets.Pets);
+        // ~Robot releases PetWorld and FaceWorld at 0x00511298 and 0x005112AC,
+        // before the old Robot allocation is freed and the retained facade is reset.
+        robot.Engine.RobotStorageFreed=_=>{Assert.Empty(faces.Faces);Assert.Empty(pets.Pets);};
         robot.Engine.Robots.RemoveRobot(1,false);
-        Assert.Contains(stack,s=>s.Contains("M14-013 PetWorld")&&s.Contains("0x3C"));
-        Assert.Contains(stack,s=>s.Contains("M14-013 FaceWorld")&&s.Contains("0x38"));
+        Assert.DoesNotContain(stack,s=>s.Contains("MISSING: Robot lifetime owner +0x3C"));
+        Assert.DoesNotContain(stack,s=>s.Contains("MISSING: Robot lifetime owner +0x38"));
         Assert.Contains(stack,s=>s.Contains("M14-013 speech")&&s.Contains("0x268"));
         Assert.DoesNotContain(source,e=>e.Text.Contains("MISSING")||e.Name.Contains("MISSING"));
     }
@@ -35,6 +42,6 @@ public sealed class M14LifetimeCheckedRowsTests
         faces.FaceDeleted+=_=>callbacks++;faces.FaceObserved+=_=>callbacks++;faces.FaceIdChanged+=(_,_)=>callbacks++;faces.Log+=_=>callbacks++;
         pets.Update(new[]{new DetectedPet(1,PetType.Unknown,new FaceRect())},1,false);pets.PetObserved+=(_,_)=>callbacks++;
         faces.ResetToConstructed();pets.ResetToConstructed();Assert.Equal(0,callbacks);Assert.Empty(faces.Faces);Assert.Empty(pets.Pets);
-        // There is no native lifetime binding here; the separate removal test requires that uncertainty be visible.
+        // This fixture alone does not prove the native lifetime binding or recursive shared-control ownership.
     }
 }

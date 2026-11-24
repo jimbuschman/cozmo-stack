@@ -54,7 +54,8 @@ internal sealed partial class PathComponent
         Abort(robot.SendChecked);
         _pathSubscription?.Dispose();_pathSubscription=null;
         _speedChooserSubscription?.Dispose();_speedChooserSubscription=null;
-        Behavior.SteppedBehavior.ReportMissing("M2-020 PathComponent destructor after C6 release 0x0064900A: remaining planner/doler destruction at this lifetime point is not built; existing managed reset remains separate");
+        // 0x0064900E..0x0064907A: release planner/goal and doler storage here, before the Robot origins.
+        RetireMachine();
     }
     private PathGoalIndex? _goalIndex;
     internal int PlannerStatus => _nativePlanners?.Current?.CheckPlanningStatus??_plan?.Status??1;
@@ -155,7 +156,8 @@ internal sealed partial class PathComponent
     private bool SendNative(RobotMessage message)=>!ScopeCurrent()?false:_scopedSend?.Invoke(message)??SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
     // fidelity: M13-029 - ErasePath builds a local Viz tag21 and sends nothing.
     private void ErasePath() => ErasePathHook?.Invoke(CozmoEngine.RobotId);
-    private void ResetMachine(){_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
+    private void RetireMachine(){_scopeGeneration++;_scopedCurrent=null;_scopedSend=null;_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;PlannerSlot10=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
+    private void ResetMachine(){RetireMachine();InitNativeShortPlanners();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
     internal void SetDolerPath(IReadOnlyList<PathSegment> path,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {

@@ -240,13 +240,14 @@ internal sealed class EngineTickRunner
     private readonly Action<long> _sleepNs;
     private readonly Func<long, int> _tick;
     private readonly Action<string> _log;
+    private readonly SourceLogSink? _sourceLog;
     private volatile bool _stop;
     private Thread? _thread;
     internal bool IsCurrentThread => ReferenceEquals(Thread.CurrentThread,_thread);
 
-    public EngineTickRunner(Func<long> nowNs, Action<long> sleepNs, Func<long, int> tick, Action<string> log)
+    public EngineTickRunner(Func<long> nowNs, Action<long> sleepNs, Func<long, int> tick, Action<string> log, SourceLogSink? sourceLog = null)
     {
-        _nowNs = nowNs; _sleepNs = sleepNs; _tick = tick; _log = log;
+        _nowNs = nowNs; _sleepNs = sleepNs; _tick = tick; _log = log; _sourceLog = sourceLog;
     }
 
     /// <summary>The loop itself; returns when stopped or when a tick returns nonzero.</summary>
@@ -260,15 +261,17 @@ internal sealed class EngineTickRunner
             int r = _tick(start - runStart);             // CD2 (0x0065B3F4..0x0065B42C)
             if (r != 0) { _log($"error: engine update returned {r}; the run loop stops"); return; }   // CD2 (0x0065B704..0x0065B712)
             long rem = target - _nowNs();                // CD3 (0x0065B432..0x0065B45E)
-            if (rem < OvertimeWarnNs)
+            // 0x0065B478..0x0065B54E compares against -200001000/-10001000 ns,
+            // negates the truncated microseconds, converts to f32 and multiplies by 0.001f.
+            if (rem <= OvertimeWarnNs - 1000)
             {
-                _log($"warning: overtime {rem / 1e6:F1} ms"); // CD4
-                _log("MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported");
+                SourceLogDispatch.Write(_sourceLog, _log, EngineLogLevel.Warning, null, "CozmoAPI.CozmoInstanceRunner.overtime",
+                    FormattableString.Invariant($"Update() (60ms max) is behind by {(float)(-(rem / 1000)) * 0.001f:F3}ms"));
             }
-            else if (rem < OvertimeDebugNs)
+            else if (rem <= OvertimeDebugNs - 1000)
             {
-                _log($"debug: overtime {rem / 1e6:F1} ms"); // CD4
-                _log("MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported");
+                SourceLogDispatch.Write(_sourceLog, _log, EngineLogLevel.Debug, "Unnamed", "CozmoAPI.CozmoInstanceRunner.overtime",
+                    FormattableString.Invariant($"Update() (60ms max) is behind by {(float)(-(rem / 1000)) * 0.001f:F3}ms"));
             }
             if (rem >= 1000) _sleepNs(rem / 1000 * 1000);                                           // CD3: rem_us (0x0065B576..0x0065B5D2)
             target += PeriodNs;                                                                       // CD3 (0x0065B5EE)
@@ -1217,9 +1220,11 @@ public sealed partial class EngineRobot
     /// </summary>
     private void ConstructorDelocalize()
     {
-        // B-M11-8 item 6: a MISSING goes to the stack channel, never the engine log stream. The pivot and lift names are read
-        // (RobotLiftBase, RobotLift); the main and forward pose names are not in the rows.
-        Behavior.SteppedBehavior.ReportMissing("M11-066 Robot ctor main (+0x298) and forward (+0x2A4) pose names have no checked row; empty names retained");
+        // 0x0051027E..0x005102AE and 0x005102CE..0x005102FE prefix the unsigned Robot ID
+        // with strings at 0x00510A04 and 0x00510A0C respectively, before constructor Delocalize.
+        string id = NativeRobotId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        MainPose.Name = "Robot_" + id;
+        ForwardPose.Name = "RobotDriveCenter_" + id;
         LiftPivot.SetParent(MainPose);LiftPose.SetParent(LiftPivot);
         PoseHistory.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
         PoseHistory.NativePoseTreeGate=PoseTreeGate;
@@ -2208,7 +2213,7 @@ public sealed partial class CozmoEngine : IDisposable
         {
             Interlocked.Exchange(ref BeforeFirstProductionTickForTest,null)?.Invoke();
             return TickAt(now);
-        }, Log);
+        }, Log, (level, channel, key, message) => EmitSourceLog(level, channel, key, message));
         _runner.Start("cozmo-engine");
         DrainAppDelivery();
     }

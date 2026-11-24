@@ -128,6 +128,19 @@ public sealed partial class RobotStateHistory
         }
     }
     internal void ResetToConstructed()=>Clear(); // process-global gap counter is not a Robot-owned field
+    internal void RetireNativeStorage() => WithGate(() =>
+    {
+        // 0x00511180/8A: key indices precede the three owned pose-history trees.
+        lock (_gate)
+        {
+            ComputedKeyToTime.Clear();ComputedTimeToKey.Clear();
+            foreach (var state in _computedStates.Values) state.Dispose();_computedStates.Clear();
+            foreach (var pose in _computed.Values) pose.Dispose();_computed.Clear();
+            foreach (var entry in VisionOnly.Values) entry.Pose.Dispose();VisionOnly.Clear();
+            ClearRaw();
+        }
+        return 0;
+    });
     internal void CullToWindowSize()
         => WithGate(()=>{CullToWindowSizeCore();return 0;});
     private void CullToWindowSizeCore()

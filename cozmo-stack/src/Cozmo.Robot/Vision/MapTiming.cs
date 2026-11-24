@@ -54,9 +54,13 @@ internal sealed partial class SourceMapComponent : IDisposable
     }
     public void Dispose()
     {
+        // 0x0067DC08 releases the last robot pose before the object-pose map (0x0067DC12)
+        // and the owned nav-map map (0x0067DC1C).
+        _lastRobotPose?.Dispose();_lastRobotPose=null;
         foreach(var entries in _objectPoses.Values)foreach(var value in entries.Values)value.Pose.Dispose();
         _objectPoses.Clear();
-        _lastRobotPose?.Dispose();_lastRobotPose=null;
+        Maps.Clear();
+        RobotPose = null; ImageTimestamp = null; OriginPose = null; ConstructionRobotTimestamp = null;
     }
     // GetRootID 0x00844B0A: null wrapper returns zero; otherwise the same parent walk as FindRoot.
     private static uint PoseRootId(Pose3d pose)

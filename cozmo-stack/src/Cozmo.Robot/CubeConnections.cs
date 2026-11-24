@@ -150,6 +150,12 @@ public sealed class CubeConnections
     /// The pool file is not touched: the next Success loads it again through <see cref="Init"/> (policy M1-042).
     /// Subscribers are kept.
     /// </summary>
+    // 0x0051130C..0x00511310 destroys Robot+0x47C, independently of the filter slots.
+    internal void RetireAdvertisementTable()
+    {
+        lock (_gate) _available.Clear();
+    }
+
     internal void ResetToConstructed()
     {
         lock (_gate)

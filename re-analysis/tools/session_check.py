@@ -259,6 +259,12 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported":
+                "0x0065B478..0x0065B54E computes truncated microseconds, converts to milliseconds and logs the source warning.",
+            "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported":
+                "0x0065B478..0x0065B54E computes the same milliseconds for the Unnamed debug channel.",
+            "MISSING: M11-066 Robot ctor main (+0x298) and forward (+0x2A4) pose names have no checked row; empty names retained":
+                "0x0051027E..0x005102FE builds Robot_ and RobotDriveCenter_ plus the unsigned robot ID.",
             "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A17CC/0x005A1872: Sparked -> ReactToSparked has no constructed strategy/behavior pair":
                 "SCOPE.md section D defers ReactToSparked and the Sparks flows. This old startup marker is outside required Freeplay coverage.",
             "MISSING: IBehavior::Resume for a behaviour that is not a SteppedBehavior: its IsRunnableBase +0x118 test (0x005bd8be) and spark lock are not modelled":

@@ -24,10 +24,11 @@ public sealed partial class EngineRobot
 {
     internal bool BlockConfigurationForceUpdate;
     internal TallStackDelocalizationData[] TallStackContainers { get; private set; } = Array.Empty<TallStackDelocalizationData>();
-    private readonly SubscriptionOwners _delocalizationSubscriptions = new();
-    private void AddDelocalizationRecipient(string name, Action handler)
+    private readonly SubscriptionOwners _configurationDelocalization = new(), _managerDelocalization = new(),
+        _systemManagerDelocalization = new(), _cubeLightDelocalization = new();
+    private void AddDelocalizationRecipient(SubscriptionOwners subscriptions, string name, Action handler)
     {
-        _delocalizationSubscriptions.Add(Engine.AnimationMessages.Subscribe(0x32, true, () =>
+        subscriptions.Add(Engine.AnimationMessages.Subscribe(0x32, true, () =>
         {
             Engine.DelocalizationRecipientObservedForTest?.Invoke(name);
             handler();
@@ -49,7 +50,7 @@ public sealed partial class EngineRobot
     {
         Engine.BeforeConstructorDelocalizeForTest?.Invoke(this);
         if (!HasExternalInterface) return;
-        AddDelocalizationRecipient("BlockConfigurationManager", () =>
+        AddDelocalizationRecipient(_configurationDelocalization, "BlockConfigurationManager", () =>
         {
             BlockConfigurationForceUpdate = true; // 0x006172A6..0x006172B6.
             Engine.DelocalizationConfigurationHook?.Invoke();
@@ -57,10 +58,10 @@ public sealed partial class EngineRobot
         for (int i = 0; i < TallStackContainers.Length; ++i)
         {
             var state = TallStackContainers[i];
-            AddDelocalizationRecipient($"CantHandleTallStack[{i}]", state.Clear); // 0x005ED240..0x005ED258 -> 0x005ED1E4.
+            AddDelocalizationRecipient(i == 0 ? _managerDelocalization : _systemManagerDelocalization,
+                $"CantHandleTallStack[{i}]", state.Clear); // 0x005ED240..0x005ED258 -> 0x005ED1E4.
         }
-        AddDelocalizationRecipient("CubeLightComponent", () => Engine.DelocalizationCubeHook?.Invoke());
-        SteppedBehavior.ReportMissing("M11-072: precise native component/container subscription retirement points are not supplied by the checked recipient rows; managed token storage retires at Robot destruction end. Full teardown ordering remains M8-023/M7-018; no native destructor ordering is claimed for these new UI handles");
+        AddDelocalizationRecipient(_cubeLightDelocalization, "CubeLightComponent", () => Engine.DelocalizationCubeHook?.Invoke());
     }
     // Native InitReactionTriggerMap is after construction Delocalize (0x00510324 then 0x00510396).
     internal void InitDelocalizationStrategyRecipients()
@@ -79,10 +80,20 @@ public sealed partial class EngineRobot
             if (name is null) continue;
             // R6/R7 reset only a temporary copy; R8's tag-32 path is a no-op, including a disabled trigger.
             // No persistent strategy/reaction data is cleared here.
-            AddDelocalizationRecipient(name, () => { });
+            AddDelocalizationRecipient(_managerDelocalization, name, () => { });
         }
     }
-    internal void ReleaseDelocalizationStorage() => _delocalizationSubscriptions.Retire();
+    // The Robot destructor releases these owners in this order: +44, +48, BlockWorld (including
+    // the configuration manager vector at 0x0061CD70), then cube-light handles at 0x00511478.
+    internal void RetireManagerDelocalization() => _managerDelocalization.Retire();
+    internal void RetireSystemManagerDelocalization() => _systemManagerDelocalization.Retire();
+    internal void RetireConfigurationDelocalization() => _configurationDelocalization.Retire();
+    internal void RetireCubeLightDelocalization() => _cubeLightDelocalization.Retire();
+    internal void ReleaseDelocalizationStorage()
+    {
+        RetireManagerDelocalization(); RetireSystemManagerDelocalization();
+        RetireConfigurationDelocalization(); RetireCubeLightDelocalization();
+    }
 }
 
 public sealed partial class CozmoEngine

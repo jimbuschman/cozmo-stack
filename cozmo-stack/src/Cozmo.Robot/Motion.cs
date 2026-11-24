@@ -1945,7 +1945,7 @@ bool requireCalibration = true)
         lifetime.Bind(0x450, _ => _robot.Cubes.DestroyTapFilter());
         lifetime.Bind(0x278, _ => _robot.CubeAccel.ResetToConstructed());
         lifetime.Bind(0x274, _ => _robot.Lights.Body.ResetToConstructed());
-        lifetime.Bind(0x270, _ => _robot.Lights.Cubes.ResetToConstructed());
+        lifetime.Bind(0x270, _ => { robot.RetireCubeLightDelocalization(); _robot.Lights.Cubes.ResetToConstructed(); });
         lifetime.Bind(0x254, _ => DestroyMovementComponent());
     }
 

@@ -127,7 +127,10 @@ internal sealed class ProgressionUnlockOwner(EngineRobot robot)
     internal void Retire()
     {
         _requestSubscription?.Dispose();_requestSubscription=null;
-        SteppedBehavior.ReportMissing("M15-027/M15-034 progression remaining scoped vector+1C and tree+10 concrete recipients remain absent at 0x005111BE..0x005111EE; current unlock tree cleared in checked order, global defaults retained");Unlocked.Clear();OverridesKnownEmpty=false;
+        // 0x005111CE retires the subscription vector, 0x005111D8 the override tree, and 0x005111E0 the unlock tree.
+        // The shipped empty overrides have no allocated entries in the host.
+        if (!OverridesKnownEmpty) SteppedBehavior.ReportMissing("M15-027/M15-034 nonempty progression overrides tree+10 at 0x005111D8 is unbuilt");
+        Unlocked.Clear();OverridesKnownEmpty=false;
     }
 }
 

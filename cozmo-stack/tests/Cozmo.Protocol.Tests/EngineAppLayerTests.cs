@@ -1146,13 +1146,13 @@ public class EngineAppLayerTests
     {
         var a = new FakeRunner();
         a.Run(1, _ => 71 * Ms);                    // rem = −11 ms
-        Assert.Contains(a.Log, l => l.StartsWith("debug: overtime"));
+        Assert.Contains(a.Log, l => l.StartsWith("debug: [Unnamed] CozmoAPI.CozmoInstanceRunner.overtime:"));
         var b = new FakeRunner();
         b.Run(1, _ => 230 * Ms);                   // rem = −170 ms: debug, not warning
-        Assert.DoesNotContain(b.Log, l => l.StartsWith("warning: overtime"));
+        Assert.DoesNotContain(b.Log, l => l.StartsWith("warning: CozmoAPI.CozmoInstanceRunner.overtime:"));
         var c = new FakeRunner();
         c.Run(1, _ => 270 * Ms);                   // rem = −210 ms
-        Assert.Contains(c.Log, l => l.StartsWith("warning: overtime"));
+        Assert.Contains(c.Log, l => l.StartsWith("warning: CozmoAPI.CozmoInstanceRunner.overtime:"));
     }
 
     /// <summary>
@@ -3205,7 +3205,45 @@ public class EngineAppLayerTests
             "dtor-event", "force-update", "abort-all", "behavior", "actions", "mood", "progression", "base", "free", "$phys", "$group", "report" }, calls);
         Assert.Null(rig.Engine.Robot);
         Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: Robot operator delete", StringComparison.Ordinal));
-        Assert.Contains(rig.Log, line => line.Contains("MISSING: Robot lifetime owner +0x258"));
+        Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: Robot lifetime owner +0x258"));
+    }
+
+    [Fact]
+    public void CheckedRemoval_ReconnectConstructsFreshRobotOwners()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(100);
+        var first = rig.Engine.Robot!;
+        var firstActions = first.ActionList;
+        var firstBehavior = first.NativeBehaviorRuntime;
+        var firstHistory = first.PoseHistory;
+        Assert.Equal("Robot_1", first.MainPose.Name);
+        int firstDeliveries = 0;
+        using var retained = first.SubscribeMessage(RobotMessageId.LiftLoad, _ => firstDeliveries++, "retired probe");
+        rig.Data(new LiftLoad { Field0 = true });
+        rig.Tick();
+        Assert.Equal(1, firstDeliveries);
+
+        rig.Engine.DisconnectCurrent();
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.Null(first.ActionListOwner);
+        Assert.Null(first.NativeBehaviorRuntime);
+        Assert.Equal(0, firstHistory.Count);
+        first.DeliverMessage(new LiftLoad { Field0 = false });
+        Assert.Equal(1, firstDeliveries);
+
+        rig.ToSuccess();
+        var second = rig.Engine.Robot!;
+        Assert.NotSame(first, second);
+        Assert.NotSame(firstActions, second.ActionList);
+        Assert.NotSame(firstHistory, second.PoseHistory);
+        if (firstBehavior is not null) Assert.NotSame(firstBehavior, second.NativeBehaviorRuntime);
+        Assert.Equal("Robot_1", second.MainPose.Name);
+        rig.Data(new LiftLoad { Field0 = false });
+        rig.Tick();
+        Assert.Equal(1, firstDeliveries);
     }
 
     // reach: production (packet/request through the real engine tick; app enqueue precedes local work, host dispatch follows it).

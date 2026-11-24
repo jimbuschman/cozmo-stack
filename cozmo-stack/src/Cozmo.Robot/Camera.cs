@@ -352,6 +352,16 @@ public sealed class CozmoCamera
     /// counts, no last frame. <see cref="WarmUpFrames"/>, <see cref="TimeSynced"/> and <see cref="EventTime"/> are the
     /// owner's settings and are kept, as are subscribers.
     /// </summary>
+    // Robot's inline EncodedImage buffer is freed at 0x0051133A..0x0051134C.
+    internal void RetireEncodedImageStorage()
+    {
+        lock (_gate)
+        {
+            _buffer.Clear();
+            _valid = false;
+        }
+    }
+
     internal void ResetToConstructed()
     {
         lock (_gate)
