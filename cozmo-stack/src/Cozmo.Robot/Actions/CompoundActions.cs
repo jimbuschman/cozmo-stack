@@ -111,7 +111,7 @@ public abstract class CompoundAction : ActionRunner
     {
         if (child is null)
         {
-            Behavior.SteppedBehavior.ReportMissing("M1-034/M8-017 raw AddAction null child at 0x0054EE14 would dereference null; skip this add and retain prior group");
+            StackDiagnostics.Write("M1-034/M8-017 AddAction skipped the null child write at 0x0054EE14, retaining the prior group");
             return;
         }
         AddAction(child, other);

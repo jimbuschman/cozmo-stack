@@ -1,5 +1,6 @@
 using System.Net;
 using Cozmo.Robot;
+using Cozmo.Robot.Emulation;
 using Cozmo.Transport;
 using Xunit;
 
@@ -17,6 +18,7 @@ public class ActionListTests
     /// <summary>A queue-facing IActionRunner whose Update result is scripted (T7/T8).</summary>
     private sealed class FakeAction : IActionRunner
     {
+        public string? NativeName { get; init; }
         public uint State { get; set; } = EngineActionResult.NotStarted;
         public byte RetriesRemain { get; set; }
         public uint OriginalTag { get; set; }
@@ -37,6 +39,7 @@ public class ActionListTests
         public bool EndingCalled;
         public bool Unlocked;
         public Action? OnUpdate;
+        public Action? OnEnding;
 
         public uint Update()
         {
@@ -55,7 +58,7 @@ public class ActionListTests
         public void Reset(bool unlockTracks) { ResetCalled = true; ResetArg = unlockTracks; }
         public bool CanInterrupt() => Interruptible;
         public void Prep() => PrepCalled = true;
-        public void WatcherEnding() => EndingCalled = true;
+        public void WatcherEnding() { EndingCalled = true; OnEnding?.Invoke(); }
         public void UnlockTracks() => Unlocked = true;
         public bool SetTag(uint tag) { Tag = tag; return true; }
     }
@@ -70,6 +73,95 @@ public class ActionListTests
     }
 
     private static ActionList NewList() => new();
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClearInvokesQueueDestructorsInNativeTreeOrder(bool removeFirstQueue)
+    {
+        var list = NewList();
+        var destroyed = new List<int>();
+        for (int index = 0; index < 6; index++)
+        {
+            int key = index;
+            var runner = new FakeAction { OnEnding = () => destroyed.Add(key) };
+            if (removeFirstQueue && key == 0) runner.UpdateResult = EngineActionResult.Success;
+            Assert.Equal(0, list.QueueAction(key == 0 ? QueueActionPosition.AtEnd : QueueActionPosition.InParallel, runner));
+        }
+        if (removeFirstQueue)
+        {
+            Assert.Equal(0, list.Update());
+            Assert.Equal(new[] { 0 }, destroyed);
+            destroyed.Clear();
+        }
+        list.Clear();
+        // 0x0053FB5C destroys left, right, then queue. Erasing black leaf 0
+        // promotes sibling 3 in __tree_remove at 0x004F63DE..0x004F6412.
+        Assert.Equal(removeFirstQueue ? new[] { 2, 1, 5, 4, 3 } : new[] { 0, 2, 5, 4, 3, 1 }, destroyed);
+    }
+
+    [Fact]
+    public void QueueMapMatchesEngineInsertAndEraseRotations()
+    {
+        string? libraries = ShippedLibraries.FindLibDir();
+        if (libraries is null) return;
+        using var machine = new ArmMachine(libraries, ["libc++_shared.so", "libcozmoEngine.so"]);
+        machine.Relocate();
+        uint engine = machine.Library("libcozmoEngine.so").Base;
+        uint tree = machine.StaticAlloc(16);
+        machine.Fill(tree, 16, 0);
+        machine.W32(tree, tree + 4);
+        var addresses = new Dictionary<int, uint>();
+        var keys = new Dictionary<uint, int>();
+        var queues = new Dictionary<ActionQueue, int>();
+        var map = new NativeActionQueueMap();
+
+        IEnumerable<int> PostOrder(uint node)
+        {
+            if (node == 0) yield break;
+            foreach (int key in PostOrder(machine.R32(node))) yield return key;
+            foreach (int key in PostOrder(machine.R32(node + 4))) yield return key;
+            yield return keys[node];
+        }
+
+        var random = new Random(42819);
+        for (int operation = 0; operation < 384; operation++)
+        {
+            int key = random.Next(32);
+            if (addresses.Remove(key, out uint node))
+            {
+                machine.Call(engine + 0x004F6311, [machine.R32(tree + 4), node]);
+                keys.Remove(node);
+                uint first = machine.R32(tree + 4);
+                if (first != 0)
+                    while (machine.R32(first) != 0)
+                        first = machine.R32(first);
+                machine.W32(tree, first == 0 ? tree + 4 : first);
+                machine.W32(tree + 8, (uint)addresses.Count);
+                map.Remove(key);
+            }
+            else
+            {
+                uint parent = tree + 4;
+                uint slot = parent;
+                while (machine.R32(slot) != 0)
+                {
+                    parent = machine.R32(slot);
+                    slot = key < keys[parent] ? parent : parent + 4;
+                }
+                node = machine.StaticAlloc(16);
+                machine.Fill(node, 16, 0);
+                keys.Add(node, key);
+                addresses.Add(key, node);
+                machine.Call(engine + 0x0053FC4D, [tree, parent, slot, node]);
+                var queue = new ActionQueue();
+                queues.Add(queue, key);
+                map.Add(key, queue);
+            }
+            Assert.Equal(addresses.Keys.Order(), map.Entries.Select(entry => entry.Key));
+            Assert.Equal(PostOrder(machine.R32(tree + 4)), map.DestructionOrder.Select(queue => queues[queue]));
+        }
+    }
 
     // ------------------------------------------------------------------ A / T
 
@@ -394,10 +486,11 @@ public class ActionListTests
     [Fact]
     public void Q14_NowAndResumeInterruptsCurrentToInterruptedState()
     {
-        var list = NewList();
-        var running = new FakeAction { UpdateResult = EngineActionResult.Running };
+        var logs = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
+        var list = new ActionList(sourceLog: (level, channel, key, text) => logs.Add((level, channel, key, text)));
+        var running = new FakeAction { UpdateResult = EngineActionResult.Running, NativeName = "current" };
         var residual = new FakeAction();
-        var incoming = new FakeAction();
+        var incoming = new FakeAction { NativeName = "incoming" };
         list.QueueAction(QueueActionPosition.AtEnd, running);
         list.Update();                                     // running is current, RUNNING
         list.QueueAction(QueueActionPosition.AtEnd, residual);
@@ -411,15 +504,18 @@ public class ActionListTests
         Assert.False(running.EndingCalled);                // interruption does not destroy
         Assert.Null(list.QueueAt(0)!.Current);
         Assert.Equal(new[] { incoming, running, residual }, list.QueueAt(0)!.Pending);
+        Assert.Contains((EngineLogLevel.Info, "Unnamed", "ActionQueue.QueueAtFront.Interrupt",
+            "Interrupting current to put incoming in front of it."), logs);
     }
 
     /// <summary>Q15: a refused Interrupt logs and falls back to QueueNow (Q6/Q7).</summary>
     [Fact]
     public void Q15_RefusedInterruptFallsBackToQueueNow()
     {
-        var list = NewList();
-        var running = new FakeAction { UpdateResult = EngineActionResult.Running, Interruptible = false };
-        var incoming = new FakeAction();
+        var logs = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
+        var list = new ActionList(sourceLog: (level, channel, key, text) => logs.Add((level, channel, key, text)));
+        var running = new FakeAction { UpdateResult = EngineActionResult.Running, Interruptible = false, NativeName = "current" };
+        var incoming = new FakeAction { NativeName = "incoming" };
         list.QueueAction(QueueActionPosition.AtEnd, running);
         list.Update();                                     // running is current
 
@@ -429,6 +525,8 @@ public class ActionListTests
         Assert.True(running.EndingCalled);
         Assert.Equal(EngineActionResult.Cancelled, running.State);
         Assert.Equal(new[] { incoming }, list.QueueAt(0)!.Pending);
+        Assert.Contains((EngineLogLevel.Info, "Unnamed", "ActionQueue.QueueAtFront.Interrupt",
+            "Could not interrupt current. Will cancel and queue incoming now."), logs);
     }
 
     /// <summary>Q15 with a pending fallback: the current is Deleted WITHOUT Cancel and the incoming is prepended.</summary>

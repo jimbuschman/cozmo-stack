@@ -259,6 +259,30 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: MovementComponent.EventHandler.DriveWheels / MoveHead / MoveLift / DriveArc / TurnInPlaceAtSpeed disabled-direct-drive engine log calls; checked argument/level rows absent":
+                "The supported handlers use the native Info text at 0x0063ED9A, 0x0063F50E and 0x0063F752",
+            "MISSING: MovementComponent.UnlockAllTracks for track 0x80: EnumToString returns NULL (0x007BC2B0); the phone libc's %s of NULL is not shipped":
+                "0x00640FD8 formats the null name from 0x007BC2B0 with the established Bionic %s spelling",
+            "MISSING: M8-015 invalid-position Error 0x0053DB2C..0x0053DB70 exact key/format/EnumToString contract needs an expanded checked row; old fabricated BadPosition Warning removed":
+                "0x0053DB42 logs the invalid queue position with the null name from 0x0075CF04",
+            "MISSING: M8-015 QueueAtFront refusal diagnostic0x0053E51E..0x0053E578 exact key/format needs expanded checked row; old fabricated InterruptRefused Warning removed":
+                "0x0053E57C uses the two native action names before the QueueNow fallback",
+            "MISSING: M8-015 QueueAtFront success Info0x0053E4E0 exact key/format needs expanded checked row; interrupt and byte-store/list order are built":
+                "0x0053E4E0 uses the two native action names before reordering the list",
+            "MISSING: M8-015 List.Clear native left/right/node post-order 0x0053FB5C..0x0053FB82 requires checked insertion/balancing tree shape; current managed ascending cleanup remains an implementation gap":
+                "Clear uses native tree rotations at 0x004E0836/0x004F6310 and destroys the queues in 0x0053FB5C postorder",
+            "MISSING: M1-034/M8-015 reentrant Clear skipped an in-flight pending deletion at 0x0053F998..0x0053F9A8":
+                "M1-034 logs the skipped reentrant deletion while the outer deletion owns the pending action",
+            "MISSING: M1-034/M8-015 pending Cancel successor was removed by synchronous completion; native iterator at0x0053E6E8/0x0053E6EE would read freed list storage: skip this pending traversal tail":
+                "M1-034 logs the skipped freed iterator at 0x0053E6E8..0x0053E6EE",
+            "MISSING: M1-034/M8-015 ActionWatcher callback erased its own native iterator at native successor read0x005418B2; skip remaining callbacks of this record, retain later deque records":
+                "M1-034 logs the skipped freed callback iterator at 0x005418B2",
+            "MISSING: M1-034/M8-017 raw AddAction null child at 0x0054EE14 would dereference null; skip this add and retain prior group":
+                "M1-034 logs the skipped null child write at 0x0054EE14",
+            "MISSING: PlayAnimationAction: what the streamer reports for a replaced or aborted animation tag is not in the inventory; every end of the animation is treated as animEnded (success)":
+                "0x0054584C marks only the matching 5F tag failed, and 0x005441CA returns 0x03000001",
+            "MISSING: CompoundActionParallel: cancelling the remaining children when one fails (0x0054fb36..0x0054fbcc) - how the engine's deletion cancels a running animation or wait is not in the inventory; they are cancelled here":
+                "0x0054FC3C prepares and releases the remaining children through DeleteActions at 0x0054EC0C..0x0054EC20",
             pickup_undefined:
                 "0x00553954 consumes undefined ID words after the failed pickup. M1-034 logs the skipped public payload",
             "MISSING: M1-034 intention0 null stack-top00570BC8: skip candidate, retain prior best":
@@ -362,6 +386,11 @@ class Session:
                   "defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; "
                   "no cross-action unused-word policy is applied."):
                 self.resolved_markers.append((index, line, "Session 5 pickup cancellation at M8902 uses the same M1-034 policy"))
+            elif (index == 7933 and stack_lines[7931] ==
+                  "debug: [Actions] IActionRunner.PrepForCompletion.AlreadyPrepped: [PanAndTilt+PanAndTilt] [3000485]" and
+                  line == "MISSING: MovementComponent.LockTracks debug name not supplied by IBehavior.cs (owning layer M5/M7/M8): "
+                  "the engine passes the caller's own string, which the inventory does not give; using an empty name"):
+                self.resolved_markers.append((index, line, "Session 5 Pounce wait now supplies both native strings from 0x005F8F46"))
             elif re.fullmatch(
                 r"MISSING: Cozmo\.Robot\.NativeActionUnavailable: M11-042 SearchForBlock ShouldBeAbleToFindTarget005BB73C: "
                 r"exact INIT camera snapshot/frame/occlusion inputs unavailable \(attempted=(?:True|False), calibration=(?:True|False)\)",

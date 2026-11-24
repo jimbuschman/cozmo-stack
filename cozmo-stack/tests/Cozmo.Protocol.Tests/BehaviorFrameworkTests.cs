@@ -1310,6 +1310,12 @@ public class BehaviorFrameworkTests
         public void DoWait(double sec, Action done) => Wait(sec, done);
         public void DoParallel(Action done) { var a = StartParallel(2, done); if (a is null) return; WaitInParallel(a, 0.5); PlayTriggerInParallel(a, AnimationTrigger.Hiccup); }
         public void Play(AnimationTrigger trigger, Action done, AnimationTrack tracksToLock = AnimationTrack.None) => PlayTrigger(trigger, done, tracksToLock);
+        public void PlayWithResult(AnimationTrigger trigger, Action<ActionOutcome> done)
+        {
+            int handle = StartActing();
+            Assert.NotEqual(0, handle);
+            RunTriggerAction(handle, trigger, done, AnimationTrack.None, 60, 1, false);
+        }
     }
 
     /// <summary>A behaviour that finishes on its first tick, for the manager's reaction/resume path.</summary>
@@ -2372,6 +2378,45 @@ public class BehaviorFrameworkTests
         Assert.False(pair.HasCurrentAction);
         pair.Update(ctx, 600);                                     // the cancelled wait does not call back again
         Assert.Equal(1, both);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AbortedHostAnimationCompletesWithTheTaggedFailure(bool replace)
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var context = new BehaviorContext
+        {
+            Robot = rig.Robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(4), ClockSec = () => 1
+        };
+        var probe = new LifecycleProbe();
+        probe.StartAsync(context, new BehaviorScope(), default).GetAwaiter().GetResult();
+        using var posted = new ManualResetEventSlim();
+        probe.WorkPosted += posted.Set;
+        var results = new List<ActionOutcome>();
+        try
+        {
+            probe.PlayWithResult(AnimationTrigger.Hiccup, results.Add);
+            Assert.True(probe.HasCurrentAction);
+            if (replace)
+                Assert.NotNull(rig.Robot.Animations.PlayTracked(rig.Robot.Animations.Library!.GetClip("anim_neutral_eyes_01")));
+            else
+                rig.Robot.Animations.Stop();
+            Assert.True(posted.Wait(TimeSpan.FromSeconds(3)));
+            probe.Update(context, 0);
+            Assert.Equal(ActionOutcome.Failed(0x03000001), Assert.Single(results));
+            Assert.False(probe.HasCurrentAction);
+        }
+        finally
+        {
+            probe.Stop(BehaviorStopReason.Interrupted);
+            rig.Robot.Animations.Stop();
+        }
     }
 
     /// <summary>

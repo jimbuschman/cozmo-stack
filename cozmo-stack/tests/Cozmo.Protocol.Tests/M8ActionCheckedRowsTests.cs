@@ -262,10 +262,12 @@ public sealed class M8ActionCheckedRowsTests
         try
         {
             EngineErrorState.ErrorFlagSet=false;
-            var list=List(new());var action=new Input();
+            var logs=new List<Entry>();var list=List(logs);var action=new Input();
             Assert.Equal(1,list.QueueAction((QueueActionPosition)position,action));
             Assert.True(EngineErrorState.ErrorFlagSet);Assert.True(list.IsEmpty);Assert.Equal(0,action.Deletes);
-            // Exact Error key/format/EnumToString remains MISSING, not a fabricated log oracle.
+            Assert.Contains(logs, entry => entry.Level == EngineLogLevel.Error &&
+                entry.Key == "CozmoGameImpl.QueueActionHelper.InvalidPosition" &&
+                entry.Text == "Unrecognized 'position' (null) for queuing action.");
         }
         finally{EngineErrorState.ErrorFlagSet=old;}
     }

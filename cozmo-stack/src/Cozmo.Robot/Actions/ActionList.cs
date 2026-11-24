@@ -9,7 +9,7 @@ namespace Cozmo.Robot;
 /// </summary>
 internal sealed class ActionList : IDisposable
 {
-    private readonly SortedDictionary<int, ActionQueue> _queues = new();
+    private readonly NativeActionQueueMap _queues = new();
     private readonly ActionWatcher _watcher = new();
     private readonly Action<string>? _log;
     private readonly SourceLogSink? _sourceLog;
@@ -43,7 +43,7 @@ internal sealed class ActionList : IDisposable
     public int QueueCount => _queues.Count;
 
     /// <summary>Test/inspection: the queue keys in ascending signed order.</summary>
-    public IReadOnlyList<int> QueueKeys => new List<int>(_queues.Keys);
+    public IReadOnlyList<int> QueueKeys => _queues.Entries.Select(entry => entry.Key).ToArray();
 
     /// <summary>T6/T5: the watcher this list ticks.</summary>
     internal ActionWatcher Watcher => _watcher;
@@ -88,7 +88,7 @@ internal sealed class ActionList : IDisposable
     {
         using var executionLease = _enterOwner?.Invoke();
         lock (_gate)
-            return _queues.Values.Any(q => ReferenceEquals(q.Current, runner) || q.HasPendingReference(runner));
+            return _queues.Entries.Any(entry => ReferenceEquals(entry.Value.Current, runner) || entry.Value.HasPendingReference(runner));
     }
 
     internal (uint Tag, int Type, bool Current)[] GetHostActions(object caller)
@@ -97,7 +97,7 @@ internal sealed class ActionList : IDisposable
         lock (_gate)
         {
             var actions = new List<(uint, int, bool)>();
-            foreach (var queue in _queues.Values)
+            foreach (var (_, queue) in _queues.Entries)
             {
                 if (queue.Current is ActionRunner current && ReferenceEquals(current.HostCaller, caller))
                     actions.Add((current.Tag, current.Type, true));
@@ -117,7 +117,7 @@ internal sealed class ActionList : IDisposable
             bool Owned(IActionRunner? runner) =>
                 runner is ActionRunner action && action.Tag == tag && ReferenceEquals(action.HostCaller, caller);
 
-            if (!_queues.Values.Any(queue => Owned(queue.Current) || queue.Pending.Any(Owned))) return false;
+            if (!_queues.Entries.Any(entry => Owned(entry.Value.Current) || entry.Value.Pending.Any(Owned))) return false;
             // Unity Robot.cs:1346–1351 sends G2E 0x70 with the u32 tag. The handler
             // at 0x00528CF0..0x00528D06 invokes ActionList::Cancel(tag) directly.
             return Cancel(tag);
@@ -138,10 +138,10 @@ internal sealed class ActionList : IDisposable
             _clearing = true;
             LifetimeObservedForTest?.Invoke("clear");
             // fidelity: M8-024
-            Behavior.SteppedBehavior.ReportMissing("M8-024 pending-survivor shipped callback census at Robot teardown remains unread; Clear mechanics do not establish reachability");
-            if (_queues.Count > 1)
-                Behavior.SteppedBehavior.ReportMissing("M8-015 List.Clear native left/right/node post-order 0x0053FB5C..0x0053FB82 requires checked insertion/balancing tree shape; current managed ascending cleanup remains an implementation gap");
-            foreach (var q in _queues.Values) q.Dispose();
+            var destructionOrder = _queues.DestructionOrder.ToArray();
+            if (destructionOrder.Any(queue => queue.HasPending))
+                Behavior.SteppedBehavior.ReportMissing("M8-024 pending-survivor shipped callback census at Robot teardown remains unread; Clear mechanics do not establish reachability");
+            foreach (var queue in destructionOrder) queue.Dispose();
             _queues.Clear();
             _clearing = false;
         }
@@ -174,9 +174,9 @@ internal sealed class ActionList : IDisposable
             {
                 // Native advances/erases AFTER Queue.Update (0x0053F5B2..0x0053F5D6).
                 // E2G completion can synchronously insert a later parallel queue; visit it this tick.
-                // Do not keep a SortedDictionary enumerator across that callback.
+                // Do not keep an iterator across that callback.
                 KeyValuePair<int, ActionQueue>? next = null;
-                foreach (var entry in _queues)
+                foreach (var entry in _queues.Entries)
                     if (previousKey is null || entry.Key > previousKey.Value) { next = entry; break; }
                 if (next is not { } kv) break;
                 previousKey = kv.Key;
@@ -277,9 +277,11 @@ internal sealed class ActionList : IDisposable
         }
     }
 
-    private static int InvalidPosition()
+    private int InvalidPosition()
     {
-        Behavior.SteppedBehavior.ReportMissing("M8-015 invalid-position Error 0x0053DB2C..0x0053DB70 exact key/format/EnumToString contract needs an expanded checked row; old fabricated BadPosition Warning removed");
+        // 0x0075CF04 returns null above 5. Bionic formats a null %s as "(null)".
+        SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Error, null,
+            "CozmoGameImpl.QueueActionHelper.InvalidPosition", "Unrecognized 'position' (null) for queuing action.");
         Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 1;
     }
 
@@ -313,7 +315,7 @@ internal sealed class ActionList : IDisposable
         while(true)
         {
             KeyValuePair<int,ActionQueue>? next=null;
-            foreach(var entry in _queues)if(previous is null || entry.Key>previous.Value){next=entry;break;}
+            foreach(var entry in _queues.Entries)if(previous is null || entry.Key>previous.Value){next=entry;break;}
             if(next is not {} current)return any;
             previous=current.Key;
             if(cancel(current.Value))
@@ -330,7 +332,7 @@ internal sealed class ActionList : IDisposable
         if (!_queues.TryGetValue(0, out var q))
         {
             q = new ActionQueue(_log,_sourceLog);
-            _queues[0] = q;
+            _queues.Add(0, q);
         }
         return q;
     }
@@ -356,6 +358,8 @@ internal sealed class ActionList : IDisposable
     /// <summary>Q13/Q14/Q15 on the main queue.</summary>
     private int QueueAtFrontMain(IActionRunner incoming,byte retries)
     {
+        // Deliver the native diagnostics after the queue is consistent if a host observer re-enters.
+        using var logScope = LogCallbackDeferral.EnterGated(_gate);
         var q = MainQueue();
         if (q.Current is null)
         {
@@ -366,8 +370,15 @@ internal sealed class ActionList : IDisposable
         }
         if (!q.Interrupt(incoming,retries))
         {
-            // Q15: an Interrupt refusal logs and falls back to QueueNow.
-            Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAtFront refusal diagnostic0x0053E51E..0x0053E578 exact key/format needs expanded checked row; old fabricated InterruptRefused Warning removed");
+            // 0x0053E542..0x0053E57C prints both action names if there is still a current action.
+            if (q.Current is { } running)
+            {
+                if (running.NativeName is { } oldName && incoming.NativeName is { } newName)
+                    LogCallbackDeferral.Run(() => SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Info, "Unnamed",
+                        "ActionQueue.QueueAtFront.Interrupt", $"Could not interrupt {oldName}. Will cancel and queue {newName} now."));
+                else
+                    Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAtFront refusal Info 0x0053E57C requires the native action names");
+            }
             q.QueueNow(incoming,retries);
         }
         return 0;
@@ -383,7 +394,7 @@ internal sealed class ActionList : IDisposable
             key++;
         }
         var q = new ActionQueue(_log,_sourceLog);
-        _queues[key] = q;
+        _queues.Add(key, q);
         q.QueueAtEnd(incoming,retries);
         return 0;
     }
@@ -401,7 +412,7 @@ internal sealed class ActionList : IDisposable
             incoming.WatcherEnding();
             return true;
         }
-        foreach (var q in _queues.Values)
+        foreach (var (_, q) in _queues.Entries)
         {
             if (q.HasPendingReference(incoming))
             {

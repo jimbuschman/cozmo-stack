@@ -139,8 +139,10 @@ public sealed class KnockOverNativeTests
         var cube=f.Add(7,30);var flip=new NativeFlipBlockRunner(f.M,7){CheckPreActionPose=false};var unrelated=new NativeTimedWaitRunner(f.M,100);
         f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,unrelated,0);f.Robot.ActionList.QueueAction(QueueActionPosition.Now,flip,0);
         for(int i=0;i<15&&flip.QueuedLiftTag==uint.MaxValue;i++){f.Motors();f.Rig.Tick();}
-        Assert.NotEqual(uint.MaxValue,flip.QueuedLiftTag);uint liftTag=flip.QueuedLiftTag;var queues=(System.Collections.Generic.SortedDictionary<int,ActionQueue>)typeof(ActionList).GetField("_queues",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(f.Robot.ActionList)!;
-        var carryLift=Assert.Single(queues.Values.Select(q=>q.GetCurrentAction()).OfType<ActionRunner>().Where(a=>a.Tag==liftTag));Assert.True(carryLift.SuppressTrackLocking);
+        Assert.NotEqual(uint.MaxValue,flip.QueuedLiftTag);uint liftTag=flip.QueuedLiftTag;
+        var list = f.Robot.ActionList;
+        var carryLift=Assert.Single(list.QueueKeys.Select(key=>list.QueueAt(key)?.GetCurrentAction()).OfType<ActionRunner>(),a=>a.Tag==liftTag);
+        Assert.True(carryLift.SuppressTrackLocking);
         f.Robot.ActionList.Cancel(flip.Tag);f.Rig.Tick();Assert.True(flip.DestructionObserved);Assert.True(carryLift.DestructionObserved);Assert.False(unrelated.DestructionObserved);
         Assert.Equal(liftTag,flip.QueuedLiftTag);Assert.NotNull(f.M.World.GetLocatedObjectByIdHelper(7));
     }
@@ -234,8 +236,8 @@ public sealed class KnockOverNativeTests
         Complete(0);Complete(0x04000001);Complete(0x04000001);Complete(0x04000001);Assert.Equal("BlindlyFlipping",knock.Phase);
         var flip=Assert.IsType<NativeFlipBlockRunner>(knock.LastSequence!.Children[0]);
         for(int i=0;i<15&&flip.QueuedLiftTag==uint.MaxValue;i++)f.Motors();Assert.NotEqual(uint.MaxValue,flip.QueuedLiftTag);
-        var queues=(SortedDictionary<int,ActionQueue>)typeof(ActionList).GetField("_queues",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(f.Robot.ActionList)!;
-        var carry=Assert.Single(queues.Values.Select(q=>q.GetCurrentAction()).OfType<ActionRunner>().Where(a=>a.Tag==flip.QueuedLiftTag));
+        var list = f.Robot.ActionList;
+        var carry=Assert.Single(list.QueueKeys.Select(key=>list.QueueAt(key)?.GetCurrentAction()).OfType<ActionRunner>(),a=>a.Tag==flip.QueuedLiftTag);
         var other=new NativeTimedWaitRunner(f.M,100);f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,other,0);f.Rig.Tick();
         var manager=f.Robot.BehaviorManagerOwner!;var replacement=new Replacement(f.M);replacement.BindActionCompletionOwner(f.Rig.Robot,f.Robot);manager.Add(replacement);
         int subscriptions=f.Rig.Engine.AnimationMessages.Count(0x11,true);

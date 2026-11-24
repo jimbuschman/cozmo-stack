@@ -1161,19 +1161,32 @@ public abstract partial class SteppedBehavior : IBehavior
             _actionDeadlineMs = double.NaN;
             _onActionTimeout = timeout is null ? null : (o => { if (CallbackMayRun(epoch)) done(o); });
         }
+        int aborted = 0;
+        var abortSubscription = Context.Robot.Engine.AnimationMessages.SubscribeMessage(0x5F, true, payload =>
+        {
+            if (payload is uint tag && tag == ticket.Tag)
+                Volatile.Write(ref aborted, 1);
+        });
         _observedAnimationTicket = ticket.Completion;
         _observedAnimationCallback = ticket.Completion.ContinueWith(completion =>
         {
+            abortSubscription.Dispose();
             lock (_gate)
             {
                 if (actionEpoch != _actionEpoch) return;
-                // PlayAnimationAction has no end reason: animEnded sets +0x89 and CheckIfDone returns SUCCESS (0x0054541d..0x005454ee, 0x005441c0).
-                // What a replaced or aborted tag does is not settled by the inventory, so every end of the animation is a success here.
-                ReportMissing("PlayAnimationAction: what the streamer reports for a replaced or aborted animation tag is not in the inventory; every end of the animation is treated as animEnded (success)");
+                // This host adapter observes the streamer ticket. A replacement aborts its
+                // tagged stream before the ticket ends. Native action runners consume the
+                // actual CB/5F messages (0x0054541C, 0x005457F4).
+                ActionOutcome outcome = completion.Result switch
+                {
+                    AnimationEndReason.Completed => ActionOutcome.Succeeded,
+                    _ when Volatile.Read(ref aborted) != 0 => ActionOutcome.Failed(ActionOutcome.StreamRefused),
+                    _ => ActionOutcome.Failed()
+                };
                 // +0x84 is cleared first (HandleActionComplete 0x005be1fc, before the callback is reachable, 0x005be216); the behaviour still
                 // reads as busy (_acting) until the completion is queued, so neither a callback nor Update can see a gap.
                 ActingEnded(handleToClear);
-                Post(() => { if (CallbackMayRun(epoch)) done(ActionOutcome.Succeeded); });
+                Post(() => { if (CallbackMayRun(epoch)) done(outcome); });
                 _owns = false; _acting = false;
                 _onActionTimeout = null; _actionTimeoutMs = double.NaN; _actionDeadlineMs = double.NaN;
             }
@@ -1289,8 +1302,9 @@ public abstract partial class SteppedBehavior : IBehavior
         /// (<c>tbb</c> 0x0054fb0e): a success lets the others finish, and the compound succeeds when none is running (0x0054fb64); a failure runs
         /// <c>ShouldIgnoreFailure</c> (0x0054f171), whose map is empty for the list constructor (0x0054e991; <c>AddAction</c> ignoreFailure 0, 0x0054ea34), so
         /// the <b>first failed child ends the compound at once</b> with its failure (0x0054fb36..0x0054fbcc) and the others are not awaited. Then
-        /// <c>HandleActionComplete</c> 0x005be1e6 clears +0x84 and calls the callback for any result. The other children are cancelled here (the wait cleared,
-        /// the animation stopped); that the engine's deletion of the compound cancels them the same way is not cited (MISSING). Called on the manager's thread.
+        /// <c>HandleActionComplete</c> 0x005BE1E6 clears +0x84 and calls the callback for any result. The compound destructor
+        /// calls <c>DeleteActions</c> at 0x0054FC3C, which prepares and releases the remaining children at 0x0054EC0C..0x0054EC20.
+        /// The host wait is cleared and the owned animation stream is stopped. Called on the manager's thread.
         /// </summary>
         public void ChildDone(ActionOutcome outcome, bool ignoreFailure = false)
         {
@@ -1300,10 +1314,7 @@ public abstract partial class SteppedBehavior : IBehavior
             if (outcome.Success && !last) return;
             _ended = true;
             if (!outcome.Success)
-            {
-                ReportMissing("CompoundActionParallel: cancelling the remaining children when one fails (0x0054fb36..0x0054fbcc) - how the engine's deletion cancels a running animation or wait is not in the inventory; they are cancelled here");
                 _owner.CancelParallelChildren();
-            }
             _owner.ActingEnded(_handle);
             if (_owner.CallbackMayRun(_epoch)) _onDone();
         }

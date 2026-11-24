@@ -182,7 +182,7 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
     private void WaitForMotion(long g)
     {
         if(!Current(g))return;NativeState=6;_driveDistance=0;_validCount=0;_pendingPoint=false;
-        if(!Scope.SmartLockTracks("behaviorPounceOnMotionWaitLock",AnimationTrack.Head))return;
+        if(!Scope.SmartLockNativeTracks("behaviorPounceOnMotionWaitLock",AnimationTrack.Head))return; // 0x005F8F46
         if(!Current(g))return;Run(new NativeTimedWaitRunner(_m,2f),()=>AfterWait(g),g);
     }
     private void AfterWait(long g)
@@ -236,7 +236,7 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
     {
         if(!Current(g))return;NativeState=8;_driveDistance=_distance-50f;
         var action=new DriveStraightAction(_m,_robot,_driveDistance,60f,true);
-        if(!Scope.SmartLockTracks("behaviorPounceOnMotionWaitLock",AnimationTrack.Head)){action.RetireNeverAdmittedTree();return;}
+        if(!Scope.SmartLockNativeTracks("behaviorPounceOnMotionWaitLock",AnimationTrack.Head)){action.RetireNeverAdmittedTree();return;} // 0x005F9662
         Run(action,()=>HeadDown(g),g);
     }
     private void Pounce(long g)

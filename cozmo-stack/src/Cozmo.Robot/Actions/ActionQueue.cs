@@ -56,7 +56,7 @@ internal sealed class ActionQueue : IDisposable
             {
                 // M1-034/M8-015: reentrant Clear at 0x53F998..A8 encounters a
                 // runner already being deleted. Its outer deletion owns the report.
-                Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 reentrant Clear skipped an in-flight pending deletion at 0x0053F998..0x0053F9A8");
+                StackDiagnostics.Write("M1-034/M8-015 reentrant Clear skipped an in-flight pending deletion at 0x0053F998..0x0053F9A8");
                 if (ReferenceEquals(node.List,_pending)) _pending.Remove(node);
             }
         }
@@ -192,7 +192,12 @@ internal sealed class ActionQueue : IDisposable
         if (!_current.SuppressTrackLocking && _current.State == EngineActionResult.Running) _current.UnlockTracks();
         _current.Reset(false);
         _current.State = EngineActionResult.Interrupted;
-        Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAtFront success Info0x0053E4E0 exact key/format needs expanded checked row; interrupt and byte-store/list order are built");
+        // 0x0053E4B0..0x0053E4E0 reads the interrupted and incoming native names.
+        if (_current.NativeName is { } oldName && incoming.NativeName is { } newName)
+            LogCallbackDeferral.Run(() => SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Info, "Unnamed",
+                "ActionQueue.QueueAtFront.Interrupt", $"Interrupting {oldName} to put {newName} in front of it."));
+        else
+            Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAtFront success Info 0x0053E4E0 requires the native action names");
         incoming.RetriesRemain=retries;
         _pending.AddFirst(_current);
         _pending.AddFirst(incoming);
@@ -228,7 +233,7 @@ internal sealed class ActionQueue : IDisposable
             {
                 if(!DeletePending(node,out var next))break;
                 any=true;node=next;
-                if(node is not null&&node.List!=_pending){MissingFreedSuccessor();break;}
+                if(node is not null&&node.List!=_pending){SkipFreedSuccessor();break;}
             }
             else node=node.Next;
         }
@@ -256,7 +261,7 @@ internal sealed class ActionQueue : IDisposable
                 if(any)SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Warning,null,"ActionQueue.Cancel.DuplicateIdTags",FormattableString.Invariant($"Multiple actions with tag={unchecked((int)idTag)} found in queue"));
                 if(!DeletePending(node,out var next))break;
                 any=true;node=next;
-                if(node is not null&&node.List!=_pending){MissingFreedSuccessor();break;}
+                if(node is not null&&node.List!=_pending){SkipFreedSuccessor();break;}
             }
             else node=node.Next;
         }
@@ -276,7 +281,7 @@ internal sealed class ActionQueue : IDisposable
         bool result=DeleteRunner(node.Value,()=>{successor=node.Next;if(ReferenceEquals(node.List,_pending))_pending.Remove(node);});
         next=successor;return result;
     }
-    private static void MissingFreedSuccessor()=>Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 pending Cancel successor was removed by synchronous completion; native iterator at0x0053E6E8/0x0053E6EE would read freed list storage: skip this pending traversal tail");
+    private static void SkipFreedSuccessor()=>StackDiagnostics.Write("M1-034/M8-015 pending Cancel skipped the freed successor at 0x0053E6E8..0x0053E6EE");
 
     // fidelity: M8-015
     /// <summary>
