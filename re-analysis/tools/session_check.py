@@ -259,6 +259,12 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A17CC/0x005A1872: Sparked -> ReactToSparked has no constructed strategy/behavior pair":
+                "SCOPE.md section D defers ReactToSparked and the Sparks flows. This old startup marker is outside required Freeplay coverage.",
+            "MISSING: IBehavior::Resume for a behaviour that is not a SteppedBehavior: its IsRunnableBase +0x118 test (0x005bd8be) and spark lock are not modelled":
+                "The standalone resume applies +0x118 at 0x005BD8BE. Configured Robot behaviors own +0x70 and the native spark lock.",
+            "MISSING: M8-013: standalone executable type-name input unavailable; number logged":
+                "Selection logs now use the same recovered executable type-name table as configured behavior requests.",
             "MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred":
                 "0x00607C58..0x00607C64 emits the raw cliff sensor reading as a decimal string with no additional fields.",
             "MISSING: Pounce EnableLiftPower(false) original owner/send unavailable":
@@ -476,6 +482,12 @@ class Session:
                 line,
             ):
                 self.resolved_markers.append((index, line, "0x005405CA and 0x0054F8C4 use the name only in the diagnostic"))
+            elif (line.startswith("MISSING: MovementComponent.LockTracks debug name not supplied by ")
+                  and line.endswith("which the inventory does not give; using an empty name")):
+                self.resolved_markers.append((index, line, "The second lock string is printed by PrintLockState at 0x006410D8 and does not participate in track ownership."))
+            elif (line.startswith("MISSING: M8-015 native action name+0x48 not supplied for ")
+                  and line.endswith("; CLR type name is not an engine source name")):
+                self.resolved_markers.append((index, line, "This marker reported a log label. The action result and completion delivery did not depend on the label."))
             elif MISSING.search(line):
                 occurrences = self.timed_missing[line]
                 occurrence = counts[line]

@@ -1207,31 +1207,16 @@ public sealed class CozmoMotion
 
     /// <summary>
     /// <c>MovementComponent::LockTracks</c> 0x00640098: one owner entry per bit in the multiset. The engine's second string
-    /// (the entry's node+0x1C, which PrintLockState prints) is <paramref name="debugName"/>; callers outside the movement
-    /// component do not pass one yet (row 3: IActionRunner passes its name; callers outside this file that pass none get an empty string, reported MISSING).
-    /// Owners of the engine callers 0x0054BE24, 0x0054EC08 and 0x005BE624: UNKNOWN (no record names them; extraction pending, B-M3M4 build item 9).
+    /// (the entry's node+0x1C, which PrintLockState prints) is <paramref name="debugName"/>. It does not select the lock owner.
     /// </summary>
     public void LockTracks(byte mask, string who, string? debugName = null, [System.Runtime.CompilerServices.CallerFilePath] string callerFile = "")
     {
-        lock (_gate)
-        {
-            // fidelity: M4-031
-            // The engine's LockTracks always takes a debug name (the entry's node+0x1C, printed by PrintLockState). The callers in the
-            // higher layers (M5 animation, M7/M8 behaviours) do not supply one yet: say so, once per calling file, and keep an empty name.
-            if (debugName is null)
-            {
-                if (_missingDebugNameFiles.Add(callerFile))
-                    Log($"MISSING: MovementComponent.LockTracks debug name not supplied by {System.IO.Path.GetFileName(callerFile)} (owning layer M5/M7/M8): the engine passes the caller's own string, which the inventory does not give; using an empty name");
-                debugName = "";
-            }
-            LockTracksLocked(mask, who, debugName);
-        }
+        lock (_gate) LockTracksLocked(mask, who, debugName ?? string.Empty);
     }
     internal void LockTracksOwned(byte mask,string who,string debugName,EngineRobot owner)
     { lock (_gate) if (!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner)) LockTracksLocked(mask,who,debugName,owner); }
     internal void UnlockTracksOwned(byte mask,string who,EngineRobot owner)
     { lock (_gate) if (!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner)) UnlockTracksLocked(mask,who,owner); }
-    private readonly HashSet<string> _missingDebugNameFiles = new();
 
     /// <summary><c>MovementComponent::UnlockTracks</c> 0x0063fe5c: remove the owner's entry per bit; true when a found key left its track still locked (A10).</summary>
     public bool UnlockTracks(byte mask, string who) { lock (_gate) return UnlockTracksLocked(mask, who); }

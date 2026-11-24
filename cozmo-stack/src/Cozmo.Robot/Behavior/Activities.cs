@@ -719,7 +719,7 @@ public sealed class SelectionChooser : IBehaviorChooser, IDisposable
 
     private static readonly Func<IBehavior, bool> DefaultHasProcessField = b => b is SteppedBehavior { RequiredProcessId: not 0 };
 
-    private bool _reportedTypeNameMissing, _reportedProcessMissing, _reportedSinkMissing, _reportedFinderMissing;
+    private bool _reportedProcessMissing, _reportedSinkMissing, _reportedFinderMissing;
 
     /// <summary>
     /// <c>SetProcessEnabled(behaviour, enabled)</c> 0x0060AE84..0x0060AEEA: only a non-null behaviour whose process field is non-null
@@ -798,7 +798,7 @@ public sealed class SelectionChooser : IBehaviorChooser, IDisposable
         long epoch=++_selectionEpoch;
         if (FindBehaviorByExecutableType is not { } find)
         {
-            if (!_reportedFinderMissing) { _reportedFinderMissing = true; Log?.Invoke("MISSING: M8-013: BehaviorManager::FindBehaviorByExecutableType's body is not in the inventory; the executable-type message is skipped"); }
+            if (!_reportedFinderMissing) { _reportedFinderMissing = true; Log?.Invoke("MISSING: M8-013: standalone Selection chooser has no configured behavior container for FindBehaviorByExecutableType (0x0059C836)"); }
             return;
         }
         IBehavior? found;
@@ -806,13 +806,8 @@ public sealed class SelectionChooser : IBehaviorChooser, IDisposable
         catch(NativeChooserUnavailable error) { if(error.BehaviorId is {} id)_nativeOwner?.InvalidateConfiguredScoreHistory(id);SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("M8-013 "+error.Message);return; }
         if(_retired || epoch!=_selectionEpoch)return;
         _numRuns = message.NumRuns;                                                        // 0x0060AAC8
-        string typeName;
-        if(_nativeOwner is not null)typeName=message.ExecutableBehaviorType<ExecutableBehaviorNames.Names.Length?ExecutableBehaviorNames.Names[message.ExecutableBehaviorType]:"(null)";
-        else
-        {
-            if (!_reportedTypeNameMissing) { _reportedTypeNameMissing = true; Log?.Invoke("MISSING: M8-013: standalone executable type-name input unavailable; number logged"); }
-            typeName=message.ExecutableBehaviorType.ToString();
-        }
+        string typeName = message.ExecutableBehaviorType < ExecutableBehaviorNames.Names.Length
+            ? ExecutableBehaviorNames.Names[message.ExecutableBehaviorType] : "(null)";
         if(_retired || epoch!=_selectionEpoch)return;
         if (found is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.NoBehavior", $"No behavior for exec type {typeName}");
         else SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.SelectBehavior", $"selecting behavior '{found.Id}' exec type '{typeName}'");

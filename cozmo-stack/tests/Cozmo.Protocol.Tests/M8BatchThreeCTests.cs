@@ -170,8 +170,8 @@ public class M8BatchThreeCTests
         Assert.Equal(-2, chooser.NumRuns);
         Assert.Equal(new byte[] { 4, 9 }, asked);
         // 0x0060ACCC / 0x0060ACF8 (strings in the .so): the hit and miss lines
-        Assert.Contains(log, l => l.Contains("selecting behavior 'AcknowledgeFace' exec type '4'"));
-        Assert.Contains(log, l => l.Contains("ExecuteBehaviorByExecutableType.NoBehavior") && l.Contains("No behavior for exec type 9"));
+        Assert.Contains(log, l => l.Contains("selecting behavior 'AcknowledgeFace' exec type 'KnockOverCubes'"));
+        Assert.Contains(log, l => l.Contains("ExecuteBehaviorByExecutableType.NoBehavior") && l.Contains("No behavior for exec type StackBlocks"));
     }
 
     /// <summary>

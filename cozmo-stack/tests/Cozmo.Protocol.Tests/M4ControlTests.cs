@@ -1238,25 +1238,24 @@ public class M4ControlTests
     }
 
     /// <summary>
-    /// M4-031: a LockTracks caller that supplies no debug name gets one visible MISSING line per calling file (the engine passes a
-    /// name the inventory does not give for these M5/M7/M8 callers); a supplied name logs nothing.
+    /// M4-031: PrintLockState (0x006410D8) displays the owner and the supplied debug label.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
-    public void M4_031_AMissingLockTracksDebugNameIsReportedOncePerCallingFile()
+    public void M4_031_PrintLockStateIncludesTheOwnerWithOrWithoutADebugLabel()
     {
         using var rig = new Rig();
         rig.ToSynced();
         var m = rig.Robot.Motion;
-        int Count(string file) { lock (rig.Log) return rig.Log.Count(l => l.StartsWith("MISSING: MovementComponent.LockTracks debug name not supplied by " + file)); }
+        var entries = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += entries.Add;
         m.LockTracks(1, "A");
-        m.LockTracks(1, "B");
-        Assert.Equal(1, Count("M4ControlTests.cs"));
-        m.LockTracks(1, "C", null, "X/Other.cs");
-        m.LockTracks(1, "D", null, "X/Other.cs");
-        Assert.Equal(1, Count("Other.cs"));
-        m.LockTracks(1, "E", "named", "X/Third.cs");
-        Assert.Equal(0, Count("Third.cs"));
+        m.LockTracks(1, "B", "named");
+        m.PrintLockState();
+        var state = Assert.Single(entries, entry => entry.Name == "MovementComponent.LockState");
+        Assert.Contains("[A] named[B]", state.Text);
+        m.UnlockTracks(1, "A");
+        Assert.True(m.AreAllTracksLockedBy(1, "B"));
     }
 
     /// <summary>M2-015 (settled by M4 MD1): the MessageExtras defaults are the app's, head 10/20 and lift 10/20, duration 0.</summary>

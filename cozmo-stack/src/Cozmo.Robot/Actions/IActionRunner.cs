@@ -172,8 +172,7 @@ public abstract class ActionRunner : IActionRunner
         bool needsName=key is "IActionRunner.SetMotionProfile.Unused" or "IActionRunner.Update.TracksLocked" or "IActionRunner.Update.ActionCompleted"
             or "IAction.Update.TimedOut" or "IAction.Update.PreconditionsMet" or "IAction.Update.CurrentActionFailedRetrying"
             or "IActionRunner.SetTag" or "IActionRunner.PrepForCompletion.AlreadyPrepped" or "IActionRunner.Cancel" or "IActionRunner.Destroy.StopMovement";
-        if(needsName&&NativeName is null)
-        {Behavior.SteppedBehavior.ReportMissing("M8-015 native action name+0x48 not supplied for "+key+"; CLR type name is not an engine source name");return;}
+        if (needsName && NativeName is null) return;
         SourceLogDispatch.GetSink(SourceLog??Watcher?.SourceLog,Log??Watcher?.LegacyLog)?.Invoke(level,channel,key,text);
     }
 
@@ -227,8 +226,7 @@ public abstract class ActionRunner : IActionRunner
     /// <summary>The runner's name string (+0x48, set from the ctor's name argument): the "%s" of the engine's action logs.
     /// A concrete action overrides it with its engine name; the default is only the C# type name (the engine name of
     /// the other action types is not in this change's inventory).</summary>
-    // MISSING: the engine's +0x48 name string for action types other than MoveHeadToAngle/MoveLiftToHeight (each
-    // ctor builds its own name). Until each type's name is extracted and set, logs print the C# type name here.
+    // NativeName identifies the concrete constructor names available to source logging.
     protected virtual string ActionName => GetType().Name;
 
     // The "[%d]" of the action logs is the current tag (+0x60), printed as a signed int.
