@@ -16,6 +16,26 @@ public sealed class FaceAlbumFileStartupTests
         string config=Path.Combine(options.ResourcesPath!,"config","engine","vision_config.json");
         File.WriteAllText(config,File.ReadAllText(config).Replace("\"FaceAlbum\" : \"robot\"","\"FaceAlbum\" : "+JsonSerializer.Serialize(directory)));
     }
+
+    [Theory]
+    [InlineData("123", "123")]
+    [InlineData("true", "true")]
+    public void ScalarAlbumSelectorUsesNativeStringConversionBeforeBranch(string jsonValue, string expectedPath)
+    {
+        using var backup = new BackupTestResources();
+        var options = backup.Options();
+        string config = Path.Combine(options.ResourcesPath!, "config", "engine", "vision_config.json");
+        File.WriteAllText(config, File.ReadAllText(config).Replace("\"FaceAlbum\" : \"robot\"", "\"FaceAlbum\" : " + jsonValue));
+        using var rig = new M4ControlTests.Rig(engineOptions: options);
+        var selected = new List<string>();
+        // Substitute only the file operation and retain the production Init and selector.
+        rig.Engine.NativeVisionFileTail = (_, path, _) => { selected.Add(path); return true; };
+        rig.ToSynced();
+        // 0x00650FD6 -> 0x004F9544 -> 0x008400D8 converts before comparing against robot.
+        Assert.Equal(expectedPath, Assert.Single(selected));
+        Assert.False(rig.Engine.Robot!.VisionNvTailUnavailable);
+        Assert.True(rig.Robot.Vision.NativeInitializationForTest!.ComponentInitialized);
+    }
     internal static void EmptyGuestAlbum(string directory)
     {
         string libraries=ShippedLibraries.FindLibDir() ?? throw new InvalidOperationException("shipped guest unavailable");

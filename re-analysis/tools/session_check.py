@@ -353,6 +353,8 @@ class Session:
                 "0x005475F6 selects the triplet at Init and 0x005479E0 calls PlayEndAnim after the ShouldPlayAnimation test",
             "MISSING: M12-002 PathSender host caller must handle ExecuteCustomPath failure; legacy ushort API has no Result output":
                 "The production path and standalone planner caller use ExecuteWithResult (native return 0x0064A488); the legacy ID API logs a failed result",
+            "MISSING: M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: the real calibration gate is applied; M11-035 has no UpdateAllResults status hook":
+                "VisionSystem binds DrainPreparedResults at construction, aggregates results for the current engine tick and supplies the 0x00513C76 failure gate. Detached compositions have a distinct guard.",
             "MISSING: M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA":
                 "M1-034 skips the unchecked external-interface dereference from 0x005A20BA..0x005A20D6. The policy skip is logged",
             "MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / "

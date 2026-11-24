@@ -127,21 +127,48 @@ public sealed class AlignWithObjectAction : DockActionBase
         return 0;
     }
 
+    // EnumToString(DockAction) 0x007D5F28..0x007D5F3A, names table 0x01034CD0.
+    private static readonly string[] DockActionNames =
+    {
+        "DA_PICKUP_LOW", "DA_PICKUP_HIGH", "DA_PLACE_HIGH", "DA_PLACE_LOW", "DA_PLACE_LOW_BLIND",
+        "DA_ROLL_LOW", "DA_DEEP_ROLL_LOW", "DA_POST_DOCK_ROLL", "DA_FACE_PLANT", "DA_POP_A_WHEELIE",
+        "DA_ALIGN", "DA_ALIGN_SPECIAL", "DA_RAMP_ASCEND", "DA_RAMP_DESCEND", "DA_CROSS_BRIDGE",
+    };
+
+    internal uint VerifyNative(EngineRobot owner)
+    {
+        var selected = SelectedDockAction ?? throw new NativeActionUnavailable("M13-016 AlignWithObject selected dock action unavailable");
+        var dock = owner.DockingOwner ?? throw new NativeActionUnavailable("M13-016 AlignWithObject docking owner unavailable");
+        // 0x00512A9C..0x00512AA0: RobotState status bit 2 writes Docking+4.
+        // 0x00533790..0x0053379A: PickAndPlaceResult (0xB8) writes Docking+5.
+        // 0xC5 (0x00557C54..0x00557CFE) only checks/queues a lift animation.
+        uint result = VerifyResult((byte)selected, dock.Active, dock.Success ? (byte)1 : (byte)0,
+            M.Robot.Motion.Path.IsActive, out var log);
+        if (result == 0)
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", "AlignWithObjectAction.Verify", log!);
+        else if (result == 0x0300001A)
+        {
+            string name = (byte)selected < DockActionNames.Length ? DockActionNames[(byte)selected] : "(null)";
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, log!, $"Don't know how to verify unexpected dockAction {name}.");
+        }
+        return result;
+    }
+
     /// <summary>
-    /// The live <c>Verify</c> keeps the stack's earlier mapping: the engine's inputs are <c>[this+0xCC]+4</c> and <c>+5</c>, written by the 0xC5 handler (M12-034, unread), so there is no
-    /// source for them here; <see cref="VerifyResult"/> is the engine's function over them.
+    /// The historical async tool adapter completes on its pending B8 report; the LLM mount path
+    /// calls <see cref="VerifyNative"/> after the native active-edge and movement checks.
     /// </summary>
     protected override ActionResult Verify(ObservableObject? target, DockResult result)
     {
-        SteppedBehavior.ReportMissing("AlignWithObjectAction::Verify 0x005534E0 inputs [[this+0xCC]+4] and [[this+0xCC]+5] (written by the unread 0xC5 handler, M12-034) have no counterpart in this stack; the live Verify keeps Success/Retry from DockResult.Succeeded (the engine's results 0x04000003/0x04000002/0x0300001A are in VerifyResult only)");
+        SteppedBehavior.ReportMissing("M13-016 legacy async AlignWithObject adapter completes on B8; native Verify 0x005534E0 uses Docking+4/+5 after the active-edge and movement checks");
         return result.Succeeded ? ActionResult.Success : ActionResult.Retry;
     }
 }
 
 /// <summary>
 /// One step of a tick-driven sub-action: the engine's <c>Init</c> (a result, 0 = go on) and <c>CheckIfDone</c> (0, RUNNING 0x01000000 or a failure). The straight drive's
-/// body is not in the M13 inventory (<c>DriveStraightAction::Init</c>/<c>CheckIfDone</c>, PLT 0x4AB590 and its base), so the live implementation
-/// (<see cref="HostDriveStraightTick"/>) wraps this stack's own async <see cref="DriveStraightAction"/> and reports RUNNING until it ends.
+/// historical tool adapter (<see cref="HostDriveStraightTick"/>) uses a host path-event wait.
+/// The LLM mount instead runs the native <see cref="DriveStraightAction"/> at 0x005475D8/0x005478C0.
 /// </summary>
 public interface IDriveStraightTick
 {
@@ -164,7 +191,7 @@ public sealed class HostDriveStraightTick : IDriveStraightTick
 
     public uint Init()
     {
-        SteppedBehavior.ReportMissing("DriveStraightAction::Init 0x005475D8 and CheckIfDone 0x005478C0 are not transliterated: this stack's drive ends on the path's own 'completed' event (HostDriveStraightTick), not on the engine's own conditions");
+        SteppedBehavior.ReportMissing("M13-013 legacy HostDriveStraightTick ends on a host path event; the canonical DriveStraightAction uses 0x005475D8/0x005478C0");
         _cts = CancellationTokenSource.CreateLinkedTokenSource(_parent);
         _task = RunLineAsync(_cts.Token);
         return 0;

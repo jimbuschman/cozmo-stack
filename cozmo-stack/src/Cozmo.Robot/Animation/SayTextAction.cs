@@ -48,14 +48,7 @@ internal sealed class SayTextAction : ActionRunner
         _fitName = fitName;
         _voiceStyle = style;
         // SayTextAction::Init 0x00561710..0x00561736 looks up the closed style table at 0x00C573B0.
-        _voiceSwitch = style switch
-        {
-            0 => 0x334C99DCu,
-            1 => 0x2F8B3BF4u,
-            2 => 0x2F8B3BF4u,
-            3 => 0x36089802u,
-            _ => 0u,
-        };
+        _voiceSwitch = VoiceSwitchForStyle(style) ?? 0u;
         Pitch = pitch;
         SourceLog = (level, channel, key, message) => robot.Engine.EmitSourceLog(level, channel, key, message);
         Log = robot.Engine.EmitStackLog;
