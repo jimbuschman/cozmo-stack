@@ -872,6 +872,8 @@ public sealed partial class EngineRobot
     /// </summary>
     private Vision.NativeVisionStageResult InvokeNativeVisionConstructor()
     {
+        // CozmoRobot binds this before any physical Robot is created. A missing
+        // recipient is possible only in detached/world-less host composition.
         if (Engine.NativeVisionConstructor is { } init) return init(this);
         Behavior.SteppedBehavior.ReportMissing("M11-059 original VisionComponent Init recipient unavailable");
         return Vision.NativeVisionStageResult.Missing;
@@ -888,6 +890,8 @@ public sealed partial class EngineRobot
         bool LiveVisionOwner() => !Lifetime.Destroying && Engine.NativeVisionOwnerCurrent?.Invoke(this)==true;
         void HoldPartialTail()
         {
+            // Host ownership guard for a reentrant replacement of the Init epoch.
+            // The native 0x00650FB4 continuation uses the same constructing component.
             if(!LiveVisionOwner())return;
             VisionNvTailUnavailable=true;
             Behavior.SteppedBehavior.ReportMissing("M11-059 superseded Vision Init left the ordered NV tail incomplete");
@@ -902,20 +906,32 @@ public sealed partial class EngineRobot
         if (outcome.Result != 0) goto backupReads;
         if (!CurrentVision()) { HoldPartialTail(); return; }
         var root = Engine.VisionConfiguration;
-        FirmwareJsonValue? album = root.Kind == FirmwareJsonKind.Object
-            ? root.Members.GetValueOrDefault(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes("FaceAlbum"))) : null;
-        if (album is not null && album.Kind != FirmwareJsonKind.Null &&
-            (album.Kind != FirmwareJsonKind.String ||
-             (album.Bytes.Length != 0 && !album.Bytes.AsSpan().SequenceEqual("robot"u8))))
+        byte[] albumSelector;
+        try
         {
-            if(album.Kind!=FirmwareJsonKind.String || Engine.NativeVisionFileTail is null)
+            // GetValueOptional<string> 0x00650FD6, 0x004F9528..0x004F956E:
+            // null/missing leaves the empty string, other values use asString (0x008400D8).
+            if (root.Kind is not (FirmwareJsonKind.Null or FirmwareJsonKind.Object))
+                throw new JsonLogicError("FaceAlbum lookup requires objectValue");
+            var album = root.Members.GetValueOrDefault(Convert.ToHexString("FaceAlbum"u8));
+            albumSelector = album is null ? Array.Empty<byte>() : Json.AsStringBytes(album);
+        }
+        catch (JsonLogicError)
+        {
+            VisionNvTailUnavailable = true;
+            Behavior.SteppedBehavior.ReportMissing("M1-034/M11-059 invalid FaceAlbum selector reaches JsonCpp terminating access (0x00650FD6); ordered NV tail skipped");
+            return;
+        }
+        if (albumSelector.Length != 0 && !albumSelector.AsSpan().SequenceEqual("robot"u8))
+        {
+            if(Engine.NativeVisionFileTail is null)
             {
                 VisionNvTailUnavailable=true;
                 Behavior.SteppedBehavior.ReportMissing("M11-059 file FaceAlbum selector or recipient unavailable");
                 return;
             }
             string directory;
-            try { directory=new System.Text.UTF8Encoding(false,true).GetString(album.Bytes); }
+            try { directory=new System.Text.UTF8Encoding(false,true).GetString(albumSelector); }
             catch(System.Text.DecoderFallbackException)
             {
                 VisionNvTailUnavailable=true;
@@ -1409,22 +1425,22 @@ public sealed partial class EngineRobot
         // fidelity: M3-032
         // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below.
         // The bound vision component supplies its FIFO aggregate; an absent hook remains a visible missing input.
-        if (Engine.HasCameraCalibration?.Invoke() == true && Engine.VisionUpdateAllResultsFailed is { } visionGate)
+        if (Engine.HasCameraCalibration?.Invoke() == true)
         {
-            bool visionFailed=visionGate();
-            if(Lifetime.Destroying || !ReferenceEquals(Engine.Robot,this))return;
-            if (visionFailed)
+            if (Engine.VisionUpdateAllResultsFailed is { } visionGate)
             {
-                // G2 (0x00513C7E..0x00513C9A): sWarningF with the key Robot.Update.VisionComponentUpdateFail and an empty format, then
-                // the return to 0x00514484, which skips everything below.
-                Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.Update.VisionComponentUpdateFail", "");
-                return;
+                bool visionFailed=visionGate();
+                if(Lifetime.Destroying || !ReferenceEquals(Engine.Robot,this))return;
+                if (visionFailed)
+                {
+                    // G2 (0x00513C7E..0x00513C9A): warning, then return to 0x00514484.
+                    Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.Update.VisionComponentUpdateFail", "");
+                    return;
+                }
             }
-        }
-        else if (Engine.HasCameraCalibration?.Invoke() == true)
-        {
-            // reported once per process (ReportMissing de-duplicates), not once per engine robot
-            Behavior.SteppedBehavior.ReportMissing("M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: the real calibration gate is applied; M11-035 has no UpdateAllResults status hook");
+            // Synthetic/detached composition guard. VisionSystem binds DrainPreparedResults
+            // in its constructor and removes it only on disposal.
+            else Behavior.SteppedBehavior.ReportMissing("M11-035 detached UpdateAllResults status hook at Robot::Update 0x00513C6E..0x00513C9A; the bound VisionSystem normally supplies the FIFO aggregate");
         }
         SendPendingVisionLocalization(); // 0x00513CBE..CC, after successful vision and before map.
         if (Lifetime.Destroying || !ReferenceEquals(Engine.Robot, this)) return;
@@ -2074,15 +2090,16 @@ public sealed partial class CozmoEngine : IDisposable
     // fidelity: M3-032, M11-035
     /// <summary>
     /// The <c>VisionComponent::UpdateAllResults()</c> result as <c>Robot::Update</c> tests it (0x00513C76 <c>blx 0x4a7db0</c>; 0x00513C7C <c>cbz r6</c>): true is the non-zero
-    /// result, after which <c>Robot::Update</c> warns and returns (0x00513C92..0x00513C9A). In this stack the vision results are handled inside <c>VisionSystem</c> on the
-    /// frame's own thread and nothing returns that status to the engine tick, so no source exists: while this is null the gate is reported MISSING once and the tick goes on. The gate is M3-032's; the result's source (the per-mode result handlers) is M11-035's: the hook M11-035 fills.
+    /// result, after which <c>Robot::Update</c> warns and returns (0x00513C92..0x00513C9A).
+    /// VisionSystem binds DrainPreparedResults to drain worker-prepared results and return the aggregate on the engine tick.
+    /// Null means a detached/test composition and remains a visible wiring guard.
     /// </summary>
     internal Func<bool>? VisionUpdateAllResultsFailed;
     // fidelity: M11-059, M3-033
     /// <summary>
     /// The branch at 0x00650E3C that decides whether VisionComponent::Init goes on to queue the FaceAlbum/Enrollment reads (VisionSystem::Init's outcome and the
-    /// album load-or-erase branch 0x00650FB4..0x0065108A): true queues the pair, false skips it. Owned by M11-059; null (the default) reports MISSING and queues
-    /// the pair, the behaviour before the gate was named.
+    /// album load-or-erase branch 0x00650FB4..0x0065108A). NativeVisionConstructor and the config selector own production admission;
+    /// this optional override is used by tests only after successful Init and the NV selector.
     /// </summary>
     internal Func<bool>? FaceAlbumReadsGate;
     internal Func<EngineRobot, Vision.NativeVisionStageResult>? NativeVisionConstructor;

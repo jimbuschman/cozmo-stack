@@ -883,7 +883,8 @@ public class M8BatchThreeDTests
         var e = robot.Engine;
         Assert.True(e.Robot!.FirstFullStateHandled);
         e.VisionUpdateAllResultsFailed=null; // explicit missing-hook unit input; constructor normally installs the actual recipient
-        e.HasCameraCalibration = () => true; // M3-032: this scenario explicitly models a non-null calibration pointer; live installation is tested in M3DeviceTests.
+        int calibrationReads = 0;
+        e.HasCameraCalibration = () => { calibrationReads++; return true; }; // 0x00513C72 reads the pointer once per tick; live installation is tested in M3DeviceTests.
         int ticks = 0;
         var canonical=e.Robot!.NativeBehaviorRuntime!.AI;
         var helper=new TestHelper(robot,"gate-probe",new Probe(),canonical.Helpers,new List<string>());
@@ -894,6 +895,7 @@ public class M8BatchThreeDTests
         Assert.Equal(1, ticks);
         e.Tick();
         Assert.Equal(2, ticks);
+        Assert.Equal(2, calibrationReads);
         lock (missing) Assert.Equal(1, missing.Count(m => m.Contains("UpdateAllResults") && m.Contains("0x00513C6E")));   // reported once per process, not per tick
 
         e.VisionUpdateAllResultsFailed = () => true;
