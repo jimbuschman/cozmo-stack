@@ -429,7 +429,7 @@ class Session:
                 (("(total)", "0x0050048E"), ("(new)", "0x005004D8"), ("", "0x00500532"), ("", "0x0050058A"))},
             "MISSING: M8-007/M8-015 TracksLockedBecause Warning0x00540530: MovementComponent.WhoIsLocking "
             "native string recipient0x00540506 is not bound; no invented owner-description text":
-                "0x00540506 supplies warning text to 0x00540530; the existing TRACKS_LOCKED result is retained",
+                "0x00540506 supplies warning text to 0x00540530; 0x006415C4..0x0064169A now formats the live lock trees; the existing TRACKS_LOCKED result is retained",
             "MISSING: M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt":
                 "0x006BFB1A writes only the visualizer path",
             **{f"MISSING: M12-024 | EraseAllPlannerObstacles({mode}) 0x0055A626/0x0055A632 visualizer handoff absent":

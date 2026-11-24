@@ -74,7 +74,7 @@ public sealed partial class CozmoBridge
             // public root completion. Wait for that actual event, when D2 sends it.
             if (!ended.OwnerRetired && owner.HasExternalInterface && ended.Result != EngineActionResult.Interrupted)
                 await delivered.Task.ConfigureAwait(false);
-            return CommandResult.Action(true, ended.Result, detail, ended.OwnerRetired) with
+            return CommandResult.Action(true, ended.Result, runner.GetTrackLockDetail(ended.Result) ?? detail, ended.OwnerRetired) with
             {
                 OwnedCompletionTag = runner.Tag,
             };

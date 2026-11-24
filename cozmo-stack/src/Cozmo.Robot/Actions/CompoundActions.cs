@@ -295,6 +295,7 @@ public abstract class CompoundAction : ActionRunner
     /// </summary>
     public override void Reset(bool unlockTracks)
     {
+        TrackLockDetail = null;
         State = EngineActionResult.NotStarted;
         foreach (var child in _children.ToArray()) child.Reset(unlockTracks);
     }
@@ -398,6 +399,7 @@ public class CompoundActionSequential : CompoundAction
         // 0x0054F8C4 formats the name for Debug before deleting the child; the scalar result is returned unchanged.
         string resultName = NativeResultName(result) ?? "(null)";
         ChildLog(child, EngineLogLevel.Debug, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Current action {n}[{unchecked((int)child.Tag)}] failed with {resultName} deleting");
+        TrackLockDetail = child.GetTrackLockDetail(result);
         StoreCompletionUnionAndDelete(child);
         return result;
     }
@@ -445,6 +447,7 @@ public class CompoundActionSequential : CompoundAction
         uint result = child.Update();
         if (DestructionObserved) return State;
         if (result == EngineActionResult.Running) return EngineActionResult.Running;
+        TrackLockDetail = child.GetTrackLockDetail(result);
         bool erased = StoreCompletionUnionAndDelete(child);
         if (!erased) _iterator++;
         if (_iterator >= Children.Count)
@@ -520,6 +523,7 @@ public class CompoundActionParallel : CompoundAction
                 if (!erased) i++;
                 continue;
             }
+            TrackLockDetail = child.GetTrackLockDetail(result);
             return result;                                                         // immediate full failure
         }
 

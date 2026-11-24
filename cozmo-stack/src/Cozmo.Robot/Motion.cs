@@ -184,7 +184,8 @@ public sealed class CozmoMotion
         }
         var result=await task.ConfigureAwait(false);
         string reason = FaceActionEndReason(result, cancellationToken);
-        string detail = result.Admitted ? $"Native face tracking ended: {reason}" : result.Detail;
+        string detail = result.Admitted && result.EngineResult != EngineActionResult.TracksLocked
+            ? $"Native face tracking ended: {reason}" : result.Detail;
         if (cancellationToken.IsCancellationRequested) detail += "; caller cancellation was requested";
         return new(result.Admitted,result.EngineResult,detail,result.OwnerRetired,
             result.Admitted ? unchecked((int)action.PreparedCompletionUnion) : null)
@@ -225,7 +226,8 @@ public sealed class CozmoMotion
         }
         var result=await task.ConfigureAwait(false);
         return new(result.Admitted,result.EngineResult,
-            action.FacePoseAvailable == false ? "Native face turn ended without a face pose; no turn target was available" : result.Detail,
+            action.FacePoseAvailable == false && result.EngineResult != EngineActionResult.TracksLocked
+                ? "Native face turn ended without a face pose; no turn target was available" : result.Detail,
             result.OwnerRetired)
         {
             FacePoseAvailable = action.FacePoseAvailable,
@@ -785,7 +787,7 @@ public sealed class CozmoMotion
         try
         {
             var ended = await completion.Task.ConfigureAwait(false);
-            return new AiHeadActionResult(true, ended.Result, detail, ended.OwnerRetired);
+            return new AiHeadActionResult(true, ended.Result, action.GetTrackLockDetail(ended.Result) ?? detail, ended.OwnerRetired);
         }
         finally
         {
@@ -1188,6 +1190,27 @@ public sealed class CozmoMotion
     /// retry (M8-007, M4-003).
     /// </summary>
     public bool AreAnyTracksLocked(byte mask) { lock (_gate) return IsTrackLockedLocked(mask); }
+
+    // MovementComponent::WhoIsLocking 0x006415C4..0x0064169A:
+    // only requested nonempty trees, in ascending track order, then debug[key] entries
+    // in multiset order, followed by two more spaces for each track.
+    internal string WhoIsLocking(byte mask)
+    {
+        lock (_gate)
+        {
+            var description = new StringBuilder();
+            for (int bit = 0; bit < _trackLocks.Length; bit++)
+            {
+                var tree = _trackLocks[bit];
+                if ((mask & (1 << bit)) == 0 || tree.Count == 0) continue;
+                description.Append(AnimTrackFlagsToString((byte)(1 << bit))).Append(" locked by ");
+                foreach (var entry in tree)
+                    description.Append(entry.Debug).Append('[').Append(entry.Key).Append("] ");
+                description.Append("  ");
+            }
+            return description.ToString();
+        }
+    }
 
     // fidelity: M4-003
     /// <summary>
@@ -2089,6 +2112,7 @@ bool requireCalibration = true)
         protected override float EngineClockSeconds => Owner._robot.Engine.Timer.SecondsF;
 
         protected override bool AreAnyTracksLocked(uint mask) => Owner.AreAnyTracksLocked((byte)mask);
+        protected override string? WhoIsLocking(uint mask) => AiOwnerCurrent ? Owner.WhoIsLocking((byte)mask) : null;
         // fidelity: M4-014
         // Row 3: IActionRunner::Update's LockTracks (0x00540584) passes the tag's decimal string as the key and the action's name (+0x48) as the debug name.
         protected override void LockTracks(uint mask, string owner) { if(AiOwner is null)Owner.LockTracks((byte)mask,owner,ActionName);else if(AiOwnerCurrent)Owner.LockTracksOwned((byte)mask,owner,ActionName,AiOwner); }

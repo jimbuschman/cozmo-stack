@@ -6,6 +6,8 @@ public sealed record ActionCompletionReport(uint Tag,int ActionType,uint Result,
     public string? AnimationName {get;init;}
     public byte? CompletionVariant {get;init;}
     public ObjectInteractionCompletion? ObjectInteraction {get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? TrackLockDetail { get; init; }
 }
 // fidelity: M8-015, M8-020
 public sealed partial class CozmoEngine
@@ -17,7 +19,8 @@ public sealed partial class CozmoEngine
             EmitStackLog($"{policyRecord} action completion tag {record.Tag}, type {record.ActionType}: zeroed four undefined object-interaction ID words (operator decision 2026-11-22).");
         var typed=new ActionCompletionReport(record.Tag,record.ActionType,record.Result,
             Array.AsReadOnly(record.SubActionResults.ToArray()),record.CompletionUnion)
-            {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant,ObjectInteraction=record.ObjectInteraction,HostCaller=record.HostCaller};
+            {AnimationName=record.AnimationName,CompletionVariant=record.CompletionVariant,ObjectInteraction=record.ObjectInteraction,HostCaller=record.HostCaller,
+                TrackLockDetail=record.TrackLockDetail};
         if(record.ObjectInteraction is {IsPayloadDefined:false})
         {
             if (record.ObjectInteraction.UndefinedPayloadPolicy is { } policy)

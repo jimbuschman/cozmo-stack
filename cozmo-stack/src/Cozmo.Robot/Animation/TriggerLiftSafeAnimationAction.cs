@@ -90,6 +90,7 @@ internal class TriggerAnimationAction : ActionRunner
     public override bool CanInterrupt()=>false;
     private bool OwnerCurrent=>_scopedOwner is null || !_scopedOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,_scopedOwner);
     protected override bool AreAnyTracksLocked(uint mask)=>OwnerCurrent && _robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override string? WhoIsLocking(uint mask)=>OwnerCurrent ? _robot.Motion.WhoIsLocking((byte)mask) : null;
     protected override void LockTracks(uint mask,string owner)
     {if(_scopedOwner is null)_robot.Motion.LockTracks((byte)mask,owner,ActionName);else LogCallbackDeferral.RunGated(_trackGate,()=>{if(OwnerCurrent&&!_destroyed&&!DestructionObserved)_robot.Motion.LockTracksOwned((byte)mask,owner,ActionName,_scopedOwner);});}
     protected override void UnlockTracksInternal(uint mask,string owner)
