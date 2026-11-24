@@ -129,7 +129,9 @@ public sealed class PathSender
     public ushort Execute(IReadOnlyList<PathSegment> path,Action<ushort>? reserve=null)
     {
         var execution=ExecuteWithResult(path,reserve);
-        if(execution.Result!=0)_robot.Engine.EmitStackLog("MISSING: M12-002 PathSender host caller must handle ExecuteCustomPath failure; legacy ushort API has no Result output");
+        // The legacy host API returns the last sent ID. ExecuteWithResult exposes the native
+        // ExecuteCustomPath result (0x0064B1F0..0x0064B1FA, ExecutePath return 0x0064A488).
+        if(execution.Result!=0)_robot.Engine.EmitStackLog($"PathSender.Execute: ExecuteCustomPath failed with result {execution.Result} (last path ID {execution.PathId})");
         return execution.PathId;
     }
     /// <summary>Host API: preserves ExecuteCustomPath's result without changing its wire path.</summary>

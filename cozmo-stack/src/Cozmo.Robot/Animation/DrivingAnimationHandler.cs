@@ -26,7 +26,9 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     internal Func<DrivingAnimationRequest, IActionRunner>? CreateActionForTest;
     internal Action<string, uint>? CallObserved;
     internal Action? RemoveWarningObservedForTest;
-    internal DrivingAnimations? Current { get; private set; } = new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D);
+    // The native constructor copies an inline triplet (0x004F0724..0x004F0728).
+    // Init replaces it with another inline triplet (0x004F0D6A..0x004F0D72).
+    internal DrivingAnimations Current { get; private set; } = new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D);
     public int State { get; private set; } = 5;
     internal uint StartId { get; private set; }
     internal uint LoopId { get; private set; }
@@ -97,7 +99,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         _tracks = tracks; _tag = tag; _unlock = !argument3; _repeat = repeatWhilePath; // Init's fourth C++ parameter (not counting this).
         return selected;
     }
-    public bool InputsReady => Current is not null;
+    public bool InputsReady => true;
     private bool UpdateCurrent(Func<bool>? current=null)
     {
         if (_entries.Count != 0) { Current = _entries[^1].Animations; return true; }
@@ -130,7 +132,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         if (id == StartId && result == 0)
         {
-            if (Current?.Loop == (AnimationTrigger)0x23F) return;
+            if (Current.Loop == (AnimationTrigger)0x23F) return;
             PlayDrivingLoopAnim(); return;
         }
         if (id == LoopId)
@@ -172,7 +174,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         if(guard is not null&&(!guard()||!ReferenceEquals(_owner,owner)))return;
         if(State!=0)return;
-        if(Current is not { } current) { Missing("current start/loop selection is unknown");return; }
+        var current = Current;
         if(current.Start!=(AnimationTrigger)0x23F)PlayDrivingStartAnim(owner,guard);
         else if(current.Loop!=(AnimationTrigger)0x23F)PlayDrivingLoopAnim(owner,guard);
     }
@@ -180,7 +182,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         if(guard is not null&&(!guard()||!ReferenceEquals(_owner,owner)))return;
         State=1;
-        if(Current is not { } current){Missing("current start selection is unknown");return;}
+        var current = Current;
         if(CreateAction(current.Start) is { } action){if(guard is not null&&!guard()){Retire(action);return;}StartId=action.Tag;Queue(action,owner,guard);}
     }
     public uint PlayEndAnim()
@@ -193,7 +195,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         if (State is 3 or 4 or 5) return 0;
         Cancel(StartId,owner,current);if(current is not null&&!current())return 0;
         Cancel(LoopId,owner,current);if(current is not null&&!current())return 0;
-        if (Current?.End == (AnimationTrigger)0x23F) return 0;
+        if (Current.End == (AnimationTrigger)0x23F) return 0;
         if (_unlock) UnlockTracks(owner,current);
         if(current is not null&&!current())return 0;
         PlayDrivingEndAnim(owner,current);
@@ -203,7 +205,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         if(guard is not null&&(!guard()||!ReferenceEquals(_owner,owner)))return;
         State = 2;
-        if (Current is not { } current) { Missing("current loop trigger is unset because Init was not built at its M12-024 caller"); return; }
+        var current = Current;
         if (CreateAction(current.Loop) is { } action)
         {
             if(guard is not null&&!guard()){Retire(action);return;}
@@ -216,7 +218,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         if(guard is not null&&(!guard()||!ReferenceEquals(_owner,owner)))return;
         if (State is 3 or 4 or 5) return;
         State = 3;
-        if (Current is not { } current) { Missing("current end trigger is unset because Init was not built at its M12-024 caller"); return; }
+        var current = Current;
         if (CreateAction(current.End) is { } action)
         {
             if(guard is not null&&!guard()){Retire(action);return;}

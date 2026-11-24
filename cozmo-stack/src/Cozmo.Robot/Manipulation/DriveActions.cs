@@ -359,8 +359,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
                 if(!ExecutionCurrent())return ActionResult.CancelledWhileRunning;
                 break;
         }
-        if (!DrivingAnimations.InputsReady)
-        { MissingSource("M5-063 current driving-animation selection is unavailable; end-call decision stopped"); return ActionResult.Running; }
+        // 0x0055B0AA..0x0055B0CC checks only the result; Init already selected the inline triplet.
         if (result != ActionResult.Running && result != ActionResult.PathPlanningFailedAbort)
         {
             uint end=_scopedOwner is {} scoped && DrivingAnimations is Animation.DrivingAnimationHandler actual
@@ -866,7 +865,7 @@ public class DriveStraightAction : ActionRunner, IDisposable
         if(!ExecutionCurrent())return ActionResult.Abort;
         if(ShouldPlayAnimation)
         {
-            if(!DrivingAnimations.InputsReady){Missing("M5-063 driving selection unavailable");return ActionResult.Running;}
+            // 0x005479E0: no additional selection gate after DriveStraight's Init at 0x005475F6.
             uint end=DrivingAnimations.PlayEndAnim();if(!ExecutionCurrent())return ActionResult.Abort;
             if(end!=0)return ActionResult.Running;
         }

@@ -2341,8 +2341,9 @@ internal sealed partial class PathComponent
 
     /// <summary>
     /// +0x38: the ERobotDriveToPoseStatus (M12-023). 4 (Ready) from the constructor (PathComponent::PathComponent 0x00648B14 movs r0,#4;
-    /// 0x00648B16 strd r0,r5,[fp,#0x38]). MISSING: it and +0x42 have no production writer yet; the stack's PathSender._pathId
-    /// (Manipulation/RobotPath.cs:113, M13-011) and DriveActions hold the engine's values, and wiring them is M12/M13.
+    /// 0x00648B16 strd r0,r5,[fp,#0x38]). NativePathComponent.SetStatus writes this field (0x006492C4).
+    /// NativePathComponent.ExecutePath increments +0x42 (0x0064A3C2..0x0064A3CA), and UpdateCurrentPathSegment
+    /// writes +0x40 on matching nonzero path IDs (0x006493B4..0x00649434).
     /// </summary>
     internal int DriveToPoseStatus = 4;
     /// <summary>+0x3C: BaseStationTimer seconds, stored by ClearPath.</summary>
