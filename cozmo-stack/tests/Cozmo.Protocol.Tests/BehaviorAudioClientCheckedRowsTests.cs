@@ -40,6 +40,26 @@ public sealed class BehaviorAudioClientCheckedRowsTests
         Assert.Equal(0,f.Rig.Engine.AnimationMessages.Count(0xA3,false));
     }
     [Fact]
+    public void OwnedPublicStateLogsTheNativeStageNamesAndKeepsTheStagePayload()
+    {
+        using var f = new Fixture();
+        var logs = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Add;
+
+        f.Public.UpdateBroadcastBehaviorStage(2, 1);
+        f.Public.UpdateBroadcastBehaviorStage(2, 3);
+
+        Assert.Equal(new[]
+        {
+            "Moving from behavior stage type Count to stage type PyramidConstruction",
+            "Updating stage type PyramidConstruction to stage 3"
+        }, logs.Where(entry => entry.Name?.StartsWith("PublicStateBroadcaster.UpdateUserFacingBehaviorStage.") == true)
+            .Select(entry => entry.Text));
+        Assert.Equal(2, f.Public.State.StageTag);
+        Assert.Equal(3, f.Public.State.Round);
+    }
+
+    [Fact]
     public void NoExternalInterfaceStillSubscribesToPublicStateAndInitDoesNotReplaceIt()
     {
         using var f=new Fixture();var pub=new BehaviorPublicStateBroadcaster(f.Robot);

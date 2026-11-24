@@ -326,6 +326,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.CantHandleTallStack] = (ctx,json)=>new NativeCantHandleTallStackBehavior(ctx,json),
         [BehaviorClass.CubeLiftWorkout] = (ctx,json)=>new NativeCubeLiftWorkoutBehavior(ctx,json),
         [BehaviorClass.Dance] = (ctx,json)=>new NativeDanceBehavior(ctx,json),
+        [BehaviorClass.Singing] = (ctx,json)=>new NativeSingingBehavior(ctx,json),
         [BehaviorClass.CheckForStackAtInterval] = (ctx,json)=>new NativeCheckForStackAtIntervalBehavior(ctx,json),
         [BehaviorClass.PopAWheelie] = (ctx,json)=>new NativePopAWheelieBehavior(ctx,json),
         [BehaviorClass.RollBlock] = (ctx,json)=>new NativeRollBlockBehavior(ctx,json),
@@ -599,7 +600,7 @@ public sealed class BehaviorFactory
         }
         if (cls is BehaviorClass.ReactToCliff or BehaviorClass.ReactToImpact or BehaviorClass.ReactToPlacedOnSlope or BehaviorClass.ReactToUnexpectedMovement or
             BehaviorClass.ReactToPickup or BehaviorClass.ReactToRobotOnBack or BehaviorClass.ReactToMotorCalibration or
-            BehaviorClass.ReactToRobotOnFace or BehaviorClass.ReactToRobotOnSide or BehaviorClass.ReactToRobotShaken or BehaviorClass.ReactToFrustration
+            BehaviorClass.ReactToRobotOnFace or BehaviorClass.ReactToRobotOnSide or BehaviorClass.ReactToRobotShaken or BehaviorClass.ReactToFrustration or BehaviorClass.Singing
             && (ctx.Manipulation is null || ctx.NativeRobot is null))
         {
             SteppedBehavior.ReportMissing($"{cls} factory requires actual manipulation and native Robot owners");
@@ -631,7 +632,7 @@ public sealed class BehaviorFactory
                 ReactToPickupBehavior or ReactToRobotOnBackBehavior or ReactToMotorCalibrationBehavior or
                 ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior or AcknowledgeFaceBehavior or
                 NativeInteractWithFaces or NativeFindFacesSocialize or NativeSearchForFaceBehavior or NativeDriveToFaceBehavior or
-                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior ||
+                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior or NativeSingingBehavior ||
                 stepped is PlayAnimBehavior { OwnsConfiguredAnimationSequence: true })
             {
                 // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
