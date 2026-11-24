@@ -15,6 +15,14 @@ public sealed class OccluderList
 
     public void Clear() => _entries.Clear();
 
+    internal OccluderList Copy()
+    {
+        var copy = new OccluderList();
+        foreach (var entry in _entries)
+            copy._entries.Add(new Occluder((Vec2[])entry.Quad.Clone(), entry.DepthMm));
+        return copy;
+    }
+
     public void Add(Vec2[] points, double depthMm)
     {
         if (points.Length == 0 || !double.IsFinite(depthMm)) return;

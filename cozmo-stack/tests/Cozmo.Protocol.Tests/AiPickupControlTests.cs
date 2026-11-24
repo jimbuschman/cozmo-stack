@@ -118,6 +118,43 @@ public sealed class AiPickupControlTests
     }
 
     [Fact]
+    public async Task MissingTargetCompletesLocallyWithoutPackingUndefinedPickupIds()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty: true);
+        var logs = new List<string>();
+        var sourceLogs = new List<EngineLogEntry>();
+        var app = new List<ActionCompletionReport>();
+        var local = new List<RobotCompletedAction>();
+        f.Rig.Engine.StackLogLine += logs.Add;
+        f.Rig.Engine.LogEntry += sourceLogs.Add;
+        f.Rig.Engine.ActionCompleted += app.Add;
+        using var subscription = f.Rig.Engine.AnimationMessages.SubscribeMessage(0x5A, true, value =>
+        {
+            if (value is RobotCompletedAction completed)
+                local.Add(completed);
+        });
+
+        var task = f.Rig.Robot.Motion.QueueAiPickupCubeAsync(7, false);
+        var runner = Assert.IsType<NativePickupObjectRunner>(f.Robot.ActionList.GetCurrentAction());
+        f.Motors();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+        f.Rig.Engine.DrainAppDelivery();
+
+        Assert.True(result.Admitted);
+        Assert.Equal(0x03000004u, result.EngineResult);
+        var completion = Assert.Single(local, record => record.Tag == runner.Tag);
+        Assert.Equal(0x03000004u, completion.Result);
+        Assert.Equal(((byte)0, false, false), (completion.ObjectInteraction!.Count, completion.ObjectInteraction.Flag,
+            completion.ObjectInteraction.IsPayloadDefined));
+        Assert.DoesNotContain(app, record => record.Tag == runner.Tag);
+        Assert.Contains(sourceLogs, entry => entry.Name == "PickupObjectAction.EmitCompletionSignal.DockActionNotSet" &&
+            entry.Text.EndsWith("Dock action not set before filling completion signal", StringComparison.Ordinal));
+        Assert.Contains(logs, line => line.Contains("M1-034 PickupObject 0x005537D4..0x00553958") &&
+            line.EndsWith("skipped the undefined public 5A payload."));
+        Assert.DoesNotContain(logs, line => line.Contains("MISSING: Concrete object-interaction completion fields unavailable"));
+    }
+
+    [Fact]
     public async Task RejectsNegativeSignedWorldIdBeforeAdmission()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture(sourceNvEmpty:true);

@@ -171,7 +171,7 @@ internal sealed class ActionWatcher
                 previous=current.Key;current.Value(record);
                 if(!_callbacks.ContainsKey(current.Key))
                 {
-                    Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 ActionWatcher callback erased its own native iterator at native successor read0x005418B2; skip remaining callbacks of this record, retain later deque records");
+                    StackDiagnostics.Write("M1-034/M8-015 ActionWatcher skipped the freed callback iterator at 0x005418B2, retaining later deque records");
                     break;
                 }
             }

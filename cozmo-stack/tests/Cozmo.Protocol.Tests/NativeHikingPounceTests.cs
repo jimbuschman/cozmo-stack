@@ -68,11 +68,20 @@ public sealed class NativeHikingPounceTests
             Assert.Equal((float)(-20d*Math.PI/180d),(float)second.Parameters.PanAngleRad,6);
             search.State=0x03000018;f.Robot.ActionList.Update(); // 0x005F89BE..0x005F89CA: no head action here
             Assert.Equal(6,p.NativeState);var motionWait=Assert.IsType<NativeTimedWaitRunner>(p.OwnedRunner);Assert.Equal(2f,motionWait.Duration);
+            const string waitLock = "behaviorPounceOnMotionWaitLock";
+            var motion = f.Rig.Robot.Motion;
+            Assert.True(motion.AreAllTracksLockedBy(CozmoMotion.HeadTrack, waitLock));
+            var lockLogs = new List<EngineLogEntry>();
+            f.Rig.Engine.LogEntry += lockLogs.Add;
+            motion.PrintLockState();
+            Assert.Contains(lockLogs, entry => entry.Name == "MovementComponent.LockState" &&
+                entry.Text.Contains(waitLock + "[" + waitLock + "]", StringComparison.Ordinal));
             motionWait.Init();float motionDeadline=motionWait.Deadline;
             f.Rig.Engine.Timer.UpdateTime((long)Math.Round((double)motionDeadline*1_000_000_000));Assert.NotEqual(0u,motionWait.CheckIfDone());
             f.Rig.Engine.Timer.UpdateTime((long)Math.Ceiling((double)MathF.BitIncrement(motionDeadline)*1_000_000_000));Assert.Equal(0u,motionWait.CheckIfDone());
             f.Rig.Engine.Timer.UpdateTime(20_000_000_000L);motionWait.State=0x03000018;f.Robot.ActionList.Update();
             Assert.Equal(13,p.NativeState);Assert.IsType<TriggerLiftSafeAnimationAction>(p.OwnedRunner);
+            Assert.False(motion.AreAllTracksLockedBy(CozmoMotion.HeadTrack, waitLock));
         }
         finally {f.Rig.Engine.ContextRandom.WordSourceForTest=null;}
     }

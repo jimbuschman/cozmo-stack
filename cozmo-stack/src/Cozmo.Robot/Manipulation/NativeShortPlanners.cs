@@ -30,7 +30,12 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
     public int ComputePath(Pose3d start,IReadOnlyList<Pose3d> goals)
     {
         _present=_error=false;
-        if(goals.Count==0){missing("M1-034/M13-033 empty IPathPlanner goal-vector dereference 0x00508A60..0x00508A8E skipped");return 0;}
+        if (goals.Count == 0)
+        {
+            // 0x00508A6A clears the status before the unchecked goal lookup and dispatch.
+            standardOutput?.Invoke("M1-034/M13-033 skipped empty IPathPlanner goal-vector dereference at 0x00508A7E..0x00508A8E");
+            return 0;
+        }
         int best=ClosestGoal(start,goals);
         missing("M13-033 ComputeClosestGoalPose Debug fields/rotation-axis formatting 0x00508870..0x0050890A not represented");
         _goalIndex=unchecked((byte)best);_goal=goals[best];return ComputeNewPathIfNeeded(start,true);
@@ -55,8 +60,8 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
         float gx=(float)_goal.Translation.X,gy=(float)_goal.Translation.Y,gyaw=(float)_goal.AngleAroundZ;
         const float accel=200f;
         float tol=EngineF.Bits(0x3D0EFA35);
-        void Turn(float px,float py,float target,float delta,float speed)=>NativePathBuffer.Append(output,new PathSegment.PointTurn(px,py,target,tol,delta<0?-speed:speed,10,10,true),missing,"AppendPointTurn");
-        void Line(float ax,float ay,float bx,float by,float speed)=>NativePathBuffer.Append(output,NativePlanDependencies.DefineLine(ax,ay,bx,by,speed,accel,accel),missing,"AppendLine");
+        void Turn(float px,float py,float target,float delta,float speed)=>NativePathBuffer.Append(output,new PathSegment.PointTurn(px,py,target,tol,delta<0?-speed:speed,10,10,true),standardOutput,"AppendPointTurn");
+        void Line(float ax,float ay,float bx,float by,float speed)=>NativePathBuffer.Append(output,NativePlanDependencies.DefineLine(ax,ay,bx,by,speed,accel,accel),standardOutput,"AppendLine");
         if(!minimal)
         {
             float dx=gx-x,dy=gy-y,d2=(float)((double)dx*dx+(double)dy*dy);
@@ -100,7 +105,7 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
         goal=_goalIndex;path=_path;
         if(!_present)return false; // base internal +0x28==0: no copy
         // IPathPlanner wrapper 0x005091E8..0x005091FA applies into the retained path, then copies it out.
-        path = NativePathBuffer.ApplyMotionProfile(_path, profile, source, missing);
+        path = NativePathBuffer.ApplyMotionProfile(_path, profile, source, standardOutput);
         _path = path;
         return true;
     }
@@ -114,7 +119,7 @@ internal static class NativePathBuffer
     {PathSegment.Line l=>l with{SpeedMmps=speed,AccelMmps2=accel,DecelMmps2=decel},PathSegment.Arc a=>a with{SpeedMmps=speed,AccelMmps2=accel,DecelMmps2=decel},PathSegment.PointTurn t=>t with{SpeedRadPerSec=speed,AccelRadPerSec2=accel,DecelRadPerSec2=decel},_=>s};
     // IPathPlanner::ApplyMotionProfile 0x00508AE4..0x005090DE.
     internal static IReadOnlyList<PathSegment> ApplyMotionProfile(IReadOnlyList<PathSegment> input,PathMotionProfile p,
-        SourceLogSink source, Action<string> missing)
+        SourceLogSink source, Action<string>? standardOutput)
     {
         var reverse=new List<PathSegment>();bool boundary=true;float eps=EngineF.Bits(0x3727C5AC);
         for(int i=input.Count-1;i>=0;i--)
@@ -151,7 +156,7 @@ internal static class NativePathBuffer
         for(int i=0;i<reverse.Count;i++)
         {
             var segment=reverse[i];float speed=Speed(segment);
-            if(segment is PathSegment.PointTurn){Append(output,segment,missing);continue;}
+            if(segment is PathSegment.PointTurn){Append(output,segment,standardOutput);continue;}
             float downstream=i+1==reverse.Count || reverse[i+1] is PathSegment.PointTurn?0:Speed(reverse[i+1]);
             // 0x00508DF6..0x00508E06 supplies positive zero at the end or before a turn.
             // Only a following translating segment takes the sign-adjustment branch at 0x00508EE6..0x00508F24.
@@ -163,9 +168,9 @@ internal static class NativePathBuffer
             {
                 float distance=MathF.CopySign(length-tail,speed), heading=NativePlanDependencies.GetEndPose(segment).Theta;
                 float x=line.FromX+distance*MathF.Cos(heading),y=line.FromY+distance*MathF.Sin(heading);
-                Append(output,NativePlanDependencies.DefineLine(line.FromX,line.FromY,x,y,speed,line.AccelMmps2,line.DecelMmps2),missing);
+                Append(output,NativePlanDependencies.DefineLine(line.FromX,line.FromY,x,y,speed,line.AccelMmps2,line.DecelMmps2),standardOutput);
                 float next=downstream==0?MathF.CopySign(20,speed):MathF.CopySign(MathF.Abs(downstream),speed);
-                Append(output,NativePlanDependencies.DefineLine(x,y,line.ToX,line.ToY,next,line.AccelMmps2,line.DecelMmps2),missing);
+                Append(output,NativePlanDependencies.DefineLine(x,y,line.ToX,line.ToY,next,line.AccelMmps2,line.DecelMmps2),standardOutput);
             }
             else
             {
@@ -173,16 +178,17 @@ internal static class NativePathBuffer
                 bool beforeTurn=i+1<reverse.Count && reverse[i+1] is PathSegment.PointTurn;
                 bool lastAfterTurn=i==reverse.Count-1 && i>0 && reverse[i-1] is PathSegment.PointTurn;
                 if(input.Count>=2 && !beforeTurn && !lastAfterTurn)segment=Profile(segment,downstream,p.AccelMmps2,p.DecelMmps2);
-                Append(output,segment,missing);
+                Append(output,segment,standardOutput);
             }
         }
         // 0x00509072 calls Path::PrintPath on the finished output. This is diagnostic only.
         source(EngineLogLevel.Debug, "Planner", "IPathPlanner.ApplyMotionProfile", $"Profiled path segments: {output.Count}");
         return output;
     }
-    internal static bool Append(List<PathSegment> output,PathSegment segment,Action<string> missing,string name="AppendSegment")
+    internal static bool Append(List<PathSegment> output,PathSegment segment,Action<string>? standardOutput,string name="AppendSegment")
     {
-        if(output.Count>=128){missing($"M13-034 CoreTechPrint: ERROR ({name}): Exceeded path size\n");return false;}
+        // Signed size byte: 0x0085D46E..0x0085D4A4, 0x0085D432 and 0x0085CED6.
+        if(output.Count>=128){standardOutput?.Invoke($"ERROR ({name}): Exceeded path size");return false;}
         output.Add(segment);return true;
     }
 }

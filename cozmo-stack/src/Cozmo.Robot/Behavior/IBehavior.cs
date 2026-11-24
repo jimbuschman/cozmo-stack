@@ -211,6 +211,7 @@ public sealed class BehaviorScope : IDisposable
     // (motion profile), +0xb4 (named track locks), +0xcc (custom light patterns) and +0xa4 (reaction
     // locks). They make the double-acquire and missing-release VERIFY paths expressible.
     private readonly Dictionary<string, Animation.AnimationTrack> _trackLocks = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _nativeTrackLocks = new(StringComparer.Ordinal);
     private readonly HashSet<uint> _lightPatterns = new();
     private readonly HashSet<string> _reactionLockNames = new(StringComparer.Ordinal);
     private bool _arbiterReactionLock;
@@ -456,22 +457,23 @@ public sealed class BehaviorScope : IDisposable
     /// existing key warns "Attempted to lock tracks with key named %s but key already exists" and returns
     /// false without locking twice.
     /// </summary>
-    public bool SmartLockTracks(string name, Animation.AnimationTrack tracks)
+    public bool SmartLockTracks(string name, Animation.AnimationTrack tracks) => SmartLockTracks(name, tracks, false);
+
+    // The native caller at 0x005F8F46/0x005F9662 supplies the same string for both arguments.
+    internal bool SmartLockNativeTracks(string name, Animation.AnimationTrack tracks) => SmartLockTracks(name, tracks, true);
+
+    private bool SmartLockTracks(string name, Animation.AnimationTrack tracks, bool native)
     {
         lock (_gate)
         {
             if (_disposed) return false;
             if (_trackLocks.ContainsKey(name)) { Verify($"SmartLockTracks: track lock '{name}' already exists"); return false; }
             _trackLocks[name] = tracks;
+            if (native) _nativeTrackLocks.Add(name);
+            _undo.Add((OrderTrackLocks, name, () => ReleaseNamedTracks(name)));
             byte mask = CozmoMotion.MaskFor(tracks);
-            if (_motion is { } m && mask != 0) m.LockTracks(mask, _owner + ":" + name);
-            _undo.Add((OrderTrackLocks, name, () =>
-            {
-                if (_trackLocks.Remove(name))
-                {
-                    if (_motion is { } mm && mask != 0) mm.UnlockTracks(mask, _owner + ":" + name);
-                }
-            }));
+            if (_motion is { } m && mask != 0)
+                m.LockTracks(mask, native ? name : _owner + ":" + name, native ? name : null);
             return true;
         }
     }
@@ -484,12 +486,18 @@ public sealed class BehaviorScope : IDisposable
         lock (_gate)
         {
             if (_disposed) return false;
-            if (!_trackLocks.TryGetValue(name, out var tracks)) { Verify($"SmartUnLockTracks: no track lock named '{name}'"); return false; }
-            _trackLocks.Remove(name);
-            byte mask = CozmoMotion.MaskFor(tracks);
-            if (_motion is { } m && mask != 0) m.UnlockTracks(mask, _owner + ":" + name);
+            if (!ReleaseNamedTracks(name)) { Verify($"SmartUnLockTracks: no track lock named '{name}'"); return false; }
             return true;
         }
+    }
+
+    private bool ReleaseNamedTracks(string name)
+    {
+        if (!_trackLocks.Remove(name, out var tracks)) return false;
+        string key = _nativeTrackLocks.Remove(name) ? name : _owner + ":" + name;
+        byte mask = CozmoMotion.MaskFor(tracks);
+        if (_motion is { } motion && mask != 0) motion.UnlockTracks(mask, key);
+        return true;
     }
 
     /// <summary>

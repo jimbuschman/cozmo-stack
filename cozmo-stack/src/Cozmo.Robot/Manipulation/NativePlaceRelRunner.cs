@@ -117,14 +117,23 @@ internal sealed class NativePlaceRelRunner:NativeVisionRunner
     public override byte? GetCompletionVariant()=>0;
     public override ObjectInteractionCompletion GetObjectInteractionCompletion()
     {
-        if(Action.SelectedDockAction is (DockAction.PlaceHigh or DockAction.PlaceLow)&&M.World.GetLocatedObjectByIdHelper(Action.ObjectId) is not null)
+        if (Action.SelectedDockAction is DockAction.PlaceHigh or DockAction.PlaceLow)
         {
-            // COMPATIBILITY_POLICY: operator 2026-10-28, zero ONLY unused four native raw words.
-            // Meaningful target/count1/false and variant0 remain source-exact; normalized words are NOT EXACT_SOURCE.
-            return new(Action.ObjectId,0,0,0,0,1,false);
+            uint objectId = Action.ObjectId;
+            if (M.World.GetLocatedObjectByIdHelper(objectId) is not null)
+            {
+                // 0x00555330..0x0055533E, with the 2026-10-28 policy for unused words.
+                return new(objectId, 0, 0, 0, 0, 1, false);
+            }
+            EmitSource(EngineLogLevel.Warning, null, "PlaceRelObjectAction.EmitCompletionSignal.NullObject",
+                FormattableString.Invariant($"Docking object {unchecked((int)objectId)} not found in world after placing."));
         }
-        SteppedBehavior.ReportMissing("Proposed PlaceRel completion: meaningful selectedDock/located target unavailable; full payload withheld, defined scalar result/callback continues; no guessed unused-word policy outside its normal guard");
-        return new(0,0,0,0,0,0,false,false);
+        else if (State != EngineActionResult.NotStarted)
+            EmitSource(EngineLogLevel.Warning, null, "PlaceRelObjectAction.EmitCompletionSignal.DockActionNotSet",
+                "Dock action not set before filling completion signal.");
+
+        // Neither warning branch initializes the ID array consumed at 0x0055532A.
+        return new(0, 0, 0, 0, 0, 0, false, false) { UndefinedPayloadPolicy = "M1-034/M12-050 PlaceRelObject 0x0055532A" };
     }
     public override void WatcherEnding()
     {

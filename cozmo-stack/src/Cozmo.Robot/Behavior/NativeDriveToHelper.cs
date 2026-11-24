@@ -6,6 +6,7 @@ namespace Cozmo.Robot.Behavior;
 // 5B56B0/5B5800/5B5838/5B5C94: ordinary type0 helper, owned by the real AI helper stack.
 internal sealed class NativeDriveToHelper:IHelper,IDisposable
 {
+    private const string RetiredSnapshot = "M1-034 M12-029 force callback5B61A2 reached a retired helper snapshot114; skip owned action";
     private readonly ManipulationSystem _m;
     private readonly SteppedBehavior _parent;
     private readonly Func<bool>? _hostCurrent;
@@ -49,7 +50,7 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
                 var list=poses.ToList();
                 Pose3d snapshot;
                 lock(_snapshotGate)
-                    snapshot=_snapshot is {} live?new Pose3d(live):throw new NativeActionUnavailable("M1-034 M12-029 force callback5B61A2 reached a retired helper snapshot114; skip owned action");
+                    snapshot=_snapshot is {} live?new Pose3d(live):throw new NativeActionUnavailable(RetiredSnapshot);
                 using var invocationSnapshot=snapshot; // invoke-time lifetime pin, never a replacement/cached callback input.
                 if(DockPreActionPoses.RemoveMatchingPredockPose(snapshot,list))inPosition=false;
                 poses=list;return result;
@@ -86,15 +87,18 @@ internal sealed class NativeDriveToHelper:IHelper,IDisposable
     private void Unavailable(uint tag,NativeActionUnavailable error)
     {
         if(!Current())return;
-        SteppedBehavior.ReportMissing(error.ToString());
-        if(!Current())return;
-        _m.Robot.Engine.Robot!.ActionList.DeferHostCleanup(()=>
+        var engine = _m.Robot.Engine;
+        var owner = engine.Robot;
+        if (error.Message == RetiredSnapshot) engine.EmitStackLog(RetiredSnapshot);
+        else SteppedBehavior.ReportMissing(error.ToString());
+        if (!Current() || owner is null || owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner)) return;
+        owner.ActionList.DeferHostCleanup(()=>
         {
-            if(!Current()||_parent.CurrentRunnerTag!=tag)return;
-            var manager=_m.Robot.Engine.Robot!.BehaviorManagerOwner;
-            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);
+            if (!Current() || owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner) || _parent.CurrentRunnerTag != tag) return;
+            var manager=owner.BehaviorManagerOwner;
+            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,engine.Timer.SecondsF);
             else _parent.Stop(BehaviorStopReason.Interrupted);
-            _m.Robot.Engine.Robot.ActionList.Cancel(tag);
+            if (!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot, owner)) owner.ActionList.Cancel(tag);
         });
     }
     public void Dispose(){lock(_snapshotGate){_snapshot?.Dispose();_snapshot=null;}}

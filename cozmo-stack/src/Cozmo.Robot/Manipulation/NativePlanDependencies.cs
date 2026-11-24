@@ -41,7 +41,7 @@ internal static class NativePlanDependencies
         return(best,distance);
     }
     internal static bool PlanIsSafe(LatticePlan old,int startIndex,float tolerance,MotionPrimitiveSet prims,
-        Func<LatticeState,MotionPrimitive,bool,(LatticeState State,float Penalty)> apply,ref LatticePlan prefix,ref StateC endpoint,Action<string>? missing=null)
+        Func<LatticeState,MotionPrimitive,bool,(LatticeState State,float Penalty)> apply,ref LatticePlan prefix,ref StateC endpoint,Action<string>? standardOutput=null)
     {
         if(old.Actions.Count==0)return false;
         var state=old.Start;
@@ -53,7 +53,13 @@ internal static class NativePlanDependencies
             var step=apply(state,old.Actions[i],true);
             float prior=old.Penalties[i];
             if((double)step.Penalty>(double)prior+0.5)
-            {missing?.Invoke($"M13-034 stdout collision diagnostic 0x00850D84: action {i}, starting from {startIndex}, old penalty {prior}, new penalty {step.Penalty}; printf formatting unbuilt");prefix=new(prefixStart,actions,old.Cost,old.Expansions){Penalties=penalties};return false;}
+            {
+                // 0x00850D76..0x00850D88 prints the absolute index and two promoted floats.
+                standardOutput?.Invoke(FormattableString.Invariant($"Collision along plan action {i} (starting from {startIndex}) Penalty increased from ") +
+                    LibcxxPrintf.FormatFixedFloat(prior) + " to " + LibcxxPrintf.FormatFixedFloat(step.Penalty));
+                prefix=new(prefixStart,actions,old.Cost,old.Expansions){Penalties=penalties};
+                return false;
+            }
             state=step.State;
             if(retain)
             {
@@ -68,21 +74,25 @@ internal static class NativePlanDependencies
     {Start=destination.Actions.Count==0?source.Start:destination.Start,Actions=destination.Actions.Concat(source.Actions).ToArray(),Penalties=destination.Penalties.Concat(source.Penalties).ToArray()};
 
     internal static void AppendToPath(MotionPrimitiveSet prims,LatticePlan plan,List<PathSegment> output,int skip,
-        Func<MotionPrimitive,IReadOnlyList<PathSegment>> cachedPath,Func<PathSegment,float,float,float,PathSegment> offsetStart,Action<string> missing)
+        Func<MotionPrimitive,IReadOnlyList<PathSegment>> cachedPath,Func<PathSegment,float,float,float,PathSegment> offsetStart,
+        Action<string> missing, Action<string>? standardOutput = null)
     {
         var state=plan.Start;
         foreach(var action in plan.Actions)
         {
             if(state.Theta>=prims.ByAngle.Count || action.ActionIndex<0 || action.ActionIndex>=prims.ByAngle[state.Theta].Count)
-            {missing($"M13-034 CoreTechPrint: ERROR: can't look up prim for angle {state.Theta} and action id {action.ActionIndex}\n");return;}
+            {
+                standardOutput?.Invoke(FormattableString.Invariant($"ERROR: can't look up prim for angle {state.Theta} and action id {action.ActionIndex}"));
+                return; // 0x00855E68..0x00855E74 leaves the appended prefix intact.
+            }
             var primitive=prims.ByAngle[state.Theta][action.ActionIndex];
-            if(skip==0)AddSegmentsToPath(cachedPath(primitive),output,prims.ResolutionMm*state.X,prims.ResolutionMm*state.Y,prims.Angles[state.Theta],offsetStart,missing);
+            if(skip==0)AddSegmentsToPath(cachedPath(primitive),output,prims.ResolutionMm*state.X,prims.ResolutionMm*state.Y,prims.Angles[state.Theta],offsetStart,missing,standardOutput);
             else skip--;
             state=Advance(state,primitive);
         }
     }
     internal static byte AddSegmentsToPath(IReadOnlyList<PathSegment> primitive,List<PathSegment> output,float x,float y,float heading,
-        Func<PathSegment,float,float,float,PathSegment> offsetStart,Action<string> missing)
+        Func<PathSegment,float,float,float,PathSegment> offsetStart,Action<string> missing,Action<string>? standardOutput=null)
     {
         byte initial=unchecked((byte)output.Count);bool attempted=false;
         foreach(var raw in primitive)
@@ -97,7 +107,7 @@ internal static class NativePlanDependencies
                 else if(prior is PathSegment.PointTurn t && next is PathSegment.PointTurn u && MathF.Abs(t.X-u.X)<EngineF.Bits(0x3727C5AC) && MathF.Abs(t.Y-u.Y)<EngineF.Bits(0x3727C5AC) && MathF.Abs(t.SpeedRadPerSec-u.SpeedRadPerSec)<EngineF.Bits(0x3727C5AC))
                 {output[^1]=t with{TargetAngleRad=u.TargetAngleRad};merged=true;}
             }
-            if(!merged){attempted=true;NativePathBuffer.Append(output,next,missing);}
+            if(!merged){attempted=true;NativePathBuffer.Append(output,next,standardOutput);}
         }
         return initial>0 && !attempted?unchecked((byte)(initial-1)):initial;
     }
@@ -221,7 +231,7 @@ internal static class NativePlanDependencies
         state=g.End;return penalty; // Corrected H10: retain the subthreshold accumulator.
     }
     internal static bool PathIsSafe(IReadOnlyList<PathSegment> input,List<PathSegment> output,float startAngle,
-        Func<PathSegment,Geometry> geometry,Func<PathSegment,Geometry,StateC,(StateC End,float Penalty)> apply,SourceLogSink source,Action<string> missing)
+        Func<PathSegment,Geometry> geometry,Func<PathSegment,Geometry,StateC,(StateC End,float Penalty)> apply,SourceLogSink source,Action<string> standardOutput)
     {
         if(input.Count==0)return false;
         output.Clear();var first=geometry(input[0]);var state=first.Start with{Theta=startAngle};float total=0,limit=EngineF.Bits(0x3727C5AC);
@@ -229,7 +239,7 @@ internal static class NativePlanDependencies
         {
             var g=geometry(input[i]);var step=apply(input[i],g,state);state=step.End;total+=step.Penalty;
             if(total>limit){source(EngineLogLevel.Info,"Unnamed","xythetaEnvironment.PathIsSafe",FormattableString.Invariant($"Collision along path segment {i} with penalty {step.Penalty:F6}, total penalty {total:F6}"));return false;}
-            NativePathBuffer.Append(output,input[i],missing);
+            NativePathBuffer.Append(output,input[i],standardOutput);
         }
         return true;
     }

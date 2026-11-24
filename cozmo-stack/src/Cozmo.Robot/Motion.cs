@@ -1255,12 +1255,9 @@ public sealed class CozmoMotion
             {
                 if (_trackLocks[k].Count == 0) continue;                    // empty set: no log, no clear, no message
                 // sChanneledInfoF 0x00640FD8, before clear and EnableAnimTracks.
-                // %s = EnumToString(AnimTrackFlag(1<<k)) (0x00640FBA..0x00640FC8 -> 0x007BC250): HEAD_TRACK.. for k 0..6;
-                // 0x80 has no case and returns NULL (0x007BC2B0), which libc then formats: not shipped, so MISSING.
-                if (k < AnimTrackNames.Length)
-                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockAllTracks", $"Unlocking track {AnimTrackNames[k]}");
-                else
-                    _robot.Engine.Log("MISSING: MovementComponent.UnlockAllTracks for track 0x80: EnumToString returns NULL (0x007BC2B0); the phone libc's %s of NULL is not shipped");
+                // 0x007BC2B0 returns null for bit 0x80. Bionic formats a null %s as "(null)".
+                string name = k < AnimTrackNames.Length ? AnimTrackNames[k] : "(null)";
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockAllTracks", $"Unlocking track {name}");
                 _trackLocks[k].Clear();
                 _robot.SendMessage(new EnableAnimTracks { Field0 = (byte)k });   // the index k, not 1<<k
             }
@@ -1324,8 +1321,9 @@ public sealed class CozmoMotion
     {
         if (_directDriveDisabled)
         {
-            Log($"info: Ignoring {what} message while direct drive is disabled");
-            Log("MISSING: MovementComponent.EventHandler.DriveWheels / MoveHead / MoveLift / DriveArc / TurnInPlaceAtSpeed disabled-direct-drive engine log calls; checked argument/level rows absent");
+            // DriveWheels 0x0063ED9A, MoveHead 0x0063F50E, MoveLift 0x0063F752.
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", $"MovementComponent.EventHandler.{what}",
+                $"Ignoring {what} message while direct drive is disabled");
             return new MotionOutcome(MotionResult.Refused, $"{what} ignored: direct drive is disabled");
         }
         if (!holds && IsTrackLockedLocked(mask))
