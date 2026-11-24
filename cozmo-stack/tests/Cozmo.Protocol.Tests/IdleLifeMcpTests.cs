@@ -304,7 +304,8 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
         using var f = new Fixture(sourceNvEmpty: true);
         var manager = f.Robot.BehaviorManagerOwner!;
         string[] ids = ["SparksLookInPlace", "Hiking_VisitInterestingEdge", "RespondToRenameFace",
-            "SparksPutDownBlock", "Hiking_DriveOffCharger"];
+            "SparksPutDownBlock", "Hiking_DriveOffCharger", "EnrollFace", "Hiking_ThinkAboutBeacons", "SparksThinkAboutBeacons"];
+        Assert.True(Assert.IsType<NativeFindFacesSocialize>(f.Runtime.Bound["SparksFindFaces"]).ParametersAvailable);
         Assert.Equal(SteppedBehavior.NoUnlockId, manager.ActiveSparkId);
         foreach (string id in ids)
         {

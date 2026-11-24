@@ -95,9 +95,8 @@ public sealed class VisitInterestingEdgeBehavior : SteppedBehavior, IDisposable
             {MarkReadinessUnavailable();ReportMissing("M11-089 original Robot world origin unavailable at 0x005E6C94");return false;}
             var map=m.World.Maps.Current;
             // A null result is a logged M1-034 smallest-unit skip (0x005E68A6, 0x005E6C58, 0x005E6EC0), not missing input.
-            // EraseDebugSegments: VizManager drawing, which reaches neither the robot nor the API.
             return Goals.IsRunnable(new InterestingEdgeInputs{RobotPose=robot.GetCheckedMainPose(),WorldOrigin=origin,Regions=runtime.AI.Analyzer.Regions,
-                Map=map is null?null:new LiveMap(map),GetRng=()=>robot.Engine.ContextRandom,EraseDebugSegments=_=>{}})==true;
+                Map=map is null?null:new LiveMap(map),GetRng=()=>robot.Engine.ContextRandom})==true;
         }
         var input=NativeInputs?.Invoke(context);
         if(input is null)

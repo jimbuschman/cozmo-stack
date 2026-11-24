@@ -408,7 +408,6 @@ public sealed partial class AIWhiteboard
     {
         beacon.FailedToFindLocation((float)_clockSec());
         UpdateBeaconRender();
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("AIBeacon [beacon+0x10] (the FailedToFindLocation stamp): only BehaviorExploreBringCubeToBeacon::IsRunnableInternal 0x005DF148 reads it here; other readers (e.g. BehaviorThinkAboutBeacons) were not scanned in the extraction, so none is built");
     }
 
     // Host-only private storage retirement for the explicit standalone extension; no native destructor claim.

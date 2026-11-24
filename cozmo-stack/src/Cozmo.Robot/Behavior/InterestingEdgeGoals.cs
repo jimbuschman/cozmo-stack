@@ -65,11 +65,10 @@ public sealed class InterestingEdgeGoalSelector
     private static Point3f Neg(Point3f a)=>new(-a.X,-a.Y,-a.Z);
     private static Point3f Mid(InterestingEdgeSegment s)=>Mul(Add(s.A,s.B),0.5f);
     private static float Dot(Point3f a,Point3f b){float v=a.X*b.X;v+=a.Y*b.Y;v+=a.Z*b.Z;return v;}
-    private static void Erase(InterestingEdgeInputs i)
-    {
-        if(i.EraseDebugSegments is {} erase)erase("BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
-        else SteppedBehavior.ReportMissing("M11-089 Viz erase recipient in 0x005E6520/0x005E675E, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
-    }
+    // 0x005E654E/0x005E675E: Viz EraseSegments builds and clears a visualizer message
+    // locally (0x006BFD02..0x006BFD08). Retain the debug tap when supplied.
+    private static void Erase(InterestingEdgeInputs i) =>
+        i.EraseDebugSegments?.Invoke("BehaviorVisitInterestingEdge.kVieDrawDebugInfo");
     private static void Clear(List<Pose3d> poses){foreach(var pose in poses)pose.Dispose();poses.Clear();}
     internal void ClearVantage()=>Clear(Vantage168);
     public bool PickGoals(InterestingEdgeInputs input,List<InterestingEdgeGoal> output)

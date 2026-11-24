@@ -127,13 +127,13 @@ public sealed class OrdinaryFreeplayNativeTests
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture();
         var fields=f.Robot.NativeConfiguredScoreFields!["VC_PounceOnMotion"];
-        Assert.False(f.Runtime.Bound.ContainsKey("VC_PounceOnMotion"));
+        Assert.IsType<NativePounceOnMotion>(f.Runtime.Bound["VC_PounceOnMotion"]);
         fields.MarkPristine();
         var selection=Assert.IsType<SelectionChooser>(f.Runtime.Tree.Single(a=>a.Id=="Selection").Chooser);
         var original=selection.FindBehaviorByExecutableType;
         try
         {
-            selection.FindBehaviorByExecutableType=_=>throw new NativeChooserUnavailable("unbuilt","VC_PounceOnMotion");
+            selection.FindBehaviorByExecutableType=_=>throw new NativeChooserUnavailable("unavailable","VC_PounceOnMotion");
             selection.HandleExecuteBehavior(new Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage(12,2));
             Assert.False(fields.ConstructorPristine);
         }

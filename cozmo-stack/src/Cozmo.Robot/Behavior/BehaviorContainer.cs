@@ -477,8 +477,16 @@ public sealed class BehaviorFactory
             status = BehaviorCreateStatus.NotImplemented;
             return null;
         }
-        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.FindFaces_socialize or BehaviorID.MeetCozmo_FindFaces_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
-        {SteppedBehavior.ReportMissing("FindFaces factory: configured socialize scanners require their actual Robot/manipulation owner");status=BehaviorCreateStatus.NotImplemented;return null;}
+        // 0x0059CC54 passes the config unconditionally. sparksFindFaces.json uses the
+        // same scan inputs as the MeetCozmo config, with a different +0x1F8 face age (0x005C1948).
+        if(cls==BehaviorClass.FindFaces && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (
+            BehaviorID.FindFaces_socialize or BehaviorID.MeetCozmo_FindFaces_Socialize or BehaviorID.SparksFindFaces) ||
+            ctx.Manipulation is null || ctx.NativeRobot is null))
+        {
+            SteppedBehavior.ReportMissing("FindFaces 0x0059CC54 requires the original Robot and manipulation owners and a checked scan profile; the Feeding profile uses a different motion profile and timed pauses");
+            status=BehaviorCreateStatus.NotImplemented;
+            return null;
+        }
         if (cls == BehaviorClass.SearchForFace && (ctx.Vision is null || ctx.Manipulation is null || ctx.NativeRobot is null))
         {
             SteppedBehavior.ReportMissing("SearchForFace factory 0x0059CFA6 requires the original Robot, vision and manipulation owners");
@@ -520,8 +528,10 @@ public sealed class BehaviorFactory
         {SteppedBehavior.ReportMissing("ExploreLookAroundInPlace factory: requires configured SparksLookInPlace or Hiking_LookInPlace360 and actual Robot/manipulation owners");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.LookInPlaceMemoryMap && (BehaviorConfigLoader.ExtractIdFromConfig(config)!=BehaviorID.Hiking_LookInPlaceForUnknown || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("LookInPlaceMemoryMap factory: only configured Hiking_LookInPlaceForUnknown with actual Robot/manipulation owner is checked");status=BehaviorCreateStatus.NotImplemented;return null;}
-        if(cls==BehaviorClass.PounceOnMotion && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Hiking_PounceOnMotion or BehaviorID.PounceOnMotion_Socialize) || ctx.Manipulation is null || ctx.NativeRobot is null))
-        {SteppedBehavior.ReportMissing("PounceOnMotion factory 0x0059CED6: checked Hiking and Socialize configurations require actual Robot and manipulation owners");status=BehaviorCreateStatus.NotImplemented;return null;}
+        if(cls==BehaviorClass.PounceOnMotion && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (
+            BehaviorID.Hiking_PounceOnMotion or BehaviorID.PounceOnMotion_Socialize or
+            BehaviorID.SparksPounceOnMotion or BehaviorID.VC_PounceOnMotion) || ctx.Manipulation is null || ctx.NativeRobot is null))
+        {SteppedBehavior.ReportMissing("PounceOnMotion factory 0x0059CED6 requires a shipped profile and its original Robot and manipulation owners");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.ExpressNeeds && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_MildLowEnergyRequest or BehaviorID.Needs_MildLowPlayRequest or BehaviorID.Needs_MildLowRepairRequest or BehaviorID.Needs_SevereLowPlayBored or BehaviorID.Needs_SevereLowPlayRequest or BehaviorID.Needs_SevereLowEnergyForcedGetOut) || ctx.Manipulation is null || ctx.NativeRobot is null))
         {SteppedBehavior.ReportMissing("ExpressNeeds factory: only six checked configured IDs with original Robot/manipulation are available");status=BehaviorCreateStatus.NotImplemented;return null;}
         if(cls==BehaviorClass.PlayAnimOnNeedsChange && (BehaviorConfigLoader.ExtractIdFromConfig(config) is not (BehaviorID.Needs_SevereLowEnergyGetIn or BehaviorID.Needs_SevereLowRepairGetIn or BehaviorID.Needs_SevereLowPlayGetIn) || ctx.Manipulation is null || ctx.NativeRobot is null))
@@ -623,6 +633,7 @@ public sealed class BehaviorFactory
             // Init 0x005BCD16 and Resume 0x005BCFAC use the configured unlock ID and live manager spark ID.
             if(stepped is NativeGuardDogBehavior or NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior or
                 NativeSparksLookInPlace or VisitInterestingEdgeBehavior or NativeRespondToRenameFace or
+                NativeEnrollFaceBehavior or ThinkAboutBeaconsBehavior or
                 NativePutDownBlockBehavior or DriveOffChargerBehavior or AcknowledgeCubeMovedBehavior)
             {
                 stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
@@ -632,7 +643,7 @@ public sealed class BehaviorFactory
                 ReactToPickupBehavior or ReactToRobotOnBackBehavior or ReactToMotorCalibrationBehavior or
                 ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior or AcknowledgeFaceBehavior or
                 NativeInteractWithFaces or NativeFindFacesSocialize or NativeSearchForFaceBehavior or NativeDriveToFaceBehavior or
-                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior or NativeSingingBehavior ||
+                NativeDriveInDesperationBehavior or NativeEarnedSparksBehavior or NativeSingingBehavior or NativePounceOnMotion ||
                 stepped is PlayAnimBehavior { OwnsConfiguredAnimationSequence: true })
             {
                 // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
