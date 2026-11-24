@@ -94,7 +94,7 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `reactionLocks` | Current named locks, each with its `id` and mapped `triggers`. Cozmo and the caller can both hold locks. |
 | `needs` | `keepFull`, `loaded`, `applied`, `paused`, plus `repair`, `energy`, `play`. Loaded needs include `brackets` for all three levels. `selectedSevereNeed` follows the selected severe activity, or the current expression when that activity has ended. `expressedSevereNeed` reports the current expression, which can start or clear while the activity is still running. |
 | `knownFaces` | Signed `faceId`, `name`, `lastObservedTimestamp`, `enrolled`, `relative`. Enrolled names can remain without a current sighting. |
-| `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A located cube need not have a current radio connection. |
+| `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A radio disconnect removes the previous pose from this list. A new sighting can provide a world ID even while the radio is disconnected. |
 | `knownChargers` | Command `worldObjectId`, `poseState`, `lastObservedTimestamp`, `relative`, in the current origin. |
 
 `relative` has `xMm`, `yMm`, `zMm` in robot MAIN axes, planar `distanceMm`, and `bearingDeg` positive to the robot's left. Null means the pose could not be expressed relative to the robot, or no observed pose is available. `go-to-pose` instead takes an established target in the current world origin [senses].

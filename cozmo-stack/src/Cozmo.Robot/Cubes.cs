@@ -135,6 +135,7 @@ public sealed class CozmoCubes
     private readonly object _gate = new();
     private readonly Dictionary<uint, Cube> _byFactoryId = new();
     private readonly Dictionary<uint, Cube> _byObjectId = new();
+    private readonly HashSet<uint> _disconnectedWorldIds = new();
     // fidelity: M4-008
     // A7 (0x00537206..0x00537240): the two std::map<u32,u32> at this+0x138 and this+0x144 of RobotToEngineImplMessaging (the object the handler runs on, built with the
     // Robot): the time of the last DAS report and the missed-packets count at it, per activeID. They persist and are reset where the Robot is rebuilt.
@@ -330,6 +331,7 @@ public sealed class CozmoCubes
         {
             _byFactoryId.Clear();
             _byObjectId.Clear();
+            _disconnectedWorldIds.Clear();
             DiscoveryEnabled = false;
             _tapFilterEnabled = true;
             _tapQueue.Clear();
@@ -885,7 +887,28 @@ public sealed class CozmoCubes
         // Existing checked CubeLight recipient; CubeAccel's recipient is a no-op.
         // E2G 0x0D reaches the owners through their retained hub subscriptions (M15-056).
         _robot.Lights.Cubes.OnObjectConnectionState(report);
+    }
 
+    internal void RecordWorldConnection(ObjectConnectionStateMessage report)
+    {
+        // The app's Robot.cs HandleBlockDataConnectionChanged calls DeleteActiveObject
+        // on the ID from 0x0D (0x00533D10..0x00533D2C). BlockWorld retains its pose.
+        if (!IsLightCube(report.ObjectType)) return;
+        lock (_gate)
+        {
+            if (report.ConnectedByte == 0) _disconnectedWorldIds.Add(report.ObjectID);
+            else _disconnectedWorldIds.Remove(report.ObjectID);
+        }
+    }
+
+    internal bool IsDisconnectedCubePose(uint objectId)
+    {
+        lock (_gate) return _disconnectedWorldIds.Contains(objectId);
+    }
+
+    internal void ReportObservedCube(uint objectId)
+    {
+        lock (_gate) _disconnectedWorldIds.Remove(objectId);
     }
 
     // fidelity: M4-009
