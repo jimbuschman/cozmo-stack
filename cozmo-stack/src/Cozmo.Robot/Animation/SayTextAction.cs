@@ -16,6 +16,7 @@ internal sealed class SayTextAction : ActionRunner
     private bool _taken;
     private readonly bool _direct;
     private readonly bool _fitName;
+    private readonly byte _voiceStyle;
     private AnimationTrigger? _cannedTrigger;
     private int _cannedTracks;
     private Task<CannedSpeechLease>? _cannedOpening;
@@ -44,6 +45,7 @@ internal sealed class SayTextAction : ActionRunner
         _openForTest = openForTest;
         _direct = direct;
         _fitName = fitName;
+        _voiceStyle = style;
         Pitch = pitch;
         SourceLog = (level, channel, key, message) => robot.Engine.EmitSourceLog(level, channel, key, message);
         Log = robot.Engine.EmitStackLog;
@@ -192,7 +194,10 @@ internal sealed class SayTextAction : ActionRunner
                 () => !_retired && !_owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _owner), diagnosticReported: true);
             _child.SetSpeechPath(_session.Path, _owner);
             if (!Current()) return DestructionObserved ? EngineActionResult.Running : 0x03000000;
-            _configuration = _session.Configure(_fitName ? 0x2F8B3BF4u : 0x36089802u, _fitName ? Pitch : 0f);
+            // SayTextAction::Init 0x00561728..0x00561754 uses the style's switch and the intent pitch,
+            // independent of the presence of a fitted animation (style table at 0x00C573B0).
+            uint voiceSwitch = _voiceStyle == 1 ? 0x2F8B3BF4u : 0x36089802u;
+            _configuration = _session.Configure(voiceSwitch, Pitch);
         }
         if (_session.Failure is { } failure)
         {

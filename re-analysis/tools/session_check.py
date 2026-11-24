@@ -259,6 +259,12 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: M14-008 FaceWorld observation-time historical pose unavailable; face update skipped":
+                "FaceWorld reports the timestamp at 0x004F438A and the failed face ID at 0x004F5332, then continues the frame without changing that entry.",
+            "MISSING: M14-011 smaller native album copy/temporary ownership is not connected; restore skipped":
+                "The direct serialized install uses the same owned album copy loop as the native file and NV paths (0x00868B2A..0x00868BE4).",
+            "MISSING: M14-006/M13-014 LastFace named SayText: the no-trigger named SayText action and provider are not joined to this caller":
+                "A Count callback now starts the audio-only SayText child at 0x0054C5CE. That child uses the name voice switch and selected pitch at 0x00561728..0x00561754.",
             "MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false":
                 "The only writer at 0x0063A2EA is the phone-app input excluded by the operator in M4-040. The runtime keeps the constructor value at 0x0063710A.",
             "MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen":

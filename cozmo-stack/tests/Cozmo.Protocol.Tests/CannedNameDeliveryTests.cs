@@ -172,10 +172,11 @@ public sealed class CannedNameDeliveryTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void StockGreetingPlaysAuthoredNameThroughSharedNativeAudio(bool initialGreeting, bool cancelBeforeSpeech)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
+    public void StockGreetingPlaysNameThroughSharedNativeAudio(bool initialGreeting, bool cancelBeforeSpeech, bool audioOnly)
     {
         if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
         string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
@@ -228,6 +229,7 @@ public sealed class CannedNameDeliveryTests
         Assert.Equal(ReactionTrigger.FacePositionUpdated, manager.CurrentReactionTrigger);
         behavior.Update(f.Runtime.Context, f.Rig.Engine.Timer.SecondsF);
         var turn = Assert.IsType<NativeLastFaceRunner>(behavior.OwnedRunner);
+        if (audioOnly) turn.NamedTriggerCallback = _ => (AnimationTrigger)0x23F; // 0x0054C5C2 takes the unadorned SayText child.
         int mark = f.Rig.Mark();
         byte? tag = null;
         string? clipName = null;
@@ -271,7 +273,8 @@ public sealed class CannedNameDeliveryTests
             return;
         }
         Assert.True(ended, $"state={turn.FaceState}, action={turn.State:X}, running={behavior.EngineRunning}, current={manager.Current?.Id}, reason={manager.CurrentReactionTrigger}, owned={behavior.OwnedRunner?.GetType().Name}, child={turn.ChildForTest?.GetType().Name}, audio={messages.OfType<AudioSample>().Count()}, motions={messages.OfType<SetBodyAngle>().Count()}/{messages.OfType<SetHeadAngle>().Count()}, logs={string.Join('|', f.Rig.Log.Where(x => x.Contains("Acknowledge") || x.Contains("Action") || x.Contains("Face")).TakeLast(30))}");
-        Assert.StartsWith(initialGreeting ? "anim_greeting_happy_" : "anim_freeplay_reacttoface_sayname_", clipName);
+        if (audioOnly) Assert.Equal("SayTextAnimation", clipName);
+        else Assert.StartsWith(initialGreeting ? "anim_greeting_happy_" : "anim_freeplay_reacttoface_sayname_", clipName);
         Assert.Contains(messages.OfType<AudioSample>(), sample => sample.Samples.Any(b => b != 0xFF && b != 0x7F));
         Assert.Equal(initialGreeting, behavior.GreetingPlayed);
         for (int i = 0; i < 20 && !objectives.Contains(0x1A); i++) f.Motors(RobotStatusFlag.IsBodyAccMode);

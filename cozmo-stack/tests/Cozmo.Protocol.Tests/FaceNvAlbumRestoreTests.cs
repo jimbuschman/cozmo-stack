@@ -34,6 +34,32 @@ public sealed class FaceNvAlbumRestoreTests
         Assert.True(done);
     }
 
+    [Fact]
+    public void ExplicitSerializedInstallCopiesTheSmallerStockAlbumIntoItsCurrentHandle()
+    {
+        if (ShippedLibraries.FindLibDir() is null) return;
+        using var resources = new BackupTestResources();
+        string directory = Path.Combine(resources.Root, "guest");
+        Directory.CreateDirectory(directory);
+        FaceAlbumFileStartupTests.SmallGuestAlbum(directory);
+        var face = new StoredEnrolledFace { FaceID = 17, Name = "Small" };
+        face.AlbumEntryIds.Add(1);
+        face.AlbumEntrySeconds.Add(8);
+        using var rig = new M4ControlTests.Rig(engineOptions: resources.Options());
+        rig.ToSynced();
+        var vision = rig.Robot.Vision;
+        var current = vision.Recognizer.AlbumHandle;
+        Assert.NotNull(current);
+
+        vision.InstallSerializedFaceData(File.ReadAllBytes(Path.Combine(directory, "data.bin")), Enrollment(321, face));
+
+        Assert.Same(current, vision.Recognizer.AlbumHandle); // 0x00868B2A..0x00868BE4.
+        var restored = Assert.Single(vision.Recognizer.EnrolledFaces);
+        Assert.Equal(17, restored.FaceID);
+        Assert.Contains(1, restored.AlbumEntries.Keys);
+        Assert.Equal(321, BitConverter.ToInt32(vision.Recognizer.ExportStockData().Enrollment, 4));
+    }
+
     [Theory]
     [InlineData(220,-120)] [InlineData(-8,100)]
     public void SmallerRealGuestRestoresThroughNvAndPublishesCapturedReports(int slotSeconds,int expectedSeenAge)
@@ -116,10 +142,20 @@ public sealed class FaceNvAlbumRestoreTests
         FaceAlbumFileStartupTests.SmallGuestAlbum(directory);byte[] album=File.ReadAllBytes(Path.Combine(directory,"data.bin"));
         var face=new StoredEnrolledFace{FaceID=17,Name="wrong"};face.AlbumEntryIds.Add(2);face.AlbumEntrySeconds.Add(1);
         using var rig=new M4ControlTests.Rig(engineOptions:resources.Options());int reports=0;
+        var logs = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += logs.Add;
         using var a=rig.Engine.AnimationMessages.SubscribeMessage(0x58,true,_=>reports++);
         using var b=rig.Engine.AnimationMessages.SubscribeMessage(0x1C,true,_=>reports++);
-        rig.ToSynced();CompleteReads(rig,album,Enrollment(321,face),enrollmentFails);
-        Assert.Equal(0,reports);Assert.Empty(rig.Robot.Vision.Recognizer.EnrolledFaces);
+        bool previousError = Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            rig.ToSynced();CompleteReads(rig,album,Enrollment(321,face),enrollmentFails);
+            Assert.Equal(0,reports);Assert.Empty(rig.Robot.Vision.Recognizer.EnrolledFaces);
+            var invalidEntry = logs.Where(log => log.Name == "FaceRecognizer.SanityCheckBookkeeping.AlbumEntryNotRegistered");
+            if (enrollmentFails) Assert.Empty(invalidEntry);
+            else Assert.EndsWith("AlbumEntry=2", Assert.Single(invalidEntry).Text); // 0x008631B4.
+        }
+        finally { Cozmo.Transport.EngineErrorState.ErrorFlagSet = previousError; }
     }
 
     [Fact]

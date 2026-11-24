@@ -2595,7 +2595,7 @@ public sealed partial class VisionSystem : IDisposable
                         if (queueForEngine && !ReferenceEquals(owner, sourceOwner)) return null;
                         lock(owner.PoseTreeGate)
                         {
-                            var originNode=ResolveFaceObservationOrigin(History,owner,timestamp);
+                            var originNode=ResolveFaceObservationOrigin(History,owner,timestamp,faceId:tf.Id);
                             if(originNode is null)continue;
                             observation=d.NativeTrackerFlagChanged is { } changed
                                 ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads,requireNativePose:queueForEngine,expectedOwner:sourceOwner,expectedGeneration:removal)
@@ -2798,10 +2798,18 @@ public sealed partial class VisionSystem : IDisposable
         return pose;
     }
 
-    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp,bool native=true)
+    internal static PoseTreeNode? ResolveFaceObservationOrigin(RobotStateHistory history,EngineRobot owner,uint timestamp,bool native=true,int? faceId=null)
     {
         if(!history.ComputeFaceObservationOriginId(timestamp,out uint originId,native))
-        { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation-time historical pose unavailable; face update skipped"); return null; }
+        {
+            // FaceWorld::AddOrUpdateFace returns before copying the face or changing its entry.
+            owner.Engine.EmitSourceLog(EngineLogLevel.Warning, null,
+                "FaceWorld.AddOrUpdateFace.GetComputedStateAtFailed", $"face timestamp={timestamp}"); // 0x004F438A.
+            if (faceId is { } id)
+                owner.Engine.EmitSourceLog(EngineLogLevel.Warning, null,
+                    "FaceWorld.Update.AddOrUpdateFaceFailed", $"ObservedFace ID={id}"); // 0x004F5332; continue with the remaining faces.
+            return null;
+        }
         if(!owner.TryGetNativeOriginOwner(originId,out var origin) || origin?.Node is not { } node)
         { SteppedBehavior.ReportMissing("M14-008 FaceWorld observation origin ID has no registered native PoseOriginList owner; face update skipped"); return null; }
         return node;
