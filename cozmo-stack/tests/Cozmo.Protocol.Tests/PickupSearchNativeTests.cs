@@ -140,19 +140,28 @@ public sealed class PickupSearchNativeTests
         finally{manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);held?.Release();parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     }
     [Fact]
-    public void Unrelated44WithUnknownInitVisibilityStopsOnlyOwnedSearchWithoutGateInversionOrFalseSuccess()
+    public void Unrelated44UsesInitOccludersAndStopsOnlyTheOwnedSearch()
     {
-        using var f=new Fixture();f.Add();var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
-        NativeSearchForBlockHelper? search=null;bool callback=false,delegated=false;parent.Entry=p=>
+        using var f=new Fixture();
+        var target=f.Add();
+        using var pose=f.Robot.CopyCurrentCameraPose(f.Rig.Robot.Motion.ObservationHeadAngleRad);
+        var liveCamera=f.M.Vision.BindOuterCameraForVisibility(f.Robot,pose.Pose)!;
+        Assert.NotNull(liveCamera);
+        liveCamera.Occluders.Add([new Vec2(0,0),new Vec2(320,240)],1);
+        Assert.Equal(NotVisibleReason.Occluded,target.IsVisibleFromWithReason(liveCamera,MathF.PI/4));
+        var parent=new Parent();parent.BindActionCompletionOwner(f.Rig.Robot,f.Robot);
+        NativeSearchForBlockHelper? search=null;bool success=false,failed=false,delegated=false;parent.Entry=p=>
         {
             var handle=f.Runtime.AI.Helpers.Factory.CreateNativeSearchForBlock(f.M,p,7);search=(NativeSearchForBlockHelper)handle.Pointer;
-            try{delegated=p.Delegate(handle,_=>callback=true,_=>callback=true);}finally{handle.Release();}
+            try{delegated=p.Delegate(handle,_=>success=true,_=>failed=true);}finally{handle.Release();}
         };
         var manager=f.Robot.BehaviorManagerOwner!;manager.Add(parent);var missing=new List<string>();SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=missing.Add;
         using var delivered=new ManualResetEventSlim();Exception? failure=null;Thread? thread=null;
         try
         {
             Assert.True(manager.StartAsync(parent.Id,f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());Assert.True(delegated);var owned=Assert.IsAssignableFrom<CompoundActionSequential>(parent.OwnedRunner);
+            liveCamera.Occluders.Clear();
+            Assert.Equal(NotVisibleReason.IsVisible,target.IsVisibleFromWithReason(liveCamera,MathF.PI/4));
             var unrelated=new NativeWaitForImagesRunner(f.M,10,(VisionMode)1,0);Assert.Equal(0,f.Robot.ActionList.QueueAction(QueueActionPosition.InParallel,unrelated));
             typeof(CozmoEngine).GetProperty("UiMessageProcessingEnabled",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(f.Rig.Engine,false);
             f.Robot.ActionList.WithGate(()=>
@@ -160,11 +169,12 @@ public sealed class PickupSearchNativeTests
                 thread=new Thread(()=>{try{using var frame=f.M.World.EnterPoseMutation();f.Rig.Engine.AnimationMessages.Deliver(0x44,true,new NativeObservedObject(1,2,1,8));}catch(Exception error){failure=error;}finally{delivered.Set();}});
                 thread.Start();Assert.True(delivered.Wait(TimeSpan.FromSeconds(5)),"44 callback enqueue must not wait on ActionList gate");
             });
-            Assert.True(thread!.Join(TimeSpan.FromSeconds(5)));Assert.Null(failure);Assert.Equal(BehaviorStatus.Running,search!.Status);
-            f.Rig.Engine.AnimationMessages.Deliver(0x44,true,new NativeObservedObject(2,2,1,7));Assert.Equal(BehaviorStatus.Running,search.Status); //unknown cannot later become faithful success.
-            f.Motors();Assert.True(owned.DestructionObserved);Assert.False(parent.HasCurrentAction);Assert.False(callback);
+            Assert.True(thread!.Join(TimeSpan.FromSeconds(5)));Assert.Null(failure);Assert.Equal(BehaviorStatus.Failure,search!.Status);
+            f.Runtime.AI.Helpers.Update(f.Rig.Robot);Assert.True(owned.DestructionObserved);Assert.False(parent.HasCurrentAction);
+            Assert.False(success);Assert.True(failed);
+            f.Motors();
             Assert.False(unrelated!.DestructionObserved);Assert.Equal(EngineActionResult.Running,unrelated.State);
-            Assert.Contains(missing,s=>s.Contains("005BB73C")&&s.Contains("INIT camera snapshot"));Assert.Equal(0,f.Rig.Robot.Motion.LockedTracks);
+            Assert.DoesNotContain(missing,s=>s.Contains("005BB73C")&&s.Contains("INIT camera snapshot"));Assert.Equal(0,f.Rig.Robot.Motion.LockedTracks);
         }
         finally{if(thread is {IsAlive:true})Assert.True(thread.Join(TimeSpan.FromSeconds(5)));SteppedBehavior.MissingReported-=missing.Add;manager.Stop(BehaviorStopReason.Interrupted,f.Rig.Engine.Timer.SecondsF);parent.RetireActionCompletionOwner();f.Robot.ActionList.Clear();}
     }

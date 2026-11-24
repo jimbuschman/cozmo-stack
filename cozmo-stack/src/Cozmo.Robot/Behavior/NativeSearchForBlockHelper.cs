@@ -13,8 +13,9 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     private readonly HashSet<uint> _seen=new();
     private readonly object _stateGate=new();
     private RetainedSubscription? _observed;
-    private CameraCalibration? _snapshotCalibration;
-    private bool _hostUnavailable,_retired;
+    private EngineRobot.CurrentCameraScope? _snapshotPose;
+    private CameraModel? _snapshotCamera;
+    private bool _retired;
     internal Action? BeforeActionPublicationForTest; // Effect-free observer/barrier; never replaces execution.
     internal bool Retired{get{lock(_stateGate)return _retired;}}
     internal uint Target {get;}
@@ -36,27 +37,41 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     protected override BehaviorStatus Init(CozmoRobot robot)
     {
         if(!Current())return Status;
-        var calibration=_m.Vision.Calibration;
-        lock(_stateGate)
+        using (var mutation = _m.World.EnterPoseMutation())
         {
-            if(_retired)return Status;
-            Stage=0;_seen.Clear();SnapshotAttempted=true;_snapshotCalibration=calibration;
+            // 0x005BAEAC..0x005BAEF8 copies the outer camera's pose,
+            // shared calibration and depth-keyed occluders at Init.
+            lock (_stateGate)
+            {
+                if (_retired) return Status;
+                Stage = 0;
+                _seen.Clear();
+                SnapshotAttempted = true;
+                _snapshotPose?.Dispose();
+                _snapshotPose = null;
+                _snapshotCamera = null;
+                if (_m.Robot.Engine.Robot is { } owner)
+                {
+                    _snapshotPose = owner.CopyCurrentCameraPose(robot.Motion.ObservationHeadAngleRad);
+                    if (_m.Vision.BindOuterCameraForVisibility(owner, _snapshotPose.Pose) is { } camera)
+                        _snapshotCamera = new CameraModel(camera.Calibration, _snapshotPose.Pose, camera.Occluders.Copy());
+                }
+            }
         }
-        //The actual INIT snapshot frame/pose/FOV+occlusion input is not recovered. It is consumed only at S7.
         Search();
         return Status;
     }
     private void Search()
     {
         if(!Current())return;
-        lock(_stateGate){if(_hostUnavailable||_retired)return;}
+        lock(_stateGate){if(_retired)return;}
         var target=HasTarget?_m.World.GetLocatedObjectByIdHelper(Target):null; // 0x005BAF3E..0x005BAF56
         if(!Current())return;
         bool missing=HasTarget&&target is null;
         bool finish;
         lock(_stateGate)
         {
-            if(_hostUnavailable||_retired)return;
+            if(_retired)return;
             finish=missing||Stage>MaxStage;
         }
         if(finish)
@@ -67,7 +82,7 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
             // 0x005BB5BA..0x005BB5D0: a specific search fails; an untargeted search checks the count.
             lock(_stateGate)
             {
-                if(!_hostUnavailable&&!_retired)
+                if(!_retired)
                     StoreStatus(!HasTarget && (uint)_seen.Count >= MinSeen ? BehaviorStatus.Complete : BehaviorStatus.Failure);
             }
             return;
@@ -109,14 +124,14 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
         bool started=_parent.StartActing(sequence,_=>Search(),_hostCurrent);
         if(!Current())return;
         bool unavailable;
-        lock(_stateGate){if(!_retired)Stage++;unavailable=_retired||_hostUnavailable;}
+        lock(_stateGate){if(!_retired)Stage++;unavailable=_retired;}
         if(started&&unavailable)ScheduleCleanup(sequence.Tag); //StartActing BEFORE stage publication.
     }
     protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot)
     {
         if(!Current())return Status;
         bool stop;
-        lock(_stateGate){stop=!_retired&&!_hostUnavailable&&Status!=BehaviorStatus.Running;}
+        lock(_stateGate){stop=!_retired&&Status!=BehaviorStatus.Running;}
         if(stop)
         {
             StopActing(false); // Common native route cancels the captured owned ActionList tag before callback/retry.
@@ -132,7 +147,7 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
         if(payload is not NativeObservedObject value)return;
         lock(_stateGate)
         {
-            if(_retired||_hostUnavailable)return;
+            if(_retired)return;
             // 0x005BB81C..0x005BB82C reads the current distinct count. The insert at
             // 0x005BB816 belongs to the specific-target branch.
             if(!HasTarget)
@@ -143,25 +158,25 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
             if(value.ObjectId==Target){StoreStatus(BehaviorStatus.Complete);return;}
             if(_seen.Contains(value.ObjectId))return;
         }
-        bool missing;
-        using(var mutation=_m.World.EnterPoseMutation())missing=_m.World.GetLocatedObjectByIdHelper(Target) is null;
-        if(!Current())return;
-        NativeActionUnavailable error;
-        lock(_stateGate)
+        using (var mutation = _m.World.EnterPoseMutation())
         {
-            if(_retired||_hostUnavailable||_seen.Contains(value.ObjectId))return;
-            if(missing){StoreStatus(BehaviorStatus.Failure);_seen.Add(value.ObjectId);return;}
-            _hostUnavailable=true;
-            error=new NativeActionUnavailable("M11-042 SearchForBlock ShouldBeAbleToFindTarget005BB73C: exact INIT camera snapshot/frame/occlusion inputs unavailable (attempted="+SnapshotAttempted+", calibration="+(_snapshotCalibration is not null)+")");
+            if (!Current()) return;
+            lock (_stateGate)
+            {
+                if (_retired || _seen.Contains(value.ObjectId)) return;
+                var target = _m.World.GetLocatedObjectByIdHelper(Target);
+                // 0x005BB73C..0x005BB776 rejects a missing target or reason 7
+                // from the Init camera, with pi/4 and all other arguments zero.
+                if (target is null ||
+                    target.IsVisibleFromWithReason(_snapshotCamera, BitConverter.UInt32BitsToSingle(0x3F490FDB)) == NotVisibleReason.Occluded)
+                    StoreStatus(BehaviorStatus.Failure);
+                _seen.Add(value.ObjectId);
+            }
         }
-        SteppedBehavior.ReportMissing(error.ToString());
-        if(!Current())return;
-        ScheduleCleanup(_parent.CurrentRunnerTag);
     }
-    private bool Unavailable{get{lock(_stateGate)return _retired||_hostUnavailable;}}
     private sealed class SearchSequence(NativeSearchForBlockHelper helper):CompoundActionSequential(()=>helper._m.Robot.Engine.Timer.SecondsF)
     {
-        public override uint Update()=>helper.Unavailable&&(State==EngineActionResult.NotStarted||State==EngineActionResult.Running)?EngineActionResult.Running:base.Update(); //Host teardown pending; never a native result or child motion.
+        public override uint Update()=>helper.Retired&&(State==EngineActionResult.NotStarted||State==EngineActionResult.Running)?EngineActionResult.Running:base.Update(); //Host teardown pending; never a native result or child motion.
     }
     private void ScheduleCleanup(uint capturedTag)
     {
@@ -178,11 +193,16 @@ internal sealed class NativeSearchForBlockHelper:IHelper,IDisposable
     public void Dispose()
     {
         RetainedSubscription? observed;
+        EngineRobot.CurrentCameraScope? pose;
         lock(_stateGate)
         {
-            if(_retired)return;_retired=true;_seen.Clear();_snapshotCalibration=null;
+            if(_retired)return;_retired=true;_seen.Clear();
+            pose = _snapshotPose;
+            _snapshotPose = null;
+            _snapshotCamera = null;
             observed=_observed;_observed=null;
         }
+        pose?.Dispose();
         observed?.Dispose();
     }
 }

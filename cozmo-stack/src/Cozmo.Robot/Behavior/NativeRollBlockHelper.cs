@@ -103,13 +103,16 @@ internal sealed class NativeRollBlockHelper:IHelper
     private void Mark(){if(_m.World.GetLocatedObjectByIdHelper(Target) is {} target)_m.Whiteboard.SetFailedToUse(target,(ObjectActionFailure)3);}
     private void Unavailable(NativeActionUnavailable error)
     {
-        _unavailable=true;_response=null;SteppedBehavior.ReportMissing("Roll native child unavailable: "+error.Message);
+        _unavailable=true;_response=null;
+        var engine = _m.Robot.Engine;
+        var owner = engine.Robot;
         int epoch=Volatile.Read(ref _epoch);uint tag=_parent.CurrentRunnerTag;
-        _m.Robot.Engine.Robot!.ActionList.DeferHostCleanup(()=>
+        SteppedBehavior.ReportMissing("Roll native child unavailable: "+error.Message);
+        owner?.ActionList.DeferHostCleanup(()=>
         {
-            if(epoch!=Volatile.Read(ref _epoch)||_parent.CurrentRunnerTag!=tag)return;
-            var manager=_m.Robot.Engine.Robot!.BehaviorManagerOwner;
-            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);else _parent.Stop(BehaviorStopReason.Interrupted);
+            if(owner.Lifetime.Destroying||!ReferenceEquals(engine.Robot,owner)||epoch!=Volatile.Read(ref _epoch)||_parent.CurrentRunnerTag!=tag)return;
+            var manager=owner.BehaviorManagerOwner;
+            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,engine.Timer.SecondsF);else _parent.Stop(BehaviorStopReason.Interrupted);
         });
     }
 }

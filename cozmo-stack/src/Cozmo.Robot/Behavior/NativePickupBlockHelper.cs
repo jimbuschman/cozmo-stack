@@ -44,14 +44,17 @@ internal sealed class NativePickupBlockHelper: IHelper
     {
         if(!Current())return;
         _hostUnavailable=true;_responseCallback=null;_converter=null;
+        var engine = _m.Robot.Engine;
+        var owner = engine.Robot;
+        int epoch=Volatile.Read(ref _availabilityEpoch);uint tag=_parent.CurrentRunnerTag;
         Missing("unavailable: "+error.Message);
         if(!Current())return;
-        int epoch=Volatile.Read(ref _availabilityEpoch);uint tag=_parent.CurrentRunnerTag;
-        _m.Robot.Engine.Robot?.ActionList.DeferHostCleanup(()=>
+        owner?.ActionList.DeferHostCleanup(()=>
         {
-            if(!Current()||epoch!=Volatile.Read(ref _availabilityEpoch)||!ReferenceEquals(_parent.HelperWeakReference?.Pointer,this)||!_parent.HasLiveHelper||_parent.CurrentRunnerTag!=tag)return;
-            var manager=_m.Robot.Engine.Robot?.BehaviorManagerOwner;
-            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,_m.Robot.Engine.Timer.SecondsF);
+            if(!Current()||owner.Lifetime.Destroying||!ReferenceEquals(engine.Robot,owner)||epoch!=Volatile.Read(ref _availabilityEpoch)||
+                !ReferenceEquals(_parent.HelperWeakReference?.Pointer,this)||!_parent.HasLiveHelper||_parent.CurrentRunnerTag!=tag)return;
+            var manager=owner.BehaviorManagerOwner;
+            if(ReferenceEquals(manager?.Current,_parent))manager.Stop(BehaviorStopReason.Interrupted,engine.Timer.SecondsF);
             else _parent.Stop(BehaviorStopReason.Interrupted);
         });
     }

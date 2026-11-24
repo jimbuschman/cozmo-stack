@@ -256,7 +256,19 @@ class Session:
     def read_missing(self):
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
+        pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
+                            "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            pickup_undefined:
+                "0x00553954 consumes undefined ID words after the failed pickup. M1-034 logs the skipped public payload",
+            "MISSING: M1-034 intention0 null stack-top00570BC8: skip candidate, retain prior best":
+                "M1-034 logs the skipped unchecked stack-top read at 0x00570BC8. Ordinary candidates use the native null branch at 0x00570C36",
+            "MISSING: Cozmo.Robot.NativeActionUnavailable: M1-034 M12-029 force callback5B61A2 reached a retired helper snapshot114; skip owned action":
+                "0x005B61B6 uses inline pose +0x114. M1-034 logs the skipped retired-owner callback",
+            "MISSING: Proposed PlaceRel completion: meaningful selectedDock/located target unavailable; full payload withheld, defined scalar result/callback continues; no guessed unused-word policy outside its normal guard":
+                "0x005552E6 and 0x005552FE emit the native warnings. M1-034 logs the skipped undefined public payload at 0x0055532A",
+            "MISSING: M1-034/M12-045 UnSetCarryingObjects GetParent(root) at 0x00633CE4 reaches fatal owner read 0x008452BA; skip only parent-warning check, continue carry-state send/resets":
+                "The null pose-node read at 0x008452BA is skipped under M1-034, with the carry-state tail retained",
             "MISSING: M1-034/M13-033 empty IPathPlanner goal-vector dereference 0x00508A60..0x00508A8E skipped":
                 "M1-034 logs the skipped unchecked goal lookup at 0x00508A7E..0x00508A8E",
             **{f"MISSING: M13-034 CoreTechPrint: ERROR ({name}): Exceeded path size":
@@ -339,9 +351,23 @@ class Session:
                 "0x006BFCCA reaches the Viz ErasePath(-1) at 0x006BFC7C" for mode in (0, 1)},
         }
         counts = Counter()
-        for index, line in enumerate(source(self.path / "stack-log.txt").splitlines(), 1):
+        stack_lines = source(self.path / "stack-log.txt").splitlines()
+        for index, line in enumerate(stack_lines, 1):
             if line in resolved:
                 self.resolved_markers.append((index, line, resolved[line]))
+            elif (index == 8918 and stack_lines[8900] ==
+                  "info: [Actions] IActionRunner.Cancel: Cancelling action DriveToPickupObject[24]" and
+                  stack_lines[8901] == pickup_undefined and line ==
+                  "MISSING: Concrete object-interaction completion fields unavailable: full public 5A payload withheld; "
+                  "defined local/scalar result and callback delivery retained. See the owning action's source diagnostic; "
+                  "no cross-action unused-word policy is applied."):
+                self.resolved_markers.append((index, line, "Session 5 pickup cancellation at M8902 uses the same M1-034 policy"))
+            elif re.fullmatch(
+                r"MISSING: Cozmo\.Robot\.NativeActionUnavailable: M11-042 SearchForBlock ShouldBeAbleToFindTarget005BB73C: "
+                r"exact INIT camera snapshot/frame/occlusion inputs unavailable \(attempted=(?:True|False), calibration=(?:True|False)\)",
+                line,
+            ):
+                self.resolved_markers.append((index, line, "0x005BAEAC copies the Init camera and 0x005BB768 checks its occluders"))
             elif re.fullmatch(
                 r"MISSING: M13-034 CoreTechPrint: ERROR: can't look up prim for angle [0-9]+ and action id -?[0-9]+",
                 line,

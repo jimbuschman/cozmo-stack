@@ -124,18 +124,30 @@ internal sealed class NativePickupTargetCache(ManipulationSystem m,EngineRobot r
         if(ids.Count==0)return uint.MaxValue;if(ids.Count==1)return ids[0];
         uint best=uint.MaxValue;float distance=float.MaxValue;
         var snapshot=m.World.NativeConfigurations?.Snapshot??throw new NativeConfigurationUnavailable("actual native configurations absent");
-        void Consider(uint id)
+        void Consider(ObservableObject obj)
         {
-            if(!ids.Contains(id))return;
-            var obj=m.World.GetLocatedObjectByIdHelper(id);
-            if(obj is null){SteppedBehavior.ReportMissing("M1-034 intention0 null stack-top00570BC8: skip candidate, retain prior best");return;}
             float value=0;
             if(PlacementProducerGeometry.TryDistanceSquared(robot.GetCheckedMainPose(),obj.NativePose,ref value)&&value<distance)
-            {distance=value;best=id;}
+            {distance=value;best=obj.ObjectId;}
         }
-        foreach(var stack in snapshot.Stacks)Consider(stack.Top);
-        foreach(uint id in ids)
-        {if(best!=uint.MaxValue&&snapshot.Stacks.Any(s=>s.Bottom==id))continue;Consider(id);}
+        foreach (var stack in snapshot.Stacks)
+        {
+            // 0x00570BC2 resolves the top before the unchecked +0x14 membership lookup.
+            var top = m.World.GetLocatedObjectByIdHelper(stack.Top);
+            if (top is null)
+            {
+                robot.Engine.EmitStackLog("M1-034 DefaultBestObjectFunction skipped the null stack-top lookup at 0x00570BC8");
+                continue;
+            }
+            if (ids.Contains(top.ObjectId)) Consider(top);
+        }
+        foreach (uint id in ids)
+        {
+            // The ordinary lookup at 0x00570C30 has its own null branch at 0x00570C36.
+            var obj = m.World.GetLocatedObjectByIdHelper(id);
+            if (obj is null || (best != uint.MaxValue && snapshot.Stacks.Any(stack => stack.Bottom == id))) continue;
+            Consider(obj);
+        }
         return best;
     }
     internal BlockWorldFilter Filter(Func<ObservableObject,bool>? extra=null)

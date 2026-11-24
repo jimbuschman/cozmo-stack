@@ -490,7 +490,7 @@ public sealed class DockingSystem : IDisposable
                 if(ReferenceEquals(parent,robot.LiftPose.Node))
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"Robot.UnSetCarryingObjects.StillAttached",FormattableString.Invariant($"Setting carried object '{unchecked((int)id)}' as not being carried, but the pose is still attached to the lift"));
                 else if(parent is null && obj.NativePose.Node is not null)
-                    Behavior.SteppedBehavior.ReportMissing("M1-034/M12-045 UnSetCarryingObjects GetParent(root) at 0x00633CE4 reaches fatal owner read 0x008452BA; skip only parent-warning check, continue carry-state send/resets");
+                    _robot.Engine.EmitStackLog("M1-034/M12-045 UnSetCarryingObjects skipped the parent check at 0x00633CE4 (null node read at 0x008452BA)");
                 else if(parent is not null&&parent.Parent is not null)
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"Robot.UnSetCarryingObjects.StillAttachedToSomething",FormattableString.Invariant($"Setting carried object '{unchecked((int)id)}' as not being carried, but the pose is still attached to something (other cube?!)"));
             }

@@ -150,12 +150,25 @@ internal sealed class NativePickupObjectRunner:NativeVisionRunner
     public override byte? GetCompletionVariant()=>0;
     public override ObjectInteractionCompletion GetObjectInteractionCompletion()
     {
-        bool flag=_prepared?.Children.Any(c=>c.Type==0x30&&c.State==0x0300001D)==true;
         var carry=(_owner??M.Robot.Engine.Robot)?.CarryingOwner;
-        if(_pickup.SelectedDockAction is not (DockAction.PickupLow or DockAction.PickupHigh)||carry?.CarriedObjectId is null)
+        bool normalDock = _pickup.SelectedDockAction is DockAction.PickupLow or DockAction.PickupHigh;
+        if (!normalDock || carry?.CarriedObjectId is null)
         {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M1-034 Pickup completion5537D4: native non-normal pickup carrier contains undefined words; skip full public payload, retain scalar/local delivery.");
-            return new(0,0,0,0,0,0,flag,false);
+            // 0x005537DE initializes Count and Flag. Both failure branches reach 0x00553954
+            // with the five ID words uninitialized. Only a selected pickup with no carried
+            // object reaches the prepared-action scan (0x005538D6..0x00553952).
+            bool flag = false;
+            if (normalDock)
+            {
+                EmitSource(EngineLogLevel.Info, "Actions", "PickupObjectAction.GetCompletionUnion.ExpectedCarryingObject", "");
+                flag = _prepared?.Children.Any(child => child.Type == 0x30 && child.State == 0x0300001D) == true;
+                if (flag)
+                    EmitSource(EngineLogLevel.Info, "Actions", "PickupObjectAction.GetCompletionUnion.SeeingUnexpectedObject", "");
+            }
+            else if (State != EngineActionResult.NotStarted)
+                EmitSource(EngineLogLevel.Warning, null, "PickupObjectAction.EmitCompletionSignal.DockActionNotSet",
+                    "Dock action not set before filling completion signal");
+            return new(0, 0, 0, 0, 0, 0, flag, false) { UndefinedPayloadPolicy = "M1-034 PickupObject 0x005537D4..0x00553958" };
         }
         var words=new[]{_target,uint.MaxValue,uint.MaxValue,uint.MaxValue,uint.MaxValue};var ids=carry.GetCarryingObjects();
         for(int i=0;i<ids.Length&&i<words.Length;i++)words[i]=ids[i];

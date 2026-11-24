@@ -5,6 +5,7 @@ namespace Cozmo.Robot;
 public sealed record ObjectInteractionCompletion(uint Word0,uint Word1,uint Word2,uint Word3,uint Word4,byte Count,bool Flag,bool IsPayloadDefined=true)
 {
     internal string? ZeroFilledWordsRecord { get; init; }
+    internal string? UndefinedPayloadPolicy { get; init; }
 
     // Operator decision 2026-11-22: apply only at the cited getters that leave words 1–4 uninitialized.
     internal static ObjectInteractionCompletion SingleWithZeroFilledWords(uint objectId, string record) =>
