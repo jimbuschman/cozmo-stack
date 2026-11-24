@@ -861,7 +861,10 @@ public sealed partial class ReactToUnexpectedMovementBehavior : SteppedBehavior
             InitFailed = true;
             return;
         }
-        if (robot.Engine.Needs is not { } needs)
+        var severe = native is null
+            ? robot.Engine.Needs.SevereNeeds
+            : native.Robot.NativeBehaviorRuntime?.AI.SevereNeeds;
+        if (severe is null)
         {
             ReportMissing("REACT-UNEXPECTED-MOVEMENT-1 I2 (0x00609B06..0x00609B10): no SevereNeeds owner for [[robot+0x264]+0x30]+0x14; Init not performed");
             InitFailed = true;
@@ -873,7 +876,7 @@ public sealed partial class ReactToUnexpectedMovementBehavior : SteppedBehavior
         Log($"emotion event {EmotionEventName}: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
         if(native is not null&&!native.CurrentAt(nativeVersion))return;
         // I2 0x00609B06..0x00609B10: the selected severe need.
-        int need = needs.SevereNeeds.Selected;
+        int need = severe.Selected;
         // I4 0x00609B1E..0x00609B22: `cmp r7,#2; moveq r2,#4`: BODY iff +0x11C == 2 (BACK).
         int tracksToLock = Volatile.Read(ref _side) == 2 ? 4 : 0;
         // I3 0x00609B30..0x00609B44: 0x1AE when need == 0 (Repair), 0x1AD when need == 1 (Energy), else 0x1AC.

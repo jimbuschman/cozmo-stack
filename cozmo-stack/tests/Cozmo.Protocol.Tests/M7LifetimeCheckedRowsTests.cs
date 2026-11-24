@@ -1,6 +1,7 @@
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
+using Cozmo.Protocol;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
 
@@ -40,6 +41,36 @@ public sealed class M7LifetimeCheckedRowsTests
         robot.Engine.Robots.RemoveRobot(1,false);Assert.Equal(0,mood.SubscriptionCount);Assert.Equal(1,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));
         held.Dispose();Assert.Equal(0,robot.Engine.AnimationMessages.SubscriberCountForTest(0xC3,false));
     }
+    [Fact]
+    public void C3ChangesTheCurrentMoodAndReportsOnlyOnRequest()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var engine = robot.Engine;
+        var mood = engine.Robot!.MoodOwner!;
+        var reports = new List<MoodStateMessage>();
+        mood.MoodStateBroadcast += reports.Add;
+        byte happy = (byte)EmotionType.Happy;
+
+        var set = new CladWriter();
+        set.U8(1); set.U8(happy); set.F32(2);
+        engine.AnimationMessages.Deliver(0xC3, false, set.ToArray());
+        Assert.Equal(2, mood[EmotionType.Happy]);
+        set = new CladWriter();
+        set.U8(1); set.U8(happy); set.F32(0);
+        engine.AnimationMessages.Deliver(0xC3, false, set.ToArray());
+
+        var add = new CladWriter();
+        add.U8(2); add.U8(happy); add.F32(.25f); add.String8("C3Fixture");
+        engine.AnimationMessages.Deliver(0xC3, false, add.ToArray());
+        Assert.Equal(.25, mood[EmotionType.Happy]);
+        engine.DrainAppDelivery();
+        Assert.Empty(reports);
+
+        engine.AnimationMessages.Deliver(0xC3, false, new byte[] { 0 });
+        engine.DrainAppDelivery();
+        Assert.Single(reports);
+    }
+
     [Fact]
     public void ReverseSubscriptionRetirementAdvancesTheEndBeforeEachReleaseAndInvokesNoHandlers()
     {

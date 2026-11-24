@@ -18,7 +18,8 @@ internal sealed class BehaviorAudioClient : IDisposable
     internal bool Active {get;private set;}
     internal int Round {get;private set;}
     internal byte Carrying,Requesting,Stacked,Activity,StageTag=4,GuardStage=5,FeedingStage=1;
-    // The checked ctor writes no +2C/+30/+34 values. Their raw-cache producer/input is not guessed as zero.
+    // 0x005A0908..0x005A0914 and 0x005A581C..0x005A5828 allocate the
+    // clients without clearing them. The ctor at 0x00591E38 leaves these words unwritten.
     private readonly float?[] _needs=new float?[3];
     internal void SetNativeNeedsCache(float first,float second,float third)
     {lock(_public.Gate){_needs[0]=first;_needs[1]=second;_needs[2]=third;}}
@@ -119,9 +120,16 @@ internal sealed class BehaviorAudioClient : IDisposable
         var values=new[]{first,second,third};uint[] parameters={0xA214FD39,0xB7B26C62,0x61693ECF};
         for(int i=0;i<3;i++)
         {
+            float value=values[i];
             if(_needs[i] is not {} old)
-            {Missing($"M13-039 client needs cache +0x{0x2C+i*4:X} read at 0x{(i==0?0x5924C4:i==1?0x592514:0x592560):X8}: checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero");continue;}
-            float value=values[i],delta=value-old;if(delta<0)delta=-delta;
+            {
+                // M1-034: skip the initial undefined comparison and its dependent
+                // send. The first actual public state supplies the next comparison.
+                _needs[i]=value;
+                StackDiagnostics.Write($"M1-034/M13-039 needs audio cache +0x{0x2C+i*4:X}: skipped initial unwritten float at 0x{(i==0?0x5924C4:i==1?0x592514:0x592560):X8}; cached the received need level");
+                continue;
+            }
+            float delta=value-old;if(delta<0)delta=-delta;
             if(delta<BitConverter.UInt32BitsToSingle(0x3727C5AC))continue;
             _needs[i]=value; // store before SetParameter, including NaN/equal epsilon
             Send(new(Owner,0x18,parameters[i],BitConverter.SingleToUInt32Bits(value),0,0,0));

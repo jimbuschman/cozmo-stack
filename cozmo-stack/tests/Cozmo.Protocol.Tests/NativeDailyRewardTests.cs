@@ -68,6 +68,26 @@ public sealed class NativeDailyRewardTests
     }
     // M15-093 0x00696BBA..0x00696BE2, 0x0069CBBC..0x0069CBC8 and shipped level 0: 66 carries the updated level and max. reach: unit, direct call.
     [Fact]
+    public void FailedDailyStarEvaluationPreservesPendingRewardThroughAZeroWeightAction()
+    {
+        using var f = new Fixture();
+        f.PlayEntersFull();
+        f.Set("_nativeDailyHistoryKnown", false);
+        f.Needs.SupplyNativeRewardForTest(true, 9, "needs.FreeplaySparksReward.RollACube");
+        var before = f.Needs.NativeRewardSnapshotForTest();
+        long epoch = f.Needs.NativePendingHistoryEpoch;
+
+        // The shipped SeeFace row has zero freeplaySparksRewardWeight.
+        Assert.False(f.Needs.RegisterNeedsActionCompleted("SeeFace"));
+        Assert.Equal(before, f.Needs.NativeRewardSnapshotForTest());
+        Assert.Equal(epoch, f.Needs.NativePendingHistoryEpoch);
+
+        // RollACube can reach the pending write if the unavailable daily check returned zero.
+        Assert.False(f.Needs.RegisterNeedsActionCompleted("RollACube"));
+        Assert.False(f.Needs.TryGetNativePending(out _));
+    }
+
+    [Fact]
     public void ChangedYearAwardsSourceLevelRewardsAndPublishesUpdatedLevel()
     {
         using var f=new Fixture();var n=f.Needs;DateTime previous=new(2025,1,1,12,0,0,DateTimeKind.Unspecified);

@@ -82,33 +82,44 @@ public sealed class SevereNeedsComponent : IDisposable
     private volatile int _selected=3; // 0x00572A0E; readers can observe from host callbacks
     public int Selected=>_selected;
     internal NeedId? SelectedNeed {get{int selected=_selected;return selected==3?null:(NeedId)selected;}}
+    private string SelectedName => SelectedNeed?.ToString() ?? "Count";
     internal Func<NeedId,NeedBracketId,bool>? IsAtBracket;
     internal Action<AnimationTrigger,AnimationTrigger,AnimationTrigger,string>? PushDriving;
     internal Action<AnimationTrigger,string>? PushIdle;
     internal Action<string,IReadOnlyList<bool>,bool>? DisableReactions;
     internal Action<string>? RemoveDriving,RemoveIdle,RemoveReactions;
     internal SourceLogSink? SourceLog;
-    internal CozmoEngine? Engine;
+    internal EngineRobot? RobotOwner { get; init; }
     private IDisposable? _wake;
-    internal void ResetForConstruction(){Dispose();_selected=3;} // new native AI component, not Clear's side effects
+    private bool OwnerIsCurrent => RobotOwner is not { } robot ||
+        (!robot.Lifetime.Destroying && ReferenceEquals(robot.Engine.Robot, robot));
     private static readonly bool[] CriticalTable="011111011011101111010".Select(c=>c=='1').ToArray(); // 0x00C59670
     private static readonly bool[] PlayTable=new bool[21]; // 0x00C5969A
     private static void Missing(string step)=>SteppedBehavior.ReportMissing("M15-072 SevereNeeds "+step+": recipient is unbound");
     private void Run(Action action)
-    {if(Engine is {} engine)engine.InvokeEngineRequest(()=>{action();return 0;});else action();}
+    {
+        if (RobotOwner is { } robot)
+            robot.Engine.InvokeEngineRequest(() => { if (OwnerIsCurrent) action(); return 0; });
+        else
+            action();
+    }
     internal void Set(NeedId need)=>Run(()=>SetCore(need));
     private void SetCore(NeedId need)
     {
         if((uint)need>2)throw new ArgumentOutOfRangeException(nameof(need)); // unsupported host enum, no invented table
-        SourceLog?.Invoke(EngineLogLevel.Info,null,"SevereNeedsComponent.SevereNeedExpression.Set",$"Set to {need} (was {(_selected==3?"Count":((NeedId)_selected).ToString())})");
+        SourceLog?.Invoke(EngineLogLevel.Debug,"SevereNeedsComponent","SevereNeedsComponent.SevereNeedExpression.Set",
+            $"Set to {need} (was {SelectedName})"); // 0x00572E60..0x00572E84
+        if (!OwnerIsCurrent) return;
         if(need is NeedId.Energy or NeedId.Repair)
         {
             int start=need==NeedId.Energy?0x134:0x140;
             if(PushDriving is {} driving)driving((AnimationTrigger)start,(AnimationTrigger)(start-1),(AnimationTrigger)(start-2),LockName);
             else Missing("PushDrivingAnimations 0x005730E2");
+            if (!OwnerIsCurrent) return;
             if(PushIdle is {} idle)idle((AnimationTrigger)(need==NeedId.Energy?0x137:0x143),LockName);
             else Missing("PushIdleAnimation 0x00573152");
         }
+        if (!OwnerIsCurrent) return;
         if(DisableReactions is {} reactions)reactions(LockName,need==NeedId.Play?PlayTable:CriticalTable,true);
         else Missing("DisableReactionsWithLock 0x005731A0");
         _selected=(int)need; // 0x005731B4, after every recipient; repeated Set still pushes
@@ -116,9 +127,13 @@ public sealed class SevereNeedsComponent : IDisposable
     internal void Clear()=>Run(ClearCore);
     private void ClearCore()
     {
-        SourceLog?.Invoke(EngineLogLevel.Info,null,"SevereNeedsComponent.SevereNeedExpression.Clear",$"{(_selected==3?"Count":((NeedId)_selected).ToString())}");
+        SourceLog?.Invoke(EngineLogLevel.Debug,"SevereNeedsComponent","SevereNeedsComponent.SevereNeedExpression.Clear",
+            $"Cleared. (was {SelectedName})"); // 0x00572C9A..0x00572CB0
+        if (!OwnerIsCurrent) return;
         if(RemoveDriving is {} driving)driving(LockName);else Missing("RemoveDrivingAnimations 0x00572CF6");
+        if (!OwnerIsCurrent) return;
         if(RemoveIdle is {} idle)idle(LockName);else Missing("RemoveIdleAnimation 0x00572D26");
+        if (!OwnerIsCurrent) return;
         if(RemoveReactions is {} reactions)reactions(LockName);else Missing("RemoveDisableReactionsLock 0x00572D56");
         _selected=3; // 0x00572D6A, including Clear from3
     }
@@ -128,7 +143,8 @@ public sealed class SevereNeedsComponent : IDisposable
         if(_selected==3)return;
         if(IsAtBracket is not {} bracket){Missing("IsNeedAtBracket 0x00572BEA");return;}
         if(bracket((NeedId)_selected,NeedBracketId.Critical))return;
-        SourceLog?.Invoke(EngineLogLevel.Info,null,"SevereNeedsState.AutoClear",$"{(NeedId)_selected}");
+        SourceLog?.Invoke(EngineLogLevel.Info,"SevereNeedsComponent","SevereNeedsState.AutoClear",
+            $"Automatically clearing currently expressed severe needs state. Was '{(NeedId)_selected}'"); // 0x00572BD0..0x00572C3C
         Clear();
     }
     internal void Wake()=>Run(WakeCore);

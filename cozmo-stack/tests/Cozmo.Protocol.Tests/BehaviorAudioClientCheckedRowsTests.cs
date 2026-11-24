@@ -136,10 +136,14 @@ public sealed class BehaviorAudioClientCheckedRowsTests
         p.Update(new(0x55,0x55,-1,0x16,(float.NaN,0,0)));Assert.Equal(4,values.Count);Assert.True(float.IsNaN(p.State.Need0));
     }
     [Fact]
-    public void ConstructorNeedsCacheStaysUnknownAndKnownCacheUsesExactEpsilonAndNaNGates()
+    public void FirstNeedsReportReplacesUnwrittenCacheAndKnownCacheUsesExactEpsilonAndNaNGates()
     {
         using var f=new Fixture();f.A.HandleNeedsUpdates(1,2,3);
-        Assert.Empty(f.Requests);Assert.Null(f.A.NeedCache(0));Assert.Null(f.A.NeedCache(1));Assert.Null(f.A.NeedCache(2));
+        Assert.Empty(f.Requests);Assert.Equal(1f,f.A.NeedCache(0));Assert.Equal(2f,f.A.NeedCache(1));Assert.Equal(3f,f.A.NeedCache(2));
+        f.A.HandleNeedsUpdates(1, .25f, 3);
+        var change=Assert.Single(f.Requests);
+        Assert.Equal(0xB7B26C62u,change.Id);Assert.Equal(BitConverter.SingleToUInt32Bits(.25f),change.Value);
+        f.Requests.Clear();
         f.A.SetNativeNeedsCache(0,0,0);
         float epsilon=BitConverter.UInt32BitsToSingle(0x3727C5AC),nan=BitConverter.UInt32BitsToSingle(0x7FC12345);
         f.A.HandleNeedsUpdates(float.BitDecrement(epsilon),0,0);Assert.Empty(f.Requests);

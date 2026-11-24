@@ -458,11 +458,15 @@ public sealed partial class MoodState
     /// </summary>
     private float RepetitionPenalty(EmotionEvent e, string eventName, float now)
     {
-        float elapsed;
-        if (_lastEventSec.TryGetValue(eventName, out var last)) elapsed = now - last;
-        else elapsed = NoPreviousEventSec;
-        _lastEventSec[eventName] = now;
+        float elapsed = RecordEventTime(eventName, now);
         return e.RepetitionPenalty is { } g ? (float)g.At(elapsed) : 1f;
+    }
+
+    private float RecordEventTime(string eventName, float now)
+    {
+        float elapsed = _lastEventSec.TryGetValue(eventName, out var last) ? now - last : NoPreviousEventSec;
+        _lastEventSec[eventName] = now; // 0x0067BE7C..0x0067BEB2
+        return elapsed;
     }
 
     /// <summary>
