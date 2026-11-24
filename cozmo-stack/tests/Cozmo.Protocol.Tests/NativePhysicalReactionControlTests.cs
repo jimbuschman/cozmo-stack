@@ -92,13 +92,110 @@ public sealed class NativePhysicalReactionControlTests
     }
 
     [Fact]
-    public void AllFiveReactionRowsUseTheirConfiguredConstructorInstances()
+    public void ReactionRowsUseTheirConfiguredConstructorInstances()
     {
         using var f=NewFixture();var manager=f.Robot.BehaviorManagerOwner!;
         foreach(var (id,trigger) in new[]{("ReactToCliff",ReactionTrigger.CliffDetected),("ReactToImpact",ReactionTrigger.RobotFalling),
             ("ReactToPlacedOnSlope",ReactionTrigger.RobotPlacedOnSlope),("ReactToReturnedToTreads",ReactionTrigger.ReturnedToTreads),
+            ("ReactToPickup",ReactionTrigger.RobotPickedUp),("ReactToRobotOnBack",ReactionTrigger.RobotOnBack),
+            ("ReactToMotorCalibration",ReactionTrigger.MotorCalibration),
             ("ReactToUnexpectedMovement",ReactionTrigger.UnexpectedMovement)})
             Assert.Same(f.Runtime.Bound[id],Assert.Single(manager.Reactions,r=>r.Strategy.Trigger==trigger).Behavior);
+    }
+
+    [Fact]
+    public void PhysicalReactionsReadTheOwnedPlatformCarryingAndOffTreadsGates()
+    {
+        using var f = NewFixture();
+        var gates = new[]
+        {
+            ("ReactToCliff", false, true), ("ReactToPickup", true, true),
+            ("ReactToRobotOnBack", true, true), ("ReactToImpact", false, false),
+            ("ReactToMotorCalibration", false, true), ("ReactToPlacedOnSlope", true, true)
+        };
+        var sensors = f.Rig.Robot.Sensors;
+        Assert.Equal(OffTreadsState.OnTreads, sensors.OffTreadsState);
+        bool Runnable(string id) => Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[id]).IsRunnableBase(f.Runtime.Context);
+        // Robot+0x34A is the platform writer at 0x00511D4C, independent of contact.
+        sensors.SetOnChargerPlatform(true);
+        Assert.True(sensors.OnChargerPlatform);
+        Assert.False(sensors.OnChargerContacts);
+        foreach (var (id, _, _) in gates) Assert.False(Runnable(id));
+        sensors.SetOnChargerPlatform(false);
+        foreach (var (id, _, _) in gates) Assert.True(Runnable(id));
+
+        f.Add();
+        f.Robot.CarryingOwner!.SetCarrying(7);
+        foreach (var (id, _, carries) in gates) Assert.Equal(carries, Runnable(id));
+        f.Robot.CarryingOwner.UnsetCarrying();
+
+        for (int i = 0; i < 10; i++) f.Motors(RobotStatusFlag.IsPickedUp);
+        Assert.Equal(OffTreadsState.InAir, sensors.OffTreadsState);
+        foreach (var (id, offTreads, _) in gates) Assert.Equal(offTreads, Runnable(id));
+    }
+
+    [Fact]
+    public void MotorCalibrationWaitWarnsWithTheCurrentNativeMotorFlags()
+    {
+        using var f = NewFixture();
+        var behavior = Assert.IsType<ReactToMotorCalibrationBehavior>(f.Runtime.Bound["ReactToMotorCalibration"]);
+        f.Rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
+        f.Rig.Tick();
+        var entries = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += entries.Add;
+        Start(f, behavior);
+        try
+        {
+            Assert.Equal(5f, Assert.IsType<NativeTimedWaitRunner>(behavior.OwnedRunner).Duration);
+            f.Rig.Tick();
+            f.Rig.Tick(5001);
+            var warning = Assert.Single(entries, entry => entry.Name == "BehaviorReactToMotorCalibration.Timeout");
+            Assert.EndsWith("Calibration didn't complete (lift: 1, head: 0)", warning.Text, StringComparison.Ordinal);
+            Assert.Equal(EngineLogLevel.Warning, warning.Level);
+        }
+        finally { behavior.Stop(BehaviorStopReason.Interrupted); }
+    }
+
+    [Theory]
+    [InlineData(399)]
+    [InlineData(400)]
+    public void ConfiguredOnBackUsesTheCliffRawBoundaryAndNativeWait(ushort front)
+    {
+        using var f = NewFixture();
+        var behavior = Assert.IsType<ReactToRobotOnBackBehavior>(f.Runtime.Bound["ReactToRobotOnBack"]);
+        for (int i = 0; i < 40; i++)
+        {
+            var state = f.Rig.MakeState(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsPickedUp,
+                origin: f.Robot.CurrentOriginId, frame: f.Robot.PoseFrameId);
+            state.Pose.Pitch = (float)OffTreadsClassifier.OnBackCentrePhysicalRad;
+            state.Accel = new AccelData { X = 9800 };
+            state.CliffDataRaw[0] = front;
+            f.Rig.Data(state);
+            f.Rig.Tick();
+        }
+        Assert.Equal(OffTreadsState.OnBack, f.Rig.Robot.Sensors.OffTreadsState);
+        var logs = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Add;
+        Start(f, behavior);
+        try
+        {
+            var action = behavior.OwnedRunner;
+            if (front < 400)
+            {
+                var flip = Assert.IsType<TriggerAnimationAction>(action);
+                Assert.Equal(AnimationTrigger.FlipDownFromBack, flip.Request.Trigger);
+            }
+            else
+            {
+                Assert.IsType<NativeHeadCalibrationRunner>(action);
+                var entry = Assert.Single(logs, l => l.Name == "BehaviorReactToRobotOnBack.FlipDownIfNeeded.CalibratingHead");
+                Assert.Equal("400", entry.Text);
+            }
+            // Both action arms use the same resultless DelayThenFlipDown callback.
+            f.Robot.ActionList.Cancel(action!.Tag);
+            Assert.Equal(.5f, Assert.IsType<NativeTimedWaitRunner>(behavior.OwnedRunner).Duration);
+        }
+        finally { behavior.Stop(BehaviorStopReason.Interrupted); }
     }
 
     // Ctor arguments from 60518E..6051BC,6080B2..6080F8,609B12..609B68, not a substitute clip selector.

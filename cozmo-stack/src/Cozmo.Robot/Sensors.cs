@@ -1030,11 +1030,11 @@ public sealed class CozmoSensors
                 break;
 
             case Protocol.RobotStopped rs:
-                var stoppedOwner=_robot.Engine.Robot;
+                var stoppedOwner=sourceOwner;
                 // fidelity: M4-019, M8-015, M8-019
                 // H1..H4 HandleRobotStopped tag 0xD4 (0x0053539C..0x00535480): H3 Evaluate sets comp+0x1C := the
                 // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0, 0x00535436), in this order:
-                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; M8-019 switch path still MISSING),
+                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; owner bound before dispatch in BindNativeBehaviorManager),
                 // ActionList::Cancel(-1) (0x00535466..0x0053546E; M8-015's ActionList, the robot's own) and the RobotStopped broadcast (0x00535480).
                 // Nothing is sent to the robot by this handler.
                 float stoppedVariance;
@@ -1042,7 +1042,7 @@ public sealed class CozmoSensors
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "RobotImplMessaging.HandleRobotStopped",
                     rs.Field0.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     new Dictionary<string, string> { ["$data"] = LibcxxPrintf.FormatFixedFloat(stoppedVariance) /* M11-083 / M4-019:0x005353AC */ });
-                if(stoppedOwner is null || !ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
+                if(stoppedOwner is null || stoppedOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
                 EvaluateCliffSuspiciousnessWhenStopped(stoppedOwner.StoredState?.Timestamp ?? _cliffTimestamp);
                 if(!ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
                 bool stoppedEnabled;
@@ -1073,9 +1073,14 @@ public sealed class CozmoSensors
                 // fidelity: M2-013, M10-011
                 // C2 (0x5350AA..0x5350C2; 0x535186..0x53519C): intensity > 1000 registers NeedsAction 17, then the DAS
                 // "robot.falling_event", then the game FallingStopped{duration, intensity}.
-                var fallOwner=_robot.Engine.Robot;var fallNeeds=_robot.Engine.Needs;
-                bool FallOwnerCurrent()=>fallOwner is not null && ReferenceEquals(_robot.Engine.Robot,fallOwner) && ReferenceEquals(_robot.Engine.Needs,fallNeeds);
+                // The context constructs Needs before RobotManager (0x004ECA0A..0x004ECA1A).
+                var fallOwner=sourceOwner;var fallNeeds=_robot.Engine.Needs;
+                bool FallOwnerCurrent()=>fallOwner is not null && !fallOwner.Lifetime.Destroying &&
+                    ReferenceEquals(_robot.Engine.Robot,fallOwner) && ReferenceEquals(_robot.Engine.Needs,fallNeeds);
                 if(!FallOwnerCurrent()){Behavior.SteppedBehavior.ReportMissing("M10-011 FallingStopped original Robot/Needs context unavailable");break;}
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleFallingStopped.FallingStopped",
+                    FormattableString.Invariant($"timestamp: {f.Timestamp}, duration (ms): {f.DurationMs}, intensity {LibcxxPrintf.FormatFixedFloat(f.ImpactIntensity, 1)}")); // 0x00535070..0x00535084
+                if(!FallOwnerCurrent())break;
                 if (f.ImpactIntensity > FallNeedsActionIntensity)
                 {
                     fallNeeds.RegisterNeedsActionCompleted("Fall"); // 005350BC..C2, original context+34.

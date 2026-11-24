@@ -257,6 +257,10 @@ class Session:
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
         resolved = {
+            "MISSING: M7-019 RobotCliffEventFinished tag0x36 native local subscriber continuity after "
+            "E2G emit0x00662590 remains unverified; typed bus delivery is built, concrete native recipients are not certified":
+                "The empty 0x36 report and synchronous emit are built. No 0x36 registration was found in the checked "
+                "E2G fixed or factory tag sets, direct calls or immediate vtable +0x28 sites",
             "MISSING: M1-034 proposed Roll own-path GetCompletionUnion005567E0..EE/setter0075C400..410 "
             "reads four undefined unused IDs: skip full public payload; defined target/count1/false and scalar/local callback retained":
                 "2026-11-22 operator decision zero-fills roll ID words 1–4 and publishes the 0x5A",

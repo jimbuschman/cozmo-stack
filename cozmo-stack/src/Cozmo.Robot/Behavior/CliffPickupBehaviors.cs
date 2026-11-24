@@ -103,6 +103,9 @@ public sealed partial class ReactToCliffBehavior : SteppedBehavior
 
     // BehaviorReactToCliff vptr+0x20 (0x0102BC10) resolves to the base false body 0x005BF04C.
     protected override bool RunnableGate20(BehaviorContext context) => false;
+    // 0x0102BC14/18 -> 0x0059EC12 (false), 0x00605676 (true).
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+    protected override bool RunnableGate28(BehaviorContext context) => true;
 
     /// <summary><c>IsRunnableInternal</c> 0x00604D4C: <c>movs r0,#1</c>.</summary>
     protected override bool IsRunnableInternal(BehaviorContext context) => true;
@@ -438,6 +441,14 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
     {
         _vision = vision;
         _rng = rng;
+    }
+
+    internal ReactToPickupBehavior(ManipulationSystem manipulation, EngineRobot owner, string id)
+        : this(manipulation.Vision, id)
+    {
+        // 0x00607726 calls the Robot/config IBehavior constructor before
+        // installing the Pickup vtable and its zero deadline and 1.0 scale.
+        BindNative(manipulation, owner, owner.BehaviorManagerOwner!);
     }
 
     /// <summary>+0x11C.</summary>

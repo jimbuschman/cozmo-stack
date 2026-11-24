@@ -318,9 +318,9 @@ public abstract partial class SteppedBehavior : IBehavior
         if (!RecentTimersAllow(context)) return false;                            // +0x78/+0x7c
         // The three robot-byte gates and their behaviour virtuals (decomp 0x005bd864..0x005bd89c):
         // robot+0x355 -> vtable+0x20, robot+0x34a -> vtable+0x24, robot+0x284->+8 != -1 -> vtable+0x28.
-        // robot+0x355 is the off-treads state and [robot+0x284]+8 != -1 is "carrying" (CarryingComponent, wired through
-        // Motion.IsCarryingObject); the seams override them. robot+0x34a, the +0x74 state, the +0x70 unlock, the
-        // +0x78/+0x7c timers and the spark gate have no source in this stack: with no seam they are reported MISSING, not allowed.
+        // The configured owner supplies off-treads, carrying, platform state
+        // (SetOnChargerPlatform at 0x00511D4C), and the base config inputs above.
+        // Standalone behavior callers can supply these fields through the seams.
         bool notOnTreads = RobotState355?.Invoke() ?? context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads;
         if (notOnTreads && !RunnableGate20(context)) return false;
         if (NativeBaseInputs is not null) { if(context.Robot.Sensors.OnChargerPlatform && !RunnableGate24(context))return false; }
