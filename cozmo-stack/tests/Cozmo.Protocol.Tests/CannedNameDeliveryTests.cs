@@ -18,9 +18,8 @@ public sealed class CannedNameDeliveryTests
         var library=f.Rig.Robot.Animations.Library!;
         var group=library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
         var original=group.Entries;
-        var missing=new List<string>();
-        void Capture(string message){if(message.Contains("authored robot audio animation is unavailable"))missing.Add(message);}
-        SteppedBehavior.MissingReported+=Capture;
+        var logs=new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry+=logs.Add;
         try
         {
             group.Entries=new[]{new AnimationGroupEntry("unavailable_meet_clip",1,0,"Default")};
@@ -32,12 +31,14 @@ public sealed class CannedNameDeliveryTests
             f.Robot.ActionList.QueueAction(QueueActionPosition.Now,action);
             int mark=f.Rig.Mark();
             f.Rig.Tick();
-            Assert.Equal(0x0300000Cu,Assert.Single(ended.Where(x=>x.Tag==action.Tag)).Result);
+            // The group selected a name. The null clip is refused by the streamer
+            // at 0x00543F96 and returns 0x03000001 (0x00543F84..0x00543F8A, 0x00544002).
+            Assert.Equal(0x03000001u,Assert.Single(ended.Where(x=>x.Tag==action.Tag)).Result);
             Assert.Null(f.Robot.ActionList.GetCurrentAction());
-            Assert.Single(missing);
+            Assert.Single(logs, entry => entry.Name == "CannedAnimationContainer.GetAnimation_Const.InvalidName");
             Assert.Empty(f.Rig.SentSince(mark).OfType<AudioSample>());
         }
-        finally { group.Entries=original;SteppedBehavior.MissingReported-=Capture; }
+        finally { group.Entries=original;f.Rig.Engine.LogEntry-=logs.Add; }
     }
 
     private sealed class Sink : IPlatformPcmSink

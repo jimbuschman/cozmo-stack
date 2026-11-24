@@ -259,6 +259,8 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made":
+                "An empty selected event vector takes state 4 at 0x00596948 and the native Info/drop path at 0x0059A0BA. This blanket marker did not report a host Wwise failure.",
             "MISSING: M14-008 FaceWorld observation-time historical pose unavailable; face update skipped":
                 "FaceWorld reports the timestamp at 0x004F438A and the failed face ID at 0x004F5332, then continues the frame without changing that entry.",
             "MISSING: M14-011 smaller native album copy/temporary ownership is not connected; restore skipped":

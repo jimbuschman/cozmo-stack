@@ -31,7 +31,7 @@ public static class M5Hw
         new("LIVE_IDLE", "Calibrated head input and default wiggles", new[]{"M5-030","M5-057","M5-036"}),
         new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028","M5-036","M3-008"}),
         new("DRIVING", "Short DriveToPose and driving animation sequence", new[]{"M5-063","M12-024","M7-026","M15-001","M8-020","M8-021","M5-036","M12-032","M12-002","M13-021","M13-033","M8-005","M8-015","M8-023","M8-027"}),
-        new("SLEEP", "Sleep deadline fallback and known action gap", new[]{"M5-038","M1-045","M8-017","M8-020","M8-021"}),
+        new("SLEEP", "Sleep deadline and native compound action", new[]{"M5-038","M1-045","M8-017","M8-020","M8-021"}),
         new("TEARDOWN", "Dispose interval, discarded buffer and transport provenance", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060","M5-022","M4-026","M5-036","M6-042"}),
     };
     public static readonly string[] RecordIds = Checks.SelectMany(x => x.Records).Concat(HarnessStartup.RecordIds).Distinct().ToArray();
@@ -54,8 +54,8 @@ public static class M5Hw
         new("PARAMETERS", "M5-028", "0x0058D382..0x0058D38C; 0x0058D48C..0x0058D4BE; 0x0058D506..0x0058D550; 0x0082FA96..0x0082FAC0", "Each KeepFaceAlive call subtracts60; a due blink generates and draws an inclusive deadline from the requested range. No wall-clock blink interval is implied."),
         new("DRIVING", "M5-063", "0x004F0D80..0x004F0D8C; 0x004F0E14..0x004F0E2A; 0x004F0DC8..0x004F0DD4", "Matching successful Start requests Loop; matching End completion sets state4 irrespective of End result."),
         new("DRIVING", "M12-024", "0x0055B0BA..0x0055B0C8", "Drive remains running while its End animation is pending. This boundary comparison does not settle the remaining M12 record gap."),
-        new("SLEEP", "M1-045", "0x0052CE54..0x0052CE6A", "KNOWN GAP: native calls the factory then queues its action. Capturing the host fallback/diagnostic is observation coverage only."),
-        new("SLEEP", "M5-038", "0x0052CEA2..0x0052CFC0", "KNOWN GAP: the native factory constructs compound children; the test does not claim that the missing production writer ran."),
+        new("SLEEP", "M1-045", "0x0052CE54..0x0052CE6A", "The idle deadline calls the factory and queues the compound Now."),
+        new("SLEEP", "M5-038", "0x0052CEA2..0x0052CFC0", "The compound runs three sleep triggers in order with a simultaneous low-lift action."),
         new("TEARDOWN", "M5-037", "0x0057AF58; 0x0057B044..0x0057B0C0", "Streamer destruction clears queued messages without sending a final flush. A missing per-entry discard log may mean the queue was empty."),
         new("TEARDOWN", "M5-059", "0x0057F376..0x0057F37A; 0x0057FC20..0x0057FC22; 0x0057FA14..0x0057FA2E", "Construction and destruction remove the existing TestAnim.json in the configured cache.")
     };
@@ -93,8 +93,8 @@ public static class M5Hw
         "DRIVING" => new("tries to drive 6 cm forward.",
             "the driving animations (start, then loop if the start worked, then end) are requested in the engine's order.",
             "Nothing. This part is automatic. Whether Cozmo actually moves is not judged here.", "up to 15 s", Array.Empty<string>()),
-        "SLEEP" => new("asks to go to sleep. This piece is known to be missing, so nothing visible should happen.",
-            "the stack reports the missing piece clearly instead of silently doing nothing.",
+        "SLEEP" => new("starts its sleep animation sequence and lowers its lift.",
+            "the sleep deadline queues the three native triggers with the low-lift action.",
             "Nothing. This part is automatic.", "about 2 s", Array.Empty<string>()),
         "TEARDOWN" => new("starts an animation and disconnects in the middle of it. This is the last part.",
             "disconnecting throws away unsent animation data without sending it, and deletes the temporary animation file.",
@@ -870,9 +870,7 @@ internal sealed class M5Run
                         && e["kind"]?.GetValue<string>() == "stack-log"
                         && e["line"]?.GetValue<string>().StartsWith("MISSING: M5-038 -> M8 ", StringComparison.Ordinal) == true);
                     var sends = Wire(start).Where(x => x.Outbound && x.Payload[0] == 0x9B).ToArray();
-                    var result = fallback && missing ? new JsonObject { ["verdict"] = "KNOWN_GAP",
-                        ["verdictRule"] = "Host diagnostic coverage only: M5-038/M1-045 fallback and visible missing-path diagnostic. Native 0x0052CE54..0x0052CE6A uses the SleepTriggerFactory and queues the action; that production writer and M8 action path remain incomplete." }
-                        : Missing("Host fallback or missing-path diagnostic was not captured; the known sleep-action gap remains.");
+                    var result = Observe("M1-045 queues the native sleep compound at 0x0052CE54..0x0052CE6A. This window records outgoing animation starts and any host fallback. It can end before all three children finish.");
                     result["goToSleepRequested"] = fallback; result["missingDiagnostic"] = missing; result["animationStarts"] = sends.Length; return result;
                 }
             case "TEARDOWN":

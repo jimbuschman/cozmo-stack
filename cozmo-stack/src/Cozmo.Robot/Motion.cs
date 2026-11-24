@@ -2005,13 +2005,14 @@ bool requireCalibration = true)
     /// results are those of every MoveLiftToHeightAction (<see cref="MoveAction"/>). It is not queued here: its parent is the
     /// sequence's parallel compound, which belongs to M5/M8 (<see cref="CozmoEngine.CreateGoToSleepSequence"/> is that seam).
     /// </summary>
-    internal ActionRunner CreateGoToSleepLiftChild()
+    internal ActionRunner CreateGoToSleepLiftChild(EngineRobot? owner = null)
     {
         float height = BitConverter.Int32BitsToSingle(0x42000000);
         float tolerance = BitConverter.Int32BitsToSingle(0x40A00000);
         var child = new MoveAction(this, isHead: false, height, tolerance, "lift to LowDock",
                                    id => new SetLiftHeight(height, DefaultLiftSpeedRadPerSec, DefaultLiftAccelRadPerSec2, 0f, id));
         child.SetName("MoveLiftToLowDock");
+        child.AiOwner = owner;
         lock (_gate) _actions.Add(child);                     // the ack subscription (+0x9C/+0xA0), installed by the ctor
         return child;
     }
@@ -2021,7 +2022,8 @@ bool requireCalibration = true)
     /// L1: the child is added to the sleep sequence's parallel parent with both flags zero (AddAction 0x0052CFB0; the returned
     /// weak handle is released).
     /// </summary>
-    internal void AddGoToSleepLiftChild(CompoundActionParallel parent) => parent.AddAction(CreateGoToSleepLiftChild(), false, false);
+    internal void AddGoToSleepLiftChild(CompoundActionParallel parent, EngineRobot? owner = null)
+        => parent.AddAction(CreateGoToSleepLiftChild(owner), false, false);
 
     // ------------------------------------------------------------------ the actions
 

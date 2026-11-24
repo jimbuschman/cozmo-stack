@@ -2525,7 +2525,7 @@ public class EngineAppLayerTests
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-031 CC6/CC7: sleep fires before disconnect in the same update (0x0052CE3C..0x0052CE98);
     /// a 0.0 deadline does nothing and blocks re-arming until a Cancel (CC3 + CC6); Cancel sets −1 (CC5,
-    /// 0x0052D0BE..0x0052D0C4). The M5-038 factory is wired; its concrete M8 TriggerAnimationAction recipient remains MISSING.
+    /// 0x0052D0BE..0x0052D0C4). The M5-038 factory builds the three native trigger actions and low-dock lift child.
     /// </summary>
     [Fact]
     public void M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate()
@@ -2539,10 +2539,17 @@ public class EngineAppLayerTests
         var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
         int sleepEvents = 0; rig.Engine.GoToSleepRequested += () => sleepEvents++;
         var factory = rig.Engine.CreateGoToSleepSequence!;
+        int[]? sleepTriggers = null;
         rig.Engine.CreateGoToSleepSequence = robot =>
         {
             order.Add(rig.Port.Calls.Any(c => c.StartsWith("disconnect")) ? "sleep after disconnect" : "sleep first");
-            return factory(robot);
+            var parallel = Assert.IsType<CompoundActionParallel>(factory(robot));
+            Assert.Equal(2, parallel.Children.Count);
+            var sequence = Assert.IsType<CompoundActionSequential>(parallel.Children[0]);
+            sleepTriggers = sequence.Children
+                .Select(child => (int)Assert.IsType<Cozmo.Robot.Animation.TriggerAnimationAction>(child).Request.Trigger)
+                .ToArray();
+            return parallel;
         };
         rig.Port.Calls.Clear();
         rig.Engine.StartIdleTimeout(0.01f, 0.01f);
@@ -2550,8 +2557,8 @@ public class EngineAppLayerTests
         rig.Tick(60);
         Assert.Equal(new[] { "sleep first" }, order);
         Assert.Contains($"disconnect {Rig.RobotEp}", rig.Port.Calls);
-        Assert.True(rig.Logged("MISSING: M5-038 -> M8"));
-        Assert.Equal(1, sleepEvents);
+        Assert.Equal(new[] { 0xD2, 0xD5, 0xD4 }, sleepTriggers);
+        Assert.Equal(0, sleepEvents);
         Assert.DoesNotContain(entries, e => e.Name == "ActionList.QueueAction.NullAction");
     }
 
