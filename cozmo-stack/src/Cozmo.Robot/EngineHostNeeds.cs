@@ -37,15 +37,28 @@ public sealed partial class CozmoEngine
         if (!float.IsFinite(repair) || !float.IsFinite(energy) || !float.IsFinite(play))
             throw new ArgumentException("Needs levels must be finite.");
         if (_keepNeedsFull) throw new InvalidOperationException("Select real needs mode before setting individual levels.");
-        if (Robot is null || !Needs.NativeLevelsLoaded) throw new InvalidOperationException("Stored needs are not loaded for this connection.");
+        var needs = Needs;
+        if (Robot is not { Lifetime.Destroying: false } owner || !needs.NativeLevelsLoaded)
+            throw new InvalidOperationException("Stored needs are not loaded for this connection.");
+        // The synchronous C6 recipient stores the three clamped levels and publishes
+        // NeedsState(NoAction) at 0x00697DA4..0x00697EC6, even when decay is paused.
         AnimationMessages.Deliver(0xC6, false, new[] { repair, energy, play });
-        return ReadHostNeedsStatus();
+        return ReadHostNeedsStatus() with
+        {
+            Applied = ReferenceEquals(Robot, owner) && !owner.Lifetime.Destroying &&
+                ReferenceEquals(Needs, needs) && needs.NativeLevelsLoaded
+        };
     });
 
-    private HostNeedsStatus ReadHostNeedsStatus() => new(_keepNeedsFull, Needs.NativeLevelsLoaded,
-        _hostNeedsApplied && Needs.NativeLevelsLoaded && ReferenceEquals(_hostNeedsRobot, Robot) && Needs.IsPaused,
-        Needs.IsPaused, (float)Needs.State.GetNeedLevel(NeedId.Repair), (float)Needs.State.GetNeedLevel(NeedId.Energy),
-        (float)Needs.State.GetNeedLevel(NeedId.Play));
+    private HostNeedsStatus ReadHostNeedsStatus()
+    {
+        bool loaded = Needs.NativeLevelsLoaded;
+        bool paused = Needs.IsPaused; // C9 recipient SetPaused at 0x00695E04.
+        bool applied = loaded && Robot is { Lifetime.Destroying: false } &&
+            (_keepNeedsFull ? _hostNeedsApplied && ReferenceEquals(_hostNeedsRobot, Robot) && paused : !paused);
+        return new(_keepNeedsFull, loaded, applied, paused, (float)Needs.State.GetNeedLevel(NeedId.Repair),
+            (float)Needs.State.GetNeedLevel(NeedId.Energy), (float)Needs.State.GetNeedLevel(NeedId.Play));
+    }
 
     private void UpdateHostNeeds()
     {

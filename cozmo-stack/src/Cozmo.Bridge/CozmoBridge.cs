@@ -347,7 +347,11 @@ public sealed partial class CozmoBridge
         var engine = Robot.Engine;
         var status = engine.GetNeedsStatus();
         var state = engine.Needs.State;
-        int selected = engine.Needs.SevereNeeds.Selected;
+        // The selected activity is visible before the get-in sets the expression and
+        // can outlast SevereNeedsComponent's auto-clear (0x00572BEA..0x00572C3C).
+        var runtime = engine.Robot?.NativeBehaviorRuntime;
+        NeedId? expressed = (runtime?.AI.SevereNeeds ?? engine.Needs.SevereNeeds).SelectedNeed;
+        NeedId? selected = runtime?.SelectedNeedsActivity ?? expressed;
         return new
         {
             status.KeepFull, status.Loaded, status.Applied, status.Paused, status.Repair, status.Energy, status.Play,
@@ -357,7 +361,8 @@ public sealed partial class CozmoBridge
                 energy = state.GetNeedBracket(NeedId.Energy).ToString(),
                 play = state.GetNeedBracket(NeedId.Play).ToString(),
             } : null,
-            selectedSevereNeed = status.Loaded ? Enum.GetName((NeedId)selected) : null,
+            selectedSevereNeed = status.Loaded ? selected?.ToString() : null,
+            expressedSevereNeed = status.Loaded ? expressed?.ToString() : null,
         };
     }
 
