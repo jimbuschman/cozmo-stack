@@ -10,13 +10,16 @@ public sealed partial class CozmoEngine
     // The native name is supplied by checked callers; this does not invent an enum-name map.
     internal void ReportBehaviorObjective(uint objective,string nativeObjectiveName,string behaviorName,byte broadcast=1)
     {
-        if(broadcast==1 && Robot?.HasExternalInterface==true)
+        if (broadcast == 1 && Robot is { HasExternalInterface: true } owner)
         {
+            bool recipientsConstructed = owner.NativeActivityRecipientsConstructed;
             byte[] payload=new byte[4];
             BinaryPrimitives.WriteUInt32LittleEndian(payload,objective); // union0x007285FE, pack0x0071BEAE
             DeliverAnimationReportToApp(0x8B,payload); // rvalue0x006625B0: enqueue before synchronous local emit
             AnimationMessages.Deliver(0x8B,true,objective);
-            if(Robot?.NativeActivityRecipientsConstructed!=true)
+            // The local emit can retire the reporting robot synchronously. The
+            // diagnostic describes the recipients available when the emit began.
+            if (!recipientsConstructed)
                 SteppedBehavior.ReportMissing("Objective recipients: actual constructed Activity owners/subscription readiness unavailable; Sparked0x005B181E and Socialize0x005B07C2 effects are not established by local delivery alone");
         }
         // 0x005BE24A..308: both diagnostics run even when publication is suppressed.

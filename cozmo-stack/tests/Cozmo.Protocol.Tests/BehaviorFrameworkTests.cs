@@ -1490,12 +1490,14 @@ public class BehaviorFrameworkTests
         owner.ActionList.QueueAction(QueueActionPosition.AtEnd, new ReactionQueueProbe { Tag = 3000001 });
         manager.AddReaction(new AlwaysTriggerStrategy(), new OneShotBehavior("absent-interface-reaction"));
         var missing = new List<string>();
+        var logs = new List<string>();
         var typed = new List<ReactionTransitionReport>();
         var raw = new List<byte[]>();
         var local = new List<object?>();
         void OnMissing(string text) => missing.Add(text);
         SteppedBehavior.ResetMissingForTests();
         SteppedBehavior.MissingReported += OnMissing;
+        rig.Engine.StackLogLine += logs.Add;
         rig.Engine.ReactionTransition += typed.Add;
         rig.Engine.EngineToGameMessage += (tag, body) => { if (tag == 0x88) raw.Add(body.ToArray()); };
         using var sub = rig.Engine.AnimationMessages.SubscribeMessage(0x88, true, local.Add);
@@ -1506,7 +1508,8 @@ public class BehaviorFrameworkTests
             Assert.True(owner.ActionList.ExternalActionsDisabled);
             Assert.Equal(ReactionTrigger.CliffDetected, manager.CurrentReactionTrigger);
             rig.Engine.DrainAppDelivery();
-            Assert.Contains(missing, line => line.Contains("M1-034 M8-012") && line.Contains("0x005A2EFA"));
+            Assert.Contains(logs, line => line.Contains("M1-034/M8-012") && line.Contains("0x005A2EFA"));
+            Assert.DoesNotContain(missing, line => line.Contains("0x005A2EFA"));
             Assert.Empty(local); Assert.Empty(raw); Assert.Empty(typed);
         }
         finally { SteppedBehavior.MissingReported -= OnMissing; }
@@ -2211,8 +2214,11 @@ public class BehaviorFrameworkTests
             using var m = new BehaviorManager(ctx);
             var strategy = new AlwaysTriggerStrategy();
             m.AddReaction(strategy, new OneShotBehavior("react"));
+            var logs = new List<string>();
+            robot.Engine.StackLogLine += logs.Add;
             Assert.NotNull(m.CheckReactions(1));
-            Assert.Contains(seen, l => l.Contains("ReactionTriggerTransition"));
+            Assert.Contains(logs, l => l.Contains("M1-034/M8-012") && l.Contains("ReactionTriggerTransition"));
+            Assert.DoesNotContain(seen, l => l.Contains("ReactionTriggerTransition"));
             Assert.Contains(seen, l => l.Contains("UpdateRobotPropertiesForReaction"));
             Assert.DoesNotContain(seen, l => l.Contains("cube light")); // empty manager state-light vector has no MS4 work.
         }

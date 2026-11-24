@@ -231,7 +231,8 @@ public sealed class BlockConfigurationManager
             var s = BuildTallestStackForObject(c, cubes);
             if (s.StackHeight >= 2 && seenBottoms.Add(s.BottomBlockId)) stacks.Add(s);
         }
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / cache 0x0062C5A2..0x0062C616: native current-origin family query, predicate and pose-root/distance joins are unbuilt; existing all-pairs snapshot is a candidate, not the processed-ID/old-cache source path");
+        // This snapshot feeds the public host extension. BlockWorld's 0x0062520C
+        // tail updates NativeConfigurationManager separately for the engine consumers.
         var bases = new List<BlockConfiguration>();
         for (int i = 0; i < cubes.Count; i++)
             for (int j = i + 1; j < cubes.Count; j++)

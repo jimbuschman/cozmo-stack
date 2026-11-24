@@ -1204,7 +1204,8 @@ public sealed partial class BehaviorManager : IDisposable
         }
         if (oldTrigger is not null || info.Trigger is not null)
         {
-            if (!SendReactionTransition(oldTrigger, info.Trigger, oldCurrent, info.Current)) SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+            if (!SendReactionTransition(oldTrigger, info.Trigger, oldCurrent, info.Current))
+                LogUnavailableReactionInterface();
         }
         if ((oldTrigger is null) != (info.Trigger is null))
         {
@@ -1244,6 +1245,8 @@ public sealed partial class BehaviorManager : IDisposable
         else send(oldTrigger, newTrigger);
         return true;
     }
+    private void LogUnavailableReactionInterface() =>
+        _context.Robot.Engine.EmitStackLog("M1-034/M8-012 skipped ReactionTriggerTransition: null external interface at 0x005A2EFA");
     /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54), called on entry or exit.</summary>
     public Action<bool>? UpdateRobotPropertiesForReaction { get; set; }
     /// <summary>The cube light stop on a behaviour change (0x005a2230..0x005a223e). MISSING.</summary>
@@ -1488,7 +1491,7 @@ public sealed partial class BehaviorManager : IDisposable
         if(trigger is not null)
         {
             if (!owner.HasExternalInterface || !SendReactionTransition(trigger, null, oldCurrent, null))
-                SteppedBehavior.ReportMissing("M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA");
+                LogUnavailableReactionInterface();
             if(!RequestCanContinue(owner))return;
             CheckRoots();if(!RequestCanContinue(owner))return;
         }

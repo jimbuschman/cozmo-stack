@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cozmo.Bridge;
 using Cozmo.Protocol;
+using Cozmo.Robot;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Xunit;
@@ -118,16 +119,42 @@ public sealed class SessionFiveNeedsReplayTests
     }
 
     [Fact]
-    public void UnconstructedSongsLeaveTheSingingChooserWithoutACandidate()
+    public void SingingChooserStartsTheUnlockedForcedSongWithItsNativeCompound()
     {
-        using var f = new Fixture(sourceNvEmpty: true);
-        var singing = f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a => a.Id == "Singing");
-        var chooser = Assert.IsType<ScoringChooser>(singing.Chooser);
-        Assert.NotEmpty(chooser.BehaviorIds);
-        chooser.RandomDraw = () => throw new InvalidOperationException("The empty native chooser draws no random score.");
-        var choice = chooser.GetDesiredActiveBehavior(null, 0, f.Runtime.Context, f.Rig.Engine.Timer.Seconds);
-        Assert.Null(choice.Behavior);
-        Assert.False(choice.InputUnavailable);
+        string directory = Directory.CreateTempSubdirectory("cozmo-singing-").FullName;
+        try
+        {
+            var options = NativeRewardCanonicalTests.SourceOptions(directory, () => NativeRewardCanonicalTests.FixedClockMicros, 1, 0);
+            using var f = new Fixture(preloadAnimations: true, engineOptions: options, sourceNvEmpty: true);
+            var singing = f.Runtime.FreeplayObserver.Freeplay.SubActivities.Single(a => a.Id == "Singing");
+            var chooser = Assert.IsType<ScoringChooser>(singing.Chooser);
+            var song = Assert.IsType<NativeSingingBehavior>(f.Runtime.Bound["Singing_Beethovens5th"]);
+            var other = Assert.IsType<NativeSingingBehavior>(f.Runtime.Bound["Singing_AbaDaba"]);
+            uint unlock = NativeUnlockNames.FromBytes("Singing_Beethovens5th"u8.ToArray());
+            f.Robot.Progression!.SetUnlock(unlock, true);
+            f.Robot.Progression.SetUnlock(NativeUnlockNames.FromBytes("Singing_AbaDaba"u8.ToArray()), true);
+            f.Rig.Engine.Needs.State.ForceNextSong = (int)unlock;
+            Assert.Equal(unlock, song.NativeBaseInputs!.RequiredUnlock);
+            Assert.True(f.Robot.Progression.TryIsUnlocked(unlock, out bool unlocked) && unlocked);
+            Assert.False(f.Rig.Robot.Sensors.OnChargerPlatform);
+            Assert.False(song.NativeBaseInputs.IsCarrying);
+            Assert.True(song.IsRunnable(f.Runtime.Context));
+            Assert.False(other.IsRunnable(f.Runtime.Context));
+            chooser.RandomDraw = () => .5;
+            var choice = chooser.GetDesiredActiveBehavior(null, 0, f.Runtime.Context, f.Rig.Engine.Timer.Seconds);
+            Assert.True(ReferenceEquals(song, choice.Behavior),
+                $"{choice.Reason}: {string.Join(", ", choice.Scores)}");
+            Assert.False(choice.InputUnavailable);
+
+            var audio = new List<BehaviorAudioRequest>();
+            f.Robot.BehaviorAudioRecipient = audio.Add;
+            Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(song.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+            var compound = Assert.IsType<Cozmo.Robot.CompoundActionSequential>(song.OwnedRunner);
+            Assert.Equal(new[] { AnimationTrigger.Singing_GetIn, AnimationTrigger.Singing_100bpm, AnimationTrigger.Singing_GetOut },
+                compound.Children.Select(action => Assert.IsType<TriggerAnimationAction>(action).Request.Trigger));
+            Assert.Contains(new BehaviorAudioRequest(song.Id, 0x14, 0xE017E775, 0x0DF58DEC, 1), audio);
+        }
+        finally { Directory.Delete(directory, true); }
     }
 
     [Fact]

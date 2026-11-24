@@ -257,6 +257,15 @@ class Session:
         # Keep the original line numbers for review. Match the exact old diagnostics
         # so a different M8-015 or M12-052 gap still blocks a verdict.
         resolved = {
+            "MISSING: M1-034 M8-012: skip absent external interface for ReactionTriggerTransition at 0x005A2EFA":
+                "M1-034 skips the unchecked external-interface dereference from 0x005A20BA..0x005A20D6. The policy skip is logged",
+            "MISSING: M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / "
+            "cache 0x0062C5A2..0x0062C616: native current-origin family query, predicate and pose-root/distance "
+            "joins are unbuilt; existing all-pairs snapshot is a candidate, not the processed-ID/old-cache source path":
+                "The diagnostic was emitted by the independent host snapshot. The activity path uses the native configuration manager updated at 0x0062520C",
+            "MISSING: M13-038 BehaviorStageTag EnumToString at 0x0064DA72/0x0064DA7A/0x0064DAF6: "
+            "stage Info name input absent; checked field store/emission proceed":
+                "The robot's broadcaster now uses the 0x0078FB14 stage-name switch and table at 0x01033FF0",
             **{f"MISSING: M13-039 client needs cache +0x{offset:X} read at 0x{address:08X}: "
                "checked ctor0x00591E50..0x00591E78 does not supply this value; initial cache input remains unknown, not zero":
                    "M1-034 skips the undefined first comparison and uses the first public state as the next baseline"

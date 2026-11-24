@@ -182,6 +182,8 @@ public sealed class CubeAccelStreams
 
     /// <summary>Removes a listener, turning the cube's stream off when it was the last.</summary>
     public void RemoveListener(uint objectId, CubeShakeListener listener) => RemoveSampleListener(objectId, listener.Update);
+    internal void RemoveSingingListener(uint activeId, CubeShakeListener listener, bool send) =>
+        RemoveSampleListener(activeId, listener.Update, send);
 
     internal void RemoveMovementListener(uint activeId, NativeCubeMovementListener listener, bool send = true) => RemoveSampleListener(activeId, listener.Update, send);
 

@@ -34,6 +34,15 @@ public sealed partial class EngineRobot
         BehaviorPublicState = new(this) // robot+40 before manager A+44/client68, then B+48/client10
         {
             UnlockNameInput = NativeUnlockNames.Lookup,
+            StageNameInput = value => value switch
+            {
+                0 => "Feeding",
+                1 => "GuardDog",
+                2 => "PyramidConstruction",
+                3 => "Workout",
+                4 => "Count",
+                _ => null
+            }, // EnumToString at 0x0078FB14..0x0078FB26, table at 0x01033FF0.
             ReactionNameInput = value => value switch
             {
                 0x15 => "Count",
