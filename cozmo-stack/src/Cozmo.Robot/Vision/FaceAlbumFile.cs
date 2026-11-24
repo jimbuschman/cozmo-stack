@@ -75,7 +75,7 @@ public sealed partial class FaceRecognizer
             var entries=parsed.Values.ToList();
             if(!CheckConsistency(loaded,entries,deferLog:true))return (true,1,reports);
             if(!current())return (false,1,reports);
-            int install=InstallNativeCandidate(loaded,current,out transferred);
+            int install=InstallAlbumCandidate(loaded,current,out transferred);
             if(install!=0)return (current(),1,reports);
             if(!current())return (false,1,reports);
             _albumEntryToFaceId.Clear();_faces.Clear();_trackToFace.Clear();
@@ -111,7 +111,7 @@ public sealed partial class FaceRecognizer
     }
 
     // 0x868948..868BE4: equal dimensions transfer; a smaller candidate is copied then deleted.
-    private int InstallNativeCandidate(OkaoAlbumHandle loaded,Func<bool> current,out bool transferred)
+    private int InstallAlbumCandidate(OkaoAlbumHandle loaded,Func<bool> current,out bool transferred)
     {
         transferred=false;
         if(_album is null || _okao.GetAlbumMaxNum(_album,out int currentUsers,out int currentData)!=0 ||
@@ -151,7 +151,7 @@ public sealed partial class FaceRecognizer
             }
             var entries=DeserializeEnrollment(enrollmentData,()=>Now,out int nextFaceId);
             if(entries is null || !current() || !CheckConsistency(loaded,entries,deferLog:true) || !current())return (false,empty);
-            if(InstallNativeCandidate(loaded,current,out transferred)!=0 || !current())return (false,empty);
+            if(InstallAlbumCandidate(loaded,current,out transferred)!=0 || !current())return (false,empty);
             _nextFaceId=nextFaceId;_albumEntryToFaceId.Clear();_faces.Clear();_trackToFace.Clear();
             foreach(var entry in entries)
             {

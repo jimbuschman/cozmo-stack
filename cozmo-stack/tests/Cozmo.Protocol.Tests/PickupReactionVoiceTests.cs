@@ -58,15 +58,16 @@ public sealed class PickupReactionVoiceTests
     }
 
     [Theory]
-    [InlineData(false,0,false,false,false,false)]
-    [InlineData(true,0,false,false,false,false)]
-    [InlineData(true,1,false,false,false,false)]
-    [InlineData(true,2,false,false,false,false)]
-    [InlineData(true,0,true,false,false,false)]
-    [InlineData(true,0,false,true,false,false)]
-    [InlineData(true,0,false,false,true,false)]
-    [InlineData(false,0,false,false,false,true)]
-    public void ActualPickupReactionSelectsNamedOrUnnamedAfterRetainedWait(bool named,int spark,bool stale,bool carrying,bool stopWaiting,bool stopOnLog)
+    [InlineData(false,0,false,false,false,false,false)]
+    [InlineData(true,0,false,false,false,false,false)]
+    [InlineData(true,1,false,false,false,false,false)]
+    [InlineData(true,2,false,false,false,false,false)]
+    [InlineData(true,0,true,false,false,false,false)]
+    [InlineData(true,0,false,true,false,false,false)]
+    [InlineData(true,0,false,false,true,false,false)]
+    [InlineData(false,0,false,false,false,true,false)]
+    [InlineData(true,1,false,false,false,false,true)]
+    public void ActualPickupReactionSelectsNamedOrUnnamedAfterRetainedWait(bool named,int spark,bool stale,bool carrying,bool stopWaiting,bool stopOnLog,bool hiccups)
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,sourceNvEmpty:true);
         var owner=f.Robot;var manager=owner.BehaviorManagerOwner!;
@@ -134,7 +135,17 @@ public sealed class PickupReactionVoiceTests
                 manager.SetNativeRequestedSpark(4,(byte)(spark==2?1:0));
                 manager.SwitchToNativeRequestedSpark();
             }
-            for(int i=0;i<20 && !stoppedByLog && behavior.OwnedRunner is Cozmo.Robot.Manipulation.NativeTimedWaitRunner;i++)f.Motors(RobotStatusFlag.IsPickedUp);
+            if (hiccups)
+            {
+                // The hard spark skips faces and pets. 0x00607942 reads the retained whiteboard.
+                f.M.Whiteboard.HiccupsActive = true;
+                wait.State = 0x03000018; // The native wait completion callback ignores the action result.
+                owner.ActionList.Update();
+            }
+            else
+            {
+                for(int i=0;i<20 && !stoppedByLog && behavior.OwnedRunner is Cozmo.Robot.Manipulation.NativeTimedWaitRunner;i++)f.Motors(RobotStatusFlag.IsPickedUp);
+            }
             if(stopOnLog){Assert.True(stoppedByLog);Assert.False(behavior.EngineRunning);Assert.Null(behavior.OwnedRunner);Assert.Equal(0,words);return;}
             if(carrying){Assert.Null(owner.CarryingOwner!.CarriedObjectId);Assert.False(carriedAtDraw);}
             if(named && !stale && spark!=1)
@@ -145,7 +156,9 @@ public sealed class PickupReactionVoiceTests
             else
             {
                 var anim=Assert.IsType<TriggerAnimationAction>(behavior.OwnedRunner);
-                Assert.Equal(spark==1?AnimationTrigger.ReactToPickup:AnimationTrigger.AcknowledgeFaceUnnamed,anim.Request.Trigger);
+                var expected = hiccups ? AnimationTrigger.HiccupRobotPickedUp
+                    : spark == 1 ? AnimationTrigger.ReactToPickup : AnimationTrigger.AcknowledgeFaceUnnamed;
+                Assert.Equal(expected, anim.Request.Trigger);
                 Assert.Equal(spark==1?0u:4u,anim.RequiredTrackMask);Assert.Equal(2,words);
             }
             Assert.Equal(1.0+ReactToPickupBehavior.RetryScaleStep,behavior.RetryScale);

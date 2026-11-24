@@ -77,6 +77,30 @@ public class NativeBouncerFaceInputTests
         }
         finally { history.Clear(); }
     }
+
+    [Fact]
+    public void MissingObservationHistoryUsesTheNativeTimestampWarning()
+    {
+        using var rig = new Rig();
+        var owner = rig.Robot.Engine.Robot!;
+        var logs = new List<EngineLogEntry>();
+        rig.Robot.Engine.LogEntry += logs.Add;
+
+        Assert.Null(VisionSystem.ResolveFaceObservationOrigin(new RobotStateHistory(), owner, 142, faceId: -7));
+
+        var warnings = logs.Where(log => log.Level == EngineLogLevel.Warning && log.Name?.StartsWith("FaceWorld.") == true);
+        Assert.Collection(warnings,
+            warning =>
+            {
+                Assert.Equal("FaceWorld.AddOrUpdateFace.GetComputedStateAtFailed", warning.Name);
+                Assert.EndsWith("face timestamp=142", warning.Text); // 0x004F4372..0x004F438A.
+            },
+            warning =>
+            {
+                Assert.Equal("FaceWorld.Update.AddOrUpdateFaceFailed", warning.Name);
+                Assert.EndsWith("ObservedFace ID=-7", warning.Text); // 0x004F5322..0x004F5332.
+            });
+    }
     [Fact]
     public void SuppliedThirdDirectionIsDistinctFromRollAndSurvivesFaceWorldCopy()
     {

@@ -314,6 +314,29 @@ public sealed class AiAuthoredAnimationTests
     }
 
     [Fact]
+    public async Task MissingSelectedClipInterruptsTheIncumbentAndReturnsAnimationFailure()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true,
+            pumpAnimations: true, sourceNvEmpty: true);
+        var animations = f.Rig.Robot.Animations;
+        var library = animations.Library!;
+        const AnimationTrigger trigger = AnimationTrigger.CozmoSaysSpeakLoop;
+        var group = library.GetGroup(library.GetAnimationForTrigger(trigger))!;
+        var clip = library.GetClip(group.Entries[0].Name);
+        Assert.NotNull(animations.PlayTracked(clip, numLoops: 0));
+        group.Entries = new[] { new AnimationGroupEntry("missing_selected_clip", 1f, 0d, "Default") };
+        var logs = new List<EngineLogEntry>();
+        f.Rig.Engine.LogEntry += logs.Add;
+
+        var request = f.Rig.Robot.Motion.QueueAiAnimationAsync(trigger);
+        f.Rig.Tick();
+        Assert.Equal(0x03000001u, (await request.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
+        Assert.Contains(logs, entry => entry.Name == "CannedAnimationContainer.GetAnimation_Const.InvalidName");
+        Assert.Contains(logs, entry => entry.Name == "AnimationStreamer.SetStreamingAnimation.Aborting");
+        Assert.NotEqual(clip.Name, animations.Scheduler.Playing);
+    }
+
+    [Fact]
     public async Task LockedRequestedTrackFailsBeforePlayback()
     {
         using var f=new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,sourceNvEmpty:true);

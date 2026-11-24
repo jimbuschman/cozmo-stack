@@ -2172,8 +2172,10 @@ public class BehaviorFrameworkTests
     }
 
     /// <summary>M8-001 B10: the Resume counter and refusal (0x005bcf16..0x005bcf7c) apply to every behaviour, including one that is not a SteppedBehavior.</summary>
-    [Fact]
-    public void ANonSteppedBehaviourGetsTheResumeCounterAndRefusal()
+    [Theory]
+    [InlineData(18, false)]
+    [InlineData(19, true)]
+    public void ANonSteppedBehaviourGetsTheResumeCounterAndRefusal(int retryAt, bool resumed)
     {
         using var offline = Offline();
         var (robot, ctx) = offline;
@@ -2190,6 +2192,15 @@ public class BehaviorFrameworkTests
         Assert.NotNull(m.CheckReactions(3)); strategy.Fire = false;
         m.Update(0, 4);
         Assert.Null(m.Current);                                              // second: refused
+
+        var falling = new AlwaysTriggerStrategy(ReactionTrigger.RobotFalling) { Fire = false };
+        m.AddReaction(falling, new OneShotBehavior("falling"));
+        Assert.True(m.StartAsync("parked", 5).GetAwaiter().GetResult());     // Init resets the counter.
+        falling.Fire = true;
+        Assert.NotNull(m.CheckReactions(6));
+        falling.Fire = false;
+        m.Update(0, retryAt);
+        Assert.Equal(resumed, ReferenceEquals(parked, m.Current));          // +0x118 survives Init until t=19.
     }
 
     /// <summary>M8-003 B12: GraphEvaluator2d::EvaluateY (0x00804bd0..0x00804c40) in float; a span at or below 1e-5f returns the LEFT node's y (0x00804c14..0x00804c1c).</summary>

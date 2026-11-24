@@ -347,6 +347,27 @@ public class RFix2BTests
         Assert.Single(log, l => l.Contains("MISSING: RobotAudioClient::CreateAudioAnimation"));
     }
 
+    [Theory]
+    [InlineData(RobotAudioOutputSource.PlayOnRobot)]
+    [InlineData(RobotAudioOutputSource.PlayOnDevice)]
+    public void M6_028_EmptySelectedAudioEventsRetireBeforePlayback(RobotAudioOutputSource source)
+    {
+        var sink = new AudioSink();
+        var log = new List<string>();
+        var scheduler = new AnimationScheduler(sink) { OutputSource = () => source, Log = log.Add };
+        var frame = new AudioKeyframe(0, new long[] { 0 }, 1f, new[] { 1f }, false);
+        scheduler.Play(new AnimationClip
+        {
+            Name = "zero_event", Keyframes = new[] { frame }, Tracks = frame.Track, DurationMs = frame.EndTimeMs,
+        }, 0);
+        for (double t = 0; t <= 1200; t += 33) scheduler.Advance(t);
+        // 0x005968B6 rejects event 0; state 4 at 0x00596948 is consumed by 0x0059A0BA.
+        Assert.Single(log, line => line.Contains("Audio is not needed right now for animation: zero_event"));
+        Assert.DoesNotContain(log, line => line.Contains("MISSING"));
+        Assert.Equal(0, sink.Samples);
+        Assert.Equal(1, sink.Ends);
+    }
+
     /// <summary>
     /// M3-024: source 0 (the client constructor's value until a firmware version is handled, 0x005994E6) clears the animation's RobotAudio track and creates nothing
     /// (0x0059A11C..0x0059A12E); a null source from the live robot is that 0.

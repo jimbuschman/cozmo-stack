@@ -30,7 +30,9 @@ internal sealed class SpeechMetadata
                 "Unprocessed" => 0,
                 "CozmoProcessing_Name" => 1,
                 "CozmoProcessing_Name_Question" => 2,
-                _ => 3,
+                "CozmoProcessing_Sentence" => 3,
+                // SayTextVoiceStyle is closed (unity Anki.Cozmo/SayTextVoiceStyle.cs); no shipped intent names another.
+                _ => byte.MaxValue,
             };
             metadata._entries.Add(item.Name, new Entry(styleId, ReadTraits(value, "durationTraits"), ReadTraits(value, "pitchTraits")));
         }

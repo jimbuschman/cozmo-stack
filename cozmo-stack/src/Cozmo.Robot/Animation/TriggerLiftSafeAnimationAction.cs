@@ -120,24 +120,23 @@ internal class TriggerAnimationAction : ActionRunner
             return 0x0300000C;
         }
         // fidelity: M8-015, M8-020 — PlayAnimation::Init 0x00543F20..0x00544180.
-        try
+        if (_boundedOrdinary) _selectedClip ??= _directClip ?? library!.GetAnimation(_clip);
+        else _cachedClip ??= _directClip ?? library!.GetAnimation(_clip);
+        var clip = _boundedOrdinary ? _selectedClip : _cachedClip;
+        if (clip is null)
         {
-            if (_boundedOrdinary) _selectedClip ??= _directClip ?? library!.GetClip(_clip);
-            else _cachedClip ??= _directClip ?? library!.GetClip(_clip);
-        }
-        catch (KeyNotFoundException error) when (_authoredSpeech || _ordinaryOwner is not null)
-        {
-            Missing("M14-006 authored robot audio animation is unavailable: "+error.Message);
-            return DestructionObserved ? unchecked((int)EngineActionResult.Cancelled) : 0x0300000C;
+            bool Current() => OwnerCurrent && !_destroyed && !DestructionObserved;
+            _robot.Animations.Scheduler.SubmitMissingClip(Request.Argument2, Request.Argument3, Current);
+            return Current() ? 0x03000001 : unchecked((int)EngineActionResult.Cancelled);
         }
         if (_ordinaryOwner is not null && (_ordinaryRetired || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
-        if (_boundedOrdinary && _selectedClip!.Keyframes.OfType<AudioKeyframe>().Any(k => k.EventIds.Any(id => unchecked((uint)id)==0xBF0BACE1)))
+        if (_boundedOrdinary && clip.Keyframes.OfType<AudioKeyframe>().Any(k => k.EventIds.Any(id => unchecked((uint)id)==0xBF0BACE1)))
         {
             HostUnavailable="MISSING: authored speech-source clip requires an authorized provider";
             Missing(HostUnavailable);
             return 0x03000000;
         }
-        bool needsOrdinaryAudio = !_boundedOrdinary || _selectedClip!.Keyframes.OfType<AudioKeyframe>().Any();
+        bool needsOrdinaryAudio = !_boundedOrdinary || clip.Keyframes.OfType<AudioKeyframe>().Any();
         if (_ordinaryOwner is { } ordinaryOwner && _ordinaryLease is null && needsOrdinaryAudio)
         {
             _ordinarySelected=true;
@@ -164,11 +163,11 @@ internal class TriggerAnimationAction : ActionRunner
         _started = _ended = _failed = false;
         _ticket = _speechPath is null
             ? _boundedOrdinary && _scopedOwner is { } scoped
-                ? _robot.Animations.PlayScopedTracked(_cachedClip,scoped,Request.Argument2,()=>!_destroyed && !DestructionObserved)
-                : _robot.Animations.PlayTracked(_cachedClip,Request.Argument3,numLoops:Request.Argument2)
+                ? _robot.Animations.PlayScopedTracked(clip,scoped,Request.Argument2,()=>!_destroyed && !DestructionObserved)
+                : _robot.Animations.PlayTracked(clip,Request.Argument3,numLoops:Request.Argument2)
             : _speechOwner is { } speechOwner ? (_authoredSpeech
-                ? _robot.Animations.PlayAuthoredSpeechTracked(_cachedClip, _speechPath, speechOwner, Request.Argument2, _nextAuthoredPath, () => !_destroyed && !DestructionObserved)
-                : _robot.Animations.PlaySpeechTracked(_cachedClip, _speechPath, speechOwner)) : null;
+                ? _robot.Animations.PlayAuthoredSpeechTracked(clip, _speechPath, speechOwner, Request.Argument2, _nextAuthoredPath, () => !_destroyed && !DestructionObserved)
+                : _robot.Animations.PlaySpeechTracked(clip, _speechPath, speechOwner)) : null;
         if (_ticket is null) return 0x03000001;
         bool ScopedCurrent() => _scopedOwner is null || !_destroyed && !DestructionObserved &&
             !_scopedOwner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,_scopedOwner);

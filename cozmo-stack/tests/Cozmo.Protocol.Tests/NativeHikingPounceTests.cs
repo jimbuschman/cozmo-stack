@@ -157,6 +157,57 @@ public sealed class NativeHikingPounceTests
     }
 
     [Fact]
+    public void VoiceRequestAndHardSparkUseTheStreamlinedInitialSearch()
+    {
+        using var f = new Fixture();
+        _ = Prepare(f);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var voice = Assert.IsType<NativePounceOnMotion>(f.Runtime.Bound["VC_PounceOnMotion"]);
+        Assert.True(manager.StartAsync(voice.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        AssertInitialSearch(voice);
+        manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+
+        var spark = Assert.IsType<NativePounceOnMotion>(f.Runtime.Bound["SparksPounceOnMotion"]);
+        manager.SetNativeRequestedSpark((int)NativeUnlockNames.FromBytes("PounceOnMotionAction"u8.ToArray()), 0);
+        manager.SwitchToNativeRequestedSpark();
+        Assert.True(manager.StartAsync(spark.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+        AssertInitialSearch(spark);
+
+        static void AssertInitialSearch(NativePounceOnMotion behavior)
+        {
+            Assert.Equal(3, behavior.NativeState);
+            var search = Assert.IsType<CompoundActionSequential>(behavior.OwnedRunner);
+            Assert.Equal(2, search.Children.Count);
+            Assert.All(search.Children, child => Assert.IsType<NativePanTiltRunner>(child));
+        }
+    }
+
+    [Fact]
+    public void LiftPowerSendFailuresKeepTheNativeWaitAndContinuation()
+    {
+        using var f = new Fixture();
+        var pounce = Prepare(f);
+        var power = new List<byte>();
+        f.Robot.SendFault = message =>
+        {
+            if (message is not EnableMotorPower command) return null;
+            power.Add(command.Field1);
+            return false;
+        };
+        Assert.True(f.Robot.BehaviorManagerOwner!.StartAsync(pounce.Id, f.Rig.Engine.Timer.SecondsF).GetAwaiter().GetResult());
+
+        Finish(pounce, f);
+        Assert.IsType<NativeTimedWaitRunner>(pounce.OwnedRunner);
+        Assert.Equal(10, pounce.NativeState);
+        Assert.True(pounce.LiftDisabled);
+        Finish(pounce, f);
+        Assert.False(pounce.LiftDisabled);
+        Assert.NotEqual(10, pounce.NativeState);
+        Assert.Equal(new byte[] { 0, 1 }, power);
+        Assert.True(f.Rig.Logged("failed to send a message type enableMotorPower"));
+    }
+
+    [Fact]
     public void TransportCallbackStoppingDuringDisableRestoresPendingLiftOwnership()
     {
         // This rig connects Engine to the real ManualPump transport; its standalone M is not used.

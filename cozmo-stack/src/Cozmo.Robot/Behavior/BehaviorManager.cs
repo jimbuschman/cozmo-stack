@@ -194,7 +194,16 @@ public sealed partial class BehaviorManager : IDisposable
         }
         if (_hostDisposed) return;
         foreach (var entry in unbound)
+        {
+            if (entry == "Sparked -> ReactToSparked")
+            {
+                _context.Robot.Engine.EmitStackLog("Sparked -> ReactToSparked is deferred in SCOPE.md (section D)");
+                continue;
+            }
+            if (entry == "NoPreDockPoses -> RamIntoBlock" && nativeOwner is not null && manipulation is not null)
+                continue; // BindReactionDependencies reports the exact remaining RamIntoBlock gap.
             SteppedBehavior.ReportMissing("M7-002/M7-014 InitReactionTriggerMap 0x005A17CC/0x005A1872: " + entry + " has no constructed strategy/behavior pair");
+        }
     }
     internal void BindFreeplayInputs(BehaviorContext context,string resources,Cozmo.Robot.Vision.VisionSystem? vision,
         Cozmo.Robot.Manipulation.ManipulationSystem? manipulation,IReadOnlyDictionary<string,IBehavior> bound)
@@ -280,7 +289,7 @@ public sealed partial class BehaviorManager : IDisposable
                         recipient=supplied;
                     else
                     {
-                        SteppedBehavior.ReportMissing("M7-019 RamIntoBlock configured factory owner unavailable; reaction-owned existing adapter supplies the strategy recipient, not the native factory identity or a recovered Ram body");
+                        SteppedBehavior.ReportMissing("M7-019 RamIntoBlock configured factory owner unavailable (0x0060473C). The reaction uses its existing adapter while the native action sequence at 0x00604764 remains unbuilt.");
                         if (_hostDisposed || _reactionBindingGeneration!=bindingGeneration) return;
                         recipient=new RamIntoBlockBehavior(manipulation);
                     }
@@ -1161,7 +1170,12 @@ public sealed partial class BehaviorManager : IDisposable
                 if (startingGeneration is not null && ((AcknowledgeObjectBehavior)next).HostGeneration != unchecked(startingGeneration.Value + 1))
                 { scope.Dispose(); return false; } // reentrant replacement owns the manager now
                 initFailed = next is SteppedBehavior sb && sb.InitFailed;
-                if (next is not SteppedBehavior) lock (_gate) _resumeState.Remove(next);       // Init zeroes +0x114 (0x005bcd58)
+                if (next is not SteppedBehavior)
+                {
+                    lock (_gate)
+                        if (_resumeState.TryGetValue(next, out var resumed))
+                            _resumeState[next] = (0, resumed.SuppressUntil); // 0x005BCD58 resets +0x114.
+                }
             }
             catch (OperationCanceledException)
             {
@@ -1249,7 +1263,7 @@ public sealed partial class BehaviorManager : IDisposable
         _context.Robot.Engine.EmitStackLog("M1-034/M8-012 skipped ReactionTriggerTransition: null external interface at 0x005A2EFA");
     /// <summary><c>UpdateRobotPropertiesForReaction</c> (0x005a2f54), called on entry or exit.</summary>
     public Action<bool>? UpdateRobotPropertiesForReaction { get; set; }
-    /// <summary>The cube light stop on a behaviour change (0x005a2230..0x005a223e). MISSING.</summary>
+    /// <summary>Legacy callback property. Running-info light stops use the native manager vector (0x005A2230..0x005A223E).</summary>
     public Action? StopLightAnimsOnBehaviorChange { get; set; }
 
     // Scopes of behaviours whose Init failed or whose resume failed: the engine never calls Stop for them, so what they took stays held
@@ -1404,25 +1418,28 @@ public sealed partial class BehaviorManager : IDisposable
     /// <c>IBehavior::Resume</c> 0x005bceac for a behaviour that is not a <see cref="SteppedBehavior"/>. The engine's Resume is the same for every
     /// behaviour: the +0x114 counter and the refusal from the second CliffDetected/UnexpectedMovement resume (+0x118 = now + 15.0f, the
     /// <c>TooManyResumesCliffOrMovement</c> emotion event), then <c>ResumeInternal</c>, which is <c>IsRunnableBase</c> and the vtable+0x50 test
-    /// (this stack's <c>IsRunnable</c>) and then <c>InitInternal</c> (its <c>StartAsync</c>). The counter, the refusal and the event are done here for it;
-    /// the +0x118 test inside <c>IsRunnableBase</c> and the spark lock belong to the behaviour and are MISSING for such a class.
+    /// (this stack's <c>IsRunnable</c>) and then <c>InitInternal</c> (its <c>StartAsync</c>). Configured Robot
+    /// behaviors use <see cref="SteppedBehavior"/>, which also handles their native unlock IDs.
     /// </summary>
     // fidelity: M8-001
     private bool ResumeNonStepped(IBehavior resume, ReactionTrigger? trigger, BehaviorScope scope, double nowSec)
     {
-        SteppedBehavior.ReportMissing("IBehavior::Resume for a behaviour that is not a SteppedBehavior: its IsRunnableBase +0x118 test (0x005bd8be) and spark lock are not modelled");
+        (int Count, float SuppressUntil) state;
+        lock (_gate) _resumeState.TryGetValue(resume, out state);
         if (trigger is ReactionTrigger.CliffDetected or ReactionTrigger.UnexpectedMovement)
         {
-            (int Count, float SuppressUntil) st;
-            lock (_gate) { _resumeState.TryGetValue(resume, out st); st.Count++; _resumeState[resume] = (st.Count, st.SuppressUntil); }
-            if (st.Count - 1 >= 1)
+            int previousCount = state.Count;
+            state.Count = unchecked(previousCount + 1);
+            if (previousCount >= 1) // 0x005BCF22 compares the value from before the increment.
             {
-                lock (_gate) _resumeState[resume] = (st.Count, (float)nowSec + SteppedBehavior.TooManyResumesCooldownSec);
+                state.SuppressUntil = (float)nowSec + SteppedBehavior.TooManyResumesCooldownSec;
+                lock (_gate) _resumeState[resume] = state;
                 _context.Mood?.Trigger(SteppedBehavior.TooManyResumesEventName, nowSec);
                 return true;
             }
+            lock (_gate) _resumeState[resume] = state;
         }
-        if (!resume.IsRunnable(_context)) return true;
+        if ((float)nowSec < state.SuppressUntil || !resume.IsRunnable(_context)) return true; // 0x005BD8BE admits equality.
         resume.StartAsync(_context, scope, CancellationToken.None).GetAwaiter().GetResult();
         return false;
     }
@@ -1674,8 +1691,6 @@ public sealed partial class BehaviorManager : IDisposable
         foreach (var s in strategies) if (s is IDisposable d) d.Dispose();
         foreach(var pickup in pickupOwners)pickup.RetireNativeBinding();
         foreach (var objectOwner in objectOwners) objectOwner.ReleaseHostGhost(); // host cleanup after stop/cancel and unsubscribe
-        if(_context.Robot.Sensors.RequestCurrentBehaviorEndImmediately?.Target==this)
-            _context.Robot.Sensors.RequestCurrentBehaviorEndImmediately=null;
         var um = _context.Robot.Sensors.UnexpectedMovement;
         if (ReferenceEquals(um.ReactionTriggerEnabled, _unexpectedMovementGate)) um.ReactionTriggerEnabled = null;
     }

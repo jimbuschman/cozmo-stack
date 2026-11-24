@@ -5,7 +5,7 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
-// Configured FindFaces_socialize and its inherited scan-in-place action core.
+// Configured FindFaces action using the inherited scan-in-place core (0x005C191C).
 internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
 {
     private readonly ManipulationSystem _m;
@@ -55,14 +55,14 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
                 !p.TryGetProperty("motionProfile",out _);
         }
         catch(Exception e) when(e is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException or ArgumentException)
-        {ReportMissing("FindFaces_socialize changed parameters unavailable: "+e.Message);}
+        {ReportMissing($"{Id} changed parameters unavailable: {e.Message}");}
         if(_robot.HasExternalInterface)
         {
             _treads=(from,to)=>
             {
                 using var owner=_robot.Engine.EnterSynchronousOwner();
                 if(to!=OffTreadsState.OnTreads || Volatile.Read(ref _retired)!=0 || !ReferenceEquals(_robot.Engine.Robot,_robot))return;
-                if(!Available){ReportMissing("FindFaces_socialize on-treads center needs actual pose/runtime input");return;}
+                if(!Available){ReportMissing($"{Id} on-treads center needs actual pose/runtime input");return;}
                 _center=Yaw();
             };
             _m.Robot.Sensors.ConfiguredBehaviorOffTreadsStateChanged+=_treads;
@@ -74,7 +74,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
     protected override bool HostExecutionVersionCurrent(long v)
     {
         if(Volatile.Read(ref _retired)!=0 || Interlocked.Read(ref _generation)!=v || !ReferenceEquals(_robot.Engine.Robot,_robot))return false;
-        if(!Available){ReportMissing("FindFaces_socialize live action continuation needs unavailable pose/runtime input");return false;}
+        if(!Available){ReportMissing($"{Id} live action continuation needs unavailable pose/runtime input");return false;}
         return true;
     }
     protected override bool HostStopContinuationCurrent(long v)=>Volatile.Read(ref _retired)==0 && Interlocked.Read(ref _generation)==unchecked(v+1);
@@ -83,7 +83,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
     public override bool IsRunnable(BehaviorContext context)
     {
         using var owner=EnterHostExecutionOwner(context);
-        if(!Available){MarkReadinessUnavailable();ReportMissing("FindFaces_socialize actual owner/parameters unavailable");return false;}
+        if(!Available){MarkReadinessUnavailable();ReportMissing($"{Id} actual owner/parameters unavailable");return false;}
         return IsRunnableBase(context);
     }
     protected override bool RunnableGate20(BehaviorContext context)=>false;
@@ -92,7 +92,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
     private float Yaw(){using var mutation=_m.World.EnterPoseMutation();return (float)_robot.GetCheckedMainPose().AngleAroundZ;}
     protected override void OnStart()
     {
-        if(!Available){MarkReadinessUnavailable();InitFailed=true;ReportMissing("FindFaces_socialize actual input unavailable");return;}
+        if(!Available){MarkReadinessUnavailable();InitFailed=true;ReportMissing($"{Id} actual input unavailable");return;}
         _accumulated=0;_endpoints=0;_center=Yaw();
         long g=CaptureHostExecutionVersion();
         byte direction=(byte)(_robot.Engine.ContextRandom.RandDbl(1)>_chance?1:0);
@@ -141,7 +141,7 @@ internal sealed class NativeFindFacesSocialize : SteppedBehavior, IDisposable
         if(!HostExecutionVersionCurrent(g))return;
         uint imageTimestamp=_m.Robot.CameraSettings.LastProcessedImageTimestamp;
         if(!_robot.TryGetNativeOriginOwner(_robot.CurrentOriginId,out var origin) || origin is null)
-        {ReportMissing("FindFaces_socialize cached-face current origin unavailable");return;}
+        {ReportMissing($"{Id} cached-face current origin unavailable");return;}
         using var pose=new Pose3d("");uint stamp=_m.Vision.Faces.CopyNativeLastFaceTimestamp(origin,false,pose);
         if(!HostExecutionVersionCurrent(g))return;
         if(stamp!=0 && (_maxAge==0 || imageTimestamp<=unchecked(stamp+_maxAge)))

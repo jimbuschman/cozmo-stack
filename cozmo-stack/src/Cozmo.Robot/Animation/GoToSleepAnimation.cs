@@ -9,9 +9,22 @@ internal sealed record SleepAnimationArguments(AnimationTrigger Trigger, int Num
 
 internal static class GoToSleepAnimation
 {
-    // Concrete TriggerAnimationAction lifecycle belongs to M8. The existing behaviour helper is an asynchronous
-    // stand-in, not an ActionRunner that the source compound can own; do not silently substitute it.
-    internal static CompoundActionParallel? Create(CozmoRobot host, Func<SleepAnimationArguments, ActionRunner?>? triggerFactory)
+    internal static CompoundActionParallel? CreateOwned(CozmoRobot host, EngineRobot owner,
+        Func<SleepAnimationArguments, ActionRunner?>? factoryOverride)
+    {
+        return Create(host, factoryOverride ?? BuildTrigger, owner);
+
+        ActionRunner BuildTrigger(SleepAnimationArguments args)
+        {
+            // 0x0052CEDE, 0x0052CF14 and 0x0052CF4A use the ordinary trigger-action constructor.
+            var child = new TriggerAnimationAction(host, new DrivingAnimationRequest(
+                args.Trigger, args.NumLoops, args.Interrupt, (int)args.Locks, args.TimeoutSeconds, args.Strict));
+            child.SetScopedOwner(owner);
+            return child;
+        }
+    }
+
+    private static CompoundActionParallel? Create(CozmoRobot host, Func<SleepAnimationArguments, ActionRunner?>? triggerFactory, EngineRobot? owner)
     {
         var sequence = new CompoundActionSequential(() => host.Engine.Timer.SecondsF);
         foreach (ushort trigger in new ushort[] { 0xD2, 0xD5, 0xD4 })
@@ -22,14 +35,17 @@ internal static class GoToSleepAnimation
             if (child is null)
             {
                 host.Engine.EmitStackLog("MISSING: M5-038 -> M8 TriggerAnimationAction concrete ActionRunner lifecycle (factory call 0x0052CEDE); no checked reusable recipient");
-                sequence.WatcherEnding();
+                sequence.RetireNeverAdmittedTree();
                 return null;
             }
             sequence.AddAction(child, false, false);
         }
         var parallel = new CompoundActionParallel(() => host.Engine.Timer.SecondsF);
         parallel.AddAction(sequence, false, false);
-        host.Motion.AddGoToSleepLiftChild(parallel); // M4-028 exact preset-0 / tolerance-5 child.
+        host.Motion.AddGoToSleepLiftChild(parallel, owner); // M4-028 exact preset-0 / tolerance-5 child.
         return parallel;
     }
+
+    internal static CompoundActionParallel? Create(CozmoRobot host, Func<SleepAnimationArguments, ActionRunner?>? factory)
+        => Create(host, factory, null);
 }

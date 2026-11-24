@@ -149,10 +149,10 @@ public sealed class M8CompoundCheckedRowsTests
     {
         using var robot=CozmoRobot.CreateOffline();var order=new List<string>();var child=new Child{Result=0x01000000,OnDelete=()=>order.Add("delete")};
         robot.Engine.Robot!.ActionList.QueueAction(QueueActionPosition.AtEnd,child);robot.Engine.Robot.ActionList.Update();
-        robot.Sensors.SetCliffSensorEnabled(enabled);robot.Sensors.RequestCurrentBehaviorEndImmediately=r=>{Assert.Equal("HandleRobotStopped",r);order.Add("request");};
+        robot.Sensors.SetCliffSensorEnabled(enabled);robot.Sensors.RobotStoppedEndRequestForTest=r=>{Assert.Equal("HandleRobotStopped",r);order.Add("request");};
         robot.Sensors.RobotStopped+=()=>order.Add("broadcast");robot.Sensors.Handle(new Cozmo.Protocol.RobotStopped());
         Assert.Equal(enabled?new[]{"request","delete"}:Array.Empty<string>(),order);robot.Engine.DrainAppDelivery();
         Assert.Equal(enabled?new[]{"request","delete","broadcast"}:Array.Empty<string>(),order);
-        robot.Sensors.RequestCurrentBehaviorEndImmediately=null;
+        robot.Sensors.RobotStoppedEndRequestForTest=null;
     }
 }

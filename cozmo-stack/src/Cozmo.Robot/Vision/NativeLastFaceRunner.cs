@@ -284,24 +284,27 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or InvalidOperationException)
                     { M.Robot.Engine.EmitStackLog("MISSING M14-006 Name_Normal configuration: " + e.Message); return 0x03000000; }
-                    var speech = new SayTextAction(M.Robot, owner, face.Name!, selection.Style, selection.Duration, selection.Pitch);
+                    // The name intent uses the audio-only live SayText animation when the callback
+                    // returns Count (0x0054C5C2..0x0054C5D8, 0x0056153C..0x005615D8).
+                    var speech = new SayTextAction(M.Robot, owner, face.Name!, selection.Style, selection.Duration, selection.Pitch, direct: true);
                     int selected;
                     try { selected = NamedTriggerCallback is null ? _sayTrigger : (int)NamedTriggerCallback(_verified.Id); }
                     catch { speech.RetireNeverAdmittedTree(); throw; }
                     if (DestructionObserved || !ScopedCurrent) { speech.RetireNeverAdmittedTree(); return EngineActionResult.Cancelled; }
                     if (selected != 0x23F)
-                    {
                         speech.SetCannedTrigger((AnimationTrigger)selected);
-                        SetChild(speech);
-                        if (DestructionObserved) return EngineActionResult.Cancelled;
-                        _faceState = 3;
-                        return EngineActionResult.Running;
+                    else if (selection.Style != 1)
+                    {
+                        speech.RetireNeverAdmittedTree();
+                        Behavior.SteppedBehavior.ReportMissing("M14-006 audio-only Name_Normal requires the shipped name voice style");
+                        return 0x03000000;
                     }
-                    speech.RetireNeverAdmittedTree();
+                    SetChild(speech);
+                    if (DestructionObserved) return EngineActionResult.Cancelled;
+                    _faceState = 3;
+                    return EngineActionResult.Running;
                 }
-                string gap=_sayTrigger==0x23F
-                    ? "the no-trigger named SayText action and provider are not joined to this caller"
-                    : "fit is false; authored animation events and any speech event require a shared persistent Wwise/robot audio recipient";
+                const string gap = "the original robot owner or Name_Normal assets are unavailable";
                 Behavior.SteppedBehavior.ReportMissing("M14-006/M13-014 LastFace named SayText: "+gap);
                 if (_actualOwner is not null) return 0x03000000;
                 throw new NativeActionUnavailable("M14-006/M13-014 native LastFace SayText(name,intent3) 0x0054C5AA: "+gap);

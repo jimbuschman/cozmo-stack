@@ -1119,6 +1119,12 @@ public sealed class AnimationScheduler
         }
     }
 
+    internal void SubmitMissingClip(int numLoops, bool interrupt, Func<bool> current)
+    {
+        // 0x00543F7C..0x00543F9A forwards a failed container lookup to SetStreamingAnimation.
+        lock (_gate) SetStreamingAnimationLocked(null, numLoops, interrupt, current);
+    }
+
     // ================================================================== Abort (A22..A24)
 
     // fidelity: M5-036 — what the robot does with AbortAnimation, Start without End, locked tracks and its start/end
@@ -1223,41 +1229,34 @@ public sealed class AnimationScheduler
     /// </list>
     /// A scheduler with no client (<see cref="OutputSource"/> null) keeps the on-robot stand-in.
     /// </summary>
-    private static void SteppedBehavior_ReportPostConstruction() =>
-        Behavior.SteppedBehavior.ReportMissing("RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made");
-
     private IAudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim,Func<bool>? current=null,WwiseRobotAudioPath? speechPath=null)
     {
         if (_audio is not null) { _audio.Abort(); if(current is not null && !current())return null; _audio = null; }
         if (OutputSource is not { } provider)
         {
-            SteppedBehavior_ReportPostConstruction();
-            return (current is not null && !current()) || speechPath is not null || anim.RobotAudio.IsEmpty
-                ? null : new AudioAnimation(this, anim.RobotAudio);
+            return (current is not null && !current()) || speechPath is not null
+                ? null : CreateFixtureAudioAnimation(anim);
         }
         var source = provider();
         var runtime = source == RobotAudioOutputSource.PlayOnRobot && speechPath is null && AudioSource is null
             ? RuntimeAudioSource?.Invoke() : null;
-        if (speechPath is null && runtime is null) SteppedBehavior_ReportPostConstruction();
         if (current is not null && !current()) return null;
         switch ((byte)(source ?? RobotAudioOutputSource.None))
         {
             case 2:
-                if (anim.RobotAudio.IsEmpty) return null;
-                if (speechPath is not null) return new SpeechAudioAnimation(this, anim.RobotAudio, speechPath);
+                if (speechPath is not null)
+                    return anim.RobotAudio.IsEmpty ? null : new SpeechAudioAnimation(this, anim.RobotAudio, speechPath);
                 if (runtime is { } native)
                 {
                     var events = ReadAuthoredAudio(this, anim.RobotAudio);
-                    if (events.Count != 0) return new RuntimeAudioAnimation(this, native.Audio, native.Current, events);
-                    // 0x0059A0BA..0x0059A118 drops the audio animation when all references were rejected.
-                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Audio",
-                        "RobotAudioClient.CreateAudioAnimation", $"Audio is not needed right now for animation: {anim.Name}");
+                    if (events.Count != 0) return new RuntimeAudioAnimation(this, anim.Name, native.Audio, native.Current, events);
+                    LogAudioNotNeeded(anim.Name);
                     return null;
                 }
-                return new AudioAnimation(this, anim.RobotAudio);
+                return CreateFixtureAudioAnimation(anim);
             case 1:
                 if (speechPath is not null) return null;
-                _ = new AudioAnimation(this, anim.RobotAudio); // D1 draws also run for the device consumer.
+                if (CreateFixtureAudioAnimation(anim) is null) return null;
                 if (!_reportedDeviceAudio)
                 {
                     _reportedDeviceAudio = true;
@@ -1272,6 +1271,20 @@ public sealed class AnimationScheduler
                 return null;
         }
     }
+
+    private AudioAnimation? CreateFixtureAudioAnimation(StreamAnimation anim)
+    {
+        var audio = new AudioAnimation(this, anim.RobotAudio);
+        if (!audio.IsComplete) return audio;
+        LogAudioNotNeeded(anim.Name);
+        return null;
+    }
+
+    // InitAnimation sets state 4 for an empty selected event vector (0x00596916..0x0059694E).
+    // CreateAudioAnimation drops the resulting owner and logs this before returning (0x0059A0BA..0x0059A118).
+    private void LogAudioNotNeeded(string name) =>
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Audio",
+            "RobotAudioClient.CreateAudioAnimation", $"Audio is not needed right now for animation: {name}");
 
     // ================================================================== idle stack (A30)
 
@@ -2236,6 +2249,7 @@ public sealed class AnimationScheduler
     private sealed class RuntimeAudioAnimation : IAudioAnimation
     {
         private readonly AnimationScheduler _scheduler;
+        private readonly string _name;
         private readonly Func<bool> _current;
         private readonly Task<CannedSpeechLease> _opening;
         private readonly List<(StreamKeyframe Frame, WwiseRobotAudioKeyframe Key)> _events;
@@ -2247,10 +2261,11 @@ public sealed class AnimationScheduler
         public bool IsComplete => _failed || Path?.State is WwiseRobotAudioState.AnimationCompleted or WwiseRobotAudioState.AnimationError;
         public bool Streaming => !IsComplete;
 
-        internal RuntimeAudioAnimation(AnimationScheduler scheduler, CannedSpeechOwner owner, Func<bool> current,
+        internal RuntimeAudioAnimation(AnimationScheduler scheduler, string name, CannedSpeechOwner owner, Func<bool> current,
             List<(StreamKeyframe Frame, WwiseRobotAudioKeyframe Key)> events)
         {
             _scheduler = scheduler;
+            _name = name;
             _current = current;
             _events = events;
             _opening = owner.AcquireOrdinary(() => Volatile.Read(ref _retired) == 0 && current());
@@ -2271,6 +2286,18 @@ public sealed class AnimationScheduler
                 }
                 _lease = _opening.Result;
                 _lease.Path.InitAnimation(_events.Select(entry => entry.Key).ToArray(), 7);
+                if (_lease.Path.State is WwiseRobotAudioState.AnimationCompleted or WwiseRobotAudioState.AnimationError)
+                {
+                    _failed = true;
+                    if (_lease.Path.State == WwiseRobotAudioState.AnimationError)
+                    {
+                        SourceLogDispatch.GetSink(_scheduler.SourceLog, _scheduler.Log)?.Invoke(EngineLogLevel.Error, null,
+                            "RobotAudioAnimation.InitAnimation", "Must set _audioClient and _audioBuffer pointers");
+                        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    }
+                    if (_current()) _scheduler.LogAudioNotNeeded(_name);
+                    return;
+                }
             }
             if (_lease.Failure is { } failure)
             {

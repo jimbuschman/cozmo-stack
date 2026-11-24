@@ -1226,28 +1226,30 @@ public sealed partial class FaceRecognizer
 
             // C3-22/C4-8 album restore: the handle is the return, the status is the 4th argument.
             var loaded = _okao.RestoreAlbum(_common, albumData, albumData.Length, out int restoreResult);
-            if (loaded is null || restoreResult != 0) return 1;
-            if (_okao.GetRegisteredUserNum(loaded, out _) != 0) { _okao.DeleteAlbumHandle(loaded); return 1; }
-
-            // C3-21 enrollment parse.
-            var parsed = DeserializeEnrollment(enrollmentData ?? Array.Empty<byte>(), Now, out int nextFaceId);
-            if (parsed is null) { _okao.DeleteAlbumHandle(loaded); return 1; }
-
-            // C3-22 consistency.
-            if (!CheckConsistency(loaded, parsed)) { _okao.DeleteAlbumHandle(loaded); return 1; }
-
-            // C3-23 capacity compare and install.
-            if (InstallAlbum(loaded) != 0) { _okao.DeleteAlbumHandle(loaded); return 1; }
-
-            // C3-24 nextFaceID, maps, loaded-face report.
-            _nextFaceId = nextFaceId;
-            _albumEntryToFaceId.Clear();
-            _faces.Clear();
-            _trackToFace.Clear();
-            foreach (var e in parsed)
+            if (loaded is null) return 1;
+            bool transferred = false;
+            List<EnrolledFaceEntry>? parsed;
+            try
             {
-                _faces[e.FaceID] = e;
-                foreach (var a in e.AlbumEntries.Keys) _albumEntryToFaceId[a] = e.FaceID;
+                if (restoreResult != 0 || _okao.GetRegisteredUserNum(loaded, out _) != 0) return 1;
+                parsed = DeserializeEnrollment(enrollmentData ?? Array.Empty<byte>(), Now, out int nextFaceId);
+                if (parsed is null || !CheckConsistency(loaded, parsed)) return 1;
+                if (InstallAlbumCandidate(loaded, static () => true, out transferred) != 0) return 1;
+
+                _nextFaceId = nextFaceId;
+                _albumEntryToFaceId.Clear();
+                _faces.Clear();
+                _trackToFace.Clear();
+                foreach (var e in parsed)
+                {
+                    _faces[e.FaceID] = e;
+                    foreach (var a in e.AlbumEntries.Keys) _albumEntryToFaceId[a] = e.FaceID;
+                }
+            }
+            finally
+            {
+                // 0x00868056: release the temporary album unless the capacity match transferred it.
+                if (!transferred) _okao.DeleteAlbumHandle(loaded);
             }
             FacesLoaded?.Invoke(parsed.Select(e => (e.FaceID, e.Name)).ToList());
             return 0;
@@ -1263,6 +1265,18 @@ public sealed partial class FaceRecognizer
             var handlers=Log;
             LogCallbackDeferral.Run(()=>EventFan.Raise(handlers,message,error=>Behavior.SteppedBehavior.ReportMissing("M1-034 M14-011 face log handler skipped: "+error.Message)));
         }
+        bool Reject(string key, string text, string legacyMessage)
+        {
+            if (_okao is NativeOkaoFaceRecognizer)
+            {
+                // SanityCheckBookkeeping's error calls share the error-flag and debug-break tail at 0x00863280..0x00863292.
+                LogCallbackDeferral.Run(() => SourceLog?.Invoke(EngineLogLevel.Error, null,
+                    "FaceRecognizer.SanityCheckBookkeeping." + key, text));
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            }
+            Warn(legacyMessage);
+            return false;
+        }
         var lut = new Dictionary<int, int>();
         foreach (var e in parsed)
             foreach (var a in e.AlbumEntries.Keys) lut[a] = e.FaceID;
@@ -1273,10 +1287,8 @@ public sealed partial class FaceRecognizer
             return false;
         }
         if (userCount != lut.Count)
-        {
-            Warn($"SanityCheckBookkeeping: FaceLibNumEntries={userCount}, AlbumEntryToFaceIDSize={lut.Count}");
-            return false;
-        }
+            return Reject("NumAlbumEntriesMismatch", $"FaceLibNumEntries={userCount}, AlbumEntryToFaceIDSize={lut.Count}",
+                $"SanityCheckBookkeeping: FaceLibNumEntries={userCount}, AlbumEntryToFaceIDSize={lut.Count}"); // 0x00863172.
         foreach (var key in lut.Keys)
         {
             if (_okao.IsRegistered(loaded, key, 0, out int result) != 0)
@@ -1285,48 +1297,20 @@ public sealed partial class FaceRecognizer
                 return false;
             }
             if (result == 0)
-            {
-                Warn($"SanityCheckBookkeeping: album entry {key} is not registered");
-                return false;
-            }
+                return Reject("AlbumEntryNotRegistered", $"AlbumEntry={key}",
+                    $"SanityCheckBookkeeping: album entry {key} is not registered"); // 0x008631B4.
         }
         foreach (var e in parsed)
             foreach (var a in e.AlbumEntries.Keys)
-                if (!lut.TryGetValue(a, out int owner) || owner != e.FaceID)
-                {
-                    Warn($"SanityCheckBookkeeping: album entry {a} does not map back to face {e.FaceID}");
-                    return false;
-                }
+            {
+                if (!lut.TryGetValue(a, out int owner))
+                    return Reject("MissingAlbumEntry", $"AlbumEntry {a} for FaceID {e.FaceID} does not exist in albumEntryToFaceID LUT",
+                        $"SanityCheckBookkeeping: album entry {a} does not map back to face {e.FaceID}"); // 0x00863208.
+                if (owner != e.FaceID)
+                    return Reject("LookupTablesOutOfSync", $"AlbumEntryToFaceID[{a}] = FaceID {owner} instead of {e.FaceID}",
+                        $"SanityCheckBookkeeping: album entry {a} does not map back to face {e.FaceID}"); // 0x00863254.
+            }
         return true;
     }
 
-    // C3-23/C5-4/C5-5: reject when either loaded capacity is larger; swap when both are equal; otherwise copy every registered pair.
-    private int InstallAlbum(OkaoAlbumHandle loaded)
-    {
-        if (_okao.GetAlbumMaxNum(_album!, out int currentAlbumMax, out int currentDataMax) != 0) return 1;
-        if (_okao.GetAlbumMaxNum(loaded, out int loadedAlbumMax, out int loadedDataMax) != 0) return 1;
-        if (loadedAlbumMax > currentAlbumMax || loadedDataMax > currentDataMax) return 1;
-        if (_okao is NativeOkaoFaceRecognizer && (loadedAlbumMax != currentAlbumMax || loadedDataMax != currentDataMax))
-        {
-            Behavior.SteppedBehavior.ReportMissing("M14-011 smaller native album copy/temporary ownership is not connected; restore skipped");
-            return 1;
-        }
-        if (loadedAlbumMax == currentAlbumMax && loadedDataMax == currentDataMax)
-        {
-            var old = _album;
-            _album = loaded;
-            if (old is not null) _okao.DeleteAlbumHandle(old);
-            return 0;
-        }
-        if (_okao.ClearAlbum(_album!) != 0) return 1;
-        for (int albumIndex = 0; albumIndex < loadedAlbumMax; albumIndex++)
-            for (int dataIndex = 0; dataIndex < loadedDataMax; dataIndex++)
-            {
-                if (_okao.IsRegistered(loaded, albumIndex, dataIndex, out int registered) != 0) return 1;
-                if (registered == 0) continue;
-                if (_okao.GetFeatureFromAlbum(loaded, albumIndex, dataIndex, out var feature) != 0) return 1;
-                if (_okao.RegisterData(_album!, feature, albumIndex, dataIndex) != 0) return 1;
-            }
-        return 0;
-    }
 }

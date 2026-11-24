@@ -6,7 +6,7 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 // fidelity: M15-107
-// Shared ordinary Hiking and Socialize PounceOnMotion owner. Native body 0x005F7F90..0x005FA194.
+// Configured PounceOnMotion owner. Native body 0x005F7F90..0x005FA1C4.
 internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState, IDisposable
 {
     private readonly ManipulationSystem _m;
@@ -16,6 +16,7 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
     private readonly float _runningBoredSeconds, _lifetimeSeconds, _rotateAfterSeconds, _pounceOnTurnOdds;
     private readonly float _searchAmplitudeRad;
     private readonly bool _skipGetOutAnim;
+    private readonly bool _alwaysStreamline;
     private readonly RetainedSubscription? _motion;
     private readonly Action<OffTreadsState,OffTreadsState>? _treads;
     private readonly Action<CliffReport>? _cliff;
@@ -51,9 +52,10 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
             _searchAmplitudeRad = new Radians(ReadFloat("searchAmplitudeDeg", 45f) *
                 BitConverter.UInt32BitsToSingle(0x3C8EFA35)).Value;
             _skipGetOutAnim = config.TryGetProperty("skipGetOutAnim", out var skip) && skip.GetBoolean();
-            _valid = !config.TryGetProperty("alwaysStreamline", out var always) ||
-                always.ValueKind is JsonValueKind.False or JsonValueKind.Null;
-            if (!_valid) ReportMissing($"{Id} streamlined PounceOnMotion path unavailable");
+            // IBehavior::ReadFromJson writes +0xD9 at 0x005BC216.
+            _alwaysStreamline = config.TryGetProperty("alwaysStreamline", out var always) &&
+                always.ValueKind != JsonValueKind.Null && always.GetBoolean();
+            _valid = true;
         }
         catch(Exception e) when(e is InvalidOperationException or FormatException or OverflowException)
         {ReportMissing($"{Id} PounceOnMotion parameters unavailable: {e.Message}");}
@@ -69,9 +71,10 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
     private bool OwnerCurrent=>_valid && NativeScoringAvailable && Volatile.Read(ref _retired)==0 && ReferenceEquals(_robot.Engine.Robot,_robot) &&
         ReferenceEquals(_robot.BehaviorManagerOwner,_manager) && _manager is not null && _robot.NativeBehaviorRuntime is {} runtime &&
         ReferenceEquals(runtime.Manipulation,_m) && runtime.Bound.TryGetValue(Id,out var actual) && ReferenceEquals(actual,this);
+    private bool Streamlined => _alwaysStreamline || SparkDisabled;
     private bool Supported()
     {
-        if(!OwnerCurrent || _manager!.ActiveSparkId!=0x55 || !_m.Vision.NativeMotionReadyFor(_robot))
+        if(!OwnerCurrent || !_m.Vision.NativeMotionReadyFor(_robot))
         {MarkReadinessUnavailable();ReportMissing("M11-098/M15-107 Pounce needs its original owner's live motion producer");return false;}
         return true;
     }
@@ -113,6 +116,13 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
         NativePanTiltRunner? optional=null;
         if((float)(now-_lastCliff)<10f)optional=Pan(BitConverter.UInt32BitsToSingle(0x3FC90FDB),0,false,false);
         if(!Current(g)){optional?.RetireNeverAdmittedTree();return;}
+        // 0x005F851E..0x005F852E skips the initial pounce with either common flag set.
+        if (Streamlined)
+        {
+            optional?.RetireNeverAdmittedTree();
+            InitialSearch(g);
+            return;
+        }
         var sequence=new CompoundActionSequential(()=>_robot.Engine.Timer.SecondsF);
         if(optional is not null)sequence.AddAction(optional,false,false);
         sequence.AddAction(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)0x196,1,true,0,60f,false)),false,false);
@@ -122,6 +132,7 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
     private bool InitHelper(long g)
     {
         _lastMotion=_started=_robot.Engine.Timer.SecondsF;_creepCount=0;
+        if (Streamlined) return true; // 0x005F8444..0x005F8454 leaves idle and driving overlays alone.
         var scheduler=_m.Robot.Animations.Scheduler;
         var idle=new ScopedAcquisition();_idleLease=idle;
         if(!Scope.SmartPushIdleAnimationGuarded(()=>scheduler.PushScopedIdle((AnimationTrigger)0x192,Id,idle),()=>{idle.Cancel();scheduler.RemoveScopedIdle(Id,idle,_robot.Engine.Timer.TimeStampMs);},()=>Current(g)))return false;
@@ -144,16 +155,19 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
         // The transport can synchronously call out after enqueueing. Treat the disable as
         // pending ownership so a reentrant Stop restores power before this call returns.
         _liftDisabled=true;
-        if(!_m.Robot.Motion.SetNativeLiftPower(_robot,false)){if(Current(g)){_liftDisabled=false;_blocked=true;ReportMissing("Pounce EnableLiftPower(false) original owner/send unavailable");}return;}
+        // 0x005FA030..0x005FA09C proceeds to the wait after the void power command.
+        _ = _m.Robot.Motion.SetNativeLiftPower(_robot, false);
         if(!Current(g))return;NativeState=10;
         Run(new NativeTimedWaitRunner(_m,BitConverter.UInt32BitsToSingle(0x3E19999A)),()=>
         {
             if(!Current(g))return;
             _liftDisabled=false;
-            if(!_m.Robot.Motion.SetNativeLiftPower(_robot,true)){if(Current(g)){_liftDisabled=true;_blocked=true;ReportMissing("Pounce EnableLiftPower(true) original owner/send unavailable");}return;}
+            // 0x005FA1A2..0x005FA1C4 clears the flag and invokes the next callback.
+            _ = _m.Robot.Motion.SetNativeLiftPower(_robot, true);
             if(!Current(g))return;next();
         },g);
     }
+
     private void InitialReaction(long g)
     {
         if(!Current(g))return;NativeState=2;
@@ -266,7 +280,11 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
         if(_robot.StoredState is not {} current){_blocked=true;ReportMissing("M15-107 original lift input unavailable after CheckResult");return;}
         bool caught=delta>BitConverter.UInt32BitsToSingle(0x3CA3D70A) || current.LiftHeightMm>35.5f;
         _validCount=0;
-        Run(new TriggerLiftSafeAnimationAction(_m.Robot,new((AnimationTrigger)(caught?0x197:0x193),1,true,0,60f,false)),_driveDistance>0?()=>Backup(g):()=>HeadDown(g),g);
+        // 0x005F9832..0x005F986E uses the ordinary Count action for a streamlined miss.
+        TriggerAnimationAction result = !caught && Streamlined
+            ? new TriggerAnimationAction(_m.Robot, new((AnimationTrigger)0x23F, 1, true, 0, 60f, false))
+            : new TriggerLiftSafeAnimationAction(_m.Robot, new((AnimationTrigger)(caught ? 0x197 : 0x193), 1, true, 0, 60f, false));
+        Run(result, _driveDistance > 0 ? () => Backup(g) : () => HeadDown(g), g);
         if(caught && Current(g))_robot.Engine.ReportBehaviorObjective(23,"PouncedAndCaught",Id);
     }
     private void Backup(long g)
@@ -304,7 +322,12 @@ internal sealed class NativePounceOnMotion : SteppedBehavior, IPounceScoreState,
     protected override void OnStop(BehaviorStopReason reason)
     {
         long g=CaptureHostExecutionVersion();NativeState=14;
-        if(_liftDisabled){_liftDisabled=false;if(!_m.Robot.Motion.SetNativeLiftPower(_robot,true))ReportMissing("Pounce Stop lift power restoration unavailable");}
+        if (_liftDisabled)
+        {
+            // Cleanup 0x005F8784..0x005F8796 restores pending power and clears the flag.
+            _liftDisabled = false;
+            _ = _m.Robot.Motion.SetNativeLiftPower(_robot, true);
+        }
         if(!HostExecutionVersionCurrent(g))return;
         Scope.SmartRemoveIdleAnimation();_idleLease=null;
         if(!HostExecutionVersionCurrent(g))return;

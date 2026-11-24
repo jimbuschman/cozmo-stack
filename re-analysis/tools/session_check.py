@@ -259,6 +259,34 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: M7-002/M7-014 InitReactionTriggerMap 0x005A17CC/0x005A1872: Sparked -> ReactToSparked has no constructed strategy/behavior pair":
+                "SCOPE.md section D defers ReactToSparked and the Sparks flows. This old startup marker is outside required Freeplay coverage.",
+            "MISSING: IBehavior::Resume for a behaviour that is not a SteppedBehavior: its IsRunnableBase +0x118 test (0x005bd8be) and spark lock are not modelled":
+                "The standalone resume applies +0x118 at 0x005BD8BE. Configured Robot behaviors own +0x70 and the native spark lock.",
+            "MISSING: M8-013: standalone executable type-name input unavailable; number logged":
+                "Selection logs now use the same recovered executable type-name table as configured behavior requests.",
+            "MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred":
+                "0x00607C58..0x00607C64 emits the raw cliff sensor reading as a decimal string with no additional fields.",
+            "MISSING: Pounce EnableLiftPower(false) original owner/send unavailable":
+                "The void command at 0x005FA030 still enters the timed wait at 0x005FA07A; Robot.SendMessage logs transport refusal.",
+            "MISSING: Pounce EnableLiftPower(true) original owner/send unavailable":
+                "The void command at 0x005FA1A2 clears the flag and invokes the continuation at 0x005FA1C4; Robot.SendMessage logs transport refusal.",
+            "MISSING: Pounce Stop lift power restoration unavailable":
+                "Cleanup at 0x005F8790..0x005F8796 clears the pending flag after the restore request; Robot.SendMessage logs transport refusal.",
+            "MISSING: M11-089 Viz erase recipient in 0x005E6520/0x005E675E, key BehaviorVisitInterestingEdge.kVieDrawDebugInfo":
+                "0x006BFD02..0x006BFD08 constructs and clears the local Viz message without sending it.",
+            "MISSING: M8-026 render GetWorldOrigin/Viz owner 0x0056A6E2..0x0056A6F4 absent":
+                "This origin lookup draws the possible-object overlay only (0x0056A6E4..0x0056A70A); list mutation has a separate required origin.",
+            "MISSING: AIBeacon [beacon+0x10] (the FailedToFindLocation stamp): only BehaviorExploreBringCubeToBeacon::IsRunnableInternal 0x005DF148 reads it here; other readers (e.g. BehaviorThinkAboutBeacons) were not scanned in the extraction, so none is built":
+                "0x0056C3F0..0x0056C400 stamps failure time and updates the render. ThinkAboutBeacons checks for an active beacon at 0x005E5CCA and adds from the Robot pose and configured radius at 0x005E5F1A..0x005E5F30.",
+            "MISSING: RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made":
+                "An empty selected event vector takes state 4 at 0x00596948 and the native Info/drop path at 0x0059A0BA. This blanket marker did not report a host Wwise failure.",
+            "MISSING: M14-008 FaceWorld observation-time historical pose unavailable; face update skipped":
+                "FaceWorld reports the timestamp at 0x004F438A and the failed face ID at 0x004F5332, then continues the frame without changing that entry.",
+            "MISSING: M14-011 smaller native album copy/temporary ownership is not connected; restore skipped":
+                "The direct serialized install uses the same owned album copy loop as the native file and NV paths (0x00868B2A..0x00868BE4).",
+            "MISSING: M14-006/M13-014 LastFace named SayText: the no-trigger named SayText action and provider are not joined to this caller":
+                "A Count callback now starts the audio-only SayText child at 0x0054C5CE. That child uses the name voice switch and selected pitch at 0x00561728..0x00561754.",
             "MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false":
                 "The only writer at 0x0063A2EA is the phone-app input excluded by the operator in M4-040. The runtime keeps the constructor value at 0x0063710A.",
             "MISSING: M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen":
@@ -393,6 +421,17 @@ class Session:
         for index, line in enumerate(stack_lines, 1):
             if line in resolved:
                 self.resolved_markers.append((index, line, resolved[line]))
+            elif (index < len(stack_lines) and line.startswith("MISSING: IBehavior::Init/Resume 'SparkBehaviorDisables' lock ")
+                  and stack_lines[index] in {
+                      "event: robot.behavior_transition: EnrollFace",
+                      "event: robot.behavior_transition: Hiking_ThinkAboutBeacons",
+                  }):
+                self.resolved_markers.append((index, line, "These configs retain unlock 0x55, which skips the lock at 0x005BCD18 and 0x005BCFAE. Their owners now supply the configured and live spark IDs."))
+            elif (1 < index < len(stack_lines) and line ==
+                  "MISSING: PounceOnMotion factory 0x0059CED6: checked Hiking and Socialize configurations require actual Robot and manipulation owners"
+                  and "Added new behavior 'SparksPopAWheelie'" in stack_lines[index - 2]
+                  and "Added new behavior 'SparksPutDownBlock'" in stack_lines[index]):
+                self.resolved_markers.append((index, line, "The skipped stock Sparks instance now uses the original factory at 0x0059CED6 and common hard-spark flag at 0x005BCCC2."))
             elif (index > 1 and line ==
                   "MISSING: M11-069 AIComponent.OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)"
                   and stack_lines[index - 2].endswith("New origin: Origin1. NumOrigins=1")):
@@ -443,6 +482,12 @@ class Session:
                 line,
             ):
                 self.resolved_markers.append((index, line, "0x005405CA and 0x0054F8C4 use the name only in the diagnostic"))
+            elif (line.startswith("MISSING: MovementComponent.LockTracks debug name not supplied by ")
+                  and line.endswith("which the inventory does not give; using an empty name")):
+                self.resolved_markers.append((index, line, "The second lock string is printed by PrintLockState at 0x006410D8 and does not participate in track ownership."))
+            elif (line.startswith("MISSING: M8-015 native action name+0x48 not supplied for ")
+                  and line.endswith("; CLR type name is not an engine source name")):
+                self.resolved_markers.append((index, line, "This marker reported a log label. The action result and completion delivery did not depend on the label."))
             elif MISSING.search(line):
                 occurrences = self.timed_missing[line]
                 occurrence = counts[line]

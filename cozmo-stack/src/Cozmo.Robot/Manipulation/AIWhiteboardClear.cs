@@ -177,11 +177,9 @@ public sealed partial class AIWhiteboard
     }
     private void UpdatePossibleObjectRender()
     {
-        if (ClearQuadWorldOrigin?.Invoke() is not { } origin)
-        {
-            SteppedBehavior.ReportMissing("M8-026 render GetWorldOrigin/Viz owner 0x0056A6E2..0x0056A6F4 absent");
-            return;
-        }
+        // This origin is only used to draw PossibleObjects (0x0056A6E4..0x0056A70A).
+        // The owning clear predicate uses its own required origin above.
+        if (ClearQuadWorldOrigin?.Invoke() is not { } origin) return;
         ErasePossibleSegments();
         float liftX = 0f * 35f, liftY = 0f * 35f, liftZ = 1f * 35f;
         foreach (var possible in PossibleObjectStorage)

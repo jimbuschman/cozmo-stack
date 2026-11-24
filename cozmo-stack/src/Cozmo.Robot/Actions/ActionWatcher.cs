@@ -9,17 +9,16 @@ namespace Cozmo.Robot;
 ///
 /// Native offsets are identification, not proposed C# layout: node map, root +0xC, current +0x10, previous +0x14,
 /// root-stack map +0x18, callback map +0x24, next handle +0x30, record deque +0x34. A node carries its tag, its
-/// embedded <see cref="RobotCompletedAction"/>, a name +0x44, a parent +0x54, a children vector +0x58 and the
+/// embedded <see cref="RobotCompletedAction"/>, a parent +0x54, a children vector +0x58 and the
 /// ending mark +0x50.
 /// </summary>
 internal sealed class ActionWatcher
 {
-    /// <summary>W6: a watcher node. The name at +0x44 has no source on <see cref="IActionRunner"/>; it stays null (MISSING, see <see cref="ActionEnding"/>).</summary>
+    // Native +0x44 is used by PrintHelper (0x00542796, 0x00542806), outside completion delivery.
     private sealed class Node
     {
         public required uint Tag { get; init; }
         public RobotCompletedAction Record { get; set; }
-        public string? Name { get; set; }                  // +0x44: no source in this stack
         public Node? Parent { get; set; }                  // +0x54
         public List<Node> Children { get; } = new();       // +0x58
         public bool EndingMark { get; set; }               // +0x50

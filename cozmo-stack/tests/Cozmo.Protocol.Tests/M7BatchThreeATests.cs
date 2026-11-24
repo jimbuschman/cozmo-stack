@@ -861,22 +861,30 @@ public class M7BatchThreeATests
             long before = b.Trace.Count(l => l.StartsWith("ReactToPickup:"));
             SendState(rig, (uint)RobotStatusFlag.IsPickedUp, raw);
             Assert.Equal(raw, rig.Robot.Sensors.CliffDataRawStored[0]);
+            var events = new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();
+            rig.Robot.Engine.LogEntry += events.Enqueue;
             Assert.True(b.Update(ctx, 10_000));
+            var calibration = events.Where(entry => entry.Name == "BehaviorReactToPickup.CalibratingHead");
             if (calibrates)
             {
+                var entry = Assert.Single(calibration);
+                Assert.Equal(EngineLogLevel.Event, entry.Level);
+                Assert.Equal("400", entry.Text);
+                Assert.Empty(entry.Data);
                 Assert.Equal(before, b.Trace.Count(l => l.StartsWith("ReactToPickup:")));          // no StartAnim
                 Assert.Contains(b.Trace, l => l.Contains("calibrate head"));                       // CalibrateMotorAction(robot, true, false)
                 Assert.Equal(deadline, b.RetryDeadline);                                           // the calibration branch touches neither timer field
             }
             else
             {
+                Assert.Empty(calibration);
                 Assert.Equal(before + 1, b.Trace.Count(l => l.StartsWith("ReactToPickup:")));
                 Assert.DoesNotContain(b.Trace, l => l.Contains("calibrate head"));
             }
         }
     }
 
-    // ---- StartAnim's branches (faces and pets need the M14 worlds, SayTextAction is not built)
+    // ---- Standalone StartAnim branches (named speech requires the original Robot owner)
 
     private static TrackedFace MakeFace(int id, uint ts, string? name = null)
     {

@@ -181,7 +181,7 @@ public sealed class CozmoAnimations : IDisposable
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
         // fidelity: M5-038
-        robot.Engine.CreateGoToSleepSequence = _ => GoToSleepAnimation.Create(robot, SleepTriggerFactory);
+        robot.Engine.CreateGoToSleepSequence = owner => GoToSleepAnimation.CreateOwned(robot, owner, SleepTriggerFactory);
         _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
         _scheduler.RuntimeAudioSource = () => robot.Engine.Robot is { } owner && robot.Engine.RuntimeWwiseAudio is { } audio
             ? (audio, () => !owner.Lifetime.Destroying && ReferenceEquals(robot.Engine.Robot, owner))
@@ -659,7 +659,7 @@ public sealed class CozmoAnimations : IDisposable
         return new AnimationTicket(handle.Completion, handle.Generation) { Tag = handle.Tag };
     }
 
-    internal Func<SleepAnimationArguments, ActionRunner?>? SleepTriggerFactory { get; set; } // M8 recipient seam, named MISSING when absent.
+    internal Func<SleepAnimationArguments, ActionRunner?>? SleepTriggerFactory { get; set; } // Test override for the native caller.
 
     internal bool ManualTicking { get; set; }
     internal Func<double>? ClockMs { get; set; }
