@@ -110,12 +110,12 @@ public sealed class CozmoSensors
     /// <summary>
     /// H4: <c>HandleRobotStopped</c>'s game-side <c>RobotStopped</c> broadcast (MessageEngineToGame(RobotStopped&amp;&amp;) 0x00535478, Robot::Broadcast 0x00535480;
     /// the message has no fields, Size 0), raised with nothing when the cliff sensor is enabled. <c>ActionList::Cancel(-1)</c> (M8-015) runs before it; the
-    /// behaviour-end entry before that (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, M8-019) logs then reports the unbuilt native switch path.
+    /// behaviour-end entry uses this Robot's manager at 0x00535454 (M8-019).
     /// </summary>
     public event Action? RobotStopped;
     internal event Action? RobotStoppedInternal;
     // fidelity: M8-019
-    internal Action<string>? RequestCurrentBehaviorEndImmediately { get; set; }
+    internal Action<string>? RobotStoppedEndRequestForTest { get; set; }
 
     /// <summary>
     /// Raised when the robot starts or stops reporting that it is falling, derived from
@@ -1034,7 +1034,7 @@ public sealed class CozmoSensors
                 // fidelity: M4-019, M8-015, M8-019
                 // H1..H4 HandleRobotStopped tag 0xD4 (0x0053539C..0x00535480): H3 Evaluate sets comp+0x1C := the
                 // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0, 0x00535436), in this order:
-                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; owner bound before dispatch in BindNativeBehaviorManager),
+                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535440..0x00535454 reads the owner from Robot+0x44),
                 // ActionList::Cancel(-1) (0x00535466..0x0053546E; M8-015's ActionList, the robot's own) and the RobotStopped broadcast (0x00535480).
                 // Nothing is sent to the robot by this handler.
                 float stoppedVariance;
@@ -1049,9 +1049,9 @@ public sealed class CozmoSensors
                 lock (_gate) stoppedEnabled = _cliffEnabled;
                 if (stoppedEnabled)
                 {
-                    if (RequestCurrentBehaviorEndImmediately is {} request &&
-                        (request.Target is not Behavior.BehaviorManager manager || ReferenceEquals(stoppedOwner.BehaviorManagerOwner,manager)))
-                        request("HandleRobotStopped");
+                    if (RobotStoppedEndRequestForTest is { } request) request("HandleRobotStopped");
+                    else if (stoppedOwner.BehaviorManagerOwner is { } manager)
+                        manager.RequestCurrentBehaviorEndImmediately("HandleRobotStopped");
                     else Behavior.SteppedBehavior.ReportMissing("M8-019 HandleRobotStopped 0x00535454: native robot+0x44 manager recipient is absent");
                     if(!ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
                     stoppedOwner.ActionList.Cancel(-1);

@@ -1674,8 +1674,6 @@ public sealed partial class BehaviorManager : IDisposable
         foreach (var s in strategies) if (s is IDisposable d) d.Dispose();
         foreach(var pickup in pickupOwners)pickup.RetireNativeBinding();
         foreach (var objectOwner in objectOwners) objectOwner.ReleaseHostGhost(); // host cleanup after stop/cancel and unsubscribe
-        if(_context.Robot.Sensors.RequestCurrentBehaviorEndImmediately?.Target==this)
-            _context.Robot.Sensors.RequestCurrentBehaviorEndImmediately=null;
         var um = _context.Robot.Sensors.UnexpectedMovement;
         if (ReferenceEquals(um.ReactionTriggerEnabled, _unexpectedMovementGate)) um.ReactionTriggerEnabled = null;
     }

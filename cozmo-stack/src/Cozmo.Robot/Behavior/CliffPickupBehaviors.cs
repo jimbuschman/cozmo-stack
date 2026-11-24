@@ -458,13 +458,13 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
 
     /// <summary>
     /// <c>CarryingComponent::SetCarriedObjectAsUnattached(true)</c> (0x00607844), called by <c>StartAnim</c> first when <c>[[robot+0x284]+8] != -1</c>. M12's;
-    /// unset while the robot is carrying, the call is reported MISSING and not made.
+    /// Standalone behavior input. Configured reactions call the original Carrying owner directly.
     /// </summary>
     public Action? SetCarriedObjectAsUnattached { get; set; }
 
     /// <summary>
     /// <c>[[[robot+0x264]+0x18]+0x74]</c> (0x0060793C..0x00607942), the AIWhiteboard byte that selects <c>HiccupRobotPickedUp</c> (0xE6) over <c>ReactToPickup</c>
-    /// (0x1A9) in the fallback. Its writers are not read (RECOVERABLE_GAP); unset, the byte is taken as clear and that is reported.
+    /// (0x1A9) in the fallback. Configured reactions read their original whiteboard's HiccupsActive.
     /// </summary>
     public Func<bool>? WhiteboardHiccupByte { get; set; }
 
@@ -532,22 +532,19 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
         string das = $"info: DAS BehaviorReactToPickup.CalibratingHead: {raw}";
         Log(das);
         if(!Current())return;
+        // 0x00607C58..0x00607C64: sEvent(key, empty fields, "%d", raw).
+        Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToPickup.CalibratingHead",
+            raw.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if(!Current())return;
         if (_nativeOwner is { } owner && _nativeManipulation is { } manipulation)
         {
-            // 0x00607C58..0x00607C64: sEvent(key, empty fields, "%d", raw).
-            owner.Engine.EmitSourceLog(EngineLogLevel.Event, null, "BehaviorReactToPickup.CalibratingHead",
-                raw.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            if (!Current()) return;
             // 0x00607C92..0x00607CA8: CalibrateMotorAction(robot, true, false),
             // then StartActing with an empty completion callback. Reuse the real
             // head-start latch, calibrated flag, timeout and result/report path.
             StartActing(new NativeHeadCalibrationRunner(manipulation, owner) { ScopedParentCurrent = Current }, null, Current);
             return;
         }
-        Context.Robot.Engine.Log(das);
-        if(!Current())return;
-        Context.Robot.Engine.Log("MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred");
-        if(Current())CalibrateHead(() => { });                                                  // CalibrateMotorAction(robot, true, false), empty callback
+        CalibrateHead(() => { }); // Standalone calibration seam, same event and callback shape.
     }
 
     private void StartNativeAnim(long generation)
@@ -674,8 +671,8 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
             if (!string.IsNullOrEmpty(name))
             {
                 // SayTextAction(robot, name, SayTextIntent 3 Name_Normal) + SetAnimationTrigger(AcknowledgeFaceNamed, tracksToLock 4), StartActing, empty callback
-                ReportMissing("ReactToPickup::StartAnim SayTextAction(name, Name_Normal) with SetAnimationTrigger(AcknowledgeFaceNamed, 4) (0x00607A00..0x00607A2C): the SayTextAction primitive is not built in this stack; no action is started for a named face");
-                Log($"MISSING: SayTextAction(\"{name}\", Name_Normal) is not built; no named-face acknowledgement");
+                ReportMissing("ReactToPickup::StartAnim SayTextAction(name, Name_Normal) with SetAnimationTrigger(AcknowledgeFaceNamed, 4) (0x00607A00..0x00607A2C): standalone behavior has no original Robot speech owner");
+                Log($"MISSING: SayTextAction(\"{name}\", Name_Normal) requires the original Robot speech owner");
             }
             else PlayTrigger(AnimationTrigger.AcknowledgeFaceUnnamed, () => { }, AnimationTrack.Body, AnimationTimeout);
         }
@@ -696,7 +693,7 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
                 if (WhiteboardHiccupByte is { } flag) hiccup = flag();
                 else
                 {
-                    ReportMissing("ReactToPickup::StartAnim [[[robot+0x264]+0x18]+0x74] (0x00607942): the AIWhiteboard byte's writers are unread (RECOVERABLE_GAP); taken as clear, so ReactToPickup (0x1A9) plays and not HiccupRobotPickedUp (0xE6)");
+                    ReportMissing("ReactToPickup::StartAnim HiccupsActive (0x00607942) is unavailable on the standalone behavior; defaulting to ReactToPickup (0x1A9)");
                     hiccup = false;
                 }
                 PlayTrigger(hiccup ? AnimationTrigger.HiccupRobotPickedUp : AnimationTrigger.ReactToPickup, () => { }, AnimationTrack.None, AnimationTimeout);

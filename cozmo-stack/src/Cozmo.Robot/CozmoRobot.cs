@@ -225,7 +225,6 @@ public sealed partial class CozmoRobot : IDisposable
         catch { native.NativeConfiguredScoreFields=null; throw; }
         finally { native.NativeBehaviorRuntimeConstructing=false; }
         if (native.HasExternalInterface) { manager.AttachSparkInput(); manager.AttachDefaultPostureInput(); }
-        Sensors.RequestCurrentBehaviorEndImmediately = manager.RequestCurrentBehaviorEndImmediately;
     }
 
     private void BindNativeReactionMap(EngineRobot native)

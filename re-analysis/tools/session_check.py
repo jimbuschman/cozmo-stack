@@ -259,6 +259,8 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred":
+                "0x00607C58..0x00607C64 emits the raw cliff sensor reading as a decimal string with no additional fields.",
             "MISSING: Pounce EnableLiftPower(false) original owner/send unavailable":
                 "The void command at 0x005FA030 still enters the timed wait at 0x005FA07A; Robot.SendMessage logs transport refusal.",
             "MISSING: Pounce EnableLiftPower(true) original owner/send unavailable":
