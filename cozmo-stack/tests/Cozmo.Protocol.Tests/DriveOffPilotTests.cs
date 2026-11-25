@@ -543,7 +543,7 @@ public sealed class DriveOffPilotTests
         rig.Data(rig.MakeState(origin:owner.CurrentOriginId,frame:owner.PoseFrameId,x:100,y:200));rig.Tick(10);
         using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
         var action=new DriveStraightAction(m,owner,100f,20f,false);bool cancelled=false;
-        void Observe(string line){if(cancelled||!line.Contains("PathSegment.Print"))return;cancelled=true;owner.ActionList.Cancel(action.Tag);}
+        void Observe(string line){if(cancelled||!line.StartsWith("line: ",StringComparison.Ordinal))return;cancelled=true;owner.ActionList.Cancel(action.Tag);}
         rig.Engine.StackLogLine+=Observe;int mark=rig.Mark();
         try
         {

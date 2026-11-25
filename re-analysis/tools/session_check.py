@@ -398,12 +398,12 @@ class Session:
             "and scalar result retained; PlaceRel normalization policy does not apply":
                 "M12-052 existing M1-034 policy for undefined ID words",
             "MISSING: M12-002 PathSegment.Print 0x00507F36 -> 0x0085C034 text/body has no checked row; "
-            "segment print is unbuilt": "0x0085C138 calls CoreTechPrint before the path wire send",
+            "segment print is unbuilt": "0x0085C138 calls CoreTechPrint before the path wire send; source segment text now goes to the host output sink",
             "MISSING: M13-033 ComputeClosestGoalPose Debug fields/rotation-axis formatting "
             "0x00508870..0x0050890A not represented":
-                "0x00508870–0x0050890A formats candidate pose and axis for Debug",
+                "0x00508870–0x0050890A formats each candidate pose, normalized axis and squared distance for Debug",
             "MISSING: M13-034 IPathPlanner.PrintPath 0x005090A0 output formatting remains unbuilt":
-                "0x00509072 calls Path::PrintPath for diagnostics",
+                "0x00509072 calls Path::PrintPath for diagnostics; the final profiled segments now use its source text",
             "MISSING: M13-034 ApplyMotionProfile two-pass length/end-pose/split calls require "
             "source-backed M13-011 PathSegment helpers (0x0085BC00..0x0085C034); only checked profile-field "
             "assignment built, continuity/deceleration/splitting remain unbuilt":
@@ -413,7 +413,7 @@ class Session:
             "geometry helpers; candidate short path safety is not claimed source-backed":
                 "SHORT-PLANNER-1 binds the safety dispatch at 0x00649FB6; this marker records the older build",
             "MISSING: M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt":
-                "0x0085C7C8 prints segments after AppendToPath",
+                "0x0085C7C8 prints numbered segments after AppendToPath and before final-angle correction; source text now emitted",
             "MISSING: M8-021 trigger DAS blacklist/event diagnostic coverage remains incomplete; concrete CA/CB/D5/5F callbacks, selected completion name and retained playback clip are independent inputs":
                 "0x005445BC is the DAS event; the existing action callbacks and completion name have separate owners",
             "MISSING: M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only":
@@ -431,7 +431,7 @@ class Session:
             "native string recipient0x00540506 is not bound; no invented owner-description text":
                 "0x00540506 supplies warning text to 0x00540530; 0x006415C4..0x0064169A now formats the live lock trees; the existing TRACKS_LOCKED result is retained",
             "MISSING: M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt":
-                "0x006BFB1A writes only the visualizer path",
+                "0x006BFB1A writes only local, discarded visualizer messages; no robot or app send",
             **{f"MISSING: M12-024 | EraseAllPlannerObstacles({mode}) 0x0055A626/0x0055A632 visualizer handoff absent":
                 "0x006BFCCA reaches the Viz ErasePath(-1) at 0x006BFC7C" for mode in (0, 1)},
         }

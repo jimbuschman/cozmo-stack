@@ -236,7 +236,9 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
             LifecycleCallObserved?.Invoke("ErasePlanner:"+which);
             if(!CleanupCurrent())break;
             if(_m.ErasePlannerObstaclesForTest is { } erase)erase(which);
-            else MissingSource("EraseAllPlannerObstacles("+(which?"1":"0")+") 0x0055A626/0x0055A632 visualizer handoff absent");
+            // 0x0055A626/0x0055A632 -> 0x006BFCCA -> 0x006BFC7C:
+            // both bools reach EraseAllPaths, which constructs and clears a
+            // local ErasePath(-1) Viz message. It sends nothing and retains no state.
         }
         if(CleanupCurrent())
         {
