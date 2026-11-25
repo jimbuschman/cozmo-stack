@@ -88,6 +88,8 @@ internal static class LibcxxPrintf
 
     // fidelity: M11-083 — float to_string entry0x66524..30, bundled %f F1-F7; double SDK overload excluded.
     internal static string FormatFixedFloat(float value, int precision = 6) => FormatDecimal(value, precision, true);
+    // sEventF robot.play_area_size 0x00624F4A passes the full f64 vararg to "%.2f".
+    internal static string FormatFixedDouble(double value, int precision) => FormatDecimal(value, precision, true);
 
     private static string FormatDecimal(double y, int precision, bool fixedFloat)
     {

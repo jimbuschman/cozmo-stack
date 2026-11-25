@@ -399,6 +399,8 @@ internal sealed class SourceQuadTree
         }
     }
     // fidelity: M11-092 -- vt+0x20 0x006816F2, the f64 at map+0x48.
+    // 0x006816E8 reads the cached f64 at processor+0x30; do not sum leaves again.
+    internal double ExploredRegionAreaM2 { get { lock(_geometryGate)return Processor.ExploredArea; } }
     internal double InterestingEdgeAreaM2 { get { lock(_geometryGate)return Processor.EdgeArea; } }
     internal bool HasContentType(MemoryMapContentType type)
     {

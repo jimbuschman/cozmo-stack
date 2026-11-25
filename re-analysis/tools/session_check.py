@@ -259,6 +259,10 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable":
+                "0x00624F32..0x00624F4E now emits the cached explored-area double with %.2f from the actual tree; this call site is telemetry only, not a map-producer closure.",
+            "MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)":
+                "0x006816E8 returns the cached double; the actual tree's per-node processor accounts for non-Unknown content. Separate producer gaps remain visible.",
             "MISSING: RobotImplMessaging.HandleImageChunk (key 0x00535BF8, format 0x00BE93C4): tick-cap logger arguments/level unported":
                 "0x00535B4A..0x00535B6C emits the incremented counter, unsigned frame timestamp and f64 tick time as a warning; the admission cap is unchanged.",
             "MISSING: M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted":

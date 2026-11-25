@@ -193,13 +193,15 @@ public sealed class M3M4X16BuilderTests : IDisposable
     {
         double now=60;var w=new BlockWorld { BaseStationSeconds=()=>now };
         var pd=new VisionPoseData(0,Pose3d.Identity,0,0,false,false);var cam=new CameraModel(CameraCalibration.Nominal(),pd.CameraPose);
-        var seen=new List<bool>();var keys=new List<string>();w.SourceLog=(l,c,k,s)=>keys.Add(k);
-        w.Log+=s=>{if(s.Contains("robot.play_area_size"))seen.Add(w.PoseChangeWindow);};
+        var tree=w.Maps.Current!.Tree;
+        tree.Root.ForceSet(new SourceNodeContent(new SourceMapData(MemoryMapContentType.ClearOfObstacle,1,2)),tree.Processor);
+        var seen=new List<bool>();var events=new List<(EngineLogLevel,string?,string)>();
+        w.SourceLog=(l,c,k,s)=>{if(k=="robot.play_area_size"){seen.Add(w.PoseChangeWindow);events.Add((l,c,s));}};
         w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Empty(seen);Assert.False(w.PoseChangeWindow);
         now=61;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.False(Assert.Single(seen));
         now=121;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Single(seen); // stored 61, strict 61+60 < now.
         now=double.NaN;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Single(seen);
-        Assert.DoesNotContain("robot.play_area_size",keys);
+        Assert.Equal((EngineLogLevel.Event,null,"0.03"),Assert.Single(events)); // f64 of 0x3CD1B719, %.2f
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]

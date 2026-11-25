@@ -116,15 +116,17 @@ public sealed class M13LegacyMapSyncTests
     }
 
     [Fact]
-    public void ExploredAreaMissingNamesTheExploredGetterRatherThanTheRootTimestamp()
+    public void ExploredAreaReadsTheCachedDoubleRatherThanTheRootTimestamp()
     {
-        // reach: unit (direct cached-area API, diagnostic observer; explored-area accumulation remains MISSING).
-        // Old: NaN with the misleading label "explored-area helper+0x38". +0x38 is a u32 root-content timestamp.
+        // reach: unit (direct cached-area API). +0x38 is a u32 root-content timestamp.
         // Checked row 70: M11-045 getter 0x006816E8 reads f64 MemoryMap+0x40, vtable virtual +0x1C.
         var logs=new List<string>();var map=new MemoryMap{Missing=logs.Add};
-        Assert.True(double.IsNaN(map.ExploredRegionAreaM2));
-        Assert.Contains(logs,s=>s.Contains("explored-area virtual +0x1C")&&s.Contains("0x006816E8")&&s.Contains("MemoryMap+0x40"));
-        Assert.DoesNotContain(logs,s=>s.Contains("helper+0x38"));
+        Assert.Equal(0,map.ExploredRegionAreaM2);
+        map.Tree.Root.ForceSet(new SourceNodeContent(new SourceMapData(MemoryMapContentType.ClearOfCliff,42,43)),map.Tree.Processor);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x3CD1B719),map.ExploredRegionAreaM2);
+        map.Tree.Root.Subdivide(map.Tree.Processor);
+        Assert.Equal(2d*BitConverter.UInt32BitsToSingle(0x3CD1B719),map.ExploredRegionAreaM2);
+        Assert.Empty(logs);
     }
 
 }

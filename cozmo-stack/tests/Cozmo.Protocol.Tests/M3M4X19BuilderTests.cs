@@ -57,17 +57,20 @@ public sealed class M3M4X19BuilderTests
         // M12-043 now supplies the projected tilted-cube quad. This check covers caller delivery;
         // no full map-insertion result is inferred from the footprint alone.
     }
-    [Fact] public void ReconstructedMapMayBeAbsentWithoutThrowingAndAreaIsExplicitlyUnknown()
+    [Fact] public void ReconstructedMapMayBeAbsentWithoutThrowingAndNoAreaIsFabricated()
     {
         var w=new BlockWorld(deferMap:true);w.ResetToConstructed();Assert.Null(w.Maps.Current);
+        var messages=new List<string>();w.Log+=messages.Add;w.BaseStationSeconds=()=>61;
         var f=Frame();w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),f.Camera,0,f.Pose);
-        var missing=new List<string>();var map=new MemoryMap{Missing=missing.Add};Assert.True(double.IsNaN(map.ExploredRegionAreaM2));Assert.Contains(missing,s=>s.Contains("M11-045"));
+        Assert.Single(messages.Where(s=>s.Contains("M1-034/M13-031: skipped robot.play_area_size")));
+        Assert.Equal(0,new MemoryMap().ExploredRegionAreaM2);
     }
     [Fact] public void SharedWorldHasOneStackLogSubscription()
     {
-        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;var missing=new List<string>();robot.Engine.StackLogLine+=missing.Add;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
+        vision.World.CreateLocalizedMemoryMap(1);var events=new List<EngineLogEntry>();robot.Engine.LogEntry+=entry=>{if(entry.Name=="robot.play_area_size")events.Add(entry);};
         vision.World.BaseStationSeconds=()=>61;var f=Frame();vision.World.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),f.Camera,0,f.Pose);
-        Assert.Single(missing.Where(s=>s.Contains("robot.play_area_size")));
+        Assert.Equal("0.00",Assert.Single(events).Text);
     }
     [Fact] public void MapTimeAndUnbuiltPoseNotificationsAreReportedOncePerFrame()
     {
