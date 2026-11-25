@@ -2,6 +2,7 @@ using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Vision;
 using Cozmo.Robot.Behavior;
+using Cozmo.Transport;
 using Xunit;
 using Fixture=Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.Fixture;
 namespace Cozmo.Protocol.Tests;
@@ -137,19 +138,71 @@ public sealed class NativeMotionIntegrationTests
         finally {vision.QualityRectangleInput=null;}
     }
     [Fact]
-    public void QualityDiagnosticReentryDoesNotCallOldFrameProvider()
+    public void QualityProfilerReentryCannotPublishTheOldFrameToReplacement()
     {
         using var f=new Fixture();var vision=f.M.Vision;var engine=f.Rig.Engine;EngineRobot? replacement=null;int calls=0;
         vision.QualityRectangleInput=()=>{calls++;return Array.Empty<ImageQualityRectangle>();};
-        void Missing(string value)
+        var originalProfiler=vision.LifetimeProfiler;
+        originalProfiler.ConfigureVisionPeriods(0,0);
+        bool replacing=false;
+        void Logged(EngineLogEntry value)
         {
-            if(replacement is not null || !value.Contains("Profiler.Tic/Toc CheckingImageQuality"))return;
+            if(replacing || value.Name!="VisionSystem.Profiler" || !value.Text.StartsWith("CheckingImageQuality averaged"))return;
+            replacing=true;
             engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
             replacement=engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
         }
-        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=Missing;
-        try {f.Image(93,modes:1<<7);Assert.NotNull(replacement);Assert.Equal(0,calls);Assert.Null(vision.LastResult);}
-        finally {SteppedBehavior.MissingReported-=Missing;vision.QualityRectangleInput=null;}
+        engine.LogEntry+=Logged;
+        try
+        {
+            f.Image(93,modes:1<<7);
+            Assert.NotNull(replacement);Assert.Equal(1,calls);Assert.Null(vision.LastResult);
+            Assert.Same(replacement,engine.Robot);
+            Assert.NotSame(originalProfiler,vision.LifetimeProfiler);
+        }
+        finally {engine.LogEntry-=Logged;vision.QualityRectangleInput=null;}
+    }
+
+    private sealed class QualityReturn(uint result):IImageQualityPipeline
+    {
+        public uint ComputeExposureAdjustment(GrayImage image,GrayImage? mask,ref float factor)
+        {factor=1;return result;}
+        public uint ComputePercentile(float percentile) => 150;
+    }
+
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(1u)]
+    public void Mode7ProfilerCountsReturnedResultsBeforeQualityErrorHandling(uint status)
+    {
+        bool oldError=EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var f=new Fixture();var vision=f.M.Vision;
+            vision.QualityProcessor.Pipeline=new QualityReturn(status);
+            vision.LifetimeProfiler.ConfigureVisionPeriods(0,0);
+            var entries=new List<EngineLogEntry>();
+            f.Rig.Engine.LogEntry+=entries.Add;
+            f.Image(94,modes:1<<7);
+            // 0x006B55F6 -> CheckImageQuality -> 0x006B560E, before the status branch.
+            const string prefix="robot.vision.profiler.VisionSystem.Profiler.CheckingImageQuality.";
+            var metrics=entries.Where(e=>e.Name?.StartsWith(prefix)==true).ToArray();
+            Assert.Equal(new[]{prefix+"OverallTime_ms",prefix+"RecentTime_ms"},metrics.Select(e=>e.Name));
+            Assert.All(metrics,e=>
+            {
+                Assert.Equal("1",e.Data["$data"]);
+                Assert.True(long.TryParse(e.Text,out long ms)&&ms>=0);
+            });
+            var printed=Assert.Single(entries,e=>e.Name=="VisionSystem.Profiler"&&e.Text.StartsWith("CheckingImageQuality averaged"));
+            Assert.Contains("over 1 calls",printed.Text);
+            if(status!=0)
+            {
+                int failure=entries.FindIndex(e=>e.Name=="VisionSystem.Update.CheckImageQualityFailed");
+                Assert.True(failure>entries.IndexOf(metrics[^1]));
+            }
+            else Assert.DoesNotContain(entries,e=>e.Name=="VisionSystem.Update.CheckImageQualityFailed");
+        }
+        finally {EngineErrorState.ErrorFlagSet=oldError;}
     }
     [Theory]
     [InlineData(false)]

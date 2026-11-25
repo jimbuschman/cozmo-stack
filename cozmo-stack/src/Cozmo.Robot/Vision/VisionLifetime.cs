@@ -39,7 +39,7 @@ internal sealed class LifetimeProfiler : IDisposable
     }
     private readonly List<Timer> _timers = new();
     private readonly object _gate = new();
-    private Timer? _decodeJpeg;
+    private Timer? _decodeJpeg, _checkingImageQuality;
     private long _infoPeriodMs = -1, _dasPeriodMs = -1;
     internal string Channel = "Profiler", Key = "Profiler";
     internal SourceLogSink? SourceLog;
@@ -70,21 +70,27 @@ internal sealed class LifetimeProfiler : IDisposable
     }
 
     // 0x0087D052..0x0087D062 takes steady-clock time before finding/creating the timer.
-    internal long TicDecodeJpeg()
+    internal long TicDecodeJpeg() => Tic(ref _decodeJpeg,"DecodeJPEG");
+    internal void TocDecodeJpeg(long start) => Toc(_decodeJpeg,start);
+    // Separate native const-char identity at 0x00C018A8, 0x006B55F6/0x006B560E.
+    internal long TicCheckingImageQuality() => Tic(ref _checkingImageQuality,"CheckingImageQuality");
+    internal void TocCheckingImageQuality(long start) => Toc(_checkingImageQuality,start);
+
+    private long Tic(ref Timer? slot,string name)
     {
         long start = Stopwatch.GetTimestamp();
         lock (_gate)
         {
-            if (!_disposed) _decodeJpeg ??= CreateTimer("DecodeJPEG");
+            if (!_disposed) slot ??= CreateTimer(name);
         }
         return start;
     }
 
-    internal void TocDecodeJpeg(long start)
+    private void Toc(Timer? timer,long start)
     {
         LogCallbackDeferral.RunGated(_gate, () =>
         {
-            if (_disposed || _decodeJpeg is not { } timer) return;
+            if (_disposed || timer is null) return;
             // 0x0087D268..0x0087D2A4 truncates elapsed nanoseconds to integral milliseconds.
             timer.Total = unchecked(timer.Total + ElapsedMilliseconds(start, Stopwatch.GetTimestamp()));
             timer.Calls = unchecked(timer.Calls + 1);

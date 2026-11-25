@@ -259,6 +259,10 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: RobotImplMessaging.HandleImageChunk (key 0x00535BF8, format 0x00BE93C4): tick-cap logger arguments/level unported":
+                "0x00535B4A..0x00535B6C emits the incremented counter, unsigned frame timestamp and f64 tick time as a warning; the admission cap is unchanged.",
+            "MISSING: M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted":
+                "0x006B55F6/0x006B560E now measure CheckingImageQuality through the same steady-clock profiler owner as DecodeJPEG, before the returned-result test.",
             "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported":
                 "0x0065B478..0x0065B54E computes truncated microseconds, converts to milliseconds and logs the source warning.",
             "MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported":

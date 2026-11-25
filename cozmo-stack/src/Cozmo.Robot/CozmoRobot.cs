@@ -409,6 +409,7 @@ public sealed partial class CozmoRobot : IDisposable
         Camera.EventTime = () => Engine.Timer.Seconds;
         Camera.CompletedImageEventTime=t=>Engine.Robot?.ObserveCompletedImageEvent(t);
         Camera.Log += l => Engine.Log(l);
+        Camera.SourceLog = (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text);
         CameraSettings.SourceLog += (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text);
         // fidelity: M3-022
         // One robot-level NV storage owner serves every read (NVStorageComponent): the VisionComponent's
