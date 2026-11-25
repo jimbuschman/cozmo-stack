@@ -12,6 +12,42 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class BridgeCommandTests
 {
+    // 0x005404F2/0x00540506 -> 0x006415C4..0x0064169A: requested tracks in
+    // bit order, nonempty trees only, debug[key] in key order, and three trailing spaces.
+    [Theory]
+    [InlineData("head", """{"radians":0.18}""", CozmoMotion.HeadTrack, "HEAD_TRACK")]
+    [InlineData("mount-charger", """{"chargerId":27}""", CozmoMotion.BodyTrack, "BODY_TRACK")]
+    [InlineData("roll", """{"objectId":23}""", CozmoMotion.BodyTrack, "BODY_TRACK")]
+    public async Task LockedTrackRefusalReportsTheNativeOwnerTextThroughRootCompletion(string command, string json, byte track, string trackName)
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        var motion = f.Rig.Robot.Motion;
+        motion.LockTracks(track, "z", "Last");
+        motion.LockTracks(track, "a", "First");
+        motion.LockTracks(track, "a", "Second");
+        motion.LockTracks(CozmoMotion.LiftTrack, "none", "NotRequested");
+        string ownerText = $"{trackName} locked by First[a] Second[a] Last[z]   ";
+        // DriveToRoll's initial drive failure is ignored. The eventual RollObject
+        // requests all three motor tracks, so the root must carry that later warning.
+        string expected = command == "roll"
+            ? $"Required tracks HEAD_TRACK+LIFT_TRACK+BODY_TRACK locked because LIFT_TRACK locked by NotRequested[none]   {ownerText}"
+            : $"Required tracks {trackName} locked because {ownerText}";
+        var reports = new List<ActionCompletionReport>();
+        f.Rig.Engine.ActionCompleted += reports.Add;
+        var task = Invoke(bridge, command, json);
+        var action = Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction());
+        for (int tick = 0; tick < 5 && f.Robot.ActionList.ContainsRunner(action); tick++)
+            f.Rig.Tick();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Equal(EngineActionResult.TracksLocked, result.GetProperty("engineResult").GetUInt32());
+        Assert.Equal("TRACKS_LOCKED", result.GetProperty("engineResultName").GetString());
+        Assert.Equal(expected, result.GetProperty("detail").GetString());
+        Assert.Equal(expected, Assert.Single(reports.Where(r => r.Tag == action.Tag)).TrackLockDetail);
+        Assert.Contains(f.Rig.Log, line => line.EndsWith("IActionRunner.Update.TracksLockedBecause: " + expected, StringComparison.Ordinal));
+        Assert.DoesNotContain(f.Rig.Log, line => line.Contains("MISSING") && line.Contains("TracksLockedBecause"));
+    }
+
     [Fact]
     public async Task MissingFaceSuccessExplainsThatNoTurnTargetWasAvailable()
     {

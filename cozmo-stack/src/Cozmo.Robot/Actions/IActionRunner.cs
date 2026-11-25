@@ -233,6 +233,9 @@ public abstract class ActionRunner : IActionRunner
     private int TagForLog => unchecked((int)Tag);
     public virtual string? NativeName=>_hasSuppliedNativeName?ActionName:null;
     internal string? SourceStatus {get;private protected set;}
+    // Host-only copy of the source diagnostic at 0x00540530, never packed into the native completion.
+    internal string? TrackLockDetail { get; private protected set; }
+    internal string? GetTrackLockDetail(uint result) => result == EngineActionResult.TracksLocked ? TrackLockDetail : null;
 
     /// <summary>The engine clock (<c>BaseStationTimer::GetCurrentTimeInSeconds</c>, 0x00540D4A..0x00540D4E).</summary>
     protected virtual float EngineClockSeconds
@@ -332,6 +335,7 @@ public abstract class ActionRunner : IActionRunner
 
     // L5/L14/L15: the MovementComponent primitives, overridden by a concrete action that owns a robot.
     protected virtual bool AreAnyTracksLocked(uint mask) => false;
+    protected virtual string? WhoIsLocking(uint mask) => null;
     protected virtual void LockTracks(uint mask, string owner) { }
     protected virtual void UnlockTracksInternal(uint mask, string owner) { }
     protected virtual bool AreAllTracksLockedBy(uint mask, string owner) => false;
@@ -408,7 +412,23 @@ public abstract class ActionRunner : IActionRunner
                     // "TracksLockedOnChargerInSDK" (gated on robot+0x338 on-charger AND SDK mode) is unreachable here:
                     // SDK mode is unsupported in this stack, so that separate path is not built.
                     EmitSource(EngineLogLevel.Warning, null, "IActionRunner.Update.TracksLocked", FormattableString.Invariant($"Action {ActionName} [{TagForLog}] not running because required tracks are locked"));
-                    Behavior.SteppedBehavior.ReportMissing("M8-007/M8-015 TracksLockedBecause Warning0x00540530: MovementComponent.WhoIsLocking native string recipient0x00540506 is not bound; no invented owner-description text");
+                    // 0x005404F2/0x00540506: format the requested mask and its current lock trees.
+                    try
+                    {
+                        string tracks = CozmoMotion.AnimTrackFlagsToString((byte)RequiredTrackMask);
+                        if (WhoIsLocking(RequiredTrackMask) is { } reason)
+                        {
+                            TrackLockDetail = $"Required tracks {tracks} locked because {reason}";
+                            EmitSource(EngineLogLevel.Warning, null, "IActionRunner.Update.TracksLockedBecause", TrackLockDetail);
+                        }
+                        else Behavior.SteppedBehavior.ReportMissing("M8-007/M8-015 detached TracksLockedBecause 0x00540506: no MovementComponent owner bound");
+                    }
+                    catch (NotSupportedException)
+                    {
+                        // M1-034: EnumToString(0x80) returns null (0x007BC2B0),
+                        // and AnimTrackFlagsToString calls strlen on it (0x0063071C).
+                        StackDiagnostics.Write("M1-034 M4-031: skipping TracksLockedBecause for undefined track name 0x80");
+                    }
                     State = EngineActionResult.TracksLocked;
                     Watcher?.ActionEndUpdating();
                     return State;
@@ -628,6 +648,7 @@ public abstract class ActionRunner : IActionRunner
     /// <summary>L2 Reset 0x00540CE8: clear Init/start; true unlocks before NOT_STARTED, false skips the unlock.</summary>
     public virtual void Reset(bool unlockTracks)
     {
+        TrackLockDetail = null;
         StartTime = BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
         Initialized = false;
         if (unlockTracks) UnlockTracks();

@@ -34,6 +34,7 @@ internal abstract class NativeVisionRunner : ActionRunner
         return true;
     }
     protected override bool AreAnyTracksLocked(uint mask)=>ScopedCurrent && M.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override string? WhoIsLocking(uint mask)=>ScopedCurrent ? M.Robot.Motion.WhoIsLocking((byte)mask) : null;
     protected override void LockTracks(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.LockTracks((byte)mask,owner,ActionName);else if(ScopedCurrent)M.Robot.Motion.LockTracksOwned((byte)mask,owner,ActionName,ScopedOwner);}
     protected override void UnlockTracksInternal(uint mask,string owner){if(ScopedOwner is null)M.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopeCleanupGate,()=>{if(ScopedOwnerCurrent)M.Robot.Motion.UnlockTracksOwned((byte)mask,owner,ScopedOwner);});}
     protected override bool AreAllTracksLockedBy(uint mask,string owner)=>ScopedOwnerCurrent && M.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);

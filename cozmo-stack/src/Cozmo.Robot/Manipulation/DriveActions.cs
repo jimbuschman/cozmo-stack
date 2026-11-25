@@ -176,6 +176,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     internal Action<string>? LifecycleCallObserved;
     protected override float EngineClockSeconds => _m.Robot.Engine.Timer.SecondsF;
     protected override bool AreAnyTracksLocked(uint mask) => OwnerCurrent() && _m.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override string? WhoIsLocking(uint mask) => OwnerCurrent() ? _m.Robot.Motion.WhoIsLocking((byte)mask) : null;
     protected override void LockTracks(uint mask, string owner) { if(_scopedOwner is null)_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveToPose");else if(OwnerCurrent())_m.Robot.Motion.LockTracksOwned((byte)mask,owner,"DriveToPose",_scopedOwner); }
     protected override void UnlockTracksInternal(uint mask, string owner)
     {if(_scopedOwner is null)_m.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_scopedCleanupGate,()=>{if(OwnerCurrent())_m.Robot.Motion.UnlockTracksOwned((byte)mask,owner,_scopedOwner);});}
@@ -809,6 +810,7 @@ public class DriveStraightAction : ActionRunner, IDisposable
     public IDrivingAnimationHandler DrivingAnimations { get; set; }
     protected override float EngineClockSeconds=>_m.Robot.Engine.Timer.SecondsF;
     protected override bool AreAnyTracksLocked(uint mask)=>NativeOwnerCurrent()&&_m.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override string? WhoIsLocking(uint mask)=>NativeOwnerCurrent()?_m.Robot.Motion.WhoIsLocking((byte)mask):null;
     protected override void LockTracks(uint mask,string owner){if(NativeOwnerCurrent())_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveStraight");}
     protected override void UnlockTracksInternal(uint mask,string owner)
     {if(_nativeOwner is null)_m.Robot.Motion.UnlockTracks((byte)mask,owner);else LogCallbackDeferral.RunGated(_cleanupGate,()=>{if(NativeOwnerCurrent())_m.Robot.Motion.UnlockTracks((byte)mask,owner);});}
