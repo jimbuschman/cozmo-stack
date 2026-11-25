@@ -11313,7 +11313,7 @@
       ],
       "effect": "Where the engine writes robot backups and stats.",
       "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
-      "unresolved": "COMPATIBILITY_POLICY: the stack supplies this root from its own settings (an app input under the 2026-10-09 scope rule). Build: a stack setting, used for scope 0.\nB-M15-1 (2026-10-15), built, awaiting strong verification: FilesPath host setting now supplies scope 0, with literal /output and /robotBackups/ concatenation. Tests use isolated host roots; no app profile implementation is claimed.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack supplies this root from its own settings (an app input under the 2026-10-09 scope rule). Build: a stack setting, used for scope 0.\nB-M15-1 (2026-10-15), built, awaiting strong verification: FilesPath host setting now supplies scope 0, with literal /output and /robotBackups/ concatenation. Tests use isolated host roots; no app profile implementation is claimed.\nNEEDS-PERSISTENCE-2: NeedsManager's scope-0 nurture/ directory (0x006921A6..0x006921D8) is a host input: production defaults to FilesPath/nurture, matching HardwareEngineOptions; NeedsDeviceDirectory overrides it. Offline fixtures retain explicit opt-in.",
       "hardware_required": false,
       "live_path": true,
       "test": "; M15BackupBuilderTests"

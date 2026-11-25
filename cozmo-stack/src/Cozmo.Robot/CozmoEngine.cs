@@ -75,7 +75,7 @@ public sealed class CozmoEngineOptions
     public Vision.IOkaoFaceRecognizer? VisionOkaoRecognizer { get; init; }
     // Explicit unit-test composition only. Every public production construction keeps its world model.
     internal bool OmitVisionForTest { get; set; }
-    /// <summary>Host nurture directory, supplied before NeedsManager::Init; null leaves device persistence unbound.</summary>
+    /// <summary>Host nurture directory; production defaults to FilesPath/nurture. Offline callers must supply it explicitly.</summary>
     public string? NeedsDeviceDirectory { get; init; }
     /// <summary>Operator-approved app refill input: load stored needs, force full and pause changes. False keeps native decay.</summary>
     // fidelity: M15-112
@@ -2152,10 +2152,11 @@ public sealed partial class CozmoEngine : IDisposable
 
     private readonly Action<string> _missingSink;
 
-    internal CozmoEngine(IEngineTransport transport, CozmoEngineOptions? options, Func<long>? nowNs = null)
+    internal CozmoEngine(IEngineTransport transport, CozmoEngineOptions? options, Func<long>? nowNs = null, bool productionHost = false)
     {
         _t = transport;
         Options = options ?? new CozmoEngineOptions();
+        _needsDeviceDirectory = Options.NeedsDeviceDirectory ?? (productionHost ? Path.Combine(Options.FilesPath, "nurture") : null);
         Features = Options.ResourcesPath is { } featuresRoot ? Behavior.FeatureGates.Load(featuresRoot) : null;
         // fidelity: M3-052, M3-053
         _logDisplay.Configure(DasLogDisplay.ShippedConfiguration(), line => EmitStackLog(line.Line));

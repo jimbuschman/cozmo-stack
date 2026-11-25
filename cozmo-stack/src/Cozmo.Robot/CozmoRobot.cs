@@ -344,7 +344,7 @@ public sealed partial class CozmoRobot : IDisposable
         Transport = transport ?? new ReliableTransport(options);
         var realPort = port is null ? new ReliableTransportPort(Transport) : null;
         // fidelity: M1-054 — B-M1-3 N1: this constructor owns the transport even when engine construction fails.
-        try { Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock); }
+        try { Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock, productionHost: !_offlineHost); }
         catch { Transport.Dispose(); throw; }
         engineCreated?.Invoke(Engine); // Test-only observer, attached before any device constructor runs.
         BeforeAnimationFileStat = beforeAnimationFileStat;
