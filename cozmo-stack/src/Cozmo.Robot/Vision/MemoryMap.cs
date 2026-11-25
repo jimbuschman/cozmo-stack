@@ -105,10 +105,10 @@ public sealed partial class MemoryMap
     public IReadOnlyDictionary<MemoryMapContentType,int> NativeContentCounts => Tree.ContentCounts();
     internal SourceLogSink? SourceLog { get => Tree.SourceLog; set => Tree.SourceLog = value; }
     internal Action<string>? Missing { get => Tree.Missing; set => Tree.Missing = value; }
-    public double ExploredRegionAreaM2
-    {
-        get { Missing?.Invoke("MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
-    }
+    // fidelity: M11-045, M11-064 — virtual +0x1C, 0x006816E8: cached f64, including every
+    // non-Unknown leaf type represented in the native tree and its retained subdivision credit.
+    // Unbuilt map content producers still limit this diagnostic; it is not an explored-union estimate.
+    public double ExploredRegionAreaM2 => Tree.ExploredRegionAreaM2;
     // 0x00681934..0x0068193A: root content pointer at +0xDC, Last at +0xC.
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
     // fidelity: M11-079 -- vt+0x2C 0x00681734: the eleven (type, enabled) pairs folded by the caller's table.

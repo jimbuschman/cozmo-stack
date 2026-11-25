@@ -629,16 +629,11 @@ public sealed class BehaviorFactory
             stepped.ReadNativeScoring(config);
             stepped.BindActionCompletionOwner(source.Robot,native);
             stepped.NativeBaseInputs=new NativeBehaviorBaseInputs(native,config);
-            if(stepped is NativeKnockOverCubesBehavior knock)knock.BindNativeCommonInputs(stepped.NativeBaseInputs);
-            // Init 0x005BCD16 and Resume 0x005BCFAC use the configured unlock ID and live manager spark ID.
-            if(stepped is NativeGuardDogBehavior or NativeTrackLaserBehavior or NativeRespondToPyramidBaseBehavior or NativeFireTruckAlarmBehavior or NativeWaitBehavior or NativeCubeLiftWorkoutBehavior or NativeCantHandleTallStackBehavior or NativeCheckForStackAtIntervalBehavior or NativeBuildPyramidBaseBehavior or NativePlayArbitraryAnimBehavior or NativeStackBlocksBehavior or NativeRollBlockBehavior or NativePopAWheelieBehavior or NativeExpressNeedsBehavior or NativeNeedsGetInBehavior or
-                NativeSparksLookInPlace or VisitInterestingEdgeBehavior or NativeRespondToRenameFace or
-                NativeEnrollFaceBehavior or ThinkAboutBeaconsBehavior or
-                NativePutDownBlockBehavior or DriveOffChargerBehavior or AcknowledgeCubeMovedBehavior)
-            {
-                stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
-                stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner?.ActiveSparkId??throw new InvalidOperationException("MISSING: native arbitrary current spark manager unavailable");
-            }
+            // IBehavior's common ctor/ReadFromJson supply +0x70 for EVERY configured class.
+            // Init 0x005BCD16 and Resume 0x005BCFAC compare it to the original manager +0x58.
+            stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
+            if(native.BehaviorManagerOwner is {} sparkManager)
+                stepped.ActiveSparkIdentifier=()=>sparkManager.ActiveSparkId;
             if(stepped is ReactToReturnedToTreadsBehavior or ReactToCliffBehavior or ReactToImpactBehavior or
                 ReactToPickupBehavior or ReactToRobotOnBackBehavior or ReactToMotorCalibrationBehavior or
                 ReactToPlacedOnSlopeBehavior or ReactToUnexpectedMovementBehavior or AcknowledgeFaceBehavior or
@@ -647,8 +642,6 @@ public sealed class BehaviorFactory
                 stepped is PlayAnimBehavior { OwnsConfiguredAnimationSequence: true })
             {
                 // IBehavior::Init 0x005BCCAC..0x005BCCC2 (+D8), 0x005BCD16..0x005BCD44 (unlock lock).
-                stepped.UnlockIdentifier=()=>unchecked((int)stepped.NativeBaseInputs.RequiredUnlock);
-                stepped.ActiveSparkIdentifier=()=>native.BehaviorManagerOwner!.ActiveSparkId;
                 stepped.SparkGate=()=>native.BehaviorManagerOwner is {} manager &&
                     manager.ActiveSparkId!=0x55 && (manager.ActiveSparkSoft^1)!=0;
             }

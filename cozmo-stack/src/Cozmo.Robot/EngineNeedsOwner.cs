@@ -29,13 +29,25 @@ public sealed partial class CozmoEngine
     internal bool IsOfflineEngine { get; private set; }
     private bool _requestedInitialBlockPool;
     internal Action? RequestInitialBlockPool;
+    // fidelity: M3-061, M15-014 — COMPATIBILITY_POLICY host input: DataPlatform scope 0 "nurture/"
+    // (NeedsManager ctor 0x006921A6..0x006921D8); match the standalone hardware/MCP directory convention.
+    private string? _needsDeviceDirectory;
 
     private void InitializeNeedsOwner()
     {
         // InitExperiments has just run; RobotManager.Init follows (0x004ECA0A before 0x004ECA1A).
         EmitSourceLog(EngineLogLevel.Info,"Unnamed","NeedsManager.Init","Starting Init of NeedsManager"); // 0x00692598.
+        if (_needsDeviceDirectory is { } directory)
+        {
+            try { Directory.CreateDirectory(directory); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                EmitStackLog($"Needs device directory {directory} unavailable: {e.Message}");
+                _needsDeviceDirectory = null; // No absence outcome or write is fabricated after an I/O failure.
+            }
+        }
         Needs=NeedsManager.FromObb(Options.ResourcesPath,()=>Timer.SecondsF,
-            deviceDirectory:Options.NeedsDeviceDirectory,contextRandom:ContextRandom,beforeInit:n=>
+            deviceDirectory:_needsDeviceDirectory,contextRandom:ContextRandom,beforeInit:n=>
             {
                 Needs=n; // context retains this same logical owner before its Init callbacks
                 n.HostEngine=this;n.NativeContextBound=true;
@@ -59,7 +71,7 @@ public sealed partial class CozmoEngine
         // M15-016: live generated G2E tag201 invoker 0x0069B0E2..0x0069B0F6 -> SetPaused 0x00695E04.
         AnimationMessages.SubscribeMessage(0xC9,false,p=>Needs.SetPaused((bool)p!));
         SteppedBehavior.ReportMissing("M15-001 NeedsManager.Init: remaining registrations 0x00692668..0x006926C8 and DAS app_start tail 0x00693486 remain unbuilt/uncertified; full StarRewardsConfig and runtime tuning lifecycle remain incomplete");
-        if(Options.NeedsDeviceDirectory is null)
+        if(_needsDeviceDirectory is null)
             SteppedBehavior.ReportMissing("M15-001 NeedsManager.InitInternal 0x00693466/0x0069347E: host nurture directory not supplied; device read/write remain unbound");
     }
 
@@ -76,7 +88,7 @@ public sealed partial class CozmoEngine
             needs.LocalNotificationsSetPaused+=notifications.SetPaused;
             // fidelity: M15-111 — the host's history, else the persisted store; both arrive on 0xD6 before Needs Init.
             var history=Options.NotificationHistory;
-            if(history is null&&!Options.OmitNotificationHistoryForTests&&Options.NeedsDeviceDirectory is {} directory)
+            if(history is null&&!Options.OmitNotificationHistoryForTests&&_needsDeviceDirectory is {} directory)
             {_notificationHistory=NotificationHistoryStore.LoadOrCreate(directory,NeedsWallClockMicros(),EmitStackLog);history=_notificationHistory.Snapshot();}
             if(history is not null)AnimationMessages.Deliver(0xD6,false,history);
         }

@@ -9,6 +9,20 @@ namespace Cozmo.Protocol.Tests;
 
 public sealed class NeedsFix1Tests
 {
+    // ActionsConfig::Init 0x0068F7AC clears/resizes to 86 records, including absent IDs.
+    [Fact]
+    public void ActionConfigurationUsesNativeIdSlotsIncludingZeroRows()
+    {
+        var actions=NeedsActionDelta.Parse("""{"actionDeltas":[{"actionId":"Feed","energyDelta":0.5}]}""");
+        Assert.Equal(86,actions.Count);
+        Assert.Equal(0.5,actions["Feed"].EnergyDelta);
+        Assert.Equal(new NeedsActionDelta("SeeFace",0,0,0,0,0,0,0,0),actions["SeeFace"]);
+        var needs=new NeedsManager(()=>0,actions:actions){Connected=true};
+        Assert.True(needs.RegisterNeedsActionCompleted("SeeFace"));
+        Assert.False(needs.RegisterNeedsActionCompleted("Count"));
+        Assert.False(needs.RegisterNeedsActionCompleted("46"));
+    }
+
     // reach: action API on standalone manager; raw state seed substitutes for the unbuilt reward/persistence input.
     [Theory]
     [InlineData("CozmoSings", 0)] [InlineData("CozmoSingsCompleted_Sparked", 0)]

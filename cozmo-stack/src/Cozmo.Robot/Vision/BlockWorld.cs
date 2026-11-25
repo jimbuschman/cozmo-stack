@@ -1951,7 +1951,12 @@ public sealed partial class BlockWorld
         if (_lastPlayAreaTime + 60f < now)
         {
             _lastPlayAreaTime = now;
-            Missing("M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable");
+            // 0x00624F2A..0x00624F4E: this value is used only by sEventF here, with empty
+            // metadata. The remaining map producer gaps are owned by the map, not this log.
+            if (Maps.Current is { } map)
+                Source(EngineLogLevel.Event, null, "robot.play_area_size", LibcxxPrintf.FormatFixedDouble(map.ExploredRegionAreaM2, 2));
+            else
+                EmitPublicLog("M1-034/M13-031: skipped robot.play_area_size null map virtual call at 0x00624F2E..0x00624F32");
         }
         // Robot::GetLastImageTimeStamp: the empty-list branch (0x00625028), UpdatePoseOfStackedObjects and UpdateMarkerlessObjects (0x0062521A) use it
         uint lastImage = LastImageTimestamp?.Invoke() ?? timestamp;

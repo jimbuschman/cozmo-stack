@@ -215,7 +215,7 @@ public sealed class CozmoCubes
 
     /// <summary>Raised the first time a cube is heard from.</summary>
     public event Action<Cube>? CubeDiscovered;
-    /// <summary>Raised when a cube connects or disconnects.</summary>
+    /// <summary>Raw radio-slot connection telemetry; engine world-ID reports use <see cref="ConnectionStateBroadcast"/>.</summary>
     public event Action<Cube>? ConnectionChanged;
     /// <summary>Queued when a cube is tapped; carries a publication-time snapshot, not the live Cube.</summary>
     public event Action<Cube>? CubeTapped;
@@ -262,7 +262,7 @@ public sealed class CozmoCubes
 
     /// <summary>Looks up a cube by its permanent id.</summary>
     public Cube? ByFactoryId(uint factoryId) { lock (_gate) return _byFactoryId.GetValueOrDefault(factoryId); }
-    /// <summary>Looks up a cube by the id the robot assigned it on connection.</summary>
+    /// <summary>Looks up the raw radio slot (not an engine world ObjectID). Native actions and lights use the BlockWorld identity.</summary>
     public Cube? ByObjectId(uint objectId) { lock (_gate) return _byObjectId.GetValueOrDefault(objectId); }
 
     /// <summary>

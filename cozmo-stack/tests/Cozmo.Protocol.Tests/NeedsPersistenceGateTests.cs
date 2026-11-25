@@ -15,6 +15,36 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NeedsPersistenceGateTests
 {
+    [Fact]
+    public void ProductionHostDefaultDirectoryPersistsAcrossEngineConstructions()
+    {
+        using var resources=new BackupTestResources();
+        var options=resources.Options(new CozmoEngineOptions
+        {
+            NeedsSystemClockMicroseconds=()=>1_700_000_000_000_000L,
+            DasDeviceId="device",LabLocaleLanguage="en",LabLocaleCountry="us"
+        });
+        string source=Path.GetDirectoryName(BackupTestResources.ShippedConfig())!;
+        foreach(string name in new[]{"needs_config.json","needs_decay_config.json","needs_action_config.json","needs_level_config.json","needs_handlers_config.json","local_notification_config.json"})
+            File.Copy(Path.Combine(source,name),Path.Combine(options.ResourcesPath!,"config","engine",name),true);
+        File.Copy(Path.Combine(source,"..","features.json"),Path.Combine(options.ResourcesPath!,"config","features.json"),true);
+        string directory=Path.Combine(resources.Root,"nurture");
+        using (var engine=new CozmoEngine(new M4ControlTests.FakePort(),options,()=>0,productionHost:true))
+        {
+            Assert.Equal(directory,engine.Needs.DeviceDirectory);
+            Assert.True(engine.Needs.HasNativePersistence);
+            Assert.True(File.Exists(Path.Combine(directory,"needsState.json")));
+            Assert.False(engine.Needs.DeviceDataPresent);
+        }
+        using (var engine=new CozmoEngine(new M4ControlTests.FakePort(),options,()=>0,productionHost:true))
+        {
+            Assert.Equal(directory,engine.Needs.DeviceDirectory);
+            Assert.True(engine.Needs.DeviceDataPresent);
+        }
+        using (var offline=CozmoRobot.CreateOffline(engineOptions:options))
+            Assert.Null(offline.Engine.Needs.DeviceDirectory);
+    }
+
     // reach: production — public startup with a host state directory, real ticker, and public persistence entries.
     // Literal file input substitutes host disk contents only; no persistence/clock adapter is enabled.
     [Theory]
@@ -86,7 +116,7 @@ public sealed class NeedsPersistenceGateTests
             var results=new ConcurrentQueue<NvResult>();
             using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions
             {
-                ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
+                ResourcesPath=root,FilesPath=root,BlockPoolPath="",BeforeStart=e=>
                 {e.ConnectionNeedsRead+=results.Enqueue;}
             });
             Wait(()=>robot.Engine.IsReadyDelivered,"startup");
@@ -154,7 +184,10 @@ public sealed class NeedsPersistenceGateTests
             while(nvCommands.TryDequeue(out var cmd))sent.Add(cmd);
             Assert.Single(sent.Where(c=>c.Tag==0x194000));
             Assert.DoesNotContain(sent,c=>c.Tag==0x194000&&c.Op!=0);
-            Assert.Single(missing);
+            // Production now resolves the default directory, but the deliberately incomplete
+            // resource fixture still gates both device access and robot persistence separately.
+            Assert.Single(missing.Where(s=>s.Contains("needs robot persistence")));
+            Assert.Single(missing.Where(s=>s.Contains("needs device persistence")));
         }
         finally{SteppedBehavior.MissingReported-=Diagnostic;Directory.Delete(root,true);}
     }

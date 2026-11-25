@@ -581,6 +581,34 @@ public class DerivedStateTests
     }
 
     [Fact]
+    public void DetachedDetectorReportsItsMissingOwnerButBoundDisconnectedDetectorDoesNotRespond()
+    {
+        using var historical = new Pose3d(Rotation3d.Identity,new Vec3(100,200,0));
+        using var current = new Pose3d(Rotation3d.Identity,new Vec3(120,200,0));
+        var detector = new UnexpectedMovementDetector
+        {
+            IsPhysical=true, ReactionTriggerEnabled=()=>true,
+            ComputeStateAt=_=>(HistoryLookupResult.Ok,new Pose3d(historical)),
+            CurrentRobotPose=()=>new Pose3d(current)
+        };
+        var log=new List<string>();
+        detector.Log+=log.Add;
+        UnexpectedMovementReport? response=null;
+        for(uint i=0;i<6;i++)response=detector.Update(State(i*33,left:50,right:60,gz:-1));
+        Assert.Equal(UnexpectedMovementSide.Front,response!.Side);
+        Assert.Single(log,line=>line.StartsWith("MISSING: M10-007 detached unexpected-movement detector") &&
+            line.Contains("0x0063E87E") && line.Contains("0x0063E916"));
+
+        using var robot=CozmoRobot.CreateOffline();
+        robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,false);
+        detector.HostEngine=robot.Engine;
+        log.Clear();
+        for(uint i=0;i<6;i++)Assert.Null(detector.Update(State(i*33,left:50,right:60,gz:-1)));
+        Assert.Equal(0,detector.Count);
+        Assert.Empty(log);
+    }
+
+    [Fact]
     public void TheDetectorResetsWhenPickedUpAndDecaysWhenStill()
     {
         var d = Mov();

@@ -1963,18 +1963,33 @@ public class M3DeviceTests
         var cam = new CozmoCamera { EventTime = () => t };
         int received = 0, toVision = 0;
         var log = new List<string>();
+        var source = new List<(EngineLogLevel Level,string? Channel,string Key,string Text)>();
+        cam.SourceLog = (level,channel,key,text) => source.Add((level,channel,key,text));
         cam.FrameReceived += _ => received++;
         cam.FrameForVision += _ => toVision++;
         cam.Log += log.Add;
-        for (uint id = 1; id <= 5; id++) cam.Handle(Chunk(id, 0, new byte[] { 0, 1 }, total: 1));
+        for (uint id = 1; id <= 5; id++)
+        {
+            var chunk = Chunk(id,0,new byte[] {0,1},total:1);
+            chunk.FrameTimestamp = 100+id;
+            cam.Handle(chunk);
+        }
         Assert.Equal(5, received);
         Assert.Equal(3, toVision);
-        Assert.Equal(2, log.Count(l => l.StartsWith("warning: Ignoring")));
-        Assert.Equal(2, log.Count(l => l.StartsWith("MISSING: RobotImplMessaging.HandleImageChunk")));
-        Assert.Contains("4th image", log[0]);
+        // 0x00535B4A..0x00535B6C passes the zero-based incremented counter
+        // and FrameTimestamp (+0), not ImageID or the host's one-based count.
+        Assert.Equal(new[]
+        {
+            (EngineLogLevel.Warning,(string?)null,"RobotImplMessaging.HandleImageChunk","Ignoring 3th image (with t=104) received during basestation tick at 1.000000sec"),
+            (EngineLogLevel.Warning,(string?)null,"RobotImplMessaging.HandleImageChunk","Ignoring 4th image (with t=105) received during basestation tick at 1.000000sec")
+        },source);
+        Assert.DoesNotContain(log,l=>l.StartsWith("MISSING: RobotImplMessaging.HandleImageChunk"));
         t = 1.06;
-        cam.Handle(Chunk(9, 0, new byte[] { 0, 1 }, total: 1));
+        var next = Chunk(9, 0, new byte[] { 0, 1 }, total: 1);
+        next.FrameTimestamp = 109;
+        cam.Handle(next);
         Assert.Equal(4, toVision);
+        Assert.Equal(2,source.Count);
     }
 
     private static string Sha16(byte[] b) => Convert.ToHexString(SHA256.HashData(b)).ToLowerInvariant()[..16];

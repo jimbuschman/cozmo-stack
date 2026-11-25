@@ -171,7 +171,7 @@ public sealed class UnexpectedMovementDetector
     /// historical pose. Null (no ComputeStateAt in this stack) takes the failure path, logged as MISSING.
     /// </summary>
     public Func<uint, (HistoryLookupResult Result, Pose3d Pose)>? ComputeStateAt { get; set; }
-    /// <summary>B15: Robot::GetPose, the robot's current pose, for the rotation copy (an M11 interface).</summary>
+    /// <summary>Optional standalone diagnostic pose; the live response reads its owning Robot at 0x0063E856.</summary>
     public Func<Pose3d?>? CurrentRobotPose { get; set; }
 
     // ---------------------------------------------------------------- state (+0x94..+0xA0)
@@ -216,6 +216,9 @@ public sealed class UnexpectedMovementDetector
     public UnexpectedMovementReport? Update(RobotState s)
     {
         var native=HostEngine?.Robot;
+        // MovementComponent is Robot-owned. A bound host without its live Robot
+        // must not fall through to the standalone detector's diagnostic adapter.
+        if (HostEngine is not null && (native is null || native.Lifetime.Destroying)) return null;
         if (!IsPhysical) return null;                                            // B2
         if (AnimationStateTag != 0 && !BodyTrackLocked) return null;             // B3
         if (s.Has(RobotStatusFlag.IsPickingOrPlacing)) return null;              // B4: no reset
@@ -298,13 +301,17 @@ public sealed class UnexpectedMovementDetector
             ApplyNativeResponse(native,hist,side);
             return side;
         }
+        // The public standalone detector can classify a response with supplied
+        // history/pose inputs, but has no owner for the two native side effects.
+        // The connected path above already performs both calls and their downstream recipients.
+        string detail = "MISSING: M10-007 detached unexpected-movement detector: no Robot/BlockWorld owner for SetNewPose 0x0063E87E and AddCollisionObstacle 0x0063E916";
         using var now = CurrentRobotPose?.Invoke();
-        if (now is { } p)
+        if (now is not null)
         {
-            using var rewound = UnexpectedMovementResponse.RewoundPose(hist, p);
-            Log?.Invoke($"MISSING: MovementComponent.CheckForUnexpectedMovement: SetNewPose({rewound.Translation}) and its AbsoluteLocalizationUpdate are not sent (M4 C9 F1..F3 not in the rows); the collision obstacle{UnexpectedMovementResponse.Name(side)} robot is not added");
+            using var rewound = UnexpectedMovementResponse.RewoundPose(hist, now);
+            detail += $"; candidate rewind {rewound.Translation}";
         }
-        else Log?.Invoke("MISSING: MovementComponent.CheckForUnexpectedMovement: the rewind (SetNewPose) and the collision obstacle are not applied");
+        Log?.Invoke(detail);
         return side;
     }
 

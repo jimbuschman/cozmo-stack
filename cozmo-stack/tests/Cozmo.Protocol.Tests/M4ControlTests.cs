@@ -190,6 +190,33 @@ public class M4ControlTests
         finally { Directory.Delete(resources, true); }
     }
 
+    [Fact]
+    public void FreeplayLightStateSelectsWorldObjectIdRatherThanRadioSlot()
+    {
+        string resources=CubeLightResources();
+        try
+        {
+            using var rig=new Rig(resources);
+            rig.ToSynced();rig.State();
+            const ObjectType type=ObjectType.Block_LIGHTCUBE1;
+            uint expected=ObjectIdSpace.SetIdFor(type,true);
+            uint slot=expected==4?3u:4u;
+            ConnectCube(rig,slot,type);
+            uint worldId=rig.Robot.LocalizationWorld.ConnectedObjectIdForActiveId(slot)!.Value;
+            Assert.Equal(expected,worldId);
+            Assert.NotEqual(slot,worldId);
+            int mark=rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(false,unchecked((int)slot));
+            Assert.Empty(rig.RawSince(mark)); // 0x006399D8: no ObjectInfo at the radio slot.
+            rig.Robot.SetEnableFreeplayLightStates(false,unchecked((int)worldId));
+            Assert.NotEmpty(rig.RawSince(mark)); // 0x006399F2: static off for this actual ObjectID.
+            mark=rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(false,unchecked((int)worldId));
+            Assert.Empty(rig.RawSince(mark)); // 0x006399DC..0x006399E0: already in requested state.
+        }
+        finally{Directory.Delete(resources,true);}
+    }
+
     [Theory]
     [InlineData(99u, 0, PoseState.Dirty)]
     [InlineData(100u, 0, PoseState.Known)]
@@ -2384,13 +2411,15 @@ public class M4ControlTests
             Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for all objects", rig.Log);
             rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);   // already in state: still logs first
             Assert.Equal(2, rig.Log.Count(l => l == "info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for all objects"));
-            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: 0);     // engine enable 0, object 0
-            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Disabling game layer only for object 0", rig.Log);
+            int worldId=unchecked((int)rig.Robot.LocalizationWorld.ConnectedObjectIdForActiveId(0)!.Value);
+            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: worldId); // engine enable 0, actual object
+            Assert.Contains($"info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Disabling game layer only for object {worldId}", rig.Log);
 
             int mark = rig.Mark();
             string top = cubes.TopPatternName(type) ?? "";
-            cubes.EnableGameLayerOnly(true, ObjectType.Block_LIGHTCUBE2, 7);       // no ObjectInfo for this object
-            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for object 7", rig.Log);
+            int absentId=worldId==7?8:7;
+            cubes.EnableGameLayerOnly(true, absentId);                            // no ObjectInfo for this ID
+            Assert.Contains($"info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for object {absentId}", rig.Log);
             Assert.Empty(rig.RawSince(mark));                                      // no SetObjectLights
             Assert.Equal(top, cubes.TopPatternName(type) ?? "");                   // no stops on any object
         }
@@ -2498,10 +2527,11 @@ public class M4ControlTests
             rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: -1);
             Assert.Empty(rig.RawSince(mark));
 
-            // single-object ObjectInfo+0x1C (cube 0, app false -> engine enable 1): same.
-            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: 0);
+            // single-object ObjectInfo+0x1C (app false -> engine enable 1): same.
+            int id=unchecked((int)rig.Robot.LocalizationWorld.ConnectedObjectIdForActiveId(0)!.Value);
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: id);
             mark = rig.Mark();
-            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: 0);
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: id);
             Assert.Empty(rig.RawSince(mark));
         }
         finally { Directory.Delete(res, true); }

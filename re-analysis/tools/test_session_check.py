@@ -299,6 +299,19 @@ class SessionCheckTests(unittest.TestCase):
         for index in range(1, 6):
             self.assertIn(f"- M{index} (0x", report)
 
+    def test_play_area_telemetry_resolves_without_masking_map_producer_gaps(self):
+        lines = (
+            "MISSING: M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable",
+            "MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)",
+            "MISSING: M11-074 ObstacleUnrecognized (type 7) producer UNKNOWN",
+        )
+        for at, line in enumerate(lines, 101):
+            self.event(at, "stack-log", line=line)
+        _, report = self.check(lines)
+        self.assertIn("0x00624F32..0x00624F4E now emits", report)
+        self.assertIn("0x006816E8 returns the cached double", report)
+        self.assertIn("ObstacleUnrecognized (type 7) producer UNKNOWN", report)
+
     def test_shared_action_logging_resolves_while_a_carry_pose_gap_stays_visible(self):
         lines = (
             "MISSING: M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x03000005",

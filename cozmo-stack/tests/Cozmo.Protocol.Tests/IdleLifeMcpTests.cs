@@ -307,6 +307,16 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
             "SparksPutDownBlock", "Hiking_DriveOffCharger", "EnrollFace", "Hiking_ThinkAboutBeacons", "SparksThinkAboutBeacons"];
         Assert.True(Assert.IsType<NativeFindFacesSocialize>(f.Runtime.Bound["SparksFindFaces"]).ParametersAvailable);
         Assert.Equal(SteppedBehavior.NoUnlockId, manager.ActiveSparkId);
+        // +0x70 is the common base field, not a per-class opt-in; check every constructed
+        // configured stepped behavior, including those not in the former allowlist.
+        var configuredSteps=f.Runtime.Bound.Values.OfType<SteppedBehavior>()
+            .Where(b=>b.NativeBaseInputs is not null).ToArray();
+        Assert.NotEmpty(configuredSteps);
+        foreach(var behavior in configuredSteps)
+        {
+            Assert.Equal(unchecked((int)behavior.NativeBaseInputs!.RequiredUnlock),behavior.UnlockIdentifier!());
+            Assert.Equal(SteppedBehavior.NoUnlockId,behavior.ActiveSparkIdentifier!());
+        }
         foreach (string id in ids)
         {
             var behavior = Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[id]);
@@ -317,6 +327,11 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
         manager.SwitchToNativeRequestedSpark();
         foreach (string id in ids)
             Assert.Equal(13, ((SteppedBehavior)f.Runtime.Bound[id]).ActiveSparkIdentifier!());
+        foreach(var behavior in configuredSteps)
+        {
+            Assert.True(behavior.NativeBaseInputs!.TryGetActiveSparkId(out int active));
+            Assert.Equal(13,active);
+        }
 
         var moved = Assert.Single(manager.Reactions, entry => entry.Strategy.Trigger == ReactionTrigger.CubeMoved);
         Assert.Same(f.Runtime.Bound["ReactToCubeMoved"], moved.Behavior);

@@ -2092,6 +2092,7 @@ public sealed partial class VisionSystem : IDisposable
         OverheadEdgeFrame? overheadEdges = null;
         lock (_busy)
         {
+            var frameProfiler = LifetimeProfiler;
             if (RemovedSince(removal)) return null;
             if (!offline && nativeState?.MotionPose.Current is { } faceCamera && faceCamera.Timestamp == timestamp && ReferenceEquals(faceCamera.Owner, sourceOwner))
                 nativeFaceFrames = (faceCamera.CameraPose.Transform, faceCamera.RobotPose.Transform);
@@ -2342,7 +2343,7 @@ public sealed partial class VisionSystem : IDisposable
             if(StaleFrame())return null;
             if(ShouldProcessVisionMode((int)VisionMode.CheckingQuality))
             {
-                bool available=TryCheckFrameQuality(gray,qualityRectangles,()=>!StaleFrame(),out uint qualityStatus,out var proposed);
+                bool available=TryCheckFrameQuality(gray,qualityRectangles,frameProfiler,()=>!StaleFrame(),out uint qualityStatus,out var proposed);
                 if(StaleFrame())return null;
                 if(!available)
                 {

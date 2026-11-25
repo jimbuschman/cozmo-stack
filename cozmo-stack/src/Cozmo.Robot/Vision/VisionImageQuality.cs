@@ -10,15 +10,19 @@ public sealed partial class VisionSystem
     // fidelity: M11-080, M11-057
     internal readonly ImageQualityProcessor QualityProcessor=new();
     internal Func<IReadOnlyList<ImageQualityRectangle>>? QualityRectangleInput;
-    private bool TryCheckFrameQuality(GrayImage image,IReadOnlyList<ImageQualityRectangle> frameRectangles,Func<bool> current,out uint status,out ImageQualityProposal proposal)
+    private bool TryCheckFrameQuality(GrayImage image,IReadOnlyList<ImageQualityRectangle> frameRectangles,LifetimeProfiler profiler,Func<bool> current,out uint status,out ImageQualityProposal proposal)
     {
         status=0;proposal=default;
-        SteppedBehavior.ReportMissing("M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted");
         if(!current())return false;
+        long start = profiler.TicCheckingImageQuality(); // 0x006B55F6
         // The optional provider is an explicit test seam; production uses the current Update's own vector.
         var rectangles=QualityProcessor.Settings.MeterFromDetections ? QualityRectangleInput?.Invoke() ?? frameRectangles : Array.Empty<ImageQualityRectangle>();
         if(!current())return false;
-        return QualityProcessor.TryCheck(image,rectangles,_robot.CameraSettings.QualityState,ModeEnableMask,out status,out proposal,current);
+        bool available = QualityProcessor.TryCheck(image,rectangles,_robot.CameraSettings.QualityState,ModeEnableMask,out status,out proposal,current);
+        // 0x006B560E precedes the check of the returned Result (0x006B5612).
+        // A host-only unavailable/retired path has no completed native Result.
+        if (available) profiler.TocCheckingImageQuality(start);
+        return available;
     }
 
     private static FirmwareJsonValue? InitMember(FirmwareJsonValue? root,string key)

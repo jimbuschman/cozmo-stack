@@ -340,11 +340,20 @@ public sealed record NeedsActionDelta(string ActionId, double RepairDelta, doubl
     public static IReadOnlyDictionary<string, NeedsActionDelta> Parse(string json)
     {
         using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
-        var d = new Dictionary<string, NeedsActionDelta>(StringComparer.OrdinalIgnoreCase);
+        // ActionsConfig::Init clears/resizes to 86 rows (0x0068F780..0x0068F7AC); append
+        // clears their 0x2C bytes (0x00691FE2..0x00691FEE). Omitted IDs are real zero rows.
+        var d = Enum.GetValues<NeedsActionId>().Where(id => id != NeedsActionId.Count)
+            .ToDictionary(id => id.ToString(), id => new NeedsActionDelta(id.ToString(), 0, 0, 0, 0, 0, 0, 0, 0), StringComparer.Ordinal);
         foreach (var e in doc.RootElement.GetProperty("actionDeltas").EnumerateArray())
         {
             double G(string k) => e.TryGetProperty(k, out var v) ? v.GetDouble() : 0;
             var id = e.GetProperty("actionId").GetString()!;
+            // Native string-to-ID at 0x0068F870; invalid names have no in-bounds row.
+            if (!d.ContainsKey(id))
+            {
+                StackDiagnostics.Write($"M1-034/M15-046: skipped invalid action config ID {id}; native indexed store after 0x0068F870 has no valid row");
+                continue;
+            }
             d[id] = new NeedsActionDelta(id, G("repairDelta"), G("repairRange"), G("energyDelta"), G("energyRange"), G("playDelta"), G("playRange"), G("cooldownSecs"), G("freeplaySparksRewardWeight"));
         }
         return d;
@@ -878,6 +887,8 @@ public sealed partial class NeedsManager
         SendNeedsLevelsDasEvent?.Invoke("app_start");            // 0x00693486
         if(TryLocalNotificationsGenerate is {} nativeNotifications){if(!nativeNotifications())return;}
         else if(LocalNotificationsGenerate is {} notifications)notifications();
+        // Phone OS scheduling/delivery is outside the app boundary; the engine's Generate
+        // remains bound for its shared RNG effects. This guard is for absent source inputs.
         else if(HasNativePersistence){HostEngine?.NativeLocalNotifications?.MarkHistoryUnavailable();SteppedBehavior.ReportMissing("M15-014/M15-093 LocalNotifications.Generate recipient unavailable at 0x00693492");}
     }
 
@@ -2190,8 +2201,10 @@ public sealed partial class NeedsManager
         {if(_nativeConnectedRobot is null)return false;}
         else if(!_robotConnected)return false; // 0x006960E0..0x006960FA
         // The +0x39C whitelist defaults off; its Unity onboarding input is outside the standalone app boundary.
-        if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || Enum.GetName(action) != actionId)
-        { SteppedBehavior.ReportMissing("M15-046 host action has no supplied native NeedsActionId: " + actionId); return false; }
+        // Host strings become the native ordinal before indexing the action table (0x0069619C..0x006961A2).
+        // Unknown host inputs and Count cannot be native action completions.
+        if (!Enum.TryParse<NeedsActionId>(actionId, false, out var action) || action == NeedsActionId.Count || Enum.GetName(action) != actionId)
+        { Log?.Invoke("NeedsManager: invalid host NeedsActionId: " + actionId); return false; }
         if (action is NeedsActionId.CozmoSings or NeedsActionId.CozmoSingsCompleted_Sparked)
             State.ForceNextSong = 0; // 0x00696138..0x00696142, before cooldown
         if (_nowSec < _actionDeadlineSec.GetValueOrDefault(action)) return false; // 0x00696146..0x0069615A

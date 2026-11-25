@@ -290,6 +290,7 @@ public sealed class CozmoCamera
     public event Action<CameraFrame>? FrameForVision;
     /// <summary>The camera's warnings (the per-tick cap).</summary>
     public event Action<string>? Log;
+    internal SourceLogSink? SourceLog { get; set; }
 
     // fidelity: M3-002
     /// <summary>
@@ -420,10 +421,7 @@ public sealed class CozmoCamera
         if (completed is null) return;
         FrameReceived?.Invoke(completed);
         if (capWarning is not null)
-        {
-            Log?.Invoke(capWarning);
-            Log?.Invoke("MISSING: RobotImplMessaging.HandleImageChunk (key 0x00535BF8, format 0x00BE93C4): tick-cap logger arguments/level unported");
-        }
+            SourceLogDispatch.Write(SourceLog,Log,EngineLogLevel.Warning,null,"RobotImplMessaging.HandleImageChunk",capWarning);
         if (toVision) FrameForVision?.Invoke(completed);
     }
 
@@ -447,8 +445,9 @@ public sealed class CozmoCamera
         _imagesThisTick++;
         if (_imagesThisTick < MaxImagesPerTick) return true;
         FramesOverTickCap++;
-        warning = $"warning: Ignoring {_imagesThisTick + 1}th image (with t={f.Timestamp}) received during basestation tick at {t:F6}sec";
-        // MISSING: RobotImplMessaging.HandleImageChunk (0x00535BF8 / 0x00BE93C4); reported with capWarning after releasing _gate.
+        // 0x00535B4A..0x00535B6C passes the stored incremented counter (not one
+        // more), ImageChunk+0 timestamp and the event's f64 tick time to sWarningF.
+        warning = FormattableString.Invariant($"Ignoring {_imagesThisTick}th image (with t={f.Timestamp}) received during basestation tick at {t:F6}sec");
         return false;
     }
 

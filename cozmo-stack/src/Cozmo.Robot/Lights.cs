@@ -1573,9 +1573,9 @@ public sealed class CubeLightComponent
     /// otherwise, then picks the default layer-2 animation; the all-objects path stops only layer 0 and sets
     /// comp+0x22 := 0, while the single-object path stops layers 0 and 2 and does not write comp+0x22.
     /// </summary>
-    internal void EnableGameLayerOnly(bool enable, ObjectType? type = null, int objectId = -1)
-        => _robot.Engine.InvokeEngineRequest(()=>{EnableGameLayerOnlyCore(enable,type,objectId);return true;});
-    private void EnableGameLayerOnlyCore(bool enable,ObjectType? type,int objectId)
+    internal void EnableGameLayerOnly(bool enable, int objectId = -1)
+        => _robot.Engine.InvokeEngineRequest(()=>{EnableGameLayerOnlyCore(enable,objectId);return true;});
+    private void EnableGameLayerOnlyCore(bool enable,int objectId)
     {
         // fidelity: M4-018
         // Entry log (0x0063997A sChanneledInfoF, before the C13.4 gates): channel "CubeLightComponent" (printed as
@@ -1584,17 +1584,26 @@ public sealed class CubeLightComponent
         // (0x00BFAA9C); "all objects" (0x00639B94) when ObjectID == -1, else "object " (0x00639BA0) + the id.
         SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.EnableGameLayerOnly", $"{(enable ? "Enabling" : "Disabling")} game layer only for " +
             (objectId == -1 ? "all objects" : FormattableString.Invariant($"object {objectId}")));
-        // An id other than -1 with no ObjectInfo (type null): the lookup fails, complete no-op after the entry log.
-        if (type is null && objectId != -1) return;
+        ObjectType? type=null;
         // fidelity: M4-018 (C13.4)
         // C13.4: the engine branches to the epilogue without acting when the target is already in the requested
         // state: the all-objects (id -1) comp+0x22 for the all-objects case (0x00639A16..0x00639A1C), the object's
         // ObjectInfo+0x1C otherwise (0x006399DC..0x006399E0).
         lock (_gate)
         {
-            if (type is null) { if (_gameLayerOnlyDefault == enable) return; }
-            // A single object with no ObjectInfo: complete no-op (cmp r7,end; beq at 0x006399D8..0x006399E0).
-            else if (!_infos.TryGetValue(type.Value, out var current) || current.GameLayerOnly == enable) return;
+            if (objectId == -1) { if (_gameLayerOnlyDefault == enable) return; }
+            else
+            {
+                // 0x006399C8..0x006399E0 finds ObjectInfo by the engine ObjectID, not its radio slot.
+                foreach(var (candidate,info) in _infos)
+                {
+                    if(info.ObjectId!=unchecked((uint)objectId))continue;
+                    if(info.GameLayerOnly==enable)return;
+                    type=candidate;
+                    break;
+                }
+                if(type is null)return;
+            }
         }
         if (enable)
         {
@@ -1667,8 +1676,7 @@ public sealed class CubeLightComponent
     {
         // Only -1 means all objects; any other id (negative too) is logged and looked up like any id, and an unknown
         // one is a no-op after the entry log (EnableGameLayerOnly).
-        ObjectType? type = objectID == -1 ? null : _robot.Cubes.ByObjectId(unchecked((uint)objectID))?.Type;
-        EnableGameLayerOnly(!enable, type, objectID);
+        EnableGameLayerOnly(!enable, objectID);
     }
 
     // fidelity: M4-018
