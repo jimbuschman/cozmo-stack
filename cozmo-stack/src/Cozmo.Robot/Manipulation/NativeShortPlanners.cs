@@ -15,7 +15,7 @@ internal interface INativePathPlanner
 }
 
 // Checked short-planner calls generate their own geometry; no StraightLinePlanner substitution.
-internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Action<string> missing,Action<string>? standardOutput=null) : INativePathPlanner
+internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Action<string>? standardOutput=null) : INativePathPlanner
 {
     private Pose3d _goal;
     private byte _goalIndex;
@@ -36,11 +36,10 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
             standardOutput?.Invoke("M1-034/M13-033 skipped empty IPathPlanner goal-vector dereference at 0x00508A7E..0x00508A8E");
             return 0;
         }
-        int best=ClosestGoal(start,goals);
-        missing("M13-033 ComputeClosestGoalPose Debug fields/rotation-axis formatting 0x00508870..0x0050890A not represented");
+        int best=ClosestGoal(start,goals,source);
         _goalIndex=unchecked((byte)best);_goal=goals[best];return ComputeNewPathIfNeeded(start,true);
     }
-    internal static int ClosestGoal(Pose3d start,IReadOnlyList<Pose3d> goals)
+    internal static int ClosestGoal(Pose3d start,IReadOnlyList<Pose3d> goals,SourceLogSink? source=null)
     {
         int best=0;float bestD=0;
         for(int i=0;i<goals.Count;i++)
@@ -48,6 +47,19 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
             float x=(float)goals[i].Translation.X-(float)start.Translation.X,y=(float)goals[i].Translation.Y-(float)start.Translation.Y,z=(float)goals[i].Translation.Z-(float)start.Translation.Z;
             float d=x*x;d+=y*y;d+=z*z;
             if(i==0 || d<bestD){best=i;bestD=d;}
+            if (source is not null)
+            {
+                // 0x00508870..0x0050890A: one diagnostic per candidate, including
+                // the translation, Z degrees, and normalized quaternion axis.
+                // 0x005089B8..0x00508A2E uses Z for a numerically zero RotationVector angle.
+                var goal = goals[i];
+                var rotation = goal.Quaternion;
+                Vec3 axis = Radians.IsNear(rotation.Angle, 0, Radians.Epsilon) ? new Vec3(0,0,1) : rotation.Axis;
+                float yawDegrees = rotation.AngleAroundZ * EngineF.Bits(0x42652EE1);
+                string Fixed(double value,int precision) => LibcxxPrintf.FormatFixedFloat((float)value,precision);
+                source(EngineLogLevel.Debug,"Unnamed","IPathPlanner.ComputeClosestGoalPose",
+                    $"Candidate target pose: ({Fixed(goal.Translation.X,2)} {Fixed(goal.Translation.Y,2)} {Fixed(goal.Translation.Z,2)}), {Fixed(yawDegrees,1)}deg @ ({Fixed(axis.X,2)} {Fixed(axis.Y,2)} {Fixed(axis.Z,2)}): dist {LibcxxPrintf.FormatFixedFloat(d)}");
+            }
         }
         return best;
     }
@@ -181,8 +193,7 @@ internal static class NativePathBuffer
                 Append(output,segment,standardOutput);
             }
         }
-        // 0x00509072 calls Path::PrintPath on the finished output. This is diagnostic only.
-        source(EngineLogLevel.Debug, "Planner", "IPathPlanner.ApplyMotionProfile", $"Profiled path segments: {output.Count}");
+        NativePathDiagnostics.PrintPath(output, standardOutput); // 0x00509072
         return output;
     }
     internal static bool Append(List<PathSegment> output,PathSegment segment,Action<string>? standardOutput,string name="AppendSegment")

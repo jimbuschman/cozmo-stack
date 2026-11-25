@@ -16,6 +16,71 @@ public sealed class M13X1BuilderTests
         throw new InvalidOperationException("Shipped motion primitives are required for this regression.");
     }
     private sealed record Unknown:PathSegment;
+
+    [Fact]
+    public void ClosestGoalLogsEveryCandidateWithNativeAxisAndSquaredDistance()
+    {
+        var logs = new List<(EngineLogLevel Level,string? Channel,string Text)>();
+        var planner = new NativeShortPlanner(false, (level,channel,key,text) =>
+        {
+            if (key == "IPathPlanner.ComputeClosestGoalPose") logs.Add((level,channel,text));
+        });
+        using var start = At(0,0);
+        using var first = At(3,4);
+        using var second = new Pose3d(Rotation3d.FromAngleAxis(MathF.PI/2,new Vec3(0,0,1)),new Vec3(1,0,2));
+        using var third = new Pose3d(Rotation3d.FromAngleAxis(0.5f,new Vec3(1,0,0)),new Vec3(6,0,0));
+        Assert.Equal(1,planner.ComputePath(start,[first,second,third]));
+        Assert.Equal(new[]
+        {
+            (EngineLogLevel.Debug,(string?)"Unnamed","Candidate target pose: (3.00 4.00 0.00), -0.0deg @ (0.00 0.00 1.00): dist 25.000000"),
+            (EngineLogLevel.Debug,(string?)"Unnamed","Candidate target pose: (1.00 0.00 2.00), 90.0deg @ (0.00 0.00 1.00): dist 5.000000"),
+            (EngineLogLevel.Debug,(string?)"Unnamed","Candidate target pose: (6.00 0.00 0.00), 0.0deg @ (1.00 0.00 0.00): dist 36.000000")
+        },logs);
+        Assert.True(planner.GetCompletePath(start,PathMotionProfile.Default,out _,out byte goal));
+        Assert.Equal((byte)1,goal);
+    }
+
+    [Theory]
+    [InlineData(true,true)]
+    [InlineData(true,false)]
+    [InlineData(false,false)]
+    public void SegmentPrintsPrecedeWireSendsAndDrawPathHasNoWireEffect(bool clearSuccess,bool executeSuccess)
+    {
+        // 0x0085C034..0x0085C13E: reference literals and f32 tolerance-to-degrees multiplication.
+        PathSegment[] segments =
+        [
+            new PathSegment.Line(1,2,3,4,-5,6,7),
+            new PathSegment.Arc(1,2,3,0.5f,-0.25f,4,5,6),
+            new PathSegment.PointTurn(1,2,0.25f,0.5f,-3,4,5,true)
+        ];
+        string[] texts =
+        [
+            "line: (1.000000, 2.000000) to (3.000000, 4.000000), speed/accel/decel = (-5.000000, 6.000000, 7.000000)\n",
+            "arc: centerPt (1.000000, 2.000000), radius 3.000000, startAng 0.500000, sweep -0.250000, speed/accel/decel = (4.000000, 5.000000, 6.000000)\n",
+            "ptTurn: x 1.000000, y 2.000000, targetAngle 0.250000, tol 28.647890deg speed/accel/decel = (-3.000000, 4.000000, 5.000000)\n"
+        ];
+        var printed = new List<string>();
+        NativePathDiagnostics.PrintPath(segments,printed.Add);
+        Assert.Equal(new[]{"Path segment 0 - ",texts[0],"Path segment 1 - ",texts[1],"Path segment 2 - ",texts[2]},printed);
+        using var rig = new Rig();
+        var path = rig.Robot.Motion.Path;
+        var order = new List<string>();
+        rig.Robot.Engine.StackLogLine += line => { if (texts.Contains(line)) order.Add(line); };
+        path.ErasePathHook = id => order.Add("viz erase:"+id);
+        int result = path.ExecutePath(segments,false,send:message =>
+        {
+            order.Add(message.GetType().Name);
+            return message switch { ClearPath => clearSuccess, ExecutePath => executeSuccess, _ => true };
+        });
+        Assert.Equal(clearSuccess&&executeSuccess?0:1,result);
+        // ClearPath itself erases the old path before its send at 0x0064923A..0x00649280.
+        // The DrawPath tail is reached on failed clear as well (0x0064A368..0x0064A36E).
+        Assert.Equal(clearSuccess
+            ? new[]{"viz erase:1","ClearPath",texts[0],"AppendPathSegmentLine",texts[1],"AppendPathSegmentArc",
+                texts[2],"AppendPathSegmentPointTurn","ExecutePath","viz erase:1"}
+            : new[]{"viz erase:1","ClearPath","viz erase:1"},order);
+    }
+
     [Fact]
     public void ShortPlannerFalseRetainsPathAndBaseMissingPlanDoesNotCopy()
     {
@@ -262,11 +327,12 @@ public sealed class M13X1BuilderTests
             AccelMmps2 = accel,
             DecelMmps2 = decel
         };
-        var missing = new List<string>();
-        var planner = new NativeShortPlanner(minimal, (_, _, _, _) => { }, missing.Add);
+        var output = new List<string>();
+        var planner = new NativeShortPlanner(minimal, (_, _, _, _) => { }, output.Add);
         Assert.Equal(1, planner.ComputePath(start, [goal]));
         Assert.True(planner.GetCompletePath(start, profile, out var path, out _));
-        Assert.DoesNotContain(missing, message => message.Contains("M13-034"));
+        Assert.Contains(output, message => message.StartsWith("Path segment 0 - "));
+        Assert.DoesNotContain(output, message => message.Contains("MISSING"));
 
         using var rig = new Rig();
         var sent = new List<RobotMessage>();

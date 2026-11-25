@@ -29,9 +29,8 @@ internal sealed partial class PathComponent
     private void InitNativeShortPlanners()
     {
         SourceLogSink source=(level,channel,key,text)=>_robot.Engine.EmitSourceLog(level,channel,key,text);
-        Action<string> missing=text=>_robot.Engine.EmitStackLog("MISSING: "+text);
-        NativeFace=new(false,source,missing,_robot.Engine.EmitStackLog);
-        NativeMinimal=new(true,source,missing,_robot.Engine.EmitStackLog);
+        NativeFace=new(false,source,_robot.Engine.EmitStackLog);
+        NativeMinimal=new(true,source,_robot.Engine.EmitStackLog);
     }
     internal Func<bool>? PlannerPathIsSafe;
     internal Func<bool>? PlannerSkipSafetyCheck;
@@ -181,7 +180,7 @@ internal sealed partial class PathComponent
         {
             _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","PathDolerOuter",$"doling out basestation idx {i} :  ");
             if(current is not null&&!current())return;
-            MissingOnce("M12-002 PathSegment.Print 0x00507F36 -> 0x0085C034 text/body has no checked row; segment print is unbuilt");
+            NativePathDiagnostics.PrintSegment(_dolerPath[i], _robot.Engine.EmitStackLog); // 0x00507F36
             if(current is not null&&!current())return;
             RobotMessage? message=_dolerPath[i] switch
             {
@@ -206,7 +205,9 @@ internal sealed partial class PathComponent
     internal int ExecutePath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
         if((byte)path.Count==0){Warning("PathComponent.ExecutePath.EmptyPath","");Field47=false;ErasePath();SetStatus(4);return 0;} // Native Path+4 is u8.
-        int r=ClearPath(send??SendNative,current);if(r!=0||current is not null&&!current())return 1;
+        int r=ClearPath(send??SendNative,current);
+        if(current is not null&&!current())return 1;
+        if(r!=0){ErasePath();return r;} // 0x0064A368..0x0064A36E branches to DrawPath even on failed clear.
         Field42=unchecked((ushort)(Field42+1));reserve?.Invoke(Field42);if(current is not null&&!current())return 1;
         SetDolerPath(path,current,send);if(current is not null&&!current())return 1;Field46=manual;
         Info("PathComponent.SendExecutePath",$"sending start execution message (pathID = {Field42}, manualSpeed == {(manual?1:0)})");
@@ -214,7 +215,12 @@ internal sealed partial class PathComponent
         r=(send??SendNative)(new ExecutePath{EventId=Field42,Unknown=manual})?0:1;
         if(current is not null&&!current())return 1;
         if(r==0){Field3C=_robot.Engine.Timer.SecondsF;SetStatus(2,current);}
-        MissingOnce("M12-032 VizManager.DrawPath 0x0064A474 recipient/color handoff is unbuilt");return r;
+        // 0x0064A474 -> 0x006BFB1A erases the robot path, constructs/discards a
+        // local Viz message for each line/arc, then sets color (0x006BFB9E).
+        // These recipients do not send to robot or game; only the existing erase
+        // observation seam is exposed, and no visualizer state is retained.
+        if(current is null||current())ErasePath();
+        return r;
     }
     internal int ExecuteCustomPath(IReadOnlyList<PathSegment> path,bool manual,Action<ushort>? reserve=null,Func<bool>? current=null,Func<RobotMessage,bool>? send=null)
     {
@@ -273,7 +279,12 @@ internal sealed partial class PathComponent
         var current=_scopedCurrent;
         bool IsCurrent()=>current?.Invoke()??true;
         if(!IsCurrent())return;
-        if(_nativePlanners?.Current is not null)_plan=_nativePlanners.Read();
+        if(_nativePlanners?.Current is not null)
+        {
+            var read = _nativePlanners.Read();
+            if(!IsCurrent())return;
+            _plan=read;
+        }
         if(!IsCurrent())return;
         if(_plan is not {} plan)return;
         if((byte)plan.Path.Count!=0)

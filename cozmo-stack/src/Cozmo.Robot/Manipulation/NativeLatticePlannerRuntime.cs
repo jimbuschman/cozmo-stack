@@ -279,10 +279,11 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             return false;
         }
         _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","total path:");
-        _missing("M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt");
         var raw = new List<PathSegment>();
         NativePlanDependencies.AppendToPath(_backend.Env.Primitives, _total, raw, nearest.Index,
             primitive => primitive.CachedPath, NativePlanDependencies.OffsetStart, _missing, WriteStandardOutput);
+        NativePathDiagnostics.PrintPath(raw, WriteStandardOutput); // 0x004FFC76, before replacing final point turns.
+        if (Volatile.Read(ref _disposed) != 0) return false; // A host log callback may retire the original planner.
         if (raw.Count != 0)
         {
             // 0x004FFCBA..0x004FFD14: take the endpoint before popping each trailing turn.
