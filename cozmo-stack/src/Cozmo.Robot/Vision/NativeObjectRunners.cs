@@ -118,7 +118,9 @@ internal sealed class NativeTurnTowardsObjectRunner:NativeTurnTowardsPoseRunner
             if(DestructionObserved || !ScopedCurrent)return EngineActionResult.Cancelled;
             if(_refine){Reset(false);_refine=false;Parameters.SetNativePanTolerance(BitConverter.UInt32BitsToSingle(0x3DB2B8C2));return EngineActionResult.Running;}
             _finished=true;
-            if(_track)throw new NotSupportedException("MISSING native TurnObject TrackObject recipient0054A9");
+            // 0x0054AE08..0x0054AE2C builds TrackObject only for track=true.
+            // M13-036: operator excluded object tracking; all supported dock/turn call sites pass false.
+            if(_track)throw new NotSupportedException("MISSING native TurnObject TrackObject recipient 0x0054AE08..0x0054AE2C (M13-036)");
             if(!_verify)return 0;
             _verification=new(M,_id,_code){SuppressTrackLocking=true,Watcher=Watcher,ScopedOwner=ScopedOwner,ScopedParentCurrent=()=>ScopedCurrent && !DestructionObserved};
             uint first=_verification.Update();if(first!=0)return first;

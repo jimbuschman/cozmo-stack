@@ -286,15 +286,16 @@ public abstract partial class DockActionBase
 
     /// <summary>
     /// <c>[+0xF7]</c> (M12-037): selects <c>Marker::ANY_CODE</c> instead of <c>[+0x82]</c> as the turn action's code. The wire factories store 1 for Align, FacePlant, Pickup, PopAWheelie,
-    /// RollObject and (through a register) PlaceRelObject (0x00529CF6..0x0052AAC6). The <c>IDockAction</c> constructor's own default is NOT in the inventory (MISSING); this stack's
-    /// actions are built by behaviours, not the wire factories, so it is false unless a caller sets it.
+    /// RollObject and (through a register) PlaceRelObject (0x00529CF6..0x0052AAC6). The <c>IDockAction</c> constructor
+    /// clears the word at +0xF4 (0x005503DA), including +0xF7; it is false unless a caller sets it.
     /// </summary>
     // fidelity: M12-037
     public bool Field0xF7 { get; set; }
     /// <summary><c>[+0x82]</c> (M12-017 steps 7 and 8): 3 after step 7, then the chosen marker's code at the join 0x00551844.</summary>
-    public short Field0x82 { get; private set; }
-    /// <summary><c>[+0x84]</c>: 3 after step 7 and again at the join when <c>vtbl+0x34</c> returns null (the per-subclass results of that virtual are unread, MISSING; every C# subclass takes the null case).</summary>
-    public short Field0x84 { get; private set; }
+    public short Field0x82 { get; private set; } = 3; // ctor 0x00550354..0x00550358.
+    /// <summary>Constructor and Init use 3. At the pre-action join, vtbl+0x34 in IDock, Pickup, PlaceRel, Roll, PopAWheelie
+    /// and Align resolves to 0x00557382 (return null). CrossBridge alone overrides it (0x0055722C); not on the supported dock paths.</summary>
+    public short Field0x84 { get; private set; } = 3;
     /// <summary>The compound <c>SetupTurnAndVerifyAction</c> stored at <c>IDockAction+0x98</c> on the last <see cref="RunAsync"/>; null before <c>Init</c> reaches step 9.</summary>
     public DockCompound? TurnAndVerify { get; private set; }
     /// <summary>Runs the compound's sub-actions (M12-037); the default is the labelled stand-in <see cref="StandInDockSubActions"/>.</summary>
@@ -490,7 +491,7 @@ public abstract partial class DockActionBase
         try
         {
         _actionStartSec = M.ClockSec();
-        _trace.Add("IDockAction.Init: not modelled: reaction locks (1),(10) M8; IsValidLightCube and the cube light (3),(11) M10; handler bodies (6) and RemoveSquint (12) M12-034; slot vtbl+0x34 of every subclass (MISSING)");
+        _trace.Add("MISSING: legacy async IDockAction adapter does not model the native tick's reaction locks, interacting light or squint removal; supported robot commands use the native runners (0x00551528..0x00551C5E)");
         // (2)
         var target = M.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("IDockAction.NullDockObject: Dock object is null"); return ActionResult.BadObject; }
@@ -510,7 +511,7 @@ public abstract partial class DockActionBase
         var selection = SelectDockActionResult(target, out var action);
         if (selection != ActionResult.Success) { _trace.Add("IDockAction.Init.DockActionSelectionFailure"); return selection; }
         SelectedDockAction = action;
-        // (6) 0x005516EA / 0x00551750: the action's own 0xC5 and 0xDA handlers, registered here and gone with the action (the bodies are M12-034, unbuilt)
+        // (6) 0x005516EA / 0x00551750: the action's own 0xC5 and 0xDA handlers, registered here and gone with the action (M12-034).
         // fidelity: M12-017
         using var handlerRegistration = M.Docking.RegisterActionHandlers(this, action);
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-017/M12-034 legacy async dock adapter: deleted target is checked on task resumption; native IDock updates check it on every action tick at 0x005521BE. The legacy adapter also has separate cleanup from 0x0055745C..0x00557582.");

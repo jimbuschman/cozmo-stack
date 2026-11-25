@@ -369,6 +369,28 @@ public class M12RVisBuildTests : IDisposable
         Assert.Equal(!checksPreDockPoses, act.Trace.Contains("PlaceRelObjectAction.Constructor.WillNotCheckPreDockPoses"));
     }
 
+    [Fact]
+    public void SupportedDockConstructorsRetainNativeMarkerDefaults()
+    {
+        using var rig=new Rig();
+        using var pickup=new PickupObjectAction(rig.M,7);
+        DockActionBase[] actions=
+        [
+            pickup,
+            new PlaceRelObjectAction(rig.M,7,false,0,0,false,true),
+            new RollObjectAction(rig.M,7),
+            new PopAWheelieAction(rig.M,7),
+            new AlignWithObjectAction(rig.M,7,0,(AlignmentType)3)
+        ];
+        foreach(var action in actions)
+        {
+            // IDock ctor 0x00550354..58 initializes both u16s; 0x005503DA clears +F7.
+            Assert.Equal((short)3,action.Field0x82);
+            Assert.Equal((short)3,action.Field0x84);
+            Assert.False(action.Field0xF7);
+        }
+    }
+
     /// <summary>
     /// M12-025, the wire factory (0x0052A72E..0x0052A754), usePreDockPose false: PlaceRelObjectAction(robot, id, true, A = [msg+0x30], B = 0.0, [msg+0x3A], true),
     /// then 1 at +0xF7 and 0 at +0xB9. usePreDockPose true builds DriveToPlaceRelObjectAction, which this stack does not have: NotSupportedException.
@@ -1129,7 +1151,7 @@ public class M12RVisBuildTests : IDisposable
         var near = Make();
         Assert.Equal(0x03000000u, (uint)await near.RunAsync(default));
         Assert.Empty(rig.Pump().OfType<DockWithObject>());
-        Assert.Contains(near.Trace, l => l.Contains("not modelled") && l.Contains("M12-034"));
+        Assert.Contains(near.Trace, l => l.StartsWith("MISSING: legacy async IDockAction adapter") && l.Contains("reaction locks"));
     }
 
     /// <summary>
