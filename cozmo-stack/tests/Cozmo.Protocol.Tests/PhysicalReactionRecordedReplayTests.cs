@@ -70,6 +70,8 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         Assert.InRange(actual.PoseY, expected.PoseY - .01f, expected.PoseY + .01f);
         Assert.InRange(actual.PoseAngleRad, expected.PoseAngleRad - .0001f, expected.PoseAngleRad + .0001f);
         Assert.Contains(f.M.World.LocatedObjects, item => item.Type == ObjectType.CollisionObstacle);
+        Assert.DoesNotContain(rig.Log, line => line.Contains("detached unexpected-movement detector") ||
+            line.Contains("the rewind (SetNewPose) and the collision obstacle") || line.Contains("and its AbsoluteLocalizationUpdate are not sent"));
     }
 
     [Fact]

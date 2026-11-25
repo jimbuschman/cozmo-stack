@@ -1166,17 +1166,17 @@ public sealed class CozmoSensors
                     {
                         er.NativeMovementIsMoving=s.Has(RobotStatusFlag.IsMoving); // 0x0063E30A..31A
                         er.NativeMovementHeadMoving=!s.Has(RobotStatusFlag.HeadInPos); // 0x0063E320..328
+                        // fidelity: M10-002, M10-006
+                        // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
+                        // (0x0063E392), which UpdateFullRobotState runs before the origin check (B1, 0x00512B5C): every synced state.
+                        // B2: robot+0x14; B3: robot+0x248 (the AnimationState tag) and the BODY track's lock set.
+                        UnexpectedMovement.IsPhysical = er.IsPhysicalRobot;
+                        UnexpectedMovement.AnimationStateTag = er.AnimationStateTag;
+                        UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
+                        var movement = UnexpectedMovement.Update(s);
+                        if(movement is not null)
+                        {_robot.Engine.QueueAppEvent(UnexpectedMovementDetected,movement);UnexpectedMovementDetectedInternal?.Invoke(movement);}
                     }
-                    // fidelity: M10-002, M10-006
-                    // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
-                    // (0x0063E392), which UpdateFullRobotState runs before the origin check (B1, 0x00512B5C): every synced state.
-                    // B2: robot+0x14; B3: robot+0x248 (the AnimationState tag) and the BODY track's lock set.
-                    UnexpectedMovement.IsPhysical = er?.IsPhysicalRobot ?? false;
-                    UnexpectedMovement.AnimationStateTag = er?.AnimationStateTag ?? 0;
-                    UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
-                    var movement = UnexpectedMovement.Update(s);
-                    if(movement is not null)
-                    {_robot.Engine.QueueAppEvent(UnexpectedMovementDetected,movement);UnexpectedMovementDetectedInternal?.Invoke(movement);}
                     // M11-044's moved-since-localized OR is before the treads/origin/history branches.
                     _robot.LocalizationWorld.NoteRobotState((s.Status&(uint)RobotStatusFlag.HeadInPos)==0 || s.Has(RobotStatusFlag.AreWheelsMoving),
                         OffTreads.Current!=OffTreadsState.OnTreads);
