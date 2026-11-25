@@ -167,7 +167,7 @@ public class M7BatchThreeATests
             m.Stop(BehaviorStopReason.Interrupted, 0);
 
             // 0x55: no spark
-            b.UnlockIdentifier = () => 0x55; b.ActiveSparkIdentifier = () => 0x55;
+            b.UnlockIdentifier = () => 0x55; b.ActiveSparkIdentifier = () => throw new InvalidOperationException("Count must not read manager+0x58");
             m.StartAsync("ReactToImpact", 0).GetAwaiter().GetResult();
             AssertLockedExactly(m, spark, new string('0', 21));
             m.Stop(BehaviorStopReason.Interrupted, 0);

@@ -44,11 +44,6 @@ internal sealed class NativeKnockOverCubesBehavior:SteppedBehavior,IDisposable
         ReachTrigger=Trigger("reachForBlockTrigger");PutDownTrigger=Trigger("knockOverPutDownTrigger");EyesTrigger=Trigger("knockOverEyesTrigger");SuccessTrigger=Trigger("knockOverSuccessTrigger");FailureTrigger=Trigger("knockOverFailureTrigger");
         if(_robot.HasExternalInterface)_upAxis=_m.Robot.Engine.AnimationMessages.SubscribeMessage(0x11,true,OnUpAxis);
     }
-    internal void BindNativeCommonInputs(NativeBehaviorBaseInputs inputs)
-    {
-        UnlockIdentifier=()=>unchecked((int)inputs.RequiredUnlock);
-        ActiveSparkIdentifier=()=>RequireManager().ActiveSparkId;
-    }
     private BehaviorManager RequireManager()
     {
         if(_robot.BehaviorManagerOwner is {} manager)return manager;

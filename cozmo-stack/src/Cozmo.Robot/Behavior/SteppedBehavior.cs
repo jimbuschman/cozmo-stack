@@ -518,20 +518,25 @@ public abstract partial class SteppedBehavior : IBehavior
     /// <c>[[this+0x2C]+0x44]+0x58</c> (the BehaviorManager's active spark), take the lock
     /// <c>"SparkBehaviorDisables"</c> (literal 0x00BF2B0A) with table 0x00C65F90 (only ObjectPositionUpdated)
     /// through <c>SmartDisableReactionsWithLock</c>; <c>IBehavior::Stop</c> releases it with the scope. Both ids
-    /// belong to the spark/progression layer (M15), which this stack does not have, so they are seams
-    /// (<see cref="UnlockIdentifier"/>, <see cref="ActiveSparkIdentifier"/>); without them the test cannot be made
-    /// and the gap is reported, not answered.
+    /// come from the common configured base and its original manager (M15-058).
+    /// Detached tests may supply the explicit seams <see cref="UnlockIdentifier"/> and
+    /// <see cref="ActiveSparkIdentifier"/>.
     /// </summary>
     protected virtual void SparkBehaviorDisables()
     {
-        if (UnlockIdentifier is not { } unlock || ActiveSparkIdentifier is not { } active)
+        int? id=NativeBaseInputs is { } inputs ? unchecked((int)inputs.RequiredUnlock) : UnlockIdentifier?.Invoke();
+        // Both native branches short-circuit BEFORE reading manager+0x58 for the Count sentinel.
+        if (id == NoUnlockId) return;
+        int? activeId;
+        if(NativeBaseInputs is { } native)
+            activeId=native.TryGetActiveSparkId(out int original) ? original : null;
+        else activeId=ActiveSparkIdentifier?.Invoke();
+        if (id is null || activeId is null)
         {
             ReportMissing("IBehavior::Init/Resume 'SparkBehaviorDisables' lock (0x005BCD16..0x005BCD44, 0x005BCFAC..0x005BCFDE): this+0x70 and [[this+0x2C]+0x44]+0x58 (the active spark) have no source in this stack (M15 spark layer); the lock is not taken");
             return;
         }
-        int id = unlock();
-        if (id == NoUnlockId) return;                                   // 0x005BCD18 cmp r0,#0x55
-        if (id != active()) return;                                     // 0x005BCD22 cmp r0,r1
+        if (id != activeId) return;                                     // 0x005BCD22 cmp r0,r1
         Scope.SmartDisableReactionsWithLock(ReactionLockTables.SparkBehaviorDisablesName, ReactionLockTables.SparkBehaviorDisables);
     }
 

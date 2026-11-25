@@ -10,6 +10,19 @@ internal sealed class NativeBehaviorBaseInputs
     private readonly BehaviorManager? _manager;
     private readonly uint _requiredUnlock;
     internal uint RequiredUnlock=>_requiredUnlock;
+    // Captured manager is the Robot+0x44 owner. Never read a replacement or a retired owner.
+    internal bool TryGetActiveSparkId(out int id)
+    {
+        bool actual=ReferenceEquals(_robot.Engine.Robot,_robot) ||
+            (_robot.Engine.Robot is null && _robot.NativeBehaviorRuntimeConstructing);
+        if(actual && _manager is {} manager && ReferenceEquals(_robot.BehaviorManagerOwner,manager))
+        {
+            id=manager.ActiveSparkId;
+            return true;
+        }
+        id=0;
+        return false;
+    }
     // Common +6C uses the native executable name table and Count constructor default.
     internal byte? CheckedExecutableType {get;}
     internal byte CheckedBehaviorClass {get;}

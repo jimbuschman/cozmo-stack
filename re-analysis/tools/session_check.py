@@ -259,6 +259,8 @@ class Session:
         pickup_undefined = ("MISSING: M1-034 Pickup completion5537D4: native non-normal pickup carrier "
                             "contains undefined words; skip full public payload, retain scalar/local delivery.")
         resolved = {
+            "MISSING: IBehavior::Init/Resume 'SparkBehaviorDisables' lock (0x005BCD16..0x005BCD44, 0x005BCFAC..0x005BCFDE): this+0x70 and [[this+0x2C]+0x44]+0x58 (the active spark) have no source in this stack (M15 spark layer); the lock is not taken":
+                "Common configured +0x70 (0x005BBCAC, 0x005BC118) and the original manager +0x58 (0x005A08F4, 0x005A4224) are bound for all native classes; Count bypasses the active read; the exact matching-ID lock remains supported.",
             "MISSING: M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable":
                 "0x00624F32..0x00624F4E now emits the cached explored-area double with %.2f from the actual tree; this call site is telemetry only, not a map-producer closure.",
             "MISSING: M11-045 explored-area virtual +0x1C (0x006816E8, MemoryMap+0x40): tree does not yet contain all map content (B-M3M4-20)":
