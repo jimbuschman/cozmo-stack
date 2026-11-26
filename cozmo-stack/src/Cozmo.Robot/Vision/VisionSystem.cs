@@ -913,7 +913,10 @@ public sealed partial class VisionSystem : IDisposable
     /// <summary>
     /// The robot's one history, Robot+0x390 (SetNewPose 0x00512708..0x0051271C, AddVisionOnlyState 0x005310D8), read from
     /// the current robot on every use so a RemoveRobot/AddRobot cannot split vision-only and raw states (B-M11-8 item 5).
-    /// With no robot there is no native history; a detached one is used and reported as MISSING.
+    /// With no robot there is no native history; a detached one is used and reported as MISSING. Production frames cannot reach it:
+    /// HandleImageChunk exits unless robot+0x29 is set (0x00535A7A; the camera gate is <c>Engine.Robot?.TimeSynced ?? false</c>), so no
+    /// image reaches vision without a robot, and the processor's engine path reads the frame owner's own <c>PoseHistory</c>. Only host
+    /// queries made while no robot is connected (current camera, origin, cube distance) read it, and get an empty history.
     /// </summary>
     public RobotStateHistory History
     {
@@ -2057,7 +2060,10 @@ public sealed partial class VisionSystem : IDisposable
     /// <see cref="InvalidOperationException"/> when marker detection fails and the engine abandons the frame (DetectMarkersFailed).
     /// </summary>
     /// <param name="overheadEdgeGround">The frame's VisionPoseData fields the overhead-edge detector reads (H, visible, status; M11-017
-    /// rows 4-6). Without them DetectingOverheadEdges reports MISSING and appends no frame.</param>
+    /// rows 4-6). Without them DetectingOverheadEdges reports MISSING and appends no frame. Production cannot reach that MISSING: the only
+    /// production caller is the processor worker (queueForEngine), which withholds a frame with no captured carrier (M11-033/M11-098) and
+    /// otherwise admits it into MotionPose.Current (0x006B4D88) before Detect reads it; this host entry and the public ProcessCapture have no
+    /// production caller.</param>
     public VisionFrameResult ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd, OverheadEdgeGroundInput? overheadEdgeGround = null)
     {
         var calibration = Calibration ?? throw new InvalidOperationException("no camera calibration");
@@ -2626,7 +2632,7 @@ public sealed partial class VisionSystem : IDisposable
                         if (queueForEngine && !ReferenceEquals(owner, sourceOwner)) return null;
                         lock(owner.PoseTreeGate)
                         {
-                            var originNode=ResolveFaceObservationOrigin(History,owner,timestamp,faceId:tf.Id);
+                            var originNode=ResolveFaceObservationOrigin(owner.PoseHistory,owner,timestamp,faceId:tf.Id); // the owner's Robot+0x390 history
                             if(originNode is null)continue;
                             observation=d.NativeTrackerFlagChanged is { } changed
                                 ? Faces.AddOrUpdateNativeFace(tf,processingPose.RobotPose,()=>NativeFaceRotatingTooFast(owner,timestamp,changed),originNode,_robot.Sensors.OffTreadsState==OffTreadsState.OnTreads,requireNativePose:queueForEngine,expectedOwner:sourceOwner,expectedGeneration:removal)
@@ -2675,8 +2681,13 @@ public sealed partial class VisionSystem : IDisposable
                 else Faces.Update(timestamp);
                 if(queueForEngine && StaleFrame())return null;
                 // fidelity: M14-011
-                // Stock FaceTracker recognition is processed before this observation pass; optional
-                // enrollment pose modes and positive-ID merge/remap transitions remain MISSING.
+                // Stock FaceTracker recognition is processed before this observation pass (OkaoFaceDetector.Detect).
+                // Positive-ID merge/remap: UpdateRecognitionData 0x008633BE..0x00863710 (FaceRecognizer.ConsumeStockFeature),
+                // GetRecognitionData 0x00863E94..0x00863FB4 (LookupStockTrack: target retarget, completed-enrollment count,
+                // normalize) and the tracker's UpdatedFaceID entries 0x0086DBC6..0x0086DCAE (AppendStockFaceIdChanges),
+                // applied above through FaceWorld::ChangeFaceID 0x004F3DB4. Enrollment poses 1..6 of IsEnrollable
+                // 0x0086E074 are unreachable: FaceWorld::Enroll passes pose 0 (0x004F5CAC/0x004F5CCE), the only
+                // writer of Impl+0x134 besides the ctor (OkaoFaceDetection.IsEnrollableDefaultPose).
             }
             if (detectedPets is {} pets)
             {
@@ -2800,7 +2811,7 @@ public sealed partial class VisionSystem : IDisposable
             }
             if(queueForEngine)
             {
-                object poseTreeGate=History.NativePoseTreeGate??_busy;
+                object poseTreeGate=(sourceOwner?.PoseHistory??History).NativePoseTreeGate??_busy;
                 Pose3d ownedPose;
                 lock(poseTreeGate)ownedPose=new Pose3d(pd.RobotPose);
                 var ownedData=pd with{RobotPose=ownedPose};
