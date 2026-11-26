@@ -88,7 +88,7 @@ public sealed class CozmoEngineOptions
     /// DataPlatformResourcesPath: the extracted <c>cozmo_resources</c> directory (G5.34, G5.35). The firmware
     /// header is read from <see cref="FirmwareHeader.ResourceRelativePath"/> under it (G5.17). Null: the header
     /// is not loaded and the expected version and time stay 0/0 (G5.31).
-    /// MISSING: this stack has no fixed resources location; the caller names it.
+    /// The caller supplies scope 1; live tools resolve it before startup, and loading fails if absent (M1-058/M1-034).
     /// </summary>
     public string? ResourcesPath { get; init; }
     /// <summary>Local Wwise bank directory containing Init.bnk and English(US)/Cozmo.bnk for direct robot speech.</summary>
@@ -685,8 +685,8 @@ internal sealed class MessageHandler
 /// thread, parse the JSON in the first 0x800 bytes up to the first NUL, and on success hand "version" and "time"
 /// to the RobotManager. A missing file, a file shorter than 0x800 bytes or a parse failure leave the values as
 /// they are (0/0).
-/// The checked byte Reader lives in FirmwareJson.cs. MISSING: shipped real-number conversion and final
-/// exception destination; these are not established by the adopted rows.
+/// The checked byte Reader and real-number converter live in FirmwareJson.cs/FirmwareJsonDouble.cs.
+/// Escaping JsonCpp exceptions are isolated under M1-034 (manager 2026-10-09).
 /// </summary>
 public static class FirmwareHeader
 {
@@ -701,7 +701,7 @@ public static class FirmwareHeader
     /// <summary>
     /// G5.19/G5.20 on bytes already read: null when the data is shorter than 0x800 or does not parse; otherwise
     /// the optional "version" and "time" values. A <see cref="JsonLogicError"/> from a non-number value propagates
-    /// (row 11n/11q); the loader thread decides what to do with it (row 11o, RECOVERABLE_GAP).
+    /// (row 11n/11q); the loader isolates it under approved M1-034 (row 11o).
     /// </summary>
     public static (uint? Version, uint? Time)? Parse(byte[] file)
     {
@@ -731,9 +731,9 @@ public static class FirmwareHeader
             try { h = Parse(file); }
             catch (JsonLogicError e)
             {
-                // MISSING: final exception destination (checked Item 6). This existing host containment
-                // remains an unbuilt candidate; it is not the engine's recovered failure result.
-                log($"error: FirmwareUpdater.LoadHeaderData: {path}: {e.Message} (M1-029: the engine throws here; its capture is RECOVERABLE_GAP 11o)");
+                // 0x0052EA54..0x0052EA92 uses Json::asUInt; escaping JsonCpp throws are
+                // isolated under M1-034 (manager 2026-10-09), retaining any prior header.
+                log($"error: FirmwareUpdater.LoadHeaderData: {path}: {e.Message} (M1-034/M1-029: skipped malformed firmware header)");
                 return;
             }
             if (h is null) { log($"error: FirmwareUpdater.LoadHeaderData: {path}: no header (size {file.Length} or unparsable)"); return; }
@@ -746,8 +746,8 @@ public static class FirmwareHeader
 
 // fidelity: M1-029
 /// <summary>
-/// The engine's <c>Json::LogicError</c> (rows 11m, 11n, 11p). Where the engine catches it is not established
-/// (checked Item 6, MISSING). Existing host containment in Isolated/LoadAsync is not recovered engine behavior.
+/// The engine's <c>Json::LogicError</c> (rows 11m, 11n, 11p). Escaping throws use the approved M1-034
+/// host containment in Isolated/LoadAsync, not a recovered engine result.
 /// </summary>
 internal sealed class JsonLogicError : Exception
 {
@@ -801,7 +801,7 @@ internal sealed class IdleTimeoutComponent
         if (FaceOffDeadline > 0 && FaceOffDeadline <= now)
         {
             FaceOffDeadline = 0.0f;
-            _robot.Engine.QueueGoToSleep();
+            _robot.Engine.QueueGoToSleep(_robot);
         }
         if (DisconnectDeadline > 0 && DisconnectDeadline <= now)
         {
@@ -1001,10 +1001,6 @@ public sealed partial class EngineRobot
         Engine.Backup?.ReadAll(); // M15-033: configured ascending set and counted native backup sink.
     }
 
-    /// <summary>The sink of a connection read whose owning layer is unbuilt: it reports MISSING naming the record, once per process.</summary>
-    internal static Action<NvResult> NoSink(string record, string what) =>
-        _ => Behavior.SteppedBehavior.ReportMissing($"{record} | {what}: this stack has no component for it, so the read completes and its result is dropped");
-
     /// <summary>The album bytes from #3 (the engine's VC+0x2F4); cleared when #3 is armed, filled on completion.</summary>
     private List<byte> _faceAlbum = new();
 
@@ -1085,7 +1081,7 @@ public sealed partial class EngineRobot
     /// firmware JSON's "sim" is null, else <see cref="RobotAudioOutputSource.PlayOnDevice"/>. Null until a firmware
     /// version has been handled. <c>CreateAudioAnimation</c> 0x00599FF0 switches on it (the live robot's scheduler reads it through
     /// <c>AnimationScheduler.OutputSource</c>): source 2 streams the animation's audio to the robot; source 1 (C2's RobotAudioAnimationOnDevice) streams none and
-    /// its device playback is reported MISSING (not built); the client's initial 0 clears the animation's audio track.
+    /// its simulator device playback is outside the physical robot path (not built); the client's initial 0 clears the animation's audio track.
     /// </summary>
     public RobotAudioOutputSource? AudioOutputSource { get; private set; }
     // fidelity: M10-010
@@ -1104,9 +1100,8 @@ public sealed partial class EngineRobot
     /// <c>Value::operator[]</c>, 0x00536938..0x0053693C) feeds <c>Robot::SetPhysicalRobot</c> (0x00536980) and <c>RobotAudioClient::SetOutputSource</c>
     /// (0x0053698E: 2 = PlayOnRobot when it is null, else 1). A <b>null root</b> is turned into an object by <c>resolveReference</c> (type 0 at 0x008EACCE),
     /// so "sim" is a null entry: the robot is physical. Any other non-object root (array, string, number, bool) takes <c>resolveReference</c>'s
-    /// <c>Json::throwLogicError</c> (0x008EADC2..0x008EAE64) out of the handler; where the engine catches that is not established
-    /// (inventory M1-029 row 11o), so this stack, which never throws on a live path, reports it once as MISSING and does nothing (the effect the throw has
-    /// inside this handler: the SetPhysicalRobot / SetOutputSource calls after it never run).
+    /// <c>Json::throwLogicError</c> (0x008EADC2..0x008EAE64) out of the handler. Approved M1-034 isolates and logs
+    /// that throw before either SetPhysicalRobot or SetOutputSource runs (manager 2026-10-09, M1-029 row 11o).
     /// </summary>
     internal void HandleFirmwareVersion(FirmwareVersion f)
     {
@@ -2144,9 +2139,8 @@ public sealed partial class CozmoEngine : IDisposable
     /// <summary>The engine's log: each line starts with its level (debug, info, warning, error).</summary>
     public event Action<string>? LogLine;
     /// <summary>
-    /// The idle faceOff deadline expired (CC6): the engine queues CreateGoToSleepAnimSequence here. MISSING
-    /// (M1-045): when the required higher-layer factory is missing, the diagnostic request is raised for
-    /// the animation layer and logged, and nothing is queued.
+    /// Detached/test-host notification only: the live CozmoAnimations factory is bound before connection,
+    /// and CC6 queues its native sleep compound NOW/retries0 (0x0052CE54..0x0052CE6A).
     /// </summary>
     public event Action? GoToSleepRequested;
 
@@ -2196,7 +2190,7 @@ public sealed partial class CozmoEngine : IDisposable
         EmitSourceLog(EngineLogLevel.Event,null,"cozmo_engine.init.build_configuration","SHIPPING");
         // M1-029: header load follows the manager event; it does not gate engine loading.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
-        else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
+        else EmitStackLog("warning: FirmwareUpdater.LoadFirmwareFile: no ResourcesPath supplied; firmware header not loaded (M1-029 G5.31)");
     }
 
     // ------------------------------------------------------------------ running
@@ -2647,9 +2641,11 @@ public sealed partial class CozmoEngine : IDisposable
     }
 
     // fidelity: M1-045
-    internal void QueueGoToSleep()
+    internal void QueueGoToSleep(EngineRobot robot)
     {
-        if (Robot is { } robot && CreateGoToSleepSequence is { } factory)
+        // 0x0052CE54..0x0052CE6A uses the idle component's own robot and ActionList (+0x250).
+        if (robot.Lifetime.Destroying || !ReferenceEquals(Robot, robot)) return;
+        if (CreateGoToSleepSequence is { } factory)
         {
             var action = factory(robot);
             if (action is not null)
@@ -2660,7 +2656,7 @@ public sealed partial class CozmoEngine : IDisposable
             }
             // The test factory can decline construction. There is no native null-action input here.
         }
-        else EmitStackLog("warning: GoToSleepRequested raised without an attached Robot and sleep factory");
+        else EmitStackLog("warning: GoToSleepRequested raised without an attached sleep factory");
         var h = GoToSleepRequested;
         if (h is null) return;
         var subscribers=h.GetInvocationList();

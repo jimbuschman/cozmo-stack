@@ -123,6 +123,8 @@ public sealed class ChargerSleepReplayTests(ITestOutputHelper output)
         fixture.Robot.CancelIdleTimeoutDelivered += () => cancels++;
         var disconnected = new List<RobotDisconnectedMessage>();
         rig.Engine.RobotDisconnected += disconnected.Add;
+        var appCancel = new TaskCompletionSource<ChargerSleepCancelledReport>(TaskCreationOptions.RunContinuationsAsynchronously);
+        rig.Engine.ChargerSleepCancelled += report => appCancel.TrySetResult(report);
 
         // Earlier commands in the session already opened the first-action reaction gate.
         int headCall = await client.Send("tools/call", new { name = "head", arguments = new { radians = 0.25 } });
@@ -153,6 +155,15 @@ public sealed class ChargerSleepReplayTests(ITestOutputHelper output)
         }
         rig.NowNs = baseNs + (long)((end - start) * 1_000_000);
         rig.Tick();
+        // Host delivery is batched independently of engine deadlines. The bridge subscribed first;
+        // observe the same actual callback before reading its inbox, without advancing replay time.
+        var deliveryDeadline = DateTime.UtcNow.AddSeconds(5);
+        while (!appCancel.Task.IsCompleted && DateTime.UtcNow < deliveryDeadline)
+        {
+            rig.Engine.DrainAppDelivery();
+            await Task.Delay(1);
+        }
+        Assert.True(appCancel.Task.IsCompletedSuccessfully, "The recorded pickup must publish sleep-cancelled to the app.");
         var events = (await client.Tool("read_events", new { since = 0 })).GetProperty("result")
             .GetProperty("structuredContent").GetProperty("events").EnumerateArray().ToArray();
         output.WriteLine($"states={states.Count}, notices={notices.Count}, armed={armed}, cancels={cancels}, cancelAt={cancelAt:F3}, contactEdges={string.Join(',', contactEdges)} transitions={string.Join(',', transitions.Select(t => t.NewTrigger))}");
