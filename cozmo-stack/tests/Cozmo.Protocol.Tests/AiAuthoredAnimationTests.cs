@@ -38,6 +38,8 @@ public sealed class AiAuthoredAnimationTests
         await runtime.Ready.WaitAsync(TimeSpan.FromSeconds(25));
         Assert.Same(runtime, f.Robot.GetCannedSpeechOwner());
         Assert.Null(f.Rig.Robot.Animations.AudioSource);
+        Assert.Equal(RobotAudioOutputSource.PlayOnRobot, f.Rig.Robot.Animations.Scheduler.OutputSource!());
+        Assert.Same(runtime, f.Rig.Robot.Animations.Scheduler.RuntimeAudioSource!()!.Value.Audio);
         var library = f.Rig.Robot.Animations.Library!;
         var group = library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
         var clip = library.GetClip(group.Entries[0].Name);
@@ -45,6 +47,9 @@ public sealed class AiAuthoredAnimationTests
         Assert.NotNull(f.Rig.Robot.Animations.PlayTracked(clip, numLoops: 0));
         await WaitForAudibleSample(mark, clip.Name);
         Assert.True(f.Rig.Logged("Audio engine loaded InitScene"));
+        Assert.False(f.Rig.Logged("MISSING M6-028 authored animation audio"));
+        Assert.False(f.Rig.Logged("MISSING: RobotAudioClient::CreateAudioAnimation"));
+        Assert.False(f.Rig.Logged("MISSING: ClearSendBuffer tag"));
 
         // The live speech action replaces the incumbent animation and acquires the same context worker.
         var speech = new TextToSpeechComponent((_, _, _) => Enumerable.Repeat(.25f, 44100).ToArray());
@@ -258,6 +263,40 @@ public sealed class AiAuthoredAnimationTests
         rig.Tick();
         Assert.Null(rig.Engine.RuntimeWwiseAudio);
         Assert.Contains(log, line => line.Contains("M6-024 InitScene failed:"));
+    }
+
+    [Fact]
+    public async Task FailedAuthoredAudioAdmissionLeavesTheVisualStreamRunning()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string archive = Path.Combine(Path.GetTempPath(), $"cozmo-authored-audio-{Guid.NewGuid():N}.zip");
+        try
+        {
+            using (System.IO.Compression.ZipFile.Open(archive, System.IO.Compression.ZipArchiveMode.Create)) { }
+            var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+                SpeechAudioArchivePath = archive, BlockPoolPath = "" };
+            using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true,
+                pumpAnimations: true, sourceNvEmpty: true, engineOptions: options,
+                engineCreated: engine => engine.RuntimeAudioSinkForTest = () => new Sink());
+            var runtime = Assert.IsType<CannedSpeechOwner>(f.Rig.Engine.RuntimeWwiseAudio);
+            Assert.True(runtime.Ready.IsFaulted);
+            var library = f.Rig.Robot.Animations.Library!;
+            var group = library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
+            var clip = library.GetClip(group.Entries[0].Name);
+            int mark = f.Rig.Mark();
+            Assert.NotNull(f.Rig.Robot.Animations.PlayTracked(clip, numLoops: 0));
+            for (int i = 0; i < 100 && !f.Rig.SentSince(mark).OfType<StartOfAnimation>().Any(); i++)
+            {
+                f.Rig.Tick();
+                await Task.Delay(10);
+            }
+            Assert.True(f.Rig.Logged("M6-028 authored animation audio admission failed:"));
+            Assert.False(f.Rig.Logged("MISSING M6-028 authored animation audio"));
+            Assert.Contains(f.Rig.SentSince(mark), message => message is StartOfAnimation);
+            Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is AudioSample);
+            Assert.Equal(clip.Name, f.Rig.Robot.Animations.Scheduler.Playing);
+        }
+        finally { if (File.Exists(archive)) File.Delete(archive); }
     }
 
     [Fact]

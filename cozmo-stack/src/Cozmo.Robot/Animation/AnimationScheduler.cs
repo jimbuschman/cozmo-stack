@@ -358,7 +358,7 @@ public sealed class StreamSendBuffer
         }
         foreach (var name in names)
             if (name is not null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationStreamer.ClearSendBuffer", $"Clearing unsent {name}");
-            else Log?.Invoke("MISSING: ClearSendBuffer tag for caller-supplied untyped test message");
+            else Log?.Invoke("AnimationStreamer.ClearSendBuffer: clearing caller-supplied untyped buffer entry (no robot message tag)"); // 0x0057B070..82: production sends have typed tags.
     }
 
     // fidelity: M1-025, M1-015
@@ -2280,7 +2280,10 @@ public sealed class AnimationScheduler
                 if (!_opening.IsCompletedSuccessfully)
                 {
                     _failed = true;
-                    _scheduler.Log?.Invoke("MISSING M6-028 authored animation audio: " +
+                    // Host admission/startup can fail independently of the native constructor. Do not report
+                    // a recovered engine pointer failure for a worker exception. The native state-5
+                    // constructor result discards audio without aborting the body (0x00596972, 0x0059A0BA..118).
+                    _scheduler.Log?.Invoke("M6-028 authored animation audio admission failed: " +
                         (_opening.Exception?.GetBaseException().Message ?? "shared worker admission retired"));
                     return;
                 }
@@ -2302,7 +2305,9 @@ public sealed class AnimationScheduler
             if (_lease.Failure is { } failure)
             {
                 _failed = true;
-                _scheduler.Log?.Invoke("MISSING M6-028 authored animation audio: " + failure.Message);
+                // Host worker failure: preserve the body stream and report the actual operational error.
+                // Native rejected events use the Wwise path callback, not this host exception.
+                _scheduler.Log?.Invoke("M6-028 authored animation audio worker failed: " + failure.Message);
                 return;
             }
             var path = _lease.Path;
@@ -2427,7 +2432,9 @@ public sealed class AnimationScheduler
                 return;
             }
             // fidelity: M3-010, M6-016
-            // C5–C7: retain the actual f32 vector. MISSING: M6-016 / M6-015 | the M6 Wwise renderer still supplies shorts (the short-PCM path below is a stand-in; ReportMissing names it).
+            // C5–C7: retain the actual f32 vector. The host-injected short-PCM seam is not the default
+            // authored path; the production runtime uses WwiseRobotAudioPath (0x00597DB4..0x00597E52).
+            // Keep the short-source gap visible: its event rendering is not established as ADP-1 arithmetic only.
             if (source is IAnimationFloatAudioSource floats)
             {
                 var rendered = floats.GetFloatPcm(id, k.Volume);
