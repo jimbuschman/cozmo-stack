@@ -122,6 +122,62 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         }
     }
 
+    [Fact]
+    public void SessionSixSlopePutDownRaceUsesNativePitchGyroAndPickupWindow()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION6_SLOPE_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        const double from = 1982050, to = 1984650;
+        var packets = RecordedRobotInput.ReadInbound(bundle, at => at >= from, to, [0xF0], discardRetries: true)
+            .Select(row => (row.At, State: Assert.IsType<RobotState>(row.Message))).DistinctBy(row => row.State.Timestamp).ToArray();
+        var lastPicked = packets.Last(row => row.State.Has(RobotStatusFlag.IsPickedUp));
+        Assert.Equal(1990930u, lastPicked.State.Timestamp);
+        var lastTilt = packets.Single(row => row.State.Timestamp == 1991620);
+        var firstZero = packets.Single(row => row.State.Timestamp == 1991650);
+        var lastZero = packets.Single(row => row.State.Timestamp == 1992400);
+        var restoredTilt = packets.Single(row => row.State.Timestamp == 1992580);
+        Assert.InRange(lastTilt.State.Pose.Pitch, .21f, .23f);
+        Assert.All(packets.Where(row => row.At >= firstZero.At && row.At <= lastZero.At),
+            row => Assert.Equal(0u, BitConverter.SingleToUInt32Bits(row.State.Pose.Pitch)));
+        Assert.InRange(lastZero.At - firstZero.At, 700, 800);
+        Assert.InRange(restoredTilt.State.Pose.Pitch, .19f, .21f);
+        Assert.True(restoredTilt.At - lastPicked.At > 1500);
+        Assert.True(MathF.Abs(restoredTilt.State.Gyro.X) > .01f || MathF.Abs(restoredTilt.State.Gyro.Y) > .01f || MathF.Abs(restoredTilt.State.Gyro.Z) > .01f);
+
+        using var f = new Fixture(sourceNvEmpty: true, keepNeedsFull: true, bodyHwVersion: 4);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        f.Rig.Tick(4000);
+        manager.Activity = null;
+        manager.HostReactionChecksEnabled = false;
+        var slope = Assert.IsType<PlacedOnSlopeStrategy>(Assert.Single(manager.Reactions,
+            reaction => reaction.Strategy.Trigger == ReactionTrigger.RobotPlacedOnSlope).Strategy);
+        var returned = Assert.IsType<GenericReactionStrategy>(Assert.Single(manager.Reactions,
+            reaction => reaction.Strategy.Trigger == ReactionTrigger.ReturnedToTreads).Strategy);
+        // 0x005A3550 scans the ascending trigger map, 13 before 14. Both
+        // strategies can interrupt another reaction; 0x0060DE36 admits an
+        // enabled ReturnedToTreads on OnTreads, with no slope exclusion.
+        Assert.True((int)slope.Trigger < (int)returned.Trigger);
+        Assert.True(slope.CanInterruptOtherTriggeredBehavior);
+        Assert.True(returned.CanInterruptOtherTriggeredBehavior);
+
+        double previous = from;
+        foreach (var (at, state) in packets)
+        {
+            state.PoseOriginId = f.Robot.CurrentOriginId;
+            state.PoseFrameId = f.Robot.PoseFrameId;
+            f.Rig.Data(state);
+            f.Rig.Tick(at - previous);
+            previous = at;
+            // UFRS 0x00512974..82 and 0x005129B0..BE feed the exact fields
+            // read by 0x00614570..0x00614688, not filtered or inferred tilt.
+            Assert.Equal(BitConverter.SingleToUInt32Bits(state.Pose.Pitch),
+                BitConverter.SingleToUInt32Bits(f.Rig.Robot.Sensors.OffTreads.PitchRad));
+            Assert.Equal(new Cozmo.Robot.Vector3(state.Gyro.X, state.Gyro.Y, state.Gyro.Z),
+                f.Rig.Robot.Sensors.OffTreads.RawGyro);
+            Assert.False(slope.WantsToRun(f.Rig.Robot, f.Rig.Engine.Timer.SecondsF));
+        }
+    }
     [Theory]
     [InlineData("slope",554800,569500)]
     [InlineData("impact-low",67000,76000)]
