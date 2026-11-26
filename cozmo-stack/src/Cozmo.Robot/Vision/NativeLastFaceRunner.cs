@@ -132,7 +132,10 @@ internal sealed class NativeLastFaceRunner:NativeTurnTowardsPoseRunner
     public override int Init()
     {
         using var mutation=M.World.EnterPoseMutation();
-        var owner=_actualOwner??M.Robot.Engine.Robot??throw new InvalidOperationException("MISSING LastFace actual Robot owner");
+        // Wiring guard, not an engine step (BEHAVIOR-FACTORY-OWNERS-1): Init runs only from IActionRunner.Update (IActionRunner.cs), which runs from
+        // ActionList.Update inside EngineRobot.Update, itself called only for Robots.Get(RobotId), i.e. Engine.Robot (CozmoEngine state 3), so the
+        // fallback Engine.Robot is non-null whenever no explicit owner was bound.
+        var owner=_actualOwner??M.Robot.Engine.Robot??throw new InvalidOperationException("wiring guard: TurnTowardsLastFacePose Init with no Robot owner (Init runs only from a live robot's ActionList)");
         if (!ScopedCurrent) return unchecked((int)EngineActionResult.Cancelled);
         using var cached=new Pose3d("");using var relative=new Pose3d("");
         bool found;

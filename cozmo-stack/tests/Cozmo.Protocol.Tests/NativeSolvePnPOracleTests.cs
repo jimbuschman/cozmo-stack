@@ -149,6 +149,46 @@ public class NativeSolvePnPOracleTests
         Assert.Contains(missing, t => t.Contains("M11-054") && t.Contains("H03"));
     }
 
+    /// <summary>PLANNER-GEOMETRY-GAPS-1, M11-054 H03 reach: BlockWorld's joint refine (the only caller with more than four points) passes the corners of
+    /// several markers of ONE cube type. A light cube's six markers have six distinct codes (CubeGeometry.CubeMarkers), one per face, so two markers in a
+    /// cluster lie on two different faces and the set is not planar: the DLT branch runs, not the homography refinement. Expected: the pose the corners
+    /// were projected from (independent ground truth), and no MISSING. reach: unit (PoseEstimation.Solve with the joint-refine input shape).</summary>
+    [Fact]
+    public void TwoFacesOfOneCubeAreNotPlanarAndNeverReachTheHomographyRefinement()
+    {
+        var cal = CameraCalibration.Nominal();
+        var robot = HeadGeometry.RobotPose(new RobotPose { X = 10, Y = -5, Angle = 0.2f });
+        var camera = new CameraModel(cal, HeadGeometry.CameraPoseInWorld(robot, -0.1));
+        var cube = new Pose3d(Mat3.AboutZ(0.35), new Vec3(150, 20, 22));
+        var markers = CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1).Where(m => m.Face is BlockFace.Front or BlockFace.Top).ToList();
+        Assert.Equal(2, markers.Count);
+        Assert.NotEqual(markers[0].Code, markers[1].Code);
+        var obj = markers.SelectMany(m => m.CornersOnObject()).ToList();
+        var img = markers.SelectMany(m => m.CornersInWorld(cube)).Select(w => camera.Project(w)!.Value).ToList();
+        var missing = new List<string>();
+        void Record(string text) => missing.Add(text);
+        SteppedBehavior.MissingReported += Record;
+        PoseEstimation.Result? res;
+        try { res = PoseEstimation.Solve(camera, obj, img); }
+        finally { SteppedBehavior.MissingReported -= Record; }
+        Assert.Empty(missing);
+        Assert.NotNull(res);
+        var recovered = camera.Pose.Compose(res!.ObjectInCamera);
+        Assert.True((recovered.Translation - cube.Translation).Length < 1.0, $"{recovered.Translation} vs {cube.Translation}");
+    }
+
+    /// <summary>PLANNER-GEOMETRY-GAPS-1, M11-054 P06 reach: the robot's calibration (NV entry 0x80000001, CLAD CameraCalibration: 5 floats, 2 u16, 8 floats =
+    /// 56 bytes) carries eight distortion coefficients, so the tilt slots 12 and 13 of the solver's fourteen are always zero and the forward-tilt
+    /// MISSING cannot be reached from a robot calibration.</summary>
+    [Fact]
+    public void TheRobotCalibrationHasNoTiltCoefficients()
+    {
+        Assert.Equal(56, CameraCalibration.WireSize);
+        var bytes = new byte[CameraCalibration.WireSize];
+        for (int i = 0; i < bytes.Length; i++) bytes[i] = 0x3F; // every float word non-zero
+        Assert.Equal(8, CameraCalibration.Unpack(bytes).DistortionCoefficients.Length);
+    }
+
     /// <summary>M11-054 rows Q01, E02: below four points and on a count mismatch the stack's entry returns null. No caller passes either: a marker has four corners.</summary>
     [Fact]
     public void TheEntryRefusesCountsNoCallerProduces()

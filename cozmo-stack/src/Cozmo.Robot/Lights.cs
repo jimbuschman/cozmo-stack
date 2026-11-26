@@ -1158,6 +1158,8 @@ public sealed class CubeLightComponent
                 var connected = _robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o => o.Type == type);
                 if (nativeObjectId is null && connected is null && (!_infos.TryGetValue(type, out var retained) || retained.ObjectId == uint.MaxValue))
                 {
+                    // Wiring guard: CozmoRobot always builds VisionSystem (CozmoRobot.cs, unless the internal OmitVisionForTest),
+                    // which attaches itself as VisionModeRecipient; only the test-only world-less composition prints this.
                     if(_robot.VisionModeRecipient is null)Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real BlockWorld ObjectID; active-slot fallback is not used");
                     else Log($"Stack.CubeLightComponent.PlayLightAnim.NoObjectForType: no connected or retained world ObjectID for {type}; play refused");
                     return false;
@@ -1177,7 +1179,10 @@ public sealed class CubeLightComponent
                 var input = anim;
                 if (modifier)
                 {
-                    if (lights is null) { Log("MISSING: M4-046 | modifier argument requires the caller's ObjectLights"); return false; }
+                    // Native ObjectLights is a reference: stack arg [sp+0xD0] goes unchecked to ApplyAnimModifier when the modifier
+                    // bool [sp+0xCC] is set (0x006384DA..0x006384F0), so it is always present; every
+                    // engine caller here passes one. Only the host API can omit it: refused clearly, nothing sent.
+                    if (lights is null) { Log("Stack.CubeLightComponent.PlayLightAnim.NullModifier: modifier=true without ObjectLights (host API argument); play refused"); return false; }
                     input = ApplyAnimModifier(anim, lights);
                 }
                 CubeLightPattern[] blended = Array.Empty<CubeLightPattern>();
@@ -1455,27 +1460,30 @@ public sealed class CubeLightComponent
     // fidelity: M4-018
     /// <summary>
     /// W2: <c>StopAllAnimsOnLayer(layer, id)</c> (0x00638D80): every entry in that layer's stack gets +0x41 = 1,
-    /// then Update runs. For a specific cube type only that object's layer is walked.
+    /// then Update runs. The argument is the native ObjectID: -1 (null here) walks every object (0x00638D88..0x00638D8E,
+    /// AllObjects log 0x00638DE2); any other id is found in the ObjectInfo map by ObjectID (0x00638D96), and a miss logs
+    /// BadObject with that id ([r6+4], format "ObjectId %u does not exist in _objectInfo map unable to stop anims" at
+    /// 0x00BFA9C2, channel 0x00BFA62F, 0x00638E5A..0x00638E72) and returns without Update.
     /// </summary>
-    internal void StopAllAnimsOnLayer(int layer, ObjectType? type = null,Func<bool>? current=null)
+    internal void StopAllAnimsOnLayer(int layer, uint? objectId = null,Func<bool>? current=null)
     {
-        if (type is null) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.AllObjects", $"Stopping all anims for all objects on layer {LayerName(layer)}");
+        if (objectId == uint.MaxValue) objectId = null; // 0x00638D8C adds #1 / beq: ObjectID -1 is the all-objects branch.
+        if (objectId is null) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.AllObjects", $"Stopping all anims for all objects on layer {LayerName(layer)}");
         else
         {
             bool exists;
-            lock (_gate) exists = _infos.ContainsKey(type.Value);
+            lock (_gate) exists = _infos.Values.Any(i => i.ObjectId == objectId.Value);
             if (!exists)
             {
-                if (TryObjectId(type.Value) is { } id) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.BadObject", $"ObjectId {id} does not exist in _objectInfo map unable to stop anims");
-                else Log("MISSING: M4-018 | StopAllAnimsOnLayer.BadObject 0x00638E72: type-only caller has no native ObjectID");
+                SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.BadObject", $"ObjectId {objectId.Value} does not exist in _objectInfo map unable to stop anims");
                 return;
             }
         }
         if(current is not null&&!current())return;
         lock (_gate)
         {
-            foreach (var (t, info) in _infos)
-                if (type is null || t == type)
+            foreach (var info in _infos.Values)
+                if (objectId is null || info.ObjectId == objectId.Value)
                 { ++info.MutationVersion;foreach (var p in info.Layers[layer]) p.Stop = true; }
         }
         Update(pickDefaultLayer: true,current);
@@ -1626,8 +1634,9 @@ public sealed class CubeLightComponent
             {
                 var only = type.Value;
                 SetObjectLights(only, OffLights);
-                StopAllAnimsOnLayer(EngineLayer, only);
-                StopAllAnimsOnLayer(StateLayer, only);
+                // 0x00639A00 / 0x00639A0E stops pass EnableGameLayerOnly's own ObjectID argument (r2 = sl).
+                StopAllAnimsOnLayer(EngineLayer, unchecked((uint)objectId));
+                StopAllAnimsOnLayer(StateLayer, unchecked((uint)objectId));
                 lock (_gate) if (_infos.TryGetValue(only, out var info)) { ++info.MutationVersion;info.GameLayerOnly = true; }
             }
             return;
@@ -1639,8 +1648,9 @@ public sealed class CubeLightComponent
         if (type is null) StopAllAnimsOnLayer(UserLayer, null);
         else
         {
-            StopAllAnimsOnLayer(UserLayer, type);
-            StopAllAnimsOnLayer(StateLayer, type);
+            // 0x00639AA2 / 0x00639AB0: r2 = sl, EnableGameLayerOnly's own ObjectID argument.
+            StopAllAnimsOnLayer(UserLayer, unchecked((uint)objectId));
+            StopAllAnimsOnLayer(StateLayer, unchecked((uint)objectId));
         }
         var defaults = new List<ObjectType>();
         lock (_gate)
@@ -1729,6 +1739,9 @@ public sealed class CubeLightComponent
             SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.SendTransitionMessage.NullObject", $"Got null object using id {unchecked((int)id)}");
             return;
         }
+        // Unreachable in the stack: comp+0x20 is written only by the game message EnableCubeLightsStateTransitionMessages
+        // (0x0063A2EA strb [fp,#0x20]); M4-040 records that app input as not supported (operator 2026-10-18), so
+        // _transitionMessagesEnabled stays false. Only reflection in tests reaches this line.
         Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
     }
 

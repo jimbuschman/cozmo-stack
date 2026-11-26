@@ -563,7 +563,7 @@ public sealed class MeetCozmoAdmissionTests
         var reference = new EngineRandom(); reference.SetSeed(71, () => 71);
         var decision = chooser.GetDesiredActiveBehavior(drive, 0, f.Runtime.Context, f.Rig.Engine.Timer.SecondsF);
         Assert.Same(drive, decision.Behavior);
-        Assert.Null(decision.UnbuiltWinner);
+        Assert.False(decision.InputUnavailable);
         Assert.Contains(decision.Scores, score => score.Id == "MeetCozmo_InteractWithFaces" && score.Score > 1);
         _ = reference.GetNextDbl(); // nonrunning scanner
         _ = reference.GetNextDbl(); // nonrunning Interact, although it loses
