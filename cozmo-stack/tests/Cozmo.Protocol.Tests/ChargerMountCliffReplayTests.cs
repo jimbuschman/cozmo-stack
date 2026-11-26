@@ -228,16 +228,27 @@ public sealed class ChargerMountCliffReplayTests
         Assert.Empty(f.Rig.SentSince(mark).OfType<ExecutePath>());
     }
 
-    [Fact]
-    public async Task ReceiveWatchdogReportsWifiTimeoutBeforeTheChargerSleepDeadlines()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReceiveWatchdogReportsWifiTimeoutBeforeTheChargerSleepDeadlines(bool sessionSeven)
     {
-        if (Bundle is not { Length: > 0 } bundle) return;
+        string? bundle = sessionSeven ? Environment.GetEnvironmentVariable("COZMO_SESSION7_CLIFF_BUNDLE") : Bundle;
+        if (string.IsNullOrEmpty(bundle)) return;
+        double noticeAt = 0;
         double timeoutAt = 0;
         foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
         {
-            if (!line.Contains("disconnect_reason WifiTimeout", StringComparison.Ordinal)) continue;
-            using var doc = JsonDocument.Parse(line);
-            timeoutAt = doc.RootElement.GetProperty("atMs").GetDouble();
+            if (line.Contains("disconnect_reason WifiTimeout", StringComparison.Ordinal))
+            {
+                using var doc = JsonDocument.Parse(line);
+                timeoutAt = doc.RootElement.GetProperty("atMs").GetDouble();
+            }
+            else if (line.Contains("\"tag\":\"0x2D\"", StringComparison.Ordinal))
+            {
+                using var doc = JsonDocument.Parse(line);
+                noticeAt = doc.RootElement.GetProperty("atMs").GetDouble();
+            }
         }
         Assert.True(timeoutAt > 0);
         byte[]? last = null;
@@ -252,6 +263,34 @@ public sealed class ChargerMountCliffReplayTests
         }
         Assert.NotNull(last);
         Assert.InRange(timeoutAt - lastAt, 5000, 5060);
+        if (sessionSeven)
+        {
+            // Native charger deadline is 300/330 s (shipped reactToOnCharger.json); the capture
+            // ended at the receive watchdog (0x00836080..98), not either sleep deadline.
+            Assert.InRange(noticeAt, 272098, 272099);
+            Assert.InRange(lastAt - noticeAt, 5900, 6000);
+            var sent = new List<(double At, SubMessage Message)>();
+            foreach (string line in File.ReadLines(Path.Combine(bundle, "frames.jsonl")))
+            {
+                using var doc = JsonDocument.Parse(line);
+                var row = doc.RootElement;
+                double at = row.GetProperty("atMs").GetDouble();
+                if (at < noticeAt || !row.GetProperty("outbound").GetBoolean()) continue;
+                var frame = FrameCodec.Decode(row.GetProperty("rawBase64").GetBytesFromBase64());
+                sent.AddRange(frame.Messages.Select(message => (at, message)));
+            }
+            // No robot radio/power-down command or deliberate disconnect was sent.
+            Assert.DoesNotContain(sent, item => item.Message.Type == ReliableMessageType.DisconnectRequest);
+            Assert.DoesNotContain(sent, item => (item.Message.Type is ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
+                && item.Message.Payload.Length > 0 && item.Message.Payload[0] is 0x52 or 0x53 or 0xA9);
+            // Native Update emits idle pings when no reliable messages are pending (0x00836564..90);
+            // thereafter resends continue while awaiting acks (0x00836592..A4).
+            Assert.Contains(sent, item => item.At > lastAt && item.Message.Type == ReliableMessageType.Ping);
+            Assert.Contains(sent, item => item.At > lastAt + 4900 && item.Message.Type == ReliableMessageType.SingleReliableMessage
+                && item.Message.Payload[0] == 0x8F);
+            Assert.Contains(sent, item => item.At > lastAt + 4900 && item.Message.Type == ReliableMessageType.SingleReliableMessage
+                && item.Message.Payload[0] == 0x97);
+        }
 
         // The offline transport advances the real receive watchdog. Relay its
         // timeout into the engine fixture at the same RCM transport boundary.
@@ -265,7 +304,7 @@ public sealed class ChargerMountCliffReplayTests
         clock.NowMs = timeoutAt;
         Assert.False(transport.OfflineTick());
 
-        var contacts = RecordedRobotInput.ReadInbound(bundle, at => at >= 683840, 683980, [0xF0])
+        var contacts = RecordedRobotInput.ReadInbound(bundle, at => at >= (sessionSeven ? 272077 : 683840), sessionSeven ? 272150 : 683980, [0xF0])
             .Select(row => (row.At, State: (RobotState)row.Message))
             .First(row => row.State.Has(RobotStatusFlag.IsOnCharger));
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
@@ -281,6 +320,7 @@ public sealed class ChargerMountCliffReplayTests
         f.Rig.Tick(21000);
         var owner = f.Robot;
         Rebase(f, contacts.State, owner.StoredState!.Timestamp + 30);
+        int mark = f.Rig.Mark();
         f.Rig.Data(contacts.State);
         f.Rig.Tick();
         Assert.True(f.Rig.Robot.Sensors.OnChargerContacts);
@@ -291,6 +331,7 @@ public sealed class ChargerMountCliffReplayTests
         f.Rig.Tick(lastAt - contacts.At);
         Assert.Equal(2, f.Rig.Engine.ConnectionState);
         Assert.True(f.Rig.Engine.Timer.SecondsF < owner.Idle.FaceOffDeadline);
+        Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is EnterSleepMode or PowerState or ShutdownRobot);
 
         f.Rig.Port.TimedOut = !transport.OfflineTick();
         f.Rig.Port.Raise(ReceiverMarker.OnDisconnected, M4ControlTests.Rig.RobotEp);
