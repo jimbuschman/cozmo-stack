@@ -91,3 +91,32 @@ Trace:
 - what the original's sleep path sends the robot (for example a power-down/GoToSleep message or stopping keepalives);
 - whether the engine expects the link to drop there, and how it reports it;
 - whether our stack stops sending pings, or the robot powers its radio down on a command we send.
+
+## Session 7b (17:21–17:39 UTC): an unmarked 3D-printed object and lighting
+
+- **Bundle (local):** `20261126-112137-LLM-SESSION/`.
+- **Manual pickup of an unmarked print (no marker, so the engine's pickup cannot target it):** lift to 32 mm, drive
+  straight in, lift.
+  - The first try stopped short.
+  - The second drove until the camera touched the face, then lifted. The robot tipped and reported RobotPickedUp
+    (the print was too heavy).
+  - With the operator's lighter version it was a PASS: lifted to 92 mm, drove ±60 mm and turned ±90° while
+    carrying.
+- **R6. Reaction animations move the lift while carrying an unmarked object.** A false PetInitialDetection
+  (17:38:25, ReactToPet) drove the lift down and slammed the print to the floor. The engine does not know it is
+  carrying, so the carry lift lock does not apply. This is expected engine behaviour for an unknown load. A
+  workaround for an LLM carrying unmarked things: lock the lift-animating triggers while carrying.
+- **Lighting:**
+  - Overhead room light: auto-exposure 55–67 ms with gain 3.98 (pinned at maximum).
+  - The print's LED raised over the camera: 9–47 ms.
+  - The charger marker was detected only with the LED off (14 sightings) and not with it on (exposure 9–18 ms at
+    that moment; glare suspected; the angles differed slightly, so this is not conclusive).
+  - In a dark room with the LED off, the frames were black. With the LED carried, the floor is usable to about
+    50 cm, but at head −2° the carried print covers the top third of the frame. With the LED set on the floor, the
+    full frame is usable inside its beam only.
+- **IR headlight:** the robot has one (`SetHeadlight`, capture-verified in the catalog), but there is no bridge
+  tool for it. The operator declined adding one for now.
+- **R2, third silent drop:** about 17:39:4x, during a plain turn-in-place (-0.5 rad) with the carry-lamp reaction
+  locks held. The stack log stops mid SteeringController point turn, result.json stays "running", and there is no
+  exception. It is not tied to a requested behaviour ending (unlike the first two). A new instance started at
+  17:39:44 and waits for robot state.
