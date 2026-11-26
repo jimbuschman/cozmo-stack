@@ -63,6 +63,53 @@ public sealed class M3M4WorldOwnershipTests
         Assert.Same(vision,robot.Vision);
     }
 
+    // reach: production - CozmoRobot.Create, live worker, framed simulated peer. CUBES-BLOCKWORLD-GUARDS-1.
+    // Wiring guards: the Robot-owned BlockWorld is always attached, so the power-level lookup (HandleObjectPowerLevel A12, BlockWorld at
+    // Robot+0x34, 0x00537360..0x0053736A) answers and broadcasts the world ObjectID.
+    // Built: the engine's movement, up-axis and tap lookups are that same BlockWorld lookup (0x00533E8A, 0x00534D78, 0x00630B76). A slot the
+    // world refused (activeID 5: HandleActiveObjectConnectionState returns at 0x00533B58, cmp r7,#4) is not found there, so the engine
+    // takes its not-found branches (0x00533EEE, 0x00534E20, 0x00630C92) and broadcasts nothing, although the host slot registry holds it.
+    [Fact]
+    public void RobotOwnedWorldAnswersPowerLevelAndARefusedSlotTakesTheNotFoundBranches()
+    {
+        var log=new ConcurrentQueue<string>();var entries=new ConcurrentQueue<EngineLogEntry>();
+        using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions{ResourcesPath=Shipped(),BlockPoolPath="",
+            BeforeStart=e=>{e.StackLogLine+=log.Enqueue;e.LogEntry+=entries.Enqueue;}});
+        var vision=robot.Vision;
+        var power=new ConcurrentQueue<ObjectPowerLevel>();robot.Cubes.PowerLevelBroadcast+=power.Enqueue;
+        int moved=0;robot.Cubes.CubeMoved+=_=>Interlocked.Increment(ref moved);
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.IsReadyDelivered,TimeSpan.FromSeconds(15)));
+        ushort seq=1;
+        void In(ReliableMessageType type,byte[] body)=>robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(type,body,seq++),1)));
+        void Data(RobotMessage m)=>In(ReliableMessageType.SingleReliableMessage,m.ToBytes());
+        robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==1,5000));
+        Assert.True(SpinWait.SpinUntil(()=>robot.Transport.Connection is not null,5000));
+        In(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==2,5000));
+        Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});
+        Assert.True(SpinWait.SpinUntil(()=>robot.Engine.RobotValidated==true,5000));
+        Data(new ObjectConnectionState{ObjectID=0,FactoryID=123,ObjectType=ObjectType.Block_LIGHTCUBE1,Connected=true});
+        Assert.True(SpinWait.SpinUntil(()=>vision.World.ConnectedObjectIdForActiveId(0)!=null,5000));
+        uint id=vision.World.ConnectedObjectIdForActiveId(0)!.Value;
+        Data(new ObjectPowerLevel{ObjectID=0,MissedPackets=3,BatteryLevel=150});
+        Assert.True(SpinWait.SpinUntil(()=>!power.IsEmpty,5000));
+        var b=Assert.Single(power);Assert.Equal((id,3u,(byte)150),(b.ObjectID,b.MissedPackets,b.BatteryLevel));
+
+        Data(new ObjectConnectionState{ObjectID=5,FactoryID=456,ObjectType=ObjectType.Block_LIGHTCUBE2,Connected=true});
+        Data(new ObjectMoved{ObjectID=5,Timestamp=200,AxisOfAccel=UpAxis.ZPositive});
+        Data(new ObjectUpAxisChanged{ObjectID=5,Timestamp=210,UpAxis=UpAxis.ZPositive});
+        Data(new ObjectTapped{ObjectID=5,Timestamp=220,TapPos=100,TapNeg=0});
+        Assert.True(SpinWait.SpinUntil(()=>entries.Any(e=>e.Name=="BlockTapFilterComponent.HandleActiveObjectTapped.UnknownActiveID"),5000));
+        Assert.Null(vision.World.ConnectedObjectIdForActiveId(5));
+        foreach(var name in new[]{"Robot.ActiveObjectMoved.UnknownActiveID","ObjectMovedOrStoppedHelper.UnknownActiveID",
+            "Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID","BlockTapFilterComponent.HandleActiveObjectMoved.ObjectIDNull"})
+            Assert.Contains(entries,e=>e.Name==name&&e.Text.EndsWith(" : Could not find match for active object ID 5",StringComparison.Ordinal));
+        Assert.DoesNotContain(entries,e=>e.Name=="Robot.ActiveObjectMoved.ObjectMovedOrStopped");
+        Assert.Equal(0,Volatile.Read(ref moved));
+        Assert.DoesNotContain(log,s=>s.Contains("MISSING: M4-009 / M11-004")||s.Contains("MISSING: HandleObjectPowerLevel"));
+    }
+
     // reach: unit (explicit internal world-less composition, kept only to exercise its visible guards).
     [Fact]
     public void OnlyTheExplicitInternalTestCompositionOmitsVision()
