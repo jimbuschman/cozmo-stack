@@ -160,6 +160,8 @@ public sealed partial class CozmoBridge
             connection = new { connected, ready = connected && Robot.Engine.IsReadyDelivered, link = Robot.Transport.State.ToString() },
             pose = ReadWorldPose(),
             batteryVolts = raw?.BatteryVoltage,
+            physical = ReadPhysicalState(raw),
+            physicalReactionChecks = connected ? ReadPhysicalReactionChecks() : [],
             isCarrying = connected ? carried.HasValue : (bool?)null,
             carriedObjectId = carried,
             isOnCharger = raw?.Has(RobotStatusFlag.IsOnCharger),

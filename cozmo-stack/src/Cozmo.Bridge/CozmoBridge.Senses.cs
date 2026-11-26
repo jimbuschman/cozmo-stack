@@ -46,6 +46,7 @@ public sealed partial class CozmoBridge
         Robot.Sensors.OffTreadsStateChanged += OffTreads;
         Robot.Sensors.CliffDetected += CliffDetected;
         Robot.Sensors.UnexpectedMovementDetected += UnexpectedMovement;
+        Robot.Sensors.RobotHiccupsStarted += OnHiccupsStarted;
         Robot.State.StateUpdated += PowerState;
     }
     private void DetachSenses()
@@ -59,6 +60,7 @@ public sealed partial class CozmoBridge
         Robot.Sensors.OffTreadsStateChanged -= OffTreads;
         Robot.Sensors.CliffDetected -= CliffDetected;
         Robot.Sensors.UnexpectedMovementDetected -= UnexpectedMovement;
+        Robot.Sensors.RobotHiccupsStarted -= OnHiccupsStarted;
         Robot.State.StateUpdated -= PowerState;
         lock (cameraGate) { receivedCamera = null; processedCamera = null; }
     }

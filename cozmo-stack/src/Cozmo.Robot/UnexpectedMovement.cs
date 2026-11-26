@@ -185,6 +185,20 @@ public sealed class UnexpectedMovementDetector
     /// <summary>The last broadcast (not an engine field; ReactToUnexpectedMovement reads it).</summary>
     public UnexpectedMovementReport? Last { get; private set; }
 
+    // Capture the actual B2..B11 branch at each state, not a second detector evaluation.
+    // Wheel sum 0x0063E47E..8A; gyro 0x0063E4B6..C2; mismatch 0x0063E540..86;
+    // count 0x0063E5B2..BA. Thresholds are the same ones the detector uses.
+    internal sealed record Evaluation(uint RobotTimestamp, string Branch, bool IsPhysical,
+        byte AnimationStateTag, bool BodyTrackLocked, uint Status, float? WheelAbsSumMmps,
+        float? GyroZRadps, float? RotationMismatchRadps, int CountBefore, int CountAfter,
+        float MinWheelSpeedSumMmps = UnexpectedMovementDetector.MinWheelSpeedSumMmps,
+        float RotationMismatchToleranceRadps = UnexpectedMovementDetector.RotationMismatchToleranceRadps,
+        int CountThreshold = UnexpectedMovementDetector.CountThreshold)
+    {
+        public float GyroTurnThresholdRadps => UnexpectedMovementDetector.GyroTurnThresholdRadps;
+    }
+    internal Evaluation? LastEvaluation { get; private set; }
+
     /// <summary>B17: the UnexpectedMovement broadcast, raised on every fire.</summary>
     public event Action<UnexpectedMovementReport>? Detected;
     internal CozmoEngine? HostEngine;
@@ -207,6 +221,7 @@ public sealed class UnexpectedMovementDetector
     {
         Reset();
         Last = null;
+        LastEvaluation = null;
         IsPhysical = false;
         AnimationStateTag = 0;
         BodyTrackLocked = false;
@@ -219,39 +234,53 @@ public sealed class UnexpectedMovementDetector
         // MovementComponent is Robot-owned. A bound host without its live Robot
         // must not fall through to the standalone detector's diagnostic adapter.
         if (HostEngine is not null && (native is null || native.Lifetime.Destroying)) return null;
-        if (!IsPhysical) return null;                                            // B2
-        if (AnimationStateTag != 0 && !BodyTrackLocked) return null;             // B3
-        if (s.Has(RobotStatusFlag.IsPickingOrPlacing)) return null;              // B4: no reset
-        if ((s.Status & (uint)ResetFlags) != 0) { Reset(); return null; }        // B5
+        int countBefore = Count;
+        float? wheelSum = null, gyroZ = null, mismatch = null;
+        void Observe(string branch) => LastEvaluation = new(s.Timestamp, branch, IsPhysical, AnimationStateTag,
+            BodyTrackLocked, s.Status, wheelSum, gyroZ, mismatch, countBefore, Count);
+        if (!IsPhysical) { Observe("not-physical"); return null; }              // B2
+        if (AnimationStateTag != 0 && !BodyTrackLocked) { Observe("animation-body-unlocked"); return null; } // B3
+        if (s.Has(RobotStatusFlag.IsPickingOrPlacing)) { Observe("picking-or-placing"); return null; } // B4
+        if ((s.Status & (uint)ResetFlags) != 0) { Reset(); Observe("reset-flags"); return null; } // B5
 
         float l = s.LwheelSpeedMmps, r = s.RwheelSpeedMmps;
-        if (MathF.Abs(l) + MathF.Abs(r) < MinWheelSpeedSumMmps)                  // B7
+        float sum = MathF.Abs(l) + MathF.Abs(r);
+        wheelSum = float.IsFinite(sum) ? sum : null;
+        if (sum < MinWheelSpeedSumMmps)                                        // B7
         {
             if (Count > 0) Count--;
+            Observe("wheels-below-threshold");
             return null;
         }
 
         float gz = s.Gyro.Z;
+        gyroZ = float.IsFinite(gz) ? gz : null;
         UnexpectedMovementType type;
         if (MathF.Abs(gz) < GyroTurnThresholdRadps)                              // B8
         {
             type = UnexpectedMovementType.TurnedButStopped;
             if (float.IsNegative(l) != float.IsNegative(r)) Accumulate(s, l, r, 1);
-            else if (MathF.Abs(0.5f * MathF.Abs((r - l) / WheelDistanceMm) - MathF.Abs(gz)) > RotationMismatchToleranceRadps)
-                Accumulate(s, l, r, 1);
+            else
+            {
+                float delta = MathF.Abs(0.5f * MathF.Abs((r - l) / WheelDistanceMm) - MathF.Abs(gz));
+                mismatch = float.IsFinite(delta) ? delta : null;
+                if (delta > RotationMismatchToleranceRadps) Accumulate(s, l, r, 1);
+            }
         }
         else                                                                      // B9
         {
             if (float.IsNegative(r - l) == float.IsNegative(gz))
             {
                 if (Count > 0) Count--;                                          // B9-a / C4: guarded by count > 0
+                Observe("gyro-direction-matched");
                 return null;
             }
             type = UnexpectedMovementType.TurnedInOppositeDirection;
             Accumulate(s, l, r, 2);
         }
 
-        if (Count <= CountThreshold) return null;                                // B11
+        Observe(Count <= CountThreshold ? "count-not-above-threshold" : "report-threshold-crossed"); // B11
+        if (Count <= CountThreshold) return null;
         Log?.Invoke($"MovementComponent.CheckForUnexpectedMovement: Unexpected movement detected {TypeName(type)}");
         SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Warning,null,
             "MovementComponent.CheckForUnexpectedMovement",$"Unexpected movement detected {TypeName(type)}"); //63E5DA

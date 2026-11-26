@@ -401,19 +401,22 @@ public sealed partial class ReactToImpactBehavior : SteppedBehavior
 
     /// <summary>+0x11e: the last FallingStopped had an impact intensity above 1000.0f.</summary>
     public bool ImpactRecorded => _impact;
+    // Host-only observation of the input to 0x0060643C..0x0060644E.
+    internal float? LastImpactIntensity { get; private set; }
     /// <summary>+0x11c: the head and lift both reported calibrated.</summary>
     public bool CalibratedRecorded => _calibrated;
     /// <summary>+0x11d: a FallingStopped has been seen.</summary>
     public bool FallingStoppedSeen => _fallingStoppedSeen;
 
     /// <summary>AlwaysHandle tag 0x3a: +0x11e = 0 (0x00606422), then the halfword at +0x11c = 0 (0x00606426): +0x11c and +0x11d.</summary>
-    public void HandleFallingStarted() { _impact = false; _calibrated = false; _fallingStoppedSeen = false; }
+    public void HandleFallingStarted() { _impact = false; _calibrated = false; _fallingStoppedSeen = false; LastImpactIntensity = null; }
 
     /// <summary>AlwaysHandle tag 0x3b: +0x11d = 1, then +0x11e = (intensity &gt; 1000.0f), stored whichever way it came out (0x0060643c..0x0060644e).</summary>
     public void HandleFallingStopped(float impactIntensity)
     {
         _fallingStoppedSeen = true;
         _impact = impactIntensity > ReactionTable.ImpactIntensityThreshold;
+        LastImpactIntensity = float.IsFinite(impactIntensity) ? impactIntensity : null;
     }
 
     /// <summary>AlwaysHandle tag 0x1e: +0x11c = 1 only when both IsHeadCalibrated and IsLiftCalibrated hold (0x00606454..0x0060646a).</summary>

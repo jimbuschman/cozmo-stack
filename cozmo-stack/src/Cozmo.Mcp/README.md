@@ -247,6 +247,13 @@ Use `--significant-events face-recognised,reaction-changed` to replace the
 list at startup, or pass `significantEventTypes` when constructing a bridge.
 The setting applies to all readers in that process.
 
+`get_state.physical` and `physicalReactionChecks` expose raw sensor units and the
+last actual strategy checks; they do not re-run reactions. `get_map` charger
+estimates include pitch, roll and the sighting/current viewing angles. The
+`hiccups-started` host event identifies a scheduled versus overfeeding-triggered
+train. See the embedded guide for units, source thresholds, and missing-input
+semantics.
+
 ## Firmware animation guard
 
 The default animation budget is 7,370 serialized bytes, an operator-approved

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -53,6 +54,7 @@ public sealed class HiccupStrategyTests
         var runtime = native.NativeBehaviorRuntime!;
         native.Progression!.Unlocked.Add(14); // DroneModeGame, shipped config.
         var reg = Assert.Single(native.BehaviorManagerOwner!.Reactions.Where(r => r.Strategy.Trigger == ReactionTrigger.Hiccup));
+        using var bridge = new CozmoBridge(rig.Robot);
         var sources = new List<HiccupStartSource>(); var changed = new List<bool>();
         rig.Robot.Sensors.RobotHiccupsStarted += sources.Add;
         rig.Robot.Sensors.RobotHiccupsChanged += changed.Add;
@@ -70,6 +72,12 @@ public sealed class HiccupStrategyTests
         rig.Engine.DrainAppDelivery();
         Assert.Equal(new[] { true }, changed);
         Assert.Equal(overfed ? HiccupStartSource.OverfeedingNotification : HiccupStartSource.Scheduled, Assert.Single(sources));
+        var entry = Assert.Single(bridge.ReadEvents().GetProperty("events").EnumerateArray(), e => e.GetProperty("type").GetString() == "hiccups-started");
+        Assert.True(entry.GetProperty("significant").GetBoolean());
+        var payload = entry.GetProperty("payload");
+        Assert.Equal(overfed ? "overfeeding-notification" : "scheduled", payload.GetProperty("source").GetString());
+        if (overfed) Assert.Equal(164, payload.GetProperty("gameToEngineTag").GetInt32());
+        else Assert.Equal(JsonValueKind.Null, payload.GetProperty("gameToEngineTag").ValueKind);
     }
 
     [Fact]
