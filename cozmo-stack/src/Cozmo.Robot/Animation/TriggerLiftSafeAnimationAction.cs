@@ -25,10 +25,7 @@ internal class TriggerAnimationAction : ActionRunner
     private bool _authoredSpeech;
     private Func<Wwise.WwiseRobotAudioPath>? _nextAuthoredPath;
     private EngineRobot? _ordinaryOwner;
-    private Task<CannedSpeechLease>? _ordinaryOpening;
-    private CannedSpeechLease? _ordinaryLease;
     private volatile bool _ordinaryRetired;
-    private bool _ordinarySelected;
     private bool _boundedOrdinary;
     internal string? HostUnavailable { get; private set; }
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
@@ -113,7 +110,7 @@ internal class TriggerAnimationAction : ActionRunner
         }
         var library=_robot.Animations.Library;
         if(_directClip is null && library is null){Missing("M8-021 animation-library input unavailable; no playback can be started");return 0x0300000C;}
-        if (!_ordinarySelected) _clip=_directClip?.Name ?? library!.GetAnimationNameFromGroup(_group!,Request.Argument6);
+        _clip=_directClip?.Name ?? library!.GetAnimationNameFromGroup(_group!,Request.Argument6);
         if (_ordinaryOwner is not null && (_ordinaryRetired || DestructionObserved)) return unchecked((int)EngineActionResult.Cancelled);
         if (_scopedOwner is { } selectedOwner && (selectedOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, selectedOwner))) return 0x03000000;
         if(_directClip is null && _clip.Length==0)
@@ -137,34 +134,14 @@ internal class TriggerAnimationAction : ActionRunner
             Missing(HostUnavailable);
             return 0x03000000;
         }
-        bool needsOrdinaryAudio = !_boundedOrdinary || clip.Keyframes.OfType<AudioKeyframe>().Any();
-        if (_ordinaryOwner is { } ordinaryOwner && _ordinaryLease is null && needsOrdinaryAudio)
-        {
-            _ordinarySelected=true;
-            bool Current() => !_ordinaryRetired && !ordinaryOwner.Lifetime.Destroying && ReferenceEquals(ordinaryOwner.Engine.Robot,ordinaryOwner);
-            if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
-            if (_ordinaryOpening is null)
-            {
-                var audio=ordinaryOwner.GetCannedSpeechOwner();
-                if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
-                if (audio is null) { HostUnavailable="M14-006 ordinary authored audio requires the shared device, banks and archive"; Missing(HostUnavailable); return 0x03000000; }
-                _robot.Animations.ReleaseRuntimeAudioForReplacement();
-                _ordinaryOpening=_boundedOrdinary ? audio.AcquireOrdinaryIfAvailable(Current) : audio.AcquireOrdinary(Current);
-            }
-            if (!_ordinaryOpening.IsCompleted) return unchecked((int)EngineActionResult.Running);
-            if (!_ordinaryOpening.IsCompletedSuccessfully)
-            { HostUnavailable="M14-006 ordinary authored audio initialization failed: "+_ordinaryOpening.Exception?.GetBaseException().Message; Missing(HostUnavailable); return 0x03000000; }
-            _ordinaryLease=_ordinaryOpening.Result;
-            if (!Current()) return unchecked((int)EngineActionResult.Cancelled);
-            SetSpeechPath(_ordinaryLease.Path,ordinaryOwner,authored:true,nextPath:_ordinaryLease.NextOrdinaryPath);
-        }
-        if (_ordinaryLease?.Failure is { } ordinaryFailure)
-        { Missing("M14-006 ordinary authored audio failed: "+ordinaryFailure.Message); return 0x03000000; }
+        // Native PlayAnimationAction::Init calls SetStreamingAnimation at 0x00543F82..9A;
+        // no audio-worker pre-admission. CreateAudioAnimation aborts and clears the predecessor
+        // before constructing the successor (0x00599FF8..0x0059A0B6). The streamer owns that handoff.
         if (_boundedOrdinary) _cachedClip = _selectedClip;
         _started = _ended = _failed = false;
         _ticket = _speechPath is null
-            ? _boundedOrdinary && _scopedOwner is { } scoped
-                ? _robot.Animations.PlayScopedTracked(clip,scoped,Request.Argument2,()=>!_destroyed && !DestructionObserved)
+            ? _ordinaryOwner is { } scoped
+                ? _robot.Animations.PlayScopedTracked(clip,scoped,Request.Argument2,()=>!_destroyed && !DestructionObserved,Request.Argument3)
                 : _robot.Animations.PlayTracked(clip,Request.Argument3,numLoops:Request.Argument2)
             : _speechOwner is { } speechOwner ? (_authoredSpeech
                 ? _robot.Animations.PlayAuthoredSpeechTracked(clip, _speechPath, speechOwner, Request.Argument2, _nextAuthoredPath, () => !_destroyed && !DestructionObserved)
@@ -237,8 +214,6 @@ internal class TriggerAnimationAction : ActionRunner
     }
     public override uint CheckIfDone()
     {
-        if (_ordinaryLease?.Failure is { } failure)
-        { Missing("M14-006 ordinary authored audio failed: "+failure.Message); return 0x03000000; }
         return _ended ? 0u : _failed ? 0x03000001u : EngineActionResult.Running;
     }
     public override string? GetAnimationCompletionName()=>_clip; // current +78, not cached clip+90.
@@ -257,9 +232,6 @@ internal class TriggerAnimationAction : ActionRunner
         _d5?.Dispose(); _d5 = null;
         _cb?.Dispose(); _cb = null;
         _ca?.Dispose(); _ca = null;
-        if (_ordinaryLease is { } ordinary) ordinary.Retire();
-        else if (_ordinaryOpening is { } pending)
-            _=pending.ContinueWith(t=>{if(t.Status==TaskStatus.RanToCompletion)t.Result.Retire();else _=t.Exception;},TaskScheduler.Default);
         base.WatcherEnding();
         if (AiNativeEnded is { } ended && _scopedOwner is { } owner)
             ended.TrySetResult((State,owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot,owner)));
