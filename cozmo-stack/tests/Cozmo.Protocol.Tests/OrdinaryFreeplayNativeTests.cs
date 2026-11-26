@@ -52,6 +52,25 @@ public sealed class OrdinaryFreeplayNativeTests
     }
 
     [Fact]
+    public void ShippedFreeplayBindsLookSocializeAndWhiteboardInputs()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture();
+        var freeplay = f.Runtime.FreeplayObserver;
+        var manipulation = Assert.IsType<Cozmo.Robot.Manipulation.ManipulationSystem>(f.Runtime.Manipulation);
+        var look = Assert.IsType<NativeLookForFaceAndCubeBehavior>(f.Runtime.Bound["PutDownDispatch_LookForFaceAndCube"]);
+
+        // Look state 6 calls the retained parent at 0x005ADF4C with the current origin.
+        Assert.True(look.ExecutionAvailable);
+        Assert.True(look.HasCheckedObjective41);
+        Assert.NotNull(manipulation.Vision.Faces.NativePoseScope);
+        Assert.NotNull(freeplay.Freeplay.SubActivities.Single(a => a.Id == "Socialize").ObjectiveOwner);
+        Assert.Null(freeplay.Inputs.RequestedSpark);
+        freeplay.RefreshInputs(f.Rig.Robot, manipulation.Vision, manipulation, 0, f.Robot);
+        Assert.Equal(manipulation.Whiteboard.OffTreadsStateChangedAtSec, freeplay.Inputs.LastOnTreadsEventSec);
+        Assert.Equal(freeplay.Inputs.LastOnTreadsEventSec, f.Runtime.Context.LastOnTreadsEventSec);
+    }
+
+    [Fact]
     public void SocializeScoresTheRetainedPounceOwnerAtZero()
     {
         using var f = new PickupPyramidNativeExecutionTests.Fixture();
