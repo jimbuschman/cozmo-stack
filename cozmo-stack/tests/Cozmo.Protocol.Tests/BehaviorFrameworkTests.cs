@@ -1453,6 +1453,41 @@ public class BehaviorFrameworkTests
         Assert.Equal(raw.Select(b => (b[0], b[1])), typed.Select(r => (r.OldTrigger, r.NewTrigger)));
     }
 
+    [Fact]
+    public void OwnedManagerSharesOneActionListAcrossReactionPostureAndResumeGates()
+    {
+        using var files = new ReactionMapFixture();
+        using var rig = new M4ControlTests.Rig(resources: files.Root);
+        rig.ToSynced();
+        var robot = rig.Engine.Robot!;
+        var manager = robot.BehaviorManagerOwner!;
+        var list = robot.ActionList;
+        list.Clear();
+        var candidate = new OneShotBehavior("action-list-guard");
+        var strategy = new AlwaysTriggerStrategy { Fire = false };
+        manager.AddReaction(strategy, candidate);
+        manager.CheckReactions(1);
+        Assert.Equal(0, strategy.Checks);
+
+        var pending = new ReactionQueueProbe { Tag = 3000001 };
+        list.QueueAction(QueueActionPosition.AtEnd, pending);
+        manager.CheckReactions(2);
+        Assert.Equal(1, strategy.Checks);
+        manager.SetDefaultHeadAndLiftState(true, 0.25f, 55f);
+        manager.FinishCurrentBehavior(candidate, true, 3);
+        Assert.Same(pending, list.GetCurrentAction());
+        Assert.Equal(1, list.QueueAt(0)!.PendingCount);
+
+        list.Clear();
+        manager.CheckReactions(4);
+        Assert.Equal(2, strategy.Checks);
+        manager.FinishCurrentBehavior(candidate, true, 5);
+        Assert.IsType<CompoundActionParallel>(list.GetCurrentAction());
+        list.Clear();
+        manager.SetDefaultHeadAndLiftState(true, 0.25f, 55f);
+        Assert.IsType<CompoundActionParallel>(list.GetCurrentAction());
+    }
+
     // reach: unit; sends a typed G2E 0xA2 on the real hub, substituting the app input.
     // M10-008 0x5A5042..506A, 0x5A1BAC..1D26: empty map queues one parallel head/lift action.
     [Fact]
