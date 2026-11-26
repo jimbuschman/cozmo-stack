@@ -61,6 +61,24 @@ public sealed class ColorCameraMcpTests
     }
 
     [Fact]
+    public async Task HeadlightToolSendsTheRobotSetHeadlightMessage()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new Client(bridge);
+        await client.Initialize();
+        int mark = f.Rig.Mark();
+        Assert.True(Data(await client.Tool("set-headlight", new { enabled = true })).GetProperty("report").GetProperty("enabled").GetBoolean());
+        Assert.True(Assert.Single(f.Rig.SentSince(mark).OfType<SetHeadlight>()).Enable);
+        Assert.True(f.Rig.Robot.Lights.HeadlightOn);
+
+        mark = f.Rig.Mark();
+        Assert.False(Data(await client.Tool("set-headlight", new { enabled = false })).GetProperty("report").GetProperty("enabled").GetBoolean());
+        Assert.False(Assert.Single(f.Rig.SentSince(mark).OfType<SetHeadlight>()).Enable);
+        Assert.False(f.Rig.Robot.Lights.HeadlightOn);
+    }
+
+    [Fact]
     public async Task RecordedColorScanReassemblesAsEncodingNineAndReturnsAColorPng()
     {
         string? bundle = Environment.GetEnvironmentVariable("COZMO_COLOR_REPLAY_BUNDLE");
