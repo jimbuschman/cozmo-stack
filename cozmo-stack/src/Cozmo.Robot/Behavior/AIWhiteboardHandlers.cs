@@ -10,14 +10,8 @@ public readonly record struct PossibleObject(Pose3d Pose, ObjectType Type);
 /// <summary>
 /// The three MessageEngineToGame handlers <c>AIWhiteboard::Init</c> registers (tags 0x44 = 68, 0x45 = 69, 0x35 = 53;
 /// subscriptions 0x0056a44c, 0x0056a50c, 0x0056a5cc), built from inventory M8-framework Correction A4 (Codex pre-extraction section 6 with
-/// the 2026-09-30 check applied). They live here because <c>Manipulation/**</c> is R-VIS's: <see cref="AIWhiteboard"/> hands these three
-/// handlers nothing yet (its <see cref="IWhiteboardExternalInterface"/> seam passes only the tag and the whiteboard), and the possible-object
-/// list belongs on the whiteboard in the engine; both moves are listed in the R-BEH2 report for R-VIS.
-///
-/// <b>Seams, none defaulted.</b> The rows do not give <c>BlockWorld::FindLocatedClosestMatchingTypeHelper</c>'s body
-/// (<see cref="FindLocatedClosestMatchingType"/>); an unset seam reports MISSING once and the handler skips (it never throws). Two inputs are the
-/// caller's: <see cref="RobotPose"/> (<c>Robot::GetPose()</c>, 0x004EA398, called at 0x0056c54c; unset reports MISSING once and skips, a
-/// null result is the engine's failed relative-pose conversion: log and stop) and the redraw sink (<see cref="PossibleObjectsRedrawn"/>, the VizManager, M11/M12).
+/// the 2026-09-30 check applied). The production recipient uses the owning robot, its BlockWorld,
+/// and the possible-object list on the same whiteboard. Standalone callers can supply those inputs explicitly.
 /// </summary>
 // fidelity: M8-014
 public sealed class AIWhiteboardHandlers
@@ -46,6 +40,48 @@ public sealed class AIWhiteboardHandlers
     {
         _whiteboard = whiteboard;
         _nowSec = nowSec;
+    }
+
+    private readonly bool _nativePoseTree;
+    internal AIWhiteboardHandlers(AIWhiteboard whiteboard, EngineRobot robot, BlockWorld world)
+        : this(whiteboard, () => robot.Engine.Timer.SecondsF)
+    {
+        _nativePoseTree = true;
+        RobotPose = () => robot.MainPose; // Robot::GetPose, 0x0056C54C
+        SourceLog = (level, channel, key, message) => robot.Engine.EmitSourceLog(level, channel, key, message);
+        FindLocatedClosestMatchingType = (type, pose, tolerance, angle, filter) =>
+        {
+            // 0x0061FC2E..0x0061FC84 copies the filter and visits every match in order.
+            // The predicate at 0x006281F2..0x00628256 narrows the tolerances after each hit.
+            var copy = filter.Clone();
+            copy.Predicates.Add(obj =>
+            {
+                if (obj.Type != type) return false;
+                var maxAngle = new Radians(angle);
+                var difference = new Radians(0);
+                var delta = Vec3.Zero;
+                if (!obj.NativePose.IsSameAsWithAmbiguity(pose, tolerance, maxAngle, ref delta,
+                    ref difference, Array.Empty<Mat3>(), false)) return false;
+                tolerance = new Vec3(Math.Abs(delta.X), Math.Abs(delta.Y), Math.Abs(delta.Z));
+                angle = Math.Abs(difference.Value);
+                return true;
+            });
+            return world.FindLocatedObjectHelper(copy, null, false) is not null;
+        };
+    }
+
+    private bool TryRelative(Pose3d pose, Pose3d frame, out Vec3 translation)
+    {
+        if (_nativePoseTree)
+        {
+            using var relative = new Pose3d("");
+            bool converted = Pose3d.GetWithRespectTo(pose, frame, relative);
+            translation = relative.Translation;
+            return converted;
+        }
+        using var flattened = pose.WithRespectTo(frame);
+        translation = flattened.Translation;
+        return true;
     }
 
     /// <summary>The possible-object list, oldest first (the cap pops the front).</summary>
@@ -81,8 +117,8 @@ public sealed class AIWhiteboardHandlers
 
     /// <summary>
     /// <c>BlockWorld::FindLocatedClosestMatchingTypeHelper</c> as the tag-69 handler calls it (type, pose, per-axis threshold, angle threshold, a
-    /// zero-initialised <see cref="BlockWorldFilter"/>, 0x0056c5ac..0x0056c606, passed at 0x0056c60c): true when a located object is found. Its body is not
-    /// in the rows. Unset reports MISSING once and the handler skips. MISSING: M8-014.
+    /// zero-initialised <see cref="BlockWorldFilter"/>, 0x0056c5ac..0x0056c606, passed at 0x0056c60c): true when a located object is found. The native binding is implemented
+    /// at 0x0061FBFC. Standalone handlers require an explicit world.
     /// </summary>
     public Func<ObjectType, Pose3d, Vec3, float, BlockWorldFilter, bool>? FindLocatedClosestMatchingType { get; set; }
 
@@ -107,14 +143,14 @@ public sealed class AIWhiteboardHandlers
 
     /// <summary>
     /// The shared removal (0x0056ad76..0x0056ae12): same type (0x0056ad76..0x0056ad88), pose expressible relative to the observed pose, squared distance
-    /// computed in float and at most <see cref="RemoveDistanceSq"/>. The stack's poses all share one root, so the conversion cannot fail.
+    /// computed in float and at most <see cref="RemoveDistanceSq"/>. Entries whose pose cannot be expressed in this frame are retained.
     /// </summary>
     private void RemoveNearbyPossibleObjects(Pose3d observedPose, ObjectType type)
     {
         _possible.RemoveAll(p =>
         {
             if (p.Type != type) return false;
-            var rel = p.Pose.WithRespectTo(observedPose).Translation;
+            if (!TryRelative(p.Pose, observedPose, out var rel)) return false;
             float x = (float)rel.X, y = (float)rel.Y, z = (float)rel.Z;
             float distSq = x * x + y * y + z * z;
             return distSq <= RemoveDistanceSq;
@@ -141,7 +177,7 @@ public sealed class AIWhiteboardHandlers
             if (!_reportedRobotPoseMissing) { _reportedRobotPoseMissing = true; Log?.Invoke("MISSING: M8-014: Robot::GetPose() (0x004EA398) is not supplied; the possible object is skipped"); }
             return;
         }
-        if (robotPose() is not { } robot)
+        if (robotPose() is not { } robot || !TryRelative(pose, robot, out var relative))
         {
             // M8-014 row 6.2 (research/20261002-R-BEH2-M8-gap1-extraction.md): a failed GetWithRespectTo (0x0056c55c beq.w 0x56c698)
             // calls sWarningF with an empty data vector (0x0056c698..0x0056c6a2), key 0x0056c77c, format 0x0056c7a4 and no varargs
@@ -149,7 +185,7 @@ public sealed class AIWhiteboardHandlers
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AIWhiteboard.PossibleObject.NoRelPose", "Couldnt get pose WRT to robot");
             return;
         }
-        float relZ = (float)pose.WithRespectTo(robot).Translation.Z;
+        float relZ = (float)relative.Z;
         if (relZ > MaxRelativeZ) return;                                                   // 0x0056c560..0x0056c576
 
         RemoveNearbyPossibleObjects(pose, type);                                           // 0x0056c57a..0x0056c584
@@ -200,9 +236,7 @@ public interface IBeaconVizSink
 /// connectLastToFirst false and a final float 0.0 (0x0056ab40..0x0056abd8), DARKGREEN when abs(beacon +0x10) &lt; 1e-5f (0x3727C5AC)
 /// and ORANGE otherwise (0x0056aad6..0x0056ab02). It only draws; it changes no behaviour.
 ///
-/// <b>Seams, none defaulted (MISSING, M8-014).</b> The beacon pose is resolved by the local helper 0x004DF628 (called at 0x0056aada: an empty Pose3d, then
-/// <c>IsRoot</c> 0x4a40d8: root copies it, else <c>GetWithRespectTo(beacon, FindRoot(beacon))</c>; <see cref="ResolveBeaconPose"/>); the +0x10 last-failure
-/// time defaults to <see cref="AIBeacon.FailedToFindLocationTimeSec"/> (M15-023); the sink is the VizManager. An unset seam reports MISSING once and that beacon is not drawn.
+/// Beacon positions use the root-frame pose returned by 0x004DF628. Colors use the timestamp stored at beacon+0x10.
 /// <see cref="Attach"/> hooks <see cref="AIWhiteboard.BeaconRenderUpdated"/>.
 /// </summary>
 // fidelity: M8-014
@@ -225,7 +259,7 @@ public sealed class AIWhiteboardBeaconRenderer
 
     public AIWhiteboardBeaconRenderer(IBeaconVizSink sink) { _sink = sink; }
 
-    /// <summary>The beacon's resolved pose (local helper 0x004DF628, see the class remarks). MISSING: M8-014.</summary>
+    /// <summary>Optional replacement for the root-frame pose helper at 0x004DF628.</summary>
     public Func<AIBeacon, Pose3d>? ResolveBeaconPose { get; set; }
 
     /// <summary>The beacon's +0x10 float: the time <c>AIBeacon::FailedToFindLocation</c> (0x0059c314..0x0059c322) last recorded, 0 until then. Defaults to <see cref="AIBeacon.FailedToFindLocationTimeSec"/> (M15-023).</summary>
@@ -234,7 +268,6 @@ public sealed class AIWhiteboardBeaconRenderer
     /// <summary>MISSING reports (once per seam).</summary>
     public event Action<string>? Log;
     public SourceLogSink? SourceLog { get; set; }
-    private bool _reportedPoseMissing, _reportedTimeMissing;
 
     /// <summary>Hooks the whiteboard's render seam so every <c>AddBeacon</c> renders (<c>AddBeacon</c> calls <c>UpdateBeaconRender</c>, 0x0056c3de).</summary>
     public void Attach(AIWhiteboard whiteboard) => whiteboard.BeaconRenderUpdated += () => Render(whiteboard.Beacons);
@@ -245,19 +278,11 @@ public sealed class AIWhiteboardBeaconRenderer
         _sink.EraseSegments(SegmentName);                                                  // 0x0056aa88..0x0056aa9e
         foreach (var beacon in beacons)
         {
-            if (ResolveBeaconPose is not { } resolve)
-            {
-                if (!_reportedPoseMissing) { _reportedPoseMissing = true; Log?.Invoke("MISSING: M8-014: the beacon pose helper 0x004DF628 is not supplied; beacons are not drawn"); }
-                continue;
-            }
-            if (LastFailureTimeOf is not { } failureTime)
-            {
-                if (!_reportedTimeMissing) { _reportedTimeMissing = true; Log?.Invoke("MISSING: M8-014: AIBeacon has no +0x10 last-failure time yet (R-VIS); beacons are not drawn"); }
-                continue;
-            }
-            var t = resolve(beacon).Translation;
+            // 0x004DF628 as called at 0x0056AADA: copy a root, otherwise express the pose in its root.
+            using var ownedPose = ResolveBeaconPose is null ? beacon.Pose.GetWithRespectToRoot() : null;
+            var t = (ownedPose ?? ResolveBeaconPose!(beacon)).Translation;
             float cx = (float)t.X, cy = (float)t.Y, cz = (float)t.Z + CenterZOffset;       // 0x0056ab1c..0x0056ab28
-            var color = MathF.Abs(failureTime(beacon)) < FailureTimeEpsilon ? BeaconColor.DarkGreen : BeaconColor.Orange;
+            var color = MathF.Abs(LastFailureTimeOf?.Invoke(beacon) ?? beacon.FailedToFindLocationTimeSec) < FailureTimeEpsilon ? BeaconColor.DarkGreen : BeaconColor.Orange;
             float r = (float)beacon.RadiusMm;                                              // beacon +0x0C
             _sink.DrawXYCircleAsSegments(cx, cy, cz, r, color, false, Segments, 0f);                          // 0x0056ab40..0x0056ab50
             _sink.DrawXYCircleAsSegments(cx, cy, cz, r + SecondRadiusStep, color, false, Segments, 0f);       // 0x0056ab7a..0x0056ab94
