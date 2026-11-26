@@ -41,3 +41,19 @@ process) is suspected. Next run: capture stderr and the exit code.
 **R3. PlayAnimWithFace turns to a stale or absent face.** TurnTowardsFace reports SUCCESS with no current
 observation of the face. Check what the original's TurnTowardsFace or VC_HowAreYouDoing does when the face pose is
 unknown or stale.
+
+## After the second reconnect (15:55–15:57 UTC)
+
+| Test | Result |
+| --- | --- |
+| request-spark FistBump | PASS. SparksFistBump ran: sparking_getin, TurnTowardsFace NO_FACE (no face since the reconnect), a search turn, fistbump requestonce, idle, requesttwice, idle, fail_01 (left hanging), sparking_getout, then back to Socialize. The spark's reaction locks were applied. Ask the operator whether a bump was attempted, to tell a missed detection from no attempt. No server drop at the spark's end. |
+| ExpressNeeds | PASS. Needs real mode with play 0.3 (Warning bracket is 0.14..0.5 per needs_config.json): Needs_MildLowPlayRequest was chosen in Socialize, "first runnable in priority order", about 10 s later (15:57:29), and completed SUCCESS. Play 0.5 did not trigger it; that is the Normal bracket boundary, as expected. Needs set back to full afterwards. |
+| InteractWithFaces | Not re-seen after the reconnect: FindFaces_socialize found no face in about 20 s and dropped to PlayAlone. It was seen at 15:49:07. |
+
+Covered from the original nine: InteractWithFaces, ExpressNeeds, ExploreLookAroundInPlace and PlayArbitraryAnim.
+Plus EarnedSparks via the spark path (the Sparks activity ran).
+
+Still failing:
+- SearchForFace and DriveToFace: the VC_ requests never run (R1).
+- PlayAnimWithFace: does not turn to the face (R3).
+- PlacedOnSlope: P1 from session 6.
