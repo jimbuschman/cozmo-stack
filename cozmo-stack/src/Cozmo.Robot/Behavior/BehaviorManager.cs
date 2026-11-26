@@ -106,6 +106,9 @@ public sealed partial class BehaviorManager : IDisposable
     internal BehaviorManager(BehaviorContext context,RepetitionPenalty? penalty,bool bindSensorOwner,EngineRobot? nativeOwner=null)
     {
         _context = context;
+        // The reaction (0x005A3558), default posture (0x005A1BAC), and resume
+        // (0x005A2B48) gates all read the ActionList of this manager's robot.
+        if (nativeOwner is not null) ActionListIsEmpty = () => nativeOwner.ActionList.IsEmpty;
         _requestOwner=nativeOwner??context.Robot.Engine.Robot;
         SparkNameInput = NativeUnlockNames.Lookup;
         _penalty = penalty ?? new RepetitionPenalty();

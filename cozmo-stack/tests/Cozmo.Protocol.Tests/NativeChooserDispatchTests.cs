@@ -9,6 +9,17 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeChooserDispatchTests
 {
+    [Fact]
+    public void ShippedSelectionHasItsConfiguredFinderAndProcessFields()
+    {
+        using var fixture = new PickupPyramidNativeExecutionTests.Fixture();
+        var selection = Assert.IsType<SelectionChooser>(fixture.Runtime.Tree.Single(a => a.Id == "Selection").Chooser);
+        Assert.NotNull(selection.FindBehaviorByExecutableType);
+        Assert.NotNull(selection.SetAnalyzerEnabled);
+        Assert.NotEmpty(fixture.Runtime.Bound);
+        Assert.All(fixture.Runtime.Bound.Values, behavior => Assert.IsAssignableFrom<SteppedBehavior>(behavior));
+    }
+
     private static string Resources()
     {
         for(var d=new DirectoryInfo(AppContext.BaseDirectory);d is not null;d=d.Parent)

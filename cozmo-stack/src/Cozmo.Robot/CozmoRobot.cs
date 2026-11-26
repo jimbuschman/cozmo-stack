@@ -214,7 +214,6 @@ public sealed partial class CozmoRobot : IDisposable
             ClockSec=()=>Engine.Timer.Seconds,Needs=Engine.Needs};
         var manager=new Behavior.BehaviorManager(context,null,bindSensorOwner:true,nativeOwner:native);
         // fidelity: M8-012, M10-004, M10-008: bind the actual robot and movement owners.
-        manager.ActionListIsEmpty=()=>native.ActionList.IsEmpty;
         manager.UpdateRobotPropertiesForReaction=active=>{ Motion.DirectDriveDisabled=active; native.ActionList.ExternalActionsDisabled=active; };
         if(native.HasExternalInterface)
             manager.BindHostReactionTransitionSender(Engine.BroadcastReactionTransition);
