@@ -125,12 +125,26 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
         Assert.Equal(0, turn.RequestedId);
         Assert.Equal(Radians.Pi, turn.MaximumTurn);
         Assert.False(turn.SayName);
+        // 0x0054B7B6 initializes require-face (+0x193) to zero; 0x005C0686/0x005C06AA never sets it.
+        // Missing last pose (0x004F5AEA..0x004F5B0E) takes state 3/SUCCESS 0x0054BEB6..BC,
+        // then the resultless callback starts the configured animation at 0x005C075A.
+        Assert.False(turn.RequireVerifiedFace);
+        int beforeTurn = f.Rig.Mark();
         pump.Until(() => response.OwnedRunner is TriggerLiftSafeAnimationAction);
+        Assert.False(turn.FacePoseAvailable);
+        Assert.Equal(3, turn.FaceState);
+        Assert.Equal(0u, turn.State);
+        Assert.DoesNotContain(f.Rig.SentSince(beforeTurn), message => message is SetBodyAngle or SetHeadAngle);
         var clip = Assert.IsType<TriggerLiftSafeAnimationAction>(response.OwnedRunner);
         Assert.Equal(expectedTrigger, clip.Request.Trigger);
         pump.Until(() => pump.Ended(clip));
         pump.Until(() => manager.Current?.Id == "Wait");
         AssertNamedClip(f, clip, expectedTrigger);
+        var completion = Assert.Single(Data(await client.Tool("read_events", new { since = 0, types = new[] { "action-completed" } }))
+            .GetProperty("events").EnumerateArray().Where(e => e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == turn.Tag))
+            .GetProperty("payload").GetProperty("completion");
+        Assert.Equal(41, completion.GetProperty("actionType").GetInt32());
+        Assert.Equal(0u, completion.GetProperty("result").GetUInt32());
         var reports = await BehaviorEvents(client, 0);
         Assert.Contains(reports, p => p.GetProperty("newBehavior").GetString() == id);
     }
