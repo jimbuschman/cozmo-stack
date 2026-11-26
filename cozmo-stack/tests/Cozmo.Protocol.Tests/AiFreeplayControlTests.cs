@@ -438,6 +438,49 @@ public sealed class AiFreeplayControlTests(ITestOutputHelper output)
         Assert.Contains(events.Skip(complete + 1), message => message.StartsWith("behavior:") && message != "behavior:Wait");
     }
 
+    [Fact]
+    public async Task SpeechParksFreeplayAndCancellationResumesOnlyAfterUnlink()
+    {
+        using var sink = new SpeechLatencyTests.SilentSink();
+        var options = new CozmoEngineOptions
+        {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), LabLocaleLanguage = "en", BlockPoolPath = "",
+        };
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+            sourceNvEmpty: true, engineOptions: options, engineCreated: e => e.RuntimeAudioSinkForTest = () => sink);
+        var engine = f.Rig.Engine;
+        await Assert.IsType<CannedSpeechOwner>(engine.RuntimeWwiseAudio).Ready.WaitAsync(TimeSpan.FromSeconds(25));
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var freeplay = f.Runtime.FreeplayObserver;
+        engine.AnimationMessages.Deliver(0xC6, false, new[] { 1f, .05f, 1f });
+        f.Rig.Robot.SetEnableFreeplayActivity(true);
+        f.Rig.Tick();
+        Assert.Same(freeplay, manager.Activity);
+        Assert.Equal("Needs_SevereLowEnergyGetIn", manager.Current?.Id);
+
+        // Session 6 speech must use the same activity bracket and external queue as motion.
+        f.Rig.Robot.DirectSpeechComponentForTest = new TextToSpeechComponent((_, _, _) => new[] { .25f });
+        using var cancel = new CancellationTokenSource();
+        var request = f.Rig.Robot.SayEnglishSentenceAsync("Hello", cancel.Token);
+        var runner = Assert.IsType<SayTextAction>(f.Robot.ActionList.GetCurrentAction());
+        Assert.True(f.Runtime.ObserveHostFreeplay().PausedForCommand);
+        Assert.Same(f.Runtime.Bound["Wait"], manager.Current);
+        Assert.False(request.IsCompleted);
+        cancel.Cancel();
+        f.Rig.Tick();
+        Assert.True((await request.WaitAsync(TimeSpan.FromSeconds(5))).Admitted);
+        Assert.False(f.Robot.ActionList.ContainsRunner(runner));
+        Assert.Same(freeplay, manager.Activity);
+        Assert.False(f.Runtime.ObserveHostFreeplay().PausedForCommand);
+
+        // A reaction that disables external actions never parks the activity.
+        f.Robot.ActionList.ExternalActionsDisabled = true;
+        var rejected = await f.Rig.Robot.SayEnglishSentenceAsync("Rejected");
+        Assert.False(rejected.Admitted);
+        Assert.Same(freeplay, manager.Activity);
+        Assert.False(f.Runtime.ObserveHostFreeplay().PausedForCommand);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

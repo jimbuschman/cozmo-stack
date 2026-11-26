@@ -205,26 +205,60 @@ public sealed partial class CozmoRobot
         }
         bool Current() => !owner.Lifetime.Destroying && ReferenceEquals(Engine.Robot, owner);
         bool disabled = owner.ActionList.ExternalActionsDisabled;
-        int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
-        if (disabled || queued != 0)
+        IDisposable? freeplay = null;
+        // Host speech follows the same command bracket as motion: G2E 0x92
+        // (0x005A4FA2) and Selection Wait 0x93 (0x0060AAAE), then QueueSingleAction
+        // (SayText factory 0x0052AB00; external tag/position 0x00527A74..0x00527A8C).
+        try { if (!disabled) freeplay = owner.NativeBehaviorRuntime?.BeginAiCommand(); }
+        catch
         {
             action.RetireNeverAdmittedTree();
-            return Task.FromResult(new AiSpeechActionResult(false, null, "Speech action was not admitted"));
+            throw;
         }
-        action.HostCaller = ActionRunner.CallerContext.Value;
-        return AwaitSpeech(action, owner, cancellationToken);
+        try
+        {
+            if (!Current() || cancellationToken.IsCancellationRequested)
+            {
+                action.RetireNeverAdmittedTree();
+                return Task.FromResult(new AiSpeechActionResult(false, null, "Robot changed or request cancelled before admission", !Current()));
+            }
+            disabled = owner.ActionList.ExternalActionsDisabled;
+            int queued = owner.ActionList.QueueActionGuardedAtEnd(action, 0, Current);
+            if (disabled || queued != 0)
+            {
+                if (action.CanDetachWatcherForRetirement())
+                {
+                    action.Watcher = null;
+                    action.RetireNeverAdmittedTree();
+                }
+                return Task.FromResult(new AiSpeechActionResult(false, null, "Speech action was not admitted", !Current()));
+            }
+            action.HostCaller = ActionRunner.CallerContext.Value;
+            var task = AwaitSpeech(action, owner, cancellationToken, freeplay);
+            freeplay = null;
+            return task;
+        }
+        finally { freeplay?.Dispose(); }
     }
 
-    private async Task<AiSpeechActionResult> AwaitSpeech(SayTextAction action, EngineRobot owner, CancellationToken token)
+    private async Task<AiSpeechActionResult> AwaitSpeech(SayTextAction action, EngineRobot owner, CancellationToken token, IDisposable? freeplay)
     {
         using var registration = token.Register(() => Engine.PostGameMessage(() =>
         {
             if (owner.Lifetime.Destroying || !ReferenceEquals(Engine.Robot, owner)) return;
             if (owner.ActionList.ContainsRunner(action)) owner.ActionList.Cancel(action.Tag);
         }));
-        var ended = await action.HostCompletion!.Task.ConfigureAwait(false);
-        using (Engine.EnterSynchronousOwner()) { }
-        return new AiSpeechActionResult(true, ended.Result, "Native speech action ended", ended.OwnerRetired);
+        try
+        {
+            var ended = await action.HostCompletion!.Task.ConfigureAwait(false);
+            return new AiSpeechActionResult(true, ended.Result, "Native speech action ended", ended.OwnerRetired);
+        }
+        finally
+        {
+            // The action watcher precedes unlink, so resume after the queue gate releases.
+            using var lease = Engine.EnterSynchronousOwner();
+            freeplay?.Dispose();
+        }
     }
 
     /// <summary>Internal admission used until the public SayText API and float output join are available.</summary>
