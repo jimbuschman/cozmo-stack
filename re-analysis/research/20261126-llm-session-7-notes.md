@@ -80,3 +80,14 @@ Open (trace against the binary before any change):
 - Decode the frames.jsonl wheel speeds and cliff values for 15:58:14.1–15.2 to see which motion took him over.
 
 This is a safety issue: high priority for the next code session.
+
+## R5. The robot disconnects (WifiTimeout) soon after going to sleep on the charger
+
+- **Session 7:** on-charger 15:59:38.28, going-to-sleep, ReactToOnCharger, then robot-disconnected WifiTimeout at
+  15:59:49.29 (about 11 s).
+- **Session 6:** going-to-sleep 03:53:18, then WifiTimeout 03:53:43 (about 25 s).
+
+Trace:
+- what the original's sleep path sends the robot (for example a power-down/GoToSleep message or stopping keepalives);
+- whether the engine expects the link to drop there, and how it reports it;
+- whether our stack stops sending pings, or the robot powers its radio down on a command we send.
