@@ -61,8 +61,8 @@ public readonly record struct DriveToPoseTick(int PathStatus, double NowSec, Pos
 /// The engine's <c>DrivingAnimationHandler</c> (<c>[robot+0x24C]</c>) as <c>DriveToPoseAction::CheckIfDone</c>
 /// uses it: the state word it reads first (<c>[[robot+0x24C]] == 3</c> keeps the action RUNNING), the start
 /// animation at path state 3 and the end animation at the tail. The shared Robot handler now implements the
-/// checked M5-063 bodies and the M12-024 action-side lifecycle calls. The queued
-/// TriggerLiftSafeAnimationAction runner remain visible MISSING boundaries.
+/// checked M5-063 bodies and the M12-024 action-side lifecycle calls. The real handler queues the
+/// TriggerLiftSafeAnimationAction (0x004F1016..0x004F105A), not a host animation placeholder.
 /// </summary>
 // fidelity: M12-024
 public interface IDrivingAnimationHandler

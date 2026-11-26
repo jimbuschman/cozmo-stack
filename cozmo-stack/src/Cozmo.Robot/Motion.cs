@@ -2149,7 +2149,8 @@ bool requireCalibration = true)
         /// nearer for 32, and skips the second clamp (0x00549140 jumps to 0x005491CE). Otherwise +0x84 = the height and the
         /// second clamp into [32, 92] (0x0054918E..0x005491D2) stores a NaN as 32. A NaN height skips the first clamp (blt at
         /// 0x0054905C is true unordered), is not negative (bpl at 0x00549102 is true unordered) and so reaches the second clamp.
-        /// The height-variability step between them (+0x80, 0x00549142..0x0054918A) is not built: see the MISSING note in the report.
+        /// The native height-variability step at 0x00549142..0x0054918A only draws RandDblInRange(-v,+v) if +0x80 > 0.
+        /// Every supported admission/child here fixes v=0 (game SetLiftHeight 0x0052AC84..0x0052AC92), so it takes the no-draw branch.
         /// </summary>
         private void LiftInitHeightLocked()
         {
@@ -2355,7 +2356,9 @@ bool requireCalibration = true)
 // fidelity: M13-029
 /// <summary>
 /// The engine's one PathComponent (Robot+0x5C): Abort/ClearPath below and the M12-032 state machine in NativePathComponent.cs.
-/// Fields retain native offsets and P1 constructor values. Unbuilt planner/Viz recipients remain explicit MISSING boundaries.
+/// Fields retain native offsets and P1 constructor values. The production constructor binds the doler and short planners;
+/// the robot binds the origin owner, and NativePlannerSet selects the native planner. VizManager::ErasePath (0x006BFACE)
+/// only constructs and clears a local Viz message; no robot/API effect. Detached receiver guards remain explicit.
 /// </summary>
 internal sealed partial class PathComponent
 {
