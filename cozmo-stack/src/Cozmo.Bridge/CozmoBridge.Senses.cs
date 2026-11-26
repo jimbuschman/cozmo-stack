@@ -112,6 +112,24 @@ public sealed partial class CozmoBridge
         return Task.FromResult(CommandResult.Confirmed(new { enabled }));
     }
 
+    private Task<CommandResult> SetHeadlight(bool enabled, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        // The app's G2E SetHeadlight (Unity Robot.cs:2136) is handled at 0x00632456..0x00632458, which passes the
+        // bool to BodyLightComponent::SetHeadlight 0x00632344..0x00632380 (M4-017: vision mode 14, then the
+        // reliable robot SetHeadlight message), the path Lights.SetHeadlight builds.
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        if (engine.ConnectionState != 2 || !engine.IsReadyDelivered || engine.RobotValidated != true ||
+            owner is null || owner.Lifetime.Destroying || !owner.FirstFullStateHandled)
+            return Task.FromResult(CommandResult.NotReady());
+
+        Robot.Lights.SetHeadlight(enabled);
+        if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner))
+            return Task.FromResult(CommandResult.Action(false, null, "Robot owner retired during the headlight request", true));
+        return Task.FromResult(CommandResult.Confirmed(new { enabled }));
+    }
+
     /// <summary>Decodes a snapshot without requesting frames or changing vision modes.</summary>
     public BridgeCameraImage GetCameraImage(bool annotate = false)
     {
