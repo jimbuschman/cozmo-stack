@@ -120,3 +120,8 @@ Trace:
   locks held. The stack log stops mid SteeringController point turn, result.json stays "running", and there is no
   exception. It is not tied to a requested behaviour ending (unlike the first two). A new instance started at
   17:39:44 and waits for robot state.
+- **R2, fourth silent drop:** about 17:41, with the robot idle after a drive-straight (-80 mm) and carry-lamp locks
+  held. The same signature: no error, and the MCP tools disappeared. Four drops today, after a behaviour ending, a
+  turn, and idle. They do not look tied to any one command; suspect the bridge process or the MCP transport itself.
+- **Lamp follow-up:** with the LED set down facing away, the print itself was unlit and invisible from the robot's
+  side, so it could not be re-acquired for pickup. A rear marker or glow, or the IR headlight, would be needed.
