@@ -119,3 +119,77 @@ Lead:
 - FindFaces kept running its look-around for about 20 s; no SayTextAnimation started; `pausedForCommand` stayed false.
 - The speech ended CANCELLED_WHILE_RUNNING when Freeplay moved on to Hiking_FirstLookIntro (03:47:16).
 - Turns pre-empt Freeplay; speech never does.
+
+## Personality list check (03:47–03:51 UTC)
+
+The shipped config shows these never run from ordinary Freeplay (`config/engine/behaviorSystem`):
+- **SearchForFace:** only as `VC_SearchForFace` (voice command).
+- **DriveToFace:** only as `VC_ComeHere` (voice command).
+- **PlayAnimWithFace:** only as FeedingPlayRequestAtFace* and `VC_HowAreYouDoing_*`.
+- **ExploreLookAroundInPlace:** only as Hiking_LookInPlace360 (no activity lists it) and SparksLookInPlace (Sparks
+  flows, deferred).
+- **PlayArbitraryAnim:** app-driven only.
+
+They need the personality harness or bridge tools that send those voice-command and app inputs, which is an operator
+decision.
+
+Reachable from Freeplay:
+- InteractWithFaces: seen tonight (03:43:59, 03:44:10).
+- ExpressNeeds: the Needs_MildLow*Request behaviours, seen in session 5 (Needs_MildLowRepairRequest 15:28:09,
+  15:29:11).
+- EarnedSparks: needs a genuine spark reward; not seen.
+- PlacedOnSlope: see below.
+
+## PlacedOnSlope retest after PLACED-ON-SLOPE-INPUTS-1 (03:49:34–03:50:30)
+
+Decoded RobotState (scratch decoder as before; pitch = pose pitch, gyro = max abs axis).
+
+1. **03:49:34, nose down:** pitch −11.5…−13°. Gyro now reaches 0.007–0.009, **under** the 0.01 quiet threshold
+   (it never did in session 5). Correctly no trigger: the range is (+10, +55)°.
+2. **03:50:04, nose up:** pitch +7.4…+7.8°, gyro 0.002–0.008. Correctly no trigger: below +10°.
+3. **03:50:27, nose up, steeper:**
+   - +9.9…+12.6° while being placed.
+   - At put-down (03:50:27.15) the RobotState pose pitch reads **exactly 0.0** for about 0.8 s (until 03:50:27.93),
+     with status 0x310/0x311. The same zeroing as session 5 Q5.
+   - Meanwhile ReactToReturnedToTreads moved the head (gyro 0.1–1.66).
+   - The pitch was back to +11.3° at 03:50:28.05, but the gyro was still 0.24–0.42.
+   - The 1.5 s put-down window (≈03:50:27.0–28.5) closed before any 0.4 s quiet stretch.
+   - ReactToFrustrationMajor took over at 03:50:28.56.
+
+**Finding P1.**
+- The slope gate looks reachable now; the inputs fix worked for the gyro.
+- It loses a race on every put-down:
+  - the robot firmware reports pitch 0.0 for about 0.8 s after the robot is set down;
+  - ReturnedToTreads' head and lift motion keeps the gyro above 0.01.
+- Together these eat the 1.5 s window.
+- Trace:
+  - whether the original's StrategyRobotPlacedOnSlope (0x61455C..0x614688) reads the same RobotState pitch or a
+    filtered or IMU-derived pitch that doesn't zero;
+  - whether ReturnedToTreads preempts it, or is suppressed, when the robot lands on a slope (trigger priority
+    between RobotPlacedOnSlope and ReturnedToTreads);
+  - whether the 1.5 s window is measured from the pickup flag clearing, as we do.
+
+## Hiccups (03:51:37–03:52:24 UTC), not yet explained
+
+- Freeplay was off. Seven Hiccup reaction cycles about 5–7 s apart, each about 2–4 s long.
+- In our code a hiccup fit starts only when G2E message 164 arrives (`HiccupReactionStrategy.Receive164`, wired in
+  `BehaviorManager.Hiccup.cs:58`). In the original that is the overfed signal (see the
+  `OverfedButHiccupDisabled` log at 0x00610A7C).
+- Nothing was fed tonight, and no set_needs was sent this session. **Open: who sent 164?** Trace:
+  - the senders of message 164 in our stack;
+  - what the original sends it for (feeding at full energy; anything else);
+  - whether anything in tonight's run (Freeplay, needs, the bridge) produced it.
+- Also check: the cure path (a pickup cures hiccups; the operator did not pick him up), and whether the fit ended
+  through self-cure (the `robot.hiccups.ended` log).
+
+## Still to do (handover, 2026-11-26)
+
+1. **P1 slope race:** trace as above (pitch zero after put-down, ReturnedToTreads against RobotPlacedOnSlope).
+2. **Hiccups:** find what sent message 164.
+3. **S1:** speech doesn't pre-empt Freeplay.
+4. **T1–T4:** track-face (ID churn, stale ID, the blocking call, reaction interrupts).
+5. **C1–C3:** charger pose tilt, ramp UnexpectedMovement, frustration drive-off.
+6. **Bridge/channel:** the operator found the screen unreadable in Freeplay; the channel pushes every action
+   completion. Proposal: push only reactions, cubes, faces and failures. Waiting for the operator's decision.
+7. **Coverage:** five personality behaviours need voice-command or app inputs (operator decision, see above).
+8. **Robot state at the end:** Freeplay off, on the desk off the charger, no locks held.
