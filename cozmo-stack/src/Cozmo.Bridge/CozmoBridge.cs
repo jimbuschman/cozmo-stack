@@ -158,6 +158,8 @@ public sealed partial class CozmoBridge
         return JsonSerializer.SerializeToElement(new
         {
             timestampUtc = DateTimeOffset.UtcNow,
+            c2Extensions = Robot.Engine.Options.C2.ActiveExtensions,
+            cliffHoldActive = connected && Robot.Engine.Robot?.C2CliffHoldActive == true,
             connection = new { connected, ready = connected && Robot.Engine.IsReadyDelivered, link = Robot.Transport.State.ToString() },
             pose = ReadWorldPose(),
             batteryVolts = raw?.BatteryVoltage,

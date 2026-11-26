@@ -35,6 +35,7 @@ public sealed class RobotAnimationSink : IAnimationSink
     // fidelity: M3-012
     /// <summary>Whether the last message this sink sent went out (the stream counts only successful sends, 0x0057BFAE).</summary>
     public bool LastSendSucceeded { get; private set; } = true;
+    public bool SuppressAnimationBodyMotion => _robot.Engine.Robot?.C2CliffHoldActive == true;
 
     private void Send(RobotMessage m) => LastSendSucceeded = _robot.SendMessage(m, flush: true);
 

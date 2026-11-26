@@ -1017,6 +1017,8 @@ public sealed class CozmoSensors
                 else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotImplMessaging.HandleCliffEvent.Undetected", "");
                 if(originalCliffOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,originalCliffOwner))break;
                 lock (_gate) _cliffDetectedByEvent = any;
+                originalCliffOwner.C2ObserveCliffEvent(_robot, any);
+                if(originalCliffOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,originalCliffOwner))break;
                 var report = new CliffReport(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff);
                 lock (_gate)
                 {
@@ -1055,6 +1057,8 @@ public sealed class CozmoSensors
                 lock (_gate) stoppedEnabled = _cliffEnabled;
                 if (stoppedEnabled)
                 {
+                    stoppedOwner.C2ObserveRobotStopped(_robot);
+                    if(stoppedOwner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot,stoppedOwner))break;
                     if (RobotStoppedEndRequestForTest is { } request) request("HandleRobotStopped");
                     else if (stoppedOwner.BehaviorManagerOwner is { } manager)
                         manager.RequestCurrentBehaviorEndImmediately("HandleRobotStopped");

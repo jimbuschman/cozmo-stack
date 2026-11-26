@@ -61,6 +61,10 @@ Operator: "use him as a baseline and then we can improve on some of cozmos abili
 locked into what he could do when he was originally written". Each improvement is built on top of the finished
 baseline, named, switchable back to the engine's behaviour, and recorded here; the baseline's own tests keep passing.
 Candidates so far:
+- **C2:cliff-hold-still** (operator approved 2026-11-26): implemented as a separate animation body hold on detected
+  cliff/firmware stop, leaving other animation tracks and the native retreat decision intact. Host settings on for
+  MCP by default, `--baseline` disables; reported in `get_state`. Offline regression against session 7's stop clip;
+  robot validation pending. Does not establish physical clearance or guarantee no fall.
 - World map memory: he forgets the charger once it is out of sight or after he is picked up (2026-11-19 session:
   charger dropped from knownChargers after leaving it; objects deleted from old origins at re-localisation).
   Operator 2026-11-26: mapping is a main improvement area ("we can do a much better job"). Candidates: a persistent

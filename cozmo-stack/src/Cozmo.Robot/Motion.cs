@@ -1055,6 +1055,8 @@ public sealed class CozmoMotion
             InsertLock(_trackLocks[b], new LockInfo(who, debugName));
             if (_trackLocks[b].Count == 1) newly |= (byte)(1 << b);
         }
+        // C2 overlay already covers this bit; native action locks still retain their owners.
+        if ((scopedOwner ?? _robot.Engine.Robot)?.C2CliffHoldActive == true) newly &= unchecked((byte)~BodyTrack);
         if (newly != 0)
         {
             var message=new DisableAnimTracks { Field0 = newly };
@@ -1096,6 +1098,8 @@ public sealed class CozmoMotion
             }
             if (tree.Count == 0) enable |= (byte)(1 << b);
         }
+        // C2 overlay remains a firmware animation-only lock, even when a native action unlocks.
+        if ((scopedOwner ?? _robot.Engine.Robot)?.C2CliffHoldActive == true) enable &= unchecked((byte)~BodyTrack);
         if (enable != 0)
         {
             var message=new EnableAnimTracks { Field0 = enable };
@@ -1103,6 +1107,19 @@ public sealed class CozmoMotion
             else scopedOwner.SendCheckedOwned(message,current);
         }
         return stillLocked;
+    }
+
+    // C2:cliff-hold-still; coalesce the extra firmware mask with native M4-014
+    // without inserting a lock into the native IActionRunner admission tree.
+    internal bool SetC2CliffAnimationTrack(EngineRobot owner, bool hold)
+    {
+        lock (_gate)
+        {
+            if (owner.Lifetime.Destroying || !ReferenceEquals(_robot.Engine.Robot, owner)) return false;
+            if (IsTrackLockedLocked(BodyTrack)) return true;
+            RobotMessage message = hold ? new DisableAnimTracks { Field0 = BodyTrack } : new EnableAnimTracks { Field0 = BodyTrack };
+            return owner.SendCheckedOwned(message, () => owner.C2CliffHoldActive == hold);
+        }
     }
 
     // fidelity: M4-031
