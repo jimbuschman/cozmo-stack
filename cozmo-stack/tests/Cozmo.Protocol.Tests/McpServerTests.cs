@@ -89,7 +89,7 @@ public sealed class McpServerTests
         await using var client = new Client(bridge);
         await client.Initialize();
         var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
-        Assert.Equal(36, tools.GetArrayLength());
+        Assert.Equal(39, tools.GetArrayLength());
         var map = Assert.Single(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "get_map");
         Assert.Equal(500, map.GetProperty("inputSchema").GetProperty("properties")
             .GetProperty("radiusMm").GetProperty("default").GetInt32());
@@ -135,23 +135,38 @@ public sealed class McpServerTests
     }
 
     [Fact]
-    public async Task PendingActionDoesNotBlockPollingAndClientCanCancelItsNativeOwner()
+    public async Task TrackAdmissionReturnsImmediatelyAndCancellationPushesNativeCompletion()
     {
         using var f = new Fixture();
         using var bridge = new CozmoBridge(f.Rig.Robot);
         await using var client = new Client(bridge);
         await client.Initialize();
-        int call = await client.Send("tools/call", new { name = "track-face", arguments = new { faceId = -7 } });
-        Assert.IsType<NativeTrackFaceRunner>(f.Robot.ActionList.GetCurrentAction());
+        var admission = Data(await client.Tool("track-face", new { faceId = -7 }));
+        Assert.Equal("submitted", admission.GetProperty("status").GetString());
+        Assert.True(admission.GetProperty("admitted").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, admission.GetProperty("engineResult").ValueKind);
+        var runner = Assert.IsType<NativeTrackFaceRunner>(f.Robot.ActionList.GetCurrentAction());
+        uint actionTag = admission.GetProperty("report").GetProperty("actionTag").GetUInt32();
+        Assert.Equal(runner.Tag, actionTag);
         Assert.True((await client.Request("ping", new { })).TryGetProperty("result", out _));
-        Assert.True(Data(await client.Tool("get_state", new { })).TryGetProperty("connection", out _));
-        await client.Notify("notifications/cancelled", new { requestId = call });
+        Assert.Equal(actionTag, Assert.Single(Data(await client.Tool("get_state", new { })).GetProperty("activeActions").EnumerateArray()).GetProperty("actionTag").GetUInt32());
+        f.Rig.Tick(); // Missing face remains running as at 0x00565DE2 and 0x00565428.
+        Assert.Same(runner, f.Robot.ActionList.GetCurrentAction());
+        long cursor = bridge.ReadEvents().GetProperty("cursor").GetInt64();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        Assert.Equal("submitted", Data(await client.Tool("cancel-action", new { actionTag })).GetProperty("status").GetString());
         f.Rig.Tick();
-        var reply = await client.Receive(call);
-        Assert.True(reply.GetProperty("result").GetProperty("isError").GetBoolean());
-        Assert.Equal("NOT_STARTED", Data(reply).GetProperty("engineResultName").GetString());
-        Assert.Equal("NOT_STARTED", Data(reply).GetProperty("why").GetProperty("engineResultName").GetString());
+        f.Rig.Engine.DrainAppDelivery();
         Assert.Null(f.Robot.ActionList.GetCurrentAction());
+        await foreach (var page in bridge.StreamPushEventsAsync(cursor, timeout.Token))
+        {
+            var ended = page.Events.SingleOrDefault(e => e.Type == "action-completed" &&
+                e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == actionTag);
+            if (ended is null) continue;
+            Assert.Equal(0x02000000u, ended.Payload.GetProperty("completion").GetProperty("result").GetUInt32());
+            Assert.Equal(-7, ended.Payload.GetProperty("faceId").GetInt32());
+            break;
+        }
     }
 
     [Fact]
@@ -355,7 +370,7 @@ public sealed class McpServerTests
         using var bridge=new CozmoBridge(f.Rig.Robot);
         await using var client=new Client(bridge);
         await client.Initialize();
-        int action=await client.Send("tools/call",new {name="track-face",arguments=new {faceId=-7,duringDetail=detail}});
+        int action=await client.Send("tools/call",new {name="head",arguments=new {radians=.4f,duringDetail=detail}});
         var clip=f.Rig.Robot.Animations.Library!.GetClip("anim_reacttocliff_pickup_03");
         var ticket=f.Rig.Robot.Animations.PlayTracked(clip)!;
         Assert.DoesNotContain(bridge.ReadEvents().GetProperty("events").EnumerateArray(),e=>e.GetProperty("type").GetString()=="animation-started");

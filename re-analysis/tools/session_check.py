@@ -613,10 +613,40 @@ def matches_interaction_completion(body, object_id):
         0, object_id, 0, 0, 0, 0, 1, 0)
 
 
+def submitted_track_check(session, call, prompt, citation, expected, seconds):
+    """Host admission is not completion: correlate the exact native action tag."""
+    end = min(session.end, call.start + 1000 * seconds)
+    window = (call.start, end)
+    tag = (call.reply.get("report") or {}).get("actionTag")
+    passed = False
+    reason = "The tracking admission has no valid action tag."
+    if type(tag) is int and 0 < tag <= 1_000_000 and call.reply.get("admitted") is True:
+        cancels = [cancel for cancel in session.calls["cancel-action"]
+                   if cancel.args.get("actionTag") == tag and cancel.reply.get("status") == "submitted"
+                   and call.start + 1000 * TRACK_SECONDS <= cancel.start <= end]
+        reports = [(at, body) for at, body in session.in_window(0x5A, *window)
+                   if len(body) >= 14 and struct.unpack_from("<IiI", body)[:2] == (tag, 0x23)]
+        if not cancels:
+            reason = "The round requires cancel-action on the admitted tag after 10 s of tracking."
+        elif len(reports) == 1:
+            at, body = reports[0]
+            offset = 13 + 4 * body[12]
+            passed = (at >= cancels[0].start and struct.unpack_from("<I", body, 8)[0] == expected
+                      and action_completion_variant(body) == 3 and len(body) == offset + 5)
+            reason = (f"Matching TrackFace variant-3 0x5A action tag {tag} at {at:.0f} ms after cancel-action."
+                      if passed else "The native completion did not match cancellation and TrackFace variant 3.")
+        else:
+            reason = f"Tracking tag {tag} had {len(reports)} attributable 0x5A reports in the round window."
+    return session.apply_missing(Verdict(PASSED if passed else SEEN, reason, citation, prompt,
+                                         window, ("track-face", *ACTION_ALIASES["track-face"])))
+
 def action_check(session, name, prompt, citation, expected, seconds, calls=None):
     citation += "; " + COMPLETION
     candidates = []
     for call in session.calls[name] if calls is None else calls:
+        if name == "track-face" and call.reply.get("status") == "submitted":
+            candidates.append(submitted_track_check(session, call, prompt, citation, expected, seconds))
+            continue
         end = min(call.end if call.end is not None else session.end, call.start + 1000 * seconds)
         window = (call.start, end)
         result = call.reply.get("engineResult")
@@ -689,6 +719,8 @@ def face_operation(session, name, step):
     prompt, citation, expected = step
     tools, tag, seconds, outcome = FACE_TOOLS[name]
     citation += f"; E2G 0x{tag:02X}"
+    if tag == 0x1D:
+        citation += "; G2E rename, save and RobotRenamedEnrolledFace broadcast at 0x00657B24"
     if tag == 0x57:
         citation += "; G2E 0x89, remove and attempt album save at 0x00657A60–0x00657A98 before the empty-name report"
     candidates = []
@@ -700,13 +732,17 @@ def face_operation(session, name, step):
             wanted = operation.get("faceId")
             wanted_name = operation.get("name")
             reports = []
-            requested_id_matches = tag != 0x57 or wanted == call.args.get("faceId")
-            if wanted is not None and requested_id_matches and operation.get("outcome") == outcome and call.reply.get("engineResult") == expected:
+            request_matches = tag == 0x56 or wanted == call.args.get("faceId")
+            if tag == 0x1D:
+                request_matches = request_matches and wanted_name == call.args.get("newName")
+            if wanted is not None and request_matches and operation.get("outcome") == outcome and call.reply.get("engineResult") == expected:
                 for at, body in session.in_window(tag, call.start, end):
                     offset = int(tag == 0x56)
                     if len(body) < offset + 5 or struct.unpack_from("<i", body, offset)[0] != wanted:
                         continue
                     if tag == 0x56 and body[0] != expected:
+                        continue
+                    if tag in (0x1D, 0x57) and len(body) != offset + 5 + body[offset + 4]:
                         continue
                     if text8(body, offset + 4) != ("" if tag == 0x57 else wanted_name):
                         continue

@@ -11,7 +11,7 @@ public sealed partial class CozmoBridge
     private sealed record WorldPose(float XMm, float YMm, float ZMm, float HeadingRad, uint OriginId,
         uint? LocalizedToObjectId, uint PoseFrameId, uint? RobotTimestamp, double? AgeMs);
     internal sealed record MapReply(JsonElement Metadata, byte[]? Png);
-    private sealed record MapObject(uint WorldObjectId, string Type, double XMm, double YMm, bool Charger);
+    private sealed record MapObject(uint WorldObjectId, string Type, double XMm, double YMm, bool Charger, ChargerEstimate? ChargerEstimate);
 
     // Caller holds the engine owner and world pose gates. Use the same current pose
     // supplier as Robot::GetRobotState 0x005180E2..0x00518160, including world yaw.
@@ -63,7 +63,8 @@ public sealed partial class CozmoBridge
                         !Pose3d.GetWithRespectTo(item.NativePose, origin, relative)) continue;
                     var point = relative.Translation;
                     if (Math.Abs(point.X - pose.XMm) <= radiusMm && Math.Abs(point.Y - pose.YMm) <= radiusMm)
-                        objects.Add(new(item.ObjectId, item.Type.ToString(), point.X, point.Y, item.Type == ObjectType.Charger_Basic));
+                        objects.Add(new(item.ObjectId, item.Type.ToString(), point.X, point.Y, item.Type == ObjectType.Charger_Basic,
+                            item.Type == ObjectType.Charger_Basic ? ReadChargerEstimate(item, relative, Robot.Engine.Robot!) : null));
                 }
             }
         }

@@ -344,13 +344,14 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
             Run(0x8DC119, new[] { _interface });
             Run(0x8DC17B, new[] { _interface });
             Run(0x8DC3ED, new uint[] { _interface, 22320, 744 });
-            Load(initBank);
-            if (musicBank is not null) Load(musicBank);
+            Load("Init.bnk", initBank);
+            if (musicBank is not null) Load("Music.bnk", musicBank);
             // InitScene order at 0x00593484..0x00593500, iterated at 0x008D2F08..0x008D2F18.
             if (startupBeforeCozmo is not null)
-                foreach (byte[] bank in startupBeforeCozmo) Load(bank);
-            Load(englishBank);
-            if (debugBank is not null) Load(debugBank);
+                for (int i = 0; i < startupBeforeCozmo.Count; i++)
+                    Load(i == 0 ? "UI.bnk" : i == 1 ? "SFX.bnk" : $"startup bank {i}", startupBeforeCozmo[i]);
+            Load("Cozmo.bnk", englishBank);
+            if (debugBank is not null) Load("Dev_Debug.bnk", debugBank);
             Ok(Run(0x9A3100, new uint[] { 7, 0, 1 }), "register game object");
             uint sends = _m.Malloc(8);
             _m.W32(sends, 0x9FA5953C); _m.W32(sends + 4, F(1));
@@ -459,14 +460,21 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
         }
     }
 
-    private void Load(byte[] bank)
+    // Host diagnostic metadata only: preserve the original native failure exception.
+    internal const string BankFailureName = "cozmo.wwise.bank";
+
+    private void Load(string bankName, byte[] bank)
     {
-        ArgumentNullException.ThrowIfNull(bank);
-        if (bank.Length == 0) throw new ArgumentException("Bank is empty", nameof(bank));
-        uint bytes = _m.Malloc((uint)bank.Length), id = _m.Malloc(4);
-        if (bytes == 0 || id == 0) throw new EmulationAbort("native bank allocation failed");
-        _m.Write(bytes, bank); // memory-view bank must remain owned until native teardown
-        Ok(Run(0x9A35F8, new[] { bytes, (uint)bank.Length, id }), "bank load");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(bank);
+            if (bank.Length == 0) throw new ArgumentException("Bank is empty", nameof(bank));
+            uint bytes = _m.Malloc((uint)bank.Length), id = _m.Malloc(4);
+            if (bytes == 0 || id == 0) throw new EmulationAbort("native bank allocation failed");
+            _m.Write(bytes, bank); // memory-view bank must remain owned until native teardown
+            Ok(Run(0x9A35F8, new[] { bytes, (uint)bank.Length, id }), "bank load");
+        }
+        catch (Exception error) { error.Data[BankFailureName] = bankName; throw; }
     }
 
     private StubResult Capture(ArmMachine m)

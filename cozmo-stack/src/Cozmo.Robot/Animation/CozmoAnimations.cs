@@ -183,7 +183,7 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-038
         robot.Engine.CreateGoToSleepSequence = owner => GoToSleepAnimation.CreateOwned(robot, owner, SleepTriggerFactory);
         _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
-        _scheduler.RuntimeAudioSource = () => robot.Engine.Robot is { } owner && robot.Engine.RuntimeWwiseAudio is { } audio
+        _scheduler.RuntimeAudioSource = () => robot.Engine.Robot is { } owner && owner.GetCannedSpeechOwner() is { } audio
             ? (audio, () => !owner.Lifetime.Destroying && ReferenceEquals(robot.Engine.Robot, owner))
             : null;
         _sink.AnimationEvent += e => robot.Engine.QueueAppEvent(Event,e); // Stack string observer, not a second native E2G publication.
@@ -566,10 +566,10 @@ public sealed class CozmoAnimations : IDisposable
     internal bool ClearStreamIfClipMatches(AnimationClip? clip)=>_scheduler.ClearStreamIfClipMatches(clip);
     internal bool ClearStreamIfClipMatches(AnimationClip? clip, Func<bool> current)=>_scheduler.ClearStreamIfClipMatches(clip,current);
 
-    internal AnimationTicket? PlayScopedTracked(AnimationClip clip, EngineRobot owner, int numLoops, Func<bool> current)
+    internal AnimationTicket? PlayScopedTracked(AnimationClip clip, EngineRobot owner, int numLoops, Func<bool> current, bool replaceRunning = true)
     {
         bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot,owner) && current();
-        var handle=_scheduler.PlayScoped(clip,NowMs(),true,numLoops,Current);
+        var handle=_scheduler.PlayScoped(clip,NowMs(),replaceRunning,numLoops,Current);
         if(handle is null)return null;
         StartTicker();
         return new AnimationTicket(handle.Completion,handle.Generation) {Tag=handle.Tag};

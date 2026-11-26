@@ -8,7 +8,7 @@ import struct
 import tempfile
 import unittest
 
-from session_check import NOT_EXERCISED, PASSED, SEEN, Session, enum_members, evaluate, render
+from session_check import NOT_EXERCISED, PASSED, SEEN, Session, action_check, enum_members, evaluate, render
 
 
 class SessionCheckTests(unittest.TestCase):
@@ -45,6 +45,26 @@ class SessionCheckTests(unittest.TestCase):
         session = Session(self.bundle)
         entries = list(evaluate(session))
         return {name: verdict for _, name, verdict in entries}, render(session, entries)
+
+    def test_submitted_tracking_requires_exact_later_cancel_and_variant_three(self):
+        self.request(100, 1, "track-face", faceId=-10)
+        self.reply(105, 1, status="submitted", admitted=True,
+                   report={"actionTag": 7, "requestedFaceId": -10})
+        self.request(10200, 2, "cancel-action", actionTag=8)
+        self.reply(10201, 2, status="submitted", report={"actionTag": 8})
+        self.raw(10250, 0x5A, struct.pack("<IiIBBi", 7, 0x23, 0x02000000, 0, 3, 1))
+        self.check()
+        def verdict():
+            return action_check(Session(self.bundle), "track-face", "", "", 0x02000000, 20)
+        self.assertEqual(SEEN, verdict().status)
+        self.request(101, 3, "cancel-action", actionTag=7)
+        self.reply(102, 3, status="submitted", report={"actionTag": 7})
+        self.check()
+        self.assertEqual(SEEN, verdict().status)
+        self.request(10210, 4, "cancel-action", actionTag=7)
+        self.reply(10211, 4, status="submitted", report={"actionTag": 7})
+        self.check()
+        self.assertEqual(PASSED, verdict().status)
 
     def test_stacked_ghost_missing_downgrades_acknowledge_and_cube_moved(self):
         ids, classes = enum_members("BehaviorID"), enum_members("BehaviorClass")
@@ -457,6 +477,18 @@ class SessionCheckTests(unittest.TestCase):
         self.raw(140, 0x5A, body + bytes((6,)))
         checks, _ = self.check()
         self.assertEqual(PASSED, checks["say-text"].status)
+
+    def test_rename_requires_requested_id_and_name_in_the_exact_rename_report(self):
+        self.request(100, 1, "rename-face", faceId=7, oldName="Drawn", newName="Ada")
+        for tag, face, name, tail in ((0x1D, 8, "Ada", b""), (0x1D, 7, "Other", b""),
+                                      (0x57, 7, "Ada", b""), (0x1D, 7, "Ada", b"x"),
+                                      (0x1D, 7, "Ada", b"")):
+            self.raw(140, tag, struct.pack("<iB", face, len(name)) + name.encode() + tail)
+            self.reply(150, 1, faceOperation={"outcome": "renamed", "faceId": face, "name": name})
+            checks, _ = self.check()
+            expected = PASSED if (tag, face, name, tail) == (0x1D, 7, "Ada", b"") else SEEN
+            self.assertEqual(expected, checks["rename-face"].status)
+            del self.events[-2:]
 
     def test_erase_requires_the_requested_id_and_empty_native_report_name(self):
         self.request(100, 1, "erase-face", faceId=7)

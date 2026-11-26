@@ -235,13 +235,24 @@ independent and both start disabled.
 The default significance list covers newly seen faces, cubes, chargers and
 other located objects, face recognition once per face per minute, object pose
 loss, cube taps and movement, pickup, return to treads from pickup, on-back,
-cliff detection, unexpected movement, reaction transitions, the bridge's own
-action completions, sleep and cancellation, robot disconnect, low battery, and
+cliff detection, unexpected movement, reaction transitions, action completions,
+sleep and cancellation, robot disconnect, low battery, and
 charger contact changes. Face deletion and object pose loss let a later sighting
-count as new. Ordinary repeat sightings stay in the full feed.
+count as new. Ordinary repeat sightings stay in the full feed. The channel pushes
+failed action completions and completions from other callers; it suppresses the
+calling bridge's own SUCCESS completions, which stay in unfiltered `read_events`
+and the session recording (and in ordinary synchronous tool replies). For
+admission-only `track-face`, read the matching terminal event to see success.
 Use `--significant-events face-recognised,reaction-changed` to replace the
 list at startup, or pass `significantEventTypes` when constructing a bridge.
 The setting applies to all readers in that process.
+
+`get_state.physical` and `physicalReactionChecks` expose raw sensor units and the
+last actual strategy checks; they do not re-run reactions. `get_map` charger
+estimates include pitch, roll and the sighting/current viewing angles. The
+`hiccups-started` host event identifies a scheduled versus overfeeding-triggered
+train. See the embedded guide for units, source thresholds, and missing-input
+semantics.
 
 ## Firmware animation guard
 

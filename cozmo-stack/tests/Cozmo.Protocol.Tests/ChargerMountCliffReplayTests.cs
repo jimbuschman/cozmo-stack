@@ -17,6 +17,7 @@ public sealed class ChargerMountCliffReplayTests
 {
     private static string? Bundle => Environment.GetEnvironmentVariable("COZMO_CHARGER_CLIFF_BUNDLE");
     private static string? SessionFive => Environment.GetEnvironmentVariable("COZMO_SESSION5_CHARGER_BUNDLE");
+    private static string? SessionSix => Environment.GetEnvironmentVariable("COZMO_SESSION6_CHARGER_BUNDLE");
 
     [Theory]
     [InlineData(false, 677360, 677875, 14)]
@@ -88,12 +89,13 @@ public sealed class ChargerMountCliffReplayTests
     }
 
     [Theory]
-    [InlineData(false, 602292, 610500, 615450, 615620, 619040, 621950, UnexpectedMovementType.TurnedInOppositeDirection)]
-    [InlineData(true, 922300, 922400, 927225, 927280, 931270, 933423, UnexpectedMovementType.TurnedButStopped)]
-    public async Task RecordedUnexpectedMovementPreemptsTheBackupPath(bool sessionFive, double alignFrom, double alignTo,
+    [InlineData(4, 602292, 610500, 615450, 615620, 619040, 621950, UnexpectedMovementType.TurnedInOppositeDirection)]
+    [InlineData(5, 922300, 922400, 927225, 927280, 931270, 933423, UnexpectedMovementType.TurnedButStopped)]
+    [InlineData(6, 1407490, 1407505, 1412795, 1412820, 1416500, 1418800, UnexpectedMovementType.TurnedInOppositeDirection)]
+    public async Task RecordedUnexpectedMovementPreemptsTheBackupPath(int session, double alignFrom, double alignTo,
         double resultFrom, double resultTo, double reverseFrom, double reverseTo, UnexpectedMovementType expected)
     {
-        if ((sessionFive ? SessionFive : Bundle) is not { Length: > 0 } bundle) return;
+        if ((session switch { 6 => SessionSix, 5 => SessionFive, _ => Bundle }) is not { Length: > 0 } bundle) return;
         var input = RecordedRobotInput.ReadInbound(bundle, at => at >= reverseFrom, reverseTo, [0xF0])
             .Select(row => (row.At, State: Assert.IsType<RobotState>(row.Message))).ToArray();
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);

@@ -136,6 +136,32 @@ public sealed class GenericReactionStrategy : ReactionTriggerStrategy, IDisposab
     private readonly Action? _unsubscribe;
     private bool _latch;
 
+    // Host observation of the actual generic predicate and latch consumption.
+    // No diagnostic invokes a native predicate a second time (0x613948..0x61397E).
+    internal sealed record EventCheck(int Tag, uint AtMs, bool FilterPassed, string? OffTreadsState,
+        string? CliffSensors, bool? StoppedForCliff, string? UnexpectedMovementType);
+    internal sealed record Evaluation(uint AtMs, bool Runnable, bool? WantsToRun, bool? TimeoutPassed,
+        bool? LatchedBefore, string? OffTreadsState, string[]? RequiredOffTreadsStates,
+        EventCheck? LastEvent, uint? TimeoutMs, uint? EventAgeMs);
+    internal Evaluation? LastEvaluation { get; private set; }
+    private EventCheck? _lastEvent;
+    private static readonly string[] InAirStates = [nameof(OffTreadsState.InAir)];
+    private static readonly string[] OnBackStates = [nameof(OffTreadsState.OnBack)];
+    private static readonly string[] OnFaceStates = [nameof(OffTreadsState.OnFace)];
+    private static readonly string[] OnSideStates = [nameof(OffTreadsState.OnLeftSide), nameof(OffTreadsState.OnRightSide)];
+    private static readonly string[] OnTreadsStates = [nameof(OffTreadsState.OnTreads)];
+    private string[]? RequiredStates => Trigger switch
+    {
+        ReactionTrigger.RobotPickedUp => InAirStates, // 0x0060DDCE
+        ReactionTrigger.RobotOnBack => OnBackStates, // 0x0060DEB2
+        ReactionTrigger.RobotOnFace => OnFaceStates, // 0x0060DF16
+        ReactionTrigger.RobotOnSide => OnSideStates, // 0x0060DF7E
+        ReactionTrigger.ReturnedToTreads => OnTreadsStates, // 0x0060DE36..56
+        _ => null,
+    };
+    private bool ObservePhysical => RequiredStates is not null || Trigger is
+        ReactionTrigger.CliffDetected or ReactionTrigger.RobotFalling or ReactionTrigger.UnexpectedMovement;
+
     /// <param name="subscribe">Hooks the events that carry the tags; handed <see cref="AlwaysHandle"/>, returns the unhook.</param>
     /// <param name="clockMs">BaseStationTimer::GetCurrentTimeStamp.</param>
     public GenericReactionStrategy(ReactionTrigger trigger, string basis, Func<uint> clockMs,
@@ -165,27 +191,49 @@ public sealed class GenericReactionStrategy : ReactionTriggerStrategy, IDisposab
     public void AlwaysHandle(int tag, object? message)
     {
         if (!_tags.Contains(tag)) return;
-        lock (_gate) _stamps[tag] = _clockMs();
+        uint stamp;
+        lock (_gate) _stamps[tag] = stamp = _clockMs();
         bool pass = _filter is null || _filter(message);
-        if (pass) lock (_gate) _latch = true;
+        if (pass || ObservePhysical) lock (_gate)
+        {
+            if (pass) _latch = true;
+            if (ObservePhysical) _lastEvent = new(tag, stamp, pass, message is OffTreadsState state ? state.ToString() : null,
+                (message as CliffReport)?.Sensors.ToString(), (message as CliffReport)?.StoppedForCliff,
+                (message as UnexpectedMovementReport)?.Type.ToString());
+        }
     }
 
     /// <summary>WantsToRunInternal.</summary>
-    public bool WantsToRun(CozmoRobot robot)
+    public bool WantsToRun(CozmoRobot robot) => WantsToRun(robot, out _);
+
+    private bool WantsToRun(CozmoRobot robot, out bool latched)
     {
-        bool latched;
         lock (_gate) { latched = _latch; _latch = false; }
         return latched || (_tags.Count == 0 && _callback is not null && _callback(robot));
     }
 
     protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
     {
-        if (!rc.RunningOrRunnable(behavior)) return false;
-        if (!WantsToRun(rc.Context.Robot)) return false;
-        if (TimeoutMs is not { } timeout) return true;
+        bool runnable = rc.RunningOrRunnable(behavior);
+        uint observedAt = rc.Context.Robot.Engine.Timer.TimeStampMs; // host snapshot only
+        if (!runnable) { Observe(false, null, null, null, null, observedAt); return false; }
+        string? state = ObservePhysical && RequiredStates is not null ? rc.Context.Robot.Sensors.OffTreadsState.ToString() : null;
+        bool wants = WantsToRun(rc.Context.Robot, out bool latched);
+        if (!wants) { Observe(true, false, null, latched, state, observedAt); return false; }
+        if (TimeoutMs is not { } timeout) { Observe(true, true, null, latched, state, observedAt); return true; }
         uint now = _clockMs();
         uint since = unchecked(now - timeout);
-        lock (_gate) return _stamps.Values.Any(s => s > since);
+        bool passed;
+        lock (_gate) passed = _stamps.Values.Any(s => s > since);
+        Observe(true, true, passed, latched, state, now);
+        return passed;
+    }
+
+    private void Observe(bool runnable, bool? wants, bool? timed, bool? latched, string? state, uint now)
+    {
+        if (!ObservePhysical) return;
+        lock (_gate) LastEvaluation = new(now, runnable, wants, timed, latched, state, RequiredStates,
+            _lastEvent, TimeoutMs, _lastEvent is { } e ? unchecked(now - e.AtMs) : null);
     }
 
     /// <summary>+0x1C: clears +0x2A (0x60F910), which has no reader (gap1 4j).</summary>
@@ -240,6 +288,15 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
     private double _lastGyroActiveSec;      // C16: starts at 0.0
     private double _lastPickedUpSec;        // C16: starts at 0.0
 
+    internal sealed record Evaluation(double AtSec, double? PitchDeg, double? MaxAbsGyroRadps,
+        double QuietForSec, double LastPickupAgeSec, bool PickedUp, string OffTreadsState,
+        bool PitchInRange, bool GyroQuietLongEnough, bool PickupWindowOpen, bool TreadsAllowed, bool WantsToRun,
+        float MinPitchDeg = PlacedOnSlopeStrategy.MinPitchDeg, float MaxPitchDeg = PlacedOnSlopeStrategy.MaxPitchDeg,
+        float GyroQuietThresholdRadps = PlacedOnSlopeStrategy.GyroQuietRadps,
+        double RequiredQuietSec = PlacedOnSlopeStrategy.QuietForSec, double PickupWindowSec = PlacedOnSlopeStrategy.PutDownWithinSec,
+        bool? Runnable = null);
+    internal Evaluation? LastEvaluation { get; private set; }
+
     public override ReactionTrigger Trigger => ReactionTrigger.RobotPlacedOnSlope;
     public override string Basis => "ReactionTriggerStrategyRobotPlacedOnSlope 0x612EB0..0x612ECC; StrategyRobotPlacedOnSlope ctor 0x6144FC..0x614554, " +
                                     "WantsToRun 0x61455C..0x614688: pitch in (10, 55) deg, quiet > 0.4 s, picked up or < 1.5 s since, +0x355 < 2";
@@ -263,15 +320,29 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
         if (pickedUp) _lastPickedUpSec = nowSec;
 
         float pitchDeg = sensors.OffTreads.PitchRad * BitConverter.UInt32BitsToSingle(0x42652EE1); // 0x0051237E copies Robot+0x304; 0x006145FC reads degrees.
-        if (!(pitchDeg > MinPitchDeg && pitchDeg < MaxPitchDeg)) return false;
-        if (!(nowSec - _lastGyroActiveSec > QuietForSec)) return false;
-        if (!(pickedUp || nowSec - _lastPickedUpSec < PutDownWithinSec)) return false;
-        return sensors.OffTreadsState < OffTreadsState.OnBack;
+        // Same comparisons, same already-updated stamps (0x00614604..0x00614680).
+        double quiet = nowSec - _lastGyroActiveSec, sincePickup = nowSec - _lastPickedUpSec;
+        bool pitchOk = pitchDeg > MinPitchDeg && pitchDeg < MaxPitchDeg;
+        bool quietOk = quiet > QuietForSec;
+        bool pickupOk = pickedUp || sincePickup < PutDownWithinSec;
+        var treads = sensors.OffTreadsState;
+        bool treadsOk = treads < OffTreadsState.OnBack;
+        bool wants = pitchOk && quietOk && pickupOk && treadsOk;
+        LastEvaluation = new(nowSec, float.IsFinite(pitchDeg) ? pitchDeg : null, float.IsFinite(maxGyro) ? maxGyro : null,
+            quiet, sincePickup, pickedUp, treads.ToString(), pitchOk, quietOk, pickupOk, treadsOk, wants);
+        return wants;
     }
 
-    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior) =>
-        WantsToRun(rc.Context.Robot, behavior is SteppedBehavior { NativeBaseInputs: not null }
-            ? rc.Context.Robot.Engine.Timer.SecondsF : rc.NowSec) && behavior.IsRunnable(rc.Context);
+    protected override bool ShouldTriggerBehaviorInternal(ReactionContext rc, IBehavior behavior)
+    {
+        if (!WantsToRun(rc.Context.Robot, behavior is SteppedBehavior { NativeBaseInputs: not null }
+            ? rc.Context.Robot.Engine.Timer.SecondsF : rc.NowSec)) return false;
+        var observation = LastEvaluation;
+        bool runnable = behavior.IsRunnable(rc.Context); // 0x00612EB0..0x00612ECC
+        if (ReferenceEquals(observation, LastEvaluation) && observation is not null)
+            LastEvaluation = observation with { Runnable = runnable };
+        return runnable;
+    }
 
     public override void EnabledStateChanged(BehaviorContext context, bool enabled) { }
 }

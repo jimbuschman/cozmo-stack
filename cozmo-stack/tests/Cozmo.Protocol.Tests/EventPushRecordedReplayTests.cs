@@ -115,8 +115,17 @@ public sealed class EventPushRecordedReplayTests(ITestOutputHelper output)
             e.Payload.GetProperty("from").GetString() == "InAir" && e.Payload.GetProperty("to").GetString() == "Falling");
         Assert.Contains(after, e => e.Type == "off-treads-changed" &&
             e.Payload.GetProperty("from").GetString() == "Falling" && e.Payload.GetProperty("to").GetString() == "OnTreads");
-        Assert.DoesNotContain(after, e => e.Type == "action-completed" &&
-            before.Any(raw => raw.GetProperty("cursor").GetInt64() == e.Cursor));
+        // Full view marked the original caller's completions significant. The
+        // new channel rule keeps its failures plus every foreign completion.
+        foreach (var own in before.Where(e => Type(e) == "action-completed"))
+        {
+            bool success = own.GetProperty("payload").GetProperty("completion").GetProperty("result").GetUInt32() == 0;
+            long cursor = own.GetProperty("cursor").GetInt64();
+            if (success) Assert.DoesNotContain(after, e => e.Cursor == cursor);
+            else Assert.Contains(after, e => e.Cursor == cursor);
+        }
+        foreach (var foreign in full.Where(e => Type(e) == "action-completed" && !e.GetProperty("significant").GetBoolean()))
+            Assert.Contains(after, e => e.Cursor == foreign.GetProperty("cursor").GetInt64());
         Assert.Contains(after, e => e.Type == "action-completed");
         var faces = after.Where(e => e.Type is "face-seen" or "face-recognised").ToArray();
         Assert.NotEmpty(faces);

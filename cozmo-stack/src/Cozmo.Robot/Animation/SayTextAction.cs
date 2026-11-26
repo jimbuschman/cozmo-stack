@@ -10,6 +10,7 @@ internal sealed class SayTextAction : ActionRunner
     private readonly TextToSpeechComponent _speech;
     private readonly byte _operation;
     internal string Text { get; }
+    internal string? HostFailureDetail { get; private set; }
     internal int CannedTracks => _cannedTracks;
     internal float Pitch { get; }
     private volatile bool _retired;
@@ -96,7 +97,7 @@ internal sealed class SayTextAction : ActionRunner
         if (state != 2) return 0x01000000;
         if (_direct || _cannedTrigger is not null)
         {
-            if (!_speech.TakeSpeech(_operation, out var samples)) return 0x03000000;
+            if (!_speech.TakeSpeech(_operation, out var samples)) return PrepareAudioFailed("speech operation has no prepared samples");
             _taken = true;
             _durationMs = (float)(((double)samples.Length / 22050.0) * 1000.0);
             if (_cannedTrigger is not null)
@@ -116,7 +117,8 @@ internal sealed class SayTextAction : ActionRunner
             if (_openForTest is { } open) _opening = open(samples);
             else if (_robot.Engine.RuntimeAudioStarted)
             {
-                if (_owner.GetCannedSpeechOwner() is not { } runtime) return 0x03000000;
+                if (_owner.GetCannedSpeechOwner() is not { } runtime || !runtime.Ready.IsCompletedSuccessfully)
+                    return PrepareAudioFailed(_robot.Engine.RuntimeAudioStartupFailure ?? "shared native audio owner unavailable");
                 _robot.Animations.ReleaseRuntimeAudioForReplacement();
                 _opening = OpenSharedDirectSpeech(runtime, samples);
             }
@@ -134,6 +136,14 @@ internal sealed class SayTextAction : ActionRunner
         return 0x03000000;
     }
 
+    private int PrepareAudioFailed(string reason)
+    {
+        HostFailureDetail = reason;
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "SayTextAction.Init.PrepareAudioEngine.Failed", string.Empty);
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x00561618..0x00561630
+        _robot.Engine.EmitStackLog("M14-006 speech preparation failed: " + reason);
+        return 0x03000000;
+    }
     private async Task<IDirectSpeechSession> OpenSharedDirectSpeech(CannedSpeechOwner runtime, float[] samples) =>
         await runtime.Acquire(samples, () => !_retired && !_owner.Lifetime.Destroying &&
             ReferenceEquals(_robot.Engine.Robot, _owner)).ConfigureAwait(false);
@@ -187,7 +197,7 @@ internal sealed class SayTextAction : ActionRunner
             bool Current() => !_retired && !_owner.Lifetime.Destroying && ReferenceEquals(_robot.Engine.Robot, _owner);
             if (_fitName)
             {
-                if (_robot.Animations.Library is not { } catalog) { _robot.Engine.EmitStackLog("MISSING VOICE-ANIMATION-FIT-1: animation catalog is unavailable"); return 0x03000000; }
+                if (_robot.Animations.Library is not { } catalog) { _robot.Engine.EmitStackLog("Speech animation catalog is unavailable (host fitted-name request)"); return 0x03000000; }
                 try
                 {
                     _fittedClip = SpeechFitBuilder.Build(_durationMs, () =>

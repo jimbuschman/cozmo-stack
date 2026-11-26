@@ -106,6 +106,8 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
             .OrderByDescending(face => face.GetProperty("lastObservedTimestamp").ValueKind == JsonValueKind.Number ? face.GetProperty("lastObservedTimestamp").GetUInt32() : 0)
             .First().GetProperty("faceId").GetInt32();
         int trackId = await client.Send("tools/call", new { name = "track-face", arguments = new { faceId, headOnly = false } });
+        var trackAdmission = Data(await client.Receive(trackId));
+        Assert.Equal("submitted", trackAdmission.GetProperty("status").GetString());
         for (int i = 0; i < 16; i++) { Step(true); await Task.Delay(1); }
         var tracked = Assert.IsType<NativeTrackFaceRunner>(f.Robot.ActionList.GetCurrentAction());
         int settledId = unchecked((int)tracked.GetCompletionUnion());
@@ -137,8 +139,8 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
         var cancel = Data(await client.Tool("cancel-action", new { actionTag }));
         Assert.Equal("submitted", cancel.GetProperty("status").GetString());
         for (int i = 0; i < 4; i++) Step(false);
-        var trackReply = await client.Receive(trackId);
-        Assert.Equal("CANCELLED_WHILE_RUNNING", Data(trackReply).GetProperty("engineResultName").GetString());
+        var trackReply = TrackCompletion(actionTag);
+        Assert.Equal("CANCELLED_WHILE_RUNNING", trackReply.GetProperty("resultName").GetString());
         // An unmatched fresh face is not a native ID remap. Ask get_state for the newest ID
         // and make a new request, rather than silently retargeting the first tracker.
         var refreshed = Data(await client.Tool("get_state", new { }));
@@ -151,11 +153,14 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
         phase = "lateral";
         int lateralStart = bodyWire.Count;
         int lateralCall = await client.Send("tools/call", new { name = "track-face", arguments = new { faceId = lateralId, headOnly = false } });
+        var lateralAdmission = Data(await client.Receive(lateralCall));
+        Assert.Equal("submitted", lateralAdmission.GetProperty("status").GetString());
+        uint lateralTag = lateralAdmission.GetProperty("report").GetProperty("actionTag").GetUInt32();
         for (int i = 0; i < 8; i++) { Step(true); await Task.Delay(1); }
         int lateralCommands = bodyWire.Count - lateralStart;
-        await client.Notify("notifications/cancelled", new { requestId = lateralCall });
+        Assert.Equal("submitted", Data(await client.Tool("cancel-action", new { actionTag = lateralTag })).GetProperty("status").GetString());
         for (int i = 0; i < 4; i++) Step(false);
-        var lateralReply = await client.Receive(lateralCall);
+        var lateralReply = TrackCompletion(lateralTag);
         var report = new { faceId, lateralId, lateralCommands, lateralBearing, followBodyCommands, refreshed, lateralReply, captureHead = captureState.HeadAngle, pictures = pictures.Select(p => new { p.Timestamp, hash = Convert.ToHexString(SHA256.HashData(p.Pixels)) }),
             stateReply, turnReply, trackReply, turnCommands, commands, frames, missing };
         string? reportPath = Environment.GetEnvironmentVariable("COZMO_FACE_TRACK_REPORT");
@@ -163,7 +168,7 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
         output.WriteLine($"face={faceId}; reports={reports.Count}; turnCommands={turnCommands}; totalCommands={commands.Count}; missing={string.Join(" | ", missing.Distinct())}");
         Assert.True(Data(turnReply).GetProperty("admitted").GetBoolean(), turnReply.ToString());
         Assert.Equal(0u, Data(turnReply).GetProperty("engineResult").GetUInt32());
-        Assert.Equal(0x02000000u, Data(trackReply).GetProperty("engineResult").GetUInt32());
+        Assert.Equal(0x02000000u, trackReply.GetProperty("completion").GetProperty("result").GetUInt32());
         Assert.NotEmpty(headWire);
         Assert.True(headWire[0].AngleRad > captureState.HeadAngle);
         Assert.True(lateralCommands > 0, "The new lateral face must produce an actual body command.");
@@ -175,13 +180,20 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
         Assert.Equal(turnFaceId, Data(turnReply).GetProperty("report").GetProperty("requestedFaceId").GetInt32());
         Assert.Equal(turnFaceId, Data(turnReply).GetProperty("report").GetProperty("faceId").GetInt32());
         Assert.Equal("completed", Data(turnReply).GetProperty("report").GetProperty("endReason").GetString());
-        Assert.Equal(1, Data(trackReply).GetProperty("report").GetProperty("faceId").GetInt32());
-        Assert.Equal(faceId, Data(trackReply).GetProperty("report").GetProperty("requestedFaceId").GetInt32());
-        Assert.Equal("cancelled-while-running", Data(trackReply).GetProperty("report").GetProperty("endReason").GetString());
-        Assert.False(Data(trackReply).GetProperty("report").GetProperty("callerCancellationRequested").GetBoolean());
-        Assert.Equal(0x02000000u, Data(lateralReply).GetProperty("engineResult").GetUInt32());
-        Assert.Equal(lateralId, Data(lateralReply).GetProperty("report").GetProperty("faceId").GetInt32());
-        Assert.True(Data(lateralReply).GetProperty("report").GetProperty("callerCancellationRequested").GetBoolean());
+        Assert.Equal(1, trackReply.GetProperty("faceId").GetInt32());
+        Assert.Equal(faceId, trackAdmission.GetProperty("report").GetProperty("requestedFaceId").GetInt32());
+        Assert.Equal(actionTag, trackAdmission.GetProperty("report").GetProperty("actionTag").GetUInt32());
+        Assert.Equal((byte)3, trackReply.GetProperty("completion").GetProperty("completionVariant").GetByte());
+        Assert.Equal(0x02000000u, lateralReply.GetProperty("completion").GetProperty("result").GetUInt32());
+        Assert.Equal(lateralId, lateralReply.GetProperty("faceId").GetInt32());
+        Assert.Equal(lateralId, lateralAdmission.GetProperty("report").GetProperty("requestedFaceId").GetInt32());
         Assert.DoesNotContain(missing, line => line.Contains("native camera-frame face position unavailable", StringComparison.Ordinal));
+        JsonElement TrackCompletion(uint tag)
+        {
+            f.Rig.Engine.DrainAppDelivery();
+            return Assert.Single(bridge.ReadEvents().GetProperty("events").EnumerateArray(),
+                e => e.GetProperty("type").GetString() == "action-completed" &&
+                     e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == tag).GetProperty("payload");
+        }
     }
 }

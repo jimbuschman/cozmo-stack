@@ -6,6 +6,8 @@ namespace Cozmo.Robot.Behavior;
 // fidelity: M10-003, M10-016
 // The canonical reaction map supplies the robot-owned inputs, configured target,
 // shared RNG and whiteboard and retains the strategy until manager teardown.
+internal enum HiccupStartSource { Scheduled, OverfeedingNotification }
+
 internal sealed class HiccupReactionStrategy : ReactionTriggerStrategy, IDisposable
 {
     internal static HiccupReactionStrategy? NativeGlobal { get; private set; }
@@ -22,6 +24,8 @@ internal sealed class HiccupReactionStrategy : ReactionTriggerStrategy, IDisposa
     private readonly Action<bool, uint> _das;
     private readonly Action<string> _missing;
     private readonly Action _disabledInput;
+    private readonly Action<HiccupStartSource>? _started;
+    private HiccupStartSource _pendingStartSource;
     private readonly List<IDisposable> _subscriptions = new();
     private readonly uint _minOccurrence, _maxOccurrence, _minCount, _maxCount, _minSpacing, _maxSpacing, _cureDelay;
     private uint _occurrence, _spacing, _remaining, _total, _first;
@@ -32,11 +36,11 @@ internal sealed class HiccupReactionStrategy : ReactionTriggerStrategy, IDisposa
         Func<uint> now, Func<bool> feature, Func<bool?> unlocked, Func<int> severe,
         Func<int, int> bracket, Action<int> needs, Action<bool> report, Action<float> keepAlive,
         Action<bool, uint> das, Action<string> missing, Func<HiccupReactionStrategy, IDisposable>? subscribeBase = null,
-        Action? disabledInput = null)
+        Action? disabledInput = null, Action<HiccupStartSource>? started = null)
     {
         _whiteboard = whiteboard; _rng = rng; _now = now; _feature = feature; _unlocked = unlocked;
         _severe = severe; _bracket = bracket; _needs = needs; _report = report;
-        _keepAlive = keepAlive; _das = das; _missing = missing;
+        _keepAlive = keepAlive; _das = das; _missing = missing; _started = started;
         _disabledInput = disabledInput ?? (() => missing("ReactionTriggerStrategyHiccup.OverfedButHiccupDisabled 0x00610A7C"));
         unchecked {
             _minOccurrence = (uint)(p?.MinHiccupOccurrenceFrequencySec ?? 0) * 1000;
@@ -76,6 +80,8 @@ internal sealed class HiccupReactionStrategy : ReactionTriggerStrategy, IDisposa
         _remaining = _total = Draw(_minCount, _maxCount);
         _occurrence = _spacing = unchecked(now + Draw(_minOccurrence, _maxOccurrence));
         _first = 0;
+        // Host provenance only: native ResetHiccups chooses a fresh timer (0x006101B2..0x006101DA).
+        _pendingStartSource = HiccupStartSource.Scheduled;
         if (_reported) { _reported = false; _report(false); }
         if (_disposed) return;
         _whiteboard.HiccupsActive = false;
@@ -125,7 +131,13 @@ internal sealed class HiccupReactionStrategy : ReactionTriggerStrategy, IDisposa
         if (disabled) return false;
         uint old = _remaining; _remaining = unchecked(_remaining - 1);
         if (old == 0) { Cure(false); return false; }
-        if (!_reported) { _reported = true; _report(true); }
+        if (!_reported)
+        {
+            _reported = true;
+            var source = _pendingStartSource;
+            _report(true); // Native E2G 0x38 at 0x006107DA..0x006107FE is unchanged.
+            if (!_disposed) _started?.Invoke(source);
+        }
         if (_disposed) return false;
         if (target is null) return MissingTarget();
         target.ReplaceTriggers(new[] { _remaining == unchecked(_total - 1) ? AnimationTrigger.HiccupGetIn : AnimationTrigger.Hiccup });
@@ -166,6 +178,8 @@ internal sealed class HiccupReactionStrategy : ReactionTriggerStrategy, IDisposa
         }
         uint now = _now(); if (_disposed) return;
         _occurrence = _spacing = now;
+        // 0x00610A58..0x00610A68 advances the existing deadline; it is not a required start signal.
+        if (!_reported) _pendingStartSource = HiccupStartSource.OverfeedingNotification;
     }
     internal void AddSubscription(IDisposable subscription)
     {

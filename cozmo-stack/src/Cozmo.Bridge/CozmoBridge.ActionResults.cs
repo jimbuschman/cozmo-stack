@@ -1,10 +1,68 @@
 using Cozmo.Robot;
 using Cozmo.Robot.Manipulation;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Bridge;
 
 public sealed partial class CozmoBridge
 {
+    // Host-only nonblocking admission. The native TrackFace action remains owned by the
+    // ActionList (0x0052ACC0..0x0052ACE6, 0x00527A74..0x00527A8C) until its real terminal event.
+    private async Task<CommandResult> TrackFace(int faceId, bool headOnly, CancellationToken token)
+    {
+        uint? admittedTag = null;
+        var completion = Robot.Motion.QueueAiTrackFaceAsync(faceId, headOnly, token, tag => admittedTag = tag);
+        if (admittedTag is not { } tag) return await FromAction(completion).ConfigureAwait(false);
+        _ = ObserveTrackFaceCompletion(completion);
+        return new CommandResult("submitted", true, null, null, "Native face tracking admitted; completion will be reported in events",
+            Report: new { actionTag = tag, requestedFaceId = faceId });
+    }
+
+    private async Task ObserveTrackFaceCompletion(Task<AiTrackFaceActionResult> completion)
+    {
+        try { await completion.ConfigureAwait(false); }
+        catch (Exception error) { Robot.Engine.EmitStackLog("Track-face completion observation failed: " + error.Message); }
+    }
+
+    private static bool IsRequestableBehavior(string id) => id is not
+        ("FactoryTest" or "FactoryCentroidExtractor" or "LiftLoadTest" or "DockingTestSimple" or "DevTurnInPlaceTest");
+
+    private Task<CommandResult> RequestBehavior(string id, AnimationTrigger? trigger, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        if (owner is null || !engine.IsReadyDelivered) return Task.FromResult(CommandResult.NotReady());
+        return Task.FromResult(engine.InvokeEngineRequest(() =>
+        {
+            token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(engine.Robot, owner) || owner.Lifetime.Destroying ||
+                owner.NativeBehaviorRuntime is not { IsRetired: false } runtime) return CommandResult.NotReady();
+            if (!IsRequestableBehavior(id)) return new CommandResult("not-admitted", false, null, null, "Factory and dev behavior is excluded.");
+            if (id == "PlayArbitraryAnim" && trigger is null)
+                return new CommandResult("not-admitted", false, null, null, "Use play-arbitrary-anim to supply the required trigger.");
+            return runtime.RequestHostBehavior(id, trigger, out int nativeRunCount)
+                ? CommandResult.Posted() with { Report = new { behavior = id, numRuns = 1, nativeRunCount, trigger = trigger?.ToString() } }
+                : new CommandResult("not-admitted", false, null, null, "The original configured behavior owner or input is unavailable.");
+        }));
+    }
+
+    private Task<CommandResult> RequestSpark(string name, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        if (owner is null || !engine.IsReadyDelivered) return Task.FromResult(CommandResult.NotReady());
+        return Task.FromResult(engine.InvokeEngineRequest(() =>
+        {
+            token.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(engine.Robot, owner) || owner.Lifetime.Destroying ||
+                owner.NativeBehaviorRuntime is not { IsRetired: false } runtime) return CommandResult.NotReady();
+            return runtime.RequestHostSpark(name)
+                ? CommandResult.Posted() with { Report = new { spark = name } }
+                : new CommandResult("not-admitted", false, null, null, "The named Spark activity is unavailable or a command is still active.");
+        }));
+    }
     private Task<CommandResult> CancelAction(uint tag, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();

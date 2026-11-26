@@ -38,6 +38,8 @@ public sealed class AiAuthoredAnimationTests
         await runtime.Ready.WaitAsync(TimeSpan.FromSeconds(25));
         Assert.Same(runtime, f.Robot.GetCannedSpeechOwner());
         Assert.Null(f.Rig.Robot.Animations.AudioSource);
+        Assert.Equal(RobotAudioOutputSource.PlayOnRobot, f.Rig.Robot.Animations.Scheduler.OutputSource!());
+        Assert.Same(runtime, f.Rig.Robot.Animations.Scheduler.RuntimeAudioSource!()!.Value.Audio);
         var library = f.Rig.Robot.Animations.Library!;
         var group = library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
         var clip = library.GetClip(group.Entries[0].Name);
@@ -45,6 +47,9 @@ public sealed class AiAuthoredAnimationTests
         Assert.NotNull(f.Rig.Robot.Animations.PlayTracked(clip, numLoops: 0));
         await WaitForAudibleSample(mark, clip.Name);
         Assert.True(f.Rig.Logged("Audio engine loaded InitScene"));
+        Assert.False(f.Rig.Logged("MISSING M6-028 authored animation audio"));
+        Assert.False(f.Rig.Logged("MISSING: RobotAudioClient::CreateAudioAnimation"));
+        Assert.False(f.Rig.Logged("MISSING: ClearSendBuffer tag"));
 
         // The live speech action replaces the incumbent animation and acquires the same context worker.
         var speech = new TextToSpeechComponent((_, _, _) => Enumerable.Repeat(.25f, 44100).ToArray());
@@ -246,7 +251,7 @@ public sealed class AiAuthoredAnimationTests
     }
 
     [Fact]
-    public void MissingStartupArchiveLeavesEngineRunningAndReportsMissing()
+    public void MissingStartupArchiveLeavesEngineRunningAndReportsOperationalFailure()
     {
         var log = new List<string>();
         using var rig = new M4ControlTests.Rig(engineOptions: new CozmoEngineOptions { BlockPoolPath = "" },
@@ -257,7 +262,41 @@ public sealed class AiAuthoredAnimationTests
             });
         rig.Tick();
         Assert.Null(rig.Engine.RuntimeWwiseAudio);
-        Assert.Contains(log, line => line.Contains("MISSING M6-024 InitScene"));
+        Assert.Contains(log, line => line.Contains("M6-024 InitScene failed:"));
+    }
+
+    [Fact]
+    public async Task FailedAuthoredAudioAdmissionLeavesTheVisualStreamRunning()
+    {
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string archive = Path.Combine(Path.GetTempPath(), $"cozmo-authored-audio-{Guid.NewGuid():N}.zip");
+        try
+        {
+            using (System.IO.Compression.ZipFile.Open(archive, System.IO.Compression.ZipArchiveMode.Create)) { }
+            var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+                SpeechAudioArchivePath = archive, BlockPoolPath = "" };
+            using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true,
+                pumpAnimations: true, sourceNvEmpty: true, engineOptions: options,
+                engineCreated: engine => engine.RuntimeAudioSinkForTest = () => new Sink());
+            var runtime = Assert.IsType<CannedSpeechOwner>(f.Rig.Engine.RuntimeWwiseAudio);
+            Assert.True(runtime.Ready.IsFaulted);
+            var library = f.Rig.Robot.Animations.Library!;
+            var group = library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
+            var clip = library.GetClip(group.Entries[0].Name);
+            int mark = f.Rig.Mark();
+            Assert.NotNull(f.Rig.Robot.Animations.PlayTracked(clip, numLoops: 0));
+            for (int i = 0; i < 100 && !f.Rig.SentSince(mark).OfType<StartOfAnimation>().Any(); i++)
+            {
+                f.Rig.Tick();
+                await Task.Delay(10);
+            }
+            Assert.True(f.Rig.Logged("M6-028 authored animation audio admission failed:"));
+            Assert.False(f.Rig.Logged("MISSING M6-028 authored animation audio"));
+            Assert.Contains(f.Rig.SentSince(mark), message => message is StartOfAnimation);
+            Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is AudioSample);
+            Assert.Equal(clip.Name, f.Rig.Robot.Animations.Scheduler.Playing);
+        }
+        finally { if (File.Exists(archive)) File.Delete(archive); }
     }
 
     [Fact]
@@ -468,34 +507,56 @@ public sealed class AiAuthoredAnimationTests
     }
 
     [Fact]
-    public async Task BusySharedRecipientFailsWithoutClearingSameClipIncumbent()
+    public async Task AuthoredActionReplacesStreamingPredecessorBeforeAcquiringItsAudio()
     {
-        if(!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null)return;
-        string banks=GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
-        string archive=Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("archive missing"),"AudioAssets.zip");
-        var options=new CozmoEngineOptions { ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),
-            SpeechSoundBankDirectory=banks,SpeechAudioArchivePath=archive,LabLocaleLanguage="en",BlockPoolPath="" };
-        using var f=new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true,engineOptions:options);
-        var sink=new Sink();f.Robot.CannedSpeechSinkForTest=()=>sink;
-        var library=f.Rig.Robot.Animations.Library!;
-        var group=library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
-        var original=group.Entries;
-        var entry=original[0];group.Entries=new[]{entry};
-        var lease=await f.Robot.GetCannedSpeechOwner()!.AcquireOrdinary(()=>true).WaitAsync(TimeSpan.FromSeconds(15));
+        if (!OperatingSystem.IsWindows() || ShippedLibraries.FindLibDir() is null) return;
+        string banks = GraphRig.FindMeta() ?? throw new InvalidOperationException("shipped banks missing");
+        string archive = Path.Combine(WwiseAssets.SoundDir ?? throw new InvalidOperationException("archive missing"), "AudioAssets.zip");
+        var options = new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            SpeechSoundBankDirectory = banks, SpeechAudioArchivePath = archive, LabLocaleLanguage = "en", BlockPoolPath = "" };
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, pumpAnimations: true,
+            sourceNvEmpty: true, engineOptions: options);
+        var sink = new Sink(); f.Robot.CannedSpeechSinkForTest = () => sink;
+        var library = f.Rig.Robot.Animations.Library!;
+        var group = library.GetGroup(library.GetAnimationForTrigger(AnimationTrigger.InteractWithFaceTrackingIdle))!;
+        var original = group.Entries;
+        group.Entries = new[] { original[0] };
         try
         {
-            var clip=library.GetClip(entry.Name);
-            Assert.NotNull(f.Rig.Robot.Animations.PlayTracked(clip,numLoops:0));
-            Assert.Equal(clip.Name,f.Rig.Robot.Animations.Scheduler.Playing);
-            var task=f.Rig.Robot.Motion.QueueAiAnimationAsync(AnimationTrigger.InteractWithFaceTrackingIdle);
-            for(int i=0;i<10 && !task.IsCompleted;i++)f.Rig.Tick();
-            var result=await task.WaitAsync(TimeSpan.FromSeconds(2));
-            Assert.True(result.Admitted);
-            Assert.Equal(0x03000000u,result.EngineResult);
-            Assert.Contains("MISSING",result.Detail);
-            Assert.Equal(clip.Name,f.Rig.Robot.Animations.Scheduler.Playing);
+            var clip = library.GetClip(original[0].Name);
+            var old = Assert.IsType<AnimationTicket>(f.Rig.Robot.Animations.PlayTracked(clip, numLoops: 0));
+            await WaitForAudio(f.Rig.Mark());
+            using var cancel = new CancellationTokenSource();
+            int mark = f.Rig.Mark();
+            var task = f.Rig.Robot.Motion.QueueAiAnimationAsync(AnimationTrigger.InteractWithFaceTrackingIdle, loops: 0, cancellationToken: cancel.Token);
+            await WaitForAudio(mark);
+            Assert.True(old.Completion.IsCompleted);
+            Assert.Contains(f.Rig.SentSince(mark), message => message is AbortAnimation);
+            Assert.False(task.IsCompleted);
+            Assert.False(f.Rig.Logged("predecessor handoff is not established"));
+            Assert.False(f.Rig.Logged("shared authored audio retirement did not complete"));
+            cancel.Cancel(); f.Rig.Tick();
+            Assert.Equal(0x02000000u, (await task.WaitAsync(TimeSpan.FromSeconds(2))).EngineResult);
         }
-        finally {group.Entries=original;lease.Retire();}
+        finally { group.Entries = original; }
+
+        async Task WaitForAudio(int from)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            while (DateTime.UtcNow < deadline)
+            {
+                sink.CompleteOne();
+                var stream = f.Rig.Robot.Animations.Scheduler.Stream;
+                f.Rig.Data(new AnimationState { NumAudioFramesPlayed = stream.FramesStreamed, NumAnimBytesPlayed = stream.BytesStreamed });
+                f.Motors(RobotStatusFlag.IsBodyAccMode);
+                var sent = f.Rig.SentSince(from);
+                if (sent.OfType<StartOfAnimation>().LastOrDefault() is { } start)
+                    f.Rig.Data(new AnimationStarted { AnimId = start.AnimId });
+                if (sent.OfType<AudioSample>().Any(sample => sample.Samples.Any(b => b is not (0xFF or 0x7F)))) return;
+                await Task.Delay(10);
+            }
+            Assert.Fail("The actual authored streamer did not emit audible PCM after owner handoff");
+        }
     }
 
     [Fact]

@@ -16,7 +16,6 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     private readonly Queue<(BehaviorAudioRequest Request, Action<BehaviorAudioRequest, uint>? Applied)> _pendingBehaviorAudio = new();
     private bool _reportedBehaviorAudioStartup;
     private bool _retired;
-    private bool _leaseRetiring;
 
     internal CannedSpeechOwner(string library, string? banks, string archive, Action<string> report, Func<IPlatformPcmSink>? sink = null, bool initScene = false)
     {
@@ -36,11 +35,15 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
         return await NativeWwiseVoiceSession.OpenSharedAsync(library, init, english, archive, _buffer,
             () => Environment.TickCount64, sink, music, beforeCozmo, debug).ConfigureAwait(false);
 
-        Task<byte[]> ReadBankAsync(string entry)
+        async Task<byte[]> ReadBankAsync(string entry)
         {
-            string? file = banks is null ? null : Path.Combine(banks, entry);
-            return File.Exists(file) ? File.ReadAllBytesAsync(file!) : Task.Run(() =>
-                ReadArchivedBank(archive, entry) ?? throw new FileNotFoundException($"Wwise bank {entry} is unavailable", archive));
+            try
+            {
+                string? file = banks is null ? null : Path.Combine(banks, entry);
+                return await (File.Exists(file) ? File.ReadAllBytesAsync(file!) : Task.Run(() =>
+                    ReadArchivedBank(archive, entry) ?? throw new FileNotFoundException($"Wwise bank {entry} is unavailable", archive))).ConfigureAwait(false);
+            }
+            catch (Exception error) when (initScene) { error.Data[NativeWwiseVoiceHost.BankFailureName] = Path.GetFileName(entry); throw; }
         }
     }
 
@@ -61,7 +64,6 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
 
     internal Task<CannedSpeechLease> Acquire(float[] samples, Func<bool> current) => AcquireCore(samples,current);
     internal Task<CannedSpeechLease> AcquireOrdinary(Func<bool> current) => AcquireCore(null,current);
-    internal Task<CannedSpeechLease> AcquireOrdinaryIfAvailable(Func<bool> current) => AcquireCore(null,current, true);
     internal Task Ready => _opening;
     internal bool MusicAvailable => _opening.IsCompletedSuccessfully && _opening.Result.HasMusic;
     internal Task RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds, Func<bool> current, EnrollmentMusicScope? scope = null)
@@ -81,7 +83,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
     {
         if (!_opening.IsCompletedSuccessfully) return;
         var stop = _opening.Result.StopMusicStateAsync(state, scope);
-        _ = stop.ContinueWith(failed => _report("MISSING M1-064 enrollment music cleanup failed: " +
+        _ = stop.ContinueWith(failed => _report("M1-064 enrollment music cleanup failed: " +
             failed.Exception!.GetBaseException().Message), CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
@@ -104,7 +106,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
             if (!_reportedBehaviorAudioStartup)
             {
                 _reportedBehaviorAudioStartup = true;
-                _report("MISSING M13-039 Freeplay Wwise startup: " + _opening.Exception!.GetBaseException().Message);
+                _report("M13-039 Freeplay Wwise startup failed: " + _opening.Exception!.GetBaseException().Message);
             }
             return;
         }
@@ -117,7 +119,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
                     _report($"Audio M13-039 Wwise rejected request 0x{request.Id:X8} (result {result})");
                 entry.Applied?.Invoke(request, result);
             }).ContinueWith(task =>
-                _report("MISSING M13-039 Freeplay Wwise request: " + task.Exception!.GetBaseException().Message),
+                _report("M13-039 Freeplay Wwise request failed: " + task.Exception!.GetBaseException().Message),
                 CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
     }
 
@@ -137,28 +139,19 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
         try
         {
             if (!tick.Wait(TimeSpan.FromSeconds(2)))
-                _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail worker timed out");
+                _report("MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail host worker timed out");
         }
         catch (AggregateException ex)
         {
-            _report("MISSING MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail failed: " + ex.GetBaseException().Message);
+            _report("MEET-COZMO-NAMED-ENROLLMENT-1: music audio-tail host worker failed: " + ex.GetBaseException().Message);
         }
     }
-    private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current, bool refuseBusy = false)
+    private async Task<CannedSpeechLease> AcquireCore(float[]? samples, Func<bool> current)
     {
-        if (refuseBusy)
-        {
-            bool acquired;
-            lock (_gate)
-            {
-                acquired=_lease.Wait(0);
-                if (!acquired && !_leaseRetiring)
-                    throw new InvalidOperationException("MISSING: shared authored audio is already owned; predecessor handoff is not established");
-            }
-            if (!acquired && !await _lease.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false))
-                throw new TimeoutException("MISSING: shared authored audio retirement did not complete");
-        }
-        else await _lease.WaitAsync().ConfigureAwait(false);
+        // 0x00599FF8..0x0059A06C and 0x0059678E..0x005967B4: predecessor abort/clear
+        // precedes successor construction. The streamer initiates retirement; wait for its
+        // host dispatch fence without rejecting the action or timing out on a host scheduling delay.
+        await _lease.WaitAsync().ConfigureAwait(false);
         NativeWwiseVoiceSession.SharedGeneration? generation = null;
         try
         {
@@ -179,8 +172,7 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
         }
     }
 
-    internal void MarkLeaseRetiring() { lock (_gate) _leaseRetiring=true; }
-    internal void Released() { lock (_gate) { _leaseRetiring=false; _lease.Release(); } }
+    internal void Released() { lock (_gate) _lease.Release(); }
     internal void Observe(Task task) => _ = task.ContinueWith(t =>
     {
         if (t.Exception is { } error) _report("M14-006 shared audio: " + error.GetBaseException().Message);
@@ -248,7 +240,6 @@ internal sealed class CannedSpeechLease : IDirectSpeechSession
     {
         WwiseRobotAudioPath path;
         lock (_pathGate) { if (_retired != 0) return; _retired=1; path=_path; }
-        _owner.MarkLeaseRetiring();
         Task stopped = path.RetireWithoutAbort();
         _owner.Observe(stopped);
         _ = stopped.ContinueWith(_ => { _generation.Dispose(); _owner.Released(); }, TaskScheduler.Default);

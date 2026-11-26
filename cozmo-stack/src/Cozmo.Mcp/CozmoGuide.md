@@ -9,7 +9,10 @@
 - Use the current `worldObjectId` from `knownCubes` or `knownChargers` for object actions. `factoryId` and `radioObjectId` identify different things. Face actions use the signed `faceId` from state/events; follow `face-id-changed` updates.
 - Read the entire action result, including `detail`, `report`, `during` and any `why`. Then check fresh state or camera observations for the physical result.
 - While a call is pending, other state, camera and event calls remain available. Use `read_events` with the last returned `cursor` as `since`. Set `waitMs` up to 30000 to wait for matching events. Set `significantOnly: true` to wait for events marked significant in the selected view. Choose `types` to include or `excludeTypes` to exclude named event types. `limit` counts matching events before compaction and defaults to 100. Reuse the new cursor even if a page has fewer than 100 events. An empty page after waiting is a timeout. `gap=true` means older events were evicted [senses].
-- Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` may remain pending. Read `activeActions` in `get_state` and call `cancel-action` with your tracking action's `actionTag` to end it. The tracking call returns its native result.
+- Use `request-behavior` with a shipped BehaviorID (e.g. `VC_SearchForFace`, `VC_ComeHere`, `VC_HowAreYouDoing_AllGood`, `Hiking_LookInPlace360`, `SparksLookInPlace`, `EarnedSparks`). It submits one native Selection run; the engine decides readiness, reactions and whether it runs. Watch behavior-change events, not the submitted reply. If Freeplay was enabled, the activity returns after that run is spent.
+- `request-spark` takes the exact shipped Spark name: BuildPyramid, CozmoSings, FireTruckAlarm, FistBump, SparksGatherCubes, KnockOverThreeCubeStack, PeekABoo, PickupCube, PopAWheelieAction, PounceOnMotionAction, RollCube, StackTwoCubes, TrackLaser, Workout. Count cancels. It enables Freeplay if needed and gives the raw requested Spark to the engine; admission is not a claim that it ran.
+- `play-arbitrary-anim` takes a shipped AnimationTrigger and requests one PlayArbitraryAnim behavior run; unlike a direct animation action, it runs the configured behavior.
+- Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` returns on admission with `report.actionTag`; tracking continues until the native action ends or is cancelled. Read `activeActions` in `get_state` and call `cancel-action` with that tag to end it. Read the matching `action-completed` event for the native result.
 - Before a multi-step task like stacking or enrolling a face, use `lock-reactions` with a task-specific ID and the reaction triggers you need to suppress. For example, lock `["CubeMoved","ObjectPositionUpdated"]` while stacking. Trigger names are case-sensitive. `"all"` disables every mapped trigger while the lock is held. Use `unlock-reactions` with the same ID when the task ends. Other IDs continue to hold their locks.
 
 ## Reading results
@@ -36,8 +39,10 @@ and send one newline-terminated JSON subscription to `127.0.0.1:8765`, such as
 the MCP server arguments and enable the configured server as a development
 channel. It pushes significant event pages after initialization. Reactions carry
 trigger names and the names of the behaviors that started or ended. Falling and
-landing after a fall are significant. Completions from other callers still push,
-and your own completions are available in tool results and `read_events`.
+landing after a fall are significant. Failed completions and completions from
+other callers are pushed. Your own successful completions are not pushed; they
+remain in ordinary tool results and `read_events`. For admission-only
+`track-face`, read the matching terminal event to see success.
 
 The channel reports a face once per approach and again on recognition or an
 identity change. It can fold a new temporary ID into one nearby approach if the
@@ -88,6 +93,8 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `timestampUtc` | Host UTC time of this snapshot. |
 | `connection` | `connected`, engine `ready`, and transport `link`; readiness comes from delivered engine readiness. |
 | `batteryVolts` | Latest robot battery reading, or null without a connected state. |
+| `physical` | Latest F0 robot timestamp, signed `pitchRad`, `rollRad` (null: firmware sends pitch/yaw, not roll), raw `gyroRadps` (x/y/z rad/s), `accelerometerMmps2` (x/y/z mm/s²), filtered acceleration and magnitude (mm/s²), raw status and native motion/treads flags. `still` complements `moving`; it is not a new IMU classifier. |
+| `physicalReactionChecks` | Per configured physical reaction, current enable/interruption gates, native source reference, and last actual evaluation (null before the first check). Values can be stale while the strategy is locked or blocked by another reaction. |
 | `isCarrying`, `carriedObjectId` | Carrying state and engine object ID, or unavailable/null. |
 | `isOnCharger`, `isCharging` | Latest native contact/charging state, or null when unavailable. |
 | `activity`, `highLevelActivity`, `behavior`, `reaction` | Latest activity and reaction observations; null when unavailable. |
@@ -97,6 +104,32 @@ This is a snapshot of the latest available data. `timestampUtc` is the host read
 | `knownCubes` | `factoryId`, `radioObjectId`, command `worldObjectId`, `type`, radio `connected`, `poseState`, `lastObservedTimestamp`, `relative`. A radio disconnect removes the previous pose from this list. A new sighting can provide a world ID even while the radio is disconnected. |
 | `knownChargers` | Command `worldObjectId`, `poseState`, `lastObservedTimestamp`, `relative`, in the current origin. |
 
+`physicalReactionChecks` is read-only. Slope exposes `pitchDeg`, `maxAbsGyroRadps`,
+`quietForSec` and `lastPickupAgeSec` against strict (+10,+55) degrees, >0.4 s
+quiet at or below the 0.01 rad/s activity threshold, and pickup or <1.5 s since the
+last pickup stamp (`0x0061455C..0x00614688`). Generic reactions show whether the
+behavior was runnable, the consumed latch, last event/filter outcome and its age,
+and the required off-treads states. Impact (`RobotFalling`) uses the 3000 ms
+falling-start latch timeout (`0x0060D838`, `0x0060F3BC..0x0060F454`) and the body
+records whether a falling-stop intensity exceeded 1000 (`0x0060643C..0x0060644E`)
+and calibration arrived. UnexpectedMovement also includes its latest detector
+branch, count before/after, wheel-speed sum (mm/s) and checked gyro Z/mismatch
+(rad/s), against its 20 mm/s, 0.1745329 rad/s, 0.2 rad/s and count >10 thresholds
+(`0x0063E398..0x0063E5BA`). A null field means that check was not reached.
+Read-only observations do not consume latches or run a strategy again.
+
+For chargers in `get_map.objects`, `chargerEstimate` reports the latest stored
+sighting timestamp, signed Euler `pitchDeg` and `rollDeg` of the estimated charger
+pose in the current world origin. `viewingAngleDeg` is the unsigned angle
+(0–180°) from the charger's front (-X) axis to the robot at the sighting, using
+native pose history where retained; null if that pose is unavailable.
+`currentViewingAngleDeg` uses the current robot pose. Non-chargers have null
+`chargerEstimate`. These are diagnostic estimates, not proof of alignment.
+
+The `hiccups-started` event reports one train start, with `source` equal to
+`scheduled` or `overfeeding-notification` (`gameToEngineTag` 164 for the latter,
+otherwise null). The native occurrence timer can start a train without food or
+Freeplay; no extra hiccup or engine event is generated by reading the report.
 `relative` has `xMm`, `yMm`, `zMm` in robot MAIN axes, planar `distanceMm`, and `bearingDeg` positive to the robot's left. Null means the pose could not be expressed relative to the robot, or no observed pose is available. `go-to-pose` instead takes an established target in the current world origin [senses].
 
 Use `set_camera_color` with `enabled: true` to request colour on the camera's current stream. Use `enabled: false` to request greyscale again. The tool confirms the requested setting. Check `isColor` on a newer frame to see what the robot sent. The same vision modes keep supplying face and marker detections from the grey image derived from each colour frame.

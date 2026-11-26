@@ -156,7 +156,10 @@ public sealed class CozmoMotion
         QueueAiMoveAsync(radians, true, cancellationToken);
 
     /// <summary>Queues face tracking after existing actions. The tracker follows fresh observations until the action ends; cancellation targets this runner.</summary>
-    public async Task<AiTrackFaceActionResult> QueueAiTrackFaceAsync(int faceId, bool headOnly, CancellationToken cancellationToken = default)
+    public Task<AiTrackFaceActionResult> QueueAiTrackFaceAsync(int faceId, bool headOnly, CancellationToken cancellationToken = default) =>
+        QueueAiTrackFaceAsync(faceId, headOnly, cancellationToken, null);
+
+    internal async Task<AiTrackFaceActionResult> QueueAiTrackFaceAsync(int faceId, bool headOnly, CancellationToken cancellationToken, Action<uint>? admitted)
     {
         AiTrackFaceActionResult Reject(string message) => new(false, null, message)
         {
@@ -180,7 +183,7 @@ public sealed class CozmoMotion
             action=new Vision.NativeTrackFaceRunner(manipulation,owner,faceId,headOnly,
                 BitConverter.UInt32BitsToSingle(0x3D0EFA35),false,-1,-1,0);
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native face tracking ended",true,
-                ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime));
+                ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime), admitted: admitted);
         }
         var result=await task.ConfigureAwait(false);
         string reason = FaceActionEndReason(result, cancellationToken);
@@ -699,7 +702,7 @@ public sealed class CozmoMotion
         return AdmitAiAction(action,owner,tag,cancellationToken,placement is not null ? "Native placement action ended" : head ? "Native head action ended" : "Native lift action ended",false);
     }
 
-    private Task<AiHeadActionResult> AdmitAiAction(ActionRunner action,EngineRobot owner,uint tag,CancellationToken cancellationToken,string detail,bool retireFailedTag,Func<bool>? admissionValid=null,Manipulation.PathMotionProfile? motionProfile=null)
+    private Task<AiHeadActionResult> AdmitAiAction(ActionRunner action,EngineRobot owner,uint tag,CancellationToken cancellationToken,string detail,bool retireFailedTag,Func<bool>? admissionValid=null,Manipulation.PathMotionProfile? motionProfile=null,Action<uint>? admitted=null)
     {
         var engine=_robot.Engine;
         if (owner.Lifetime.Destroying || !ReferenceEquals(engine.Robot, owner) || admissionValid is not null && !admissionValid())
@@ -770,6 +773,7 @@ public sealed class CozmoMotion
                 return Task.FromResult(new AiHeadActionResult(false, null, disabled ? "External actions are disabled by a reaction" : "Action admission failed", !Current()));
             }
             action.HostCaller = ActionRunner.CallerContext.Value;
+            admitted?.Invoke(action.Tag);
             var task = AwaitAiMove(action, completion, owner, cancellationToken, detail, freeplay);
             freeplay = null; // The terminal action owns the activity handoff from here.
             return task;
@@ -2145,7 +2149,8 @@ bool requireCalibration = true)
         /// nearer for 32, and skips the second clamp (0x00549140 jumps to 0x005491CE). Otherwise +0x84 = the height and the
         /// second clamp into [32, 92] (0x0054918E..0x005491D2) stores a NaN as 32. A NaN height skips the first clamp (blt at
         /// 0x0054905C is true unordered), is not negative (bpl at 0x00549102 is true unordered) and so reaches the second clamp.
-        /// The height-variability step between them (+0x80, 0x00549142..0x0054918A) is not built: see the MISSING note in the report.
+        /// The native height-variability step at 0x00549142..0x0054918A only draws RandDblInRange(-v,+v) if +0x80 > 0.
+        /// Every supported admission/child here fixes v=0 (game SetLiftHeight 0x0052AC84..0x0052AC92), so it takes the no-draw branch.
         /// </summary>
         private void LiftInitHeightLocked()
         {
@@ -2351,7 +2356,9 @@ bool requireCalibration = true)
 // fidelity: M13-029
 /// <summary>
 /// The engine's one PathComponent (Robot+0x5C): Abort/ClearPath below and the M12-032 state machine in NativePathComponent.cs.
-/// Fields retain native offsets and P1 constructor values. Unbuilt planner/Viz recipients remain explicit MISSING boundaries.
+/// Fields retain native offsets and P1 constructor values. The production constructor binds the doler and short planners;
+/// the robot binds the origin owner, and NativePlannerSet selects the native planner. VizManager::ErasePath (0x006BFACE)
+/// only constructs and clears a local Viz message; no robot/API effect. Detached receiver guards remain explicit.
 /// </summary>
 internal sealed partial class PathComponent
 {

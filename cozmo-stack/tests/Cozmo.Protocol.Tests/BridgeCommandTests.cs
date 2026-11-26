@@ -133,6 +133,20 @@ public sealed class BridgeCommandTests
                 Assert.Equal(27u, mount.Drive.Action.ObjectId);
                 break;
         }
+        if (command == "track-face")
+        {
+            var admission = await task.WaitAsync(TimeSpan.FromSeconds(3));
+            Assert.Equal("submitted", admission.GetProperty("status").GetString());
+            Assert.Equal(runner.Tag, admission.GetProperty("report").GetProperty("actionTag").GetUInt32());
+            Assert.True(f.Robot.ActionList.ContainsRunner(runner));
+            Assert.Equal("submitted", (await Invoke(bridge, "cancel-action", $"{{\"actionTag\":{runner.Tag}}}")).GetProperty("status").GetString());
+            f.Rig.Tick();
+            f.Rig.Engine.DrainAppDelivery();
+            var ended = Assert.Single(bridge.ReadEvents().GetProperty("events").EnumerateArray(),
+                e => e.GetProperty("type").GetString() == "action-completed" && e.GetProperty("payload").GetProperty("completion").GetProperty("tag").GetUInt32() == runner.Tag);
+            Assert.Equal(0x02000001u, ended.GetProperty("payload").GetProperty("completion").GetProperty("result").GetUInt32());
+            return;
+        }
         cancel.Cancel();
         f.Rig.Tick();
         var result = await task.WaitAsync(TimeSpan.FromSeconds(3));
@@ -280,7 +294,7 @@ public sealed class BridgeCommandTests
             "head", "lift", "drive-straight", "turn-in-place", "turn-to-face", "turn-to-cube", "track-face",
             "animation", "say-text", "pickup", "put-down", "roll", "stack", "flip", "wheelie", "go-to-pose",
             "mount-charger", "teach-face", "enroll-face", "rename-face", "erase-face", "set_camera_color",
-            "set-backpack-lights", "set-cube-lights", "lock-reactions", "unlock-reactions", "cancel-action", "freeplay", "wake", "set_needs_mode", "set_needs",
+            "set-backpack-lights", "set-cube-lights", "lock-reactions", "unlock-reactions", "cancel-action", "request-behavior", "request-spark", "play-arbitrary-anim", "freeplay", "wake", "set_needs_mode", "set_needs",
         }, entries.Select(entry => entry.GetProperty("name").GetString()));
         Assert.All(entries, entry =>
         {

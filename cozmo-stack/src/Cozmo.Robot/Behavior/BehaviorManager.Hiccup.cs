@@ -51,7 +51,7 @@ public sealed partial class BehaviorManager
                 facade.Engine.EmitSourceLog(EngineLogLevel.Error, null, "ReactionTriggerStrategyHiccup.AlwaysHandleInternal.OverfedButHiccupDisabled",
                     "Cozmo was overfed and should get hiccups, but hiccups are disabled");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-            });
+            }, source => facade.Sensors.BroadcastHiccupsStarted(source));
         if (robot.HasExternalInterface)
         {
             strategy.AddSubscription(new HiccupSensorSubscription(facade.Sensors, (_, next) => strategy.OffTreadsChanged((byte)next)));
