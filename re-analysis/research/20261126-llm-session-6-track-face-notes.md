@@ -40,3 +40,27 @@ Consider making track-face return once admitted, with completion in events, or a
 
 **T4. The commanded track was interrupted by reactions** (AcknowledgeObject, AcknowledgeFace, Pickup) unless those
 triggers were locked. Probably engine behaviour; to confirm against the action's reaction locks.
+
+## Charger mount (03:32–03:37 UTC): the charger marker is never detected
+
+He was picked up at 03:30:36, so a new origin; knownChargers was empty. Claude drove him around to the charger's
+open end, then placed him square to the marker, about 15–25 cm away and centred in frame. Frames
+`imageId` 18546, 18697, 19833 and 20870 are visionProcessed=true.
+
+- **No `charger-seen` events in the whole session**, from 03:33:50 to 03:37 across many views.
+- The only charger in BlockWorld was the on-charger placement at connect (stack-log 2439, lastObserved 0).
+- Lighting is ruled out:
+  - first, dark room: exposure 63–67 ms, gain 3.98 (maximum);
+  - then the operator's lamp behind the charger: glare;
+  - then the lamp from behind the robot (03:36:30): marker crisp, square, about 40×35 px.
+
+  It was not detected in any of the three.
+- Marker detection is enabled (stack-log 2350 DetectingMarkers) and found the cube marker this session (03:24:34
+  and 03:25:20).
+- In session 5 (2026-11-23, daylight) the same charger was detected at similar sizes and angles (many charger-seen).
+- **Lead:** a regression since 2026-11-23 in charger-marker detection or charger object creation. Commits since then
+  touch `Vision/VisionSystem.cs`, `Vision/BlockWorld.cs`, `NativeVisionRunners.cs`, `VisionImageQuality.cs` and
+  `DockActions.cs` (cd8792af "Restore native dock constructor marker defaults"), and others.
+- **Next step:** replay this bundle's frames around 03:36:30 through the stack's marker detector offline, and bisect
+  if the session-5 frames still detect the charger.
+- The mount itself was not attempted: it needs a located charger.
