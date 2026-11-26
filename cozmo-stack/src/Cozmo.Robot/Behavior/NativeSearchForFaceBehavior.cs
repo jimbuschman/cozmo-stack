@@ -49,7 +49,8 @@ internal sealed class NativeSearchForFaceBehavior : SteppedBehavior, IDisposable
     }
 
     // 0x005C9170..0x005C9180: HasAnyFaces(0, false), inverted.
-    protected override bool IsRunnableInternal(BehaviorContext context) => !_manipulation.Vision.Faces.HasAnyFaces(0, false);
+    protected override bool IsRunnableInternal(BehaviorContext context) => !_manipulation.Vision.Faces.HasAnyFaces(0, false) ||
+        ReadinessBlocked("a face already exists in the current origin; native search has no freshness filter (0x005C9170..80)");
 
     protected override void OnStart()
     {

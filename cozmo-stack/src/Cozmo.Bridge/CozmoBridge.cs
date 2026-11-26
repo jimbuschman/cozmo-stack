@@ -50,6 +50,7 @@ public sealed partial class CozmoBridge
         Robot.Cubes.TapBroadcast += OnCubeTapped;
         engine.ObjectPoseUnknown += OnObjectPoseLost;
         engine.BehaviorTransition += OnBehavior;
+        engine.BehaviorRequestBlocked += OnBehaviorRequestBlocked;
         engine.ReactionTransition += OnReaction;
         engine.NeedsStateReported += OnNeedsState;
         engine.Needs.FreeplaySparksAwarded += OnFreeplaySparksAwarded;
@@ -320,6 +321,7 @@ public sealed partial class CozmoBridge
             Add("object-pose-lost", report);
         }
     }
+    private void OnBehaviorRequestBlocked(BehaviorRequestBlockedReport report) => Add("behavior-request-not-runnable", report);
     private void OnBehavior(BehaviorTransitionReport report)
     {
         var context = Robot.Engine.GetBehaviorTransitionContext(report);
@@ -484,6 +486,7 @@ public sealed partial class CozmoBridge
         Robot.Cubes.TapBroadcast -= OnCubeTapped;
         engine.ObjectPoseUnknown -= OnObjectPoseLost;
         engine.BehaviorTransition -= OnBehavior;
+        engine.BehaviorRequestBlocked -= OnBehaviorRequestBlocked;
         engine.ReactionTransition -= OnReaction;
         engine.NeedsStateReported -= OnNeedsState;
         engine.Needs.FreeplaySparksAwarded -= OnFreeplaySparksAwarded;

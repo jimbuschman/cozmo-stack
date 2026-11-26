@@ -242,7 +242,7 @@ public abstract partial class SteppedBehavior : IBehavior
     protected virtual bool HoldUnavailableActionCompletion => false;
 
     // Host-only scoped availability; native false remains distinct from missing input.
-    private sealed class ReadinessFrame { internal bool Unavailable; }
+    private sealed class ReadinessFrame { internal bool Unavailable; internal string? BlockReason; }
     private static readonly AsyncLocal<ReadinessFrame?> Readiness = new();
     internal static Action? ReadinessUnavailableObservedForTest;
     // Host input availability boundary, not a native readiness predicate.
@@ -252,10 +252,19 @@ public abstract partial class SteppedBehavior : IBehavior
         if(Readiness.Value is not {} frame)return;
         frame.Unavailable=true;ReadinessUnavailableObservedForTest?.Invoke();
     }
+    // Host diagnostic only: record a failing native predicate as part of that same evaluation.
+    // In particular DriveToFace's IsRunnable mutates its SmartFaceID, so never re-run it for a report.
+    internal static bool ReadinessBlocked(string reason)
+    {
+        if (Readiness.Value is { } frame) frame.BlockReason ??= reason;
+        return false;
+    }
     internal (bool Available,bool Runnable) EvaluateHostReadiness(BehaviorContext context)
+        => EvaluateHostReadiness(context, out _);
+    internal (bool Available,bool Runnable) EvaluateHostReadiness(BehaviorContext context, out string? reason)
     {
         var prior=Readiness.Value;var frame=new ReadinessFrame();Readiness.Value=frame;
-        try { bool runnable=IsRunnable(context);return (!frame.Unavailable,runnable); }
+        try { bool runnable=IsRunnable(context);reason=frame.BlockReason;return (!frame.Unavailable,runnable); }
         finally { Readiness.Value=prior; }
     }
     internal static (bool Available,T Value) EvaluateHostOperation<T>(Func<T> action)
@@ -322,17 +331,17 @@ public abstract partial class SteppedBehavior : IBehavior
         // (SetOnChargerPlatform at 0x00511D4C), and the base config inputs above.
         // Standalone behavior callers can supply these fields through the seams.
         bool notOnTreads = RobotState355?.Invoke() ?? context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads;
-        if (notOnTreads && !RunnableGate20(context)) return false;
-        if (NativeBaseInputs is not null) { if(context.Robot.Sensors.OnChargerPlatform && !RunnableGate24(context))return false; }
+        if (notOnTreads && !RunnableGate20(context)) return ReadinessBlocked("robot is off its treads (0x005BD864..74)");
+        if (NativeBaseInputs is not null) { if(context.Robot.Sensors.OnChargerPlatform && !RunnableGate24(context))return ReadinessBlocked("robot is on the charger platform (0x005BD876..86)"); }
         else if (RobotState34a is null) ReportMissing("IBehavior::IsRunnableBase robot+0x34a (0x005bd876): no source for the byte; the vtable+0x24 gate is not consulted");
-        else if (RobotState34a() && !RunnableGate24(context)) return false;
+        else if (RobotState34a() && !RunnableGate24(context)) return ReadinessBlocked("robot is on the charger platform (0x005BD876..86)");
         bool carrying = NativeBaseInputs is { } inputs ? inputs.IsCarrying : RobotComponent284?.Invoke() ?? context.Robot.Motion.IsCarryingObject?.Invoke() == true;
-        if (carrying && !RunnableGate28(context)) return false;
+        if (carrying && !RunnableGate28(context)) return ReadinessBlocked("robot is carrying an object (0x005BD888..9C)");
         if (NativeBaseInputs is null && (RobotStateAllowsRun is null || UnlockAllowsRun is null))
             ReportMissing("IBehavior::IsRunnableBase +0x74 state (0x005bd7e6) and +0x70 unlock (0x005bd810) inputs: no source in this stack; not tested");
-        if (!WantsToRun(context)) return false;                                   // +0x38
+        if (!WantsToRun(context)) return ReadinessBlocked("configured wants-to-run strategy declined (0x005BD89E..AA)");                                   // +0x38
         double now = context.ClockSec?.Invoke() ?? Clock() / 1000.0;
-        return !((float)now < _resumeSuppressionUntil);                             // +0x118
+        return !((float)now < _resumeSuppressionUntil) || ReadinessBlocked("native resume suppression timer has not elapsed (0x005BD8B4..C8)"); // +0x118
     }
 
     /// <summary>The float timers' check (<c>+0x78</c>/<c>+0x7c</c>). A class that reads them from its config overrides it.</summary>

@@ -59,7 +59,8 @@ internal sealed class NativeDriveToFaceBehavior : SteppedBehavior, IDisposable
             var origin=_robot.GetNativeOrigin(_robot.CurrentOriginId);
             using var cached=new Pose3d("");
             uint stamp=_m.Vision.Faces.CopyNativeLastFaceTimestamp(origin,true,cached);
-            if (PoseTreeNode.HasSameRoot(cached.Node,origin.Node))
+            bool currentRoot = PoseTreeNode.HasSameRoot(cached.Node,origin.Node);
+            if (currentRoot)
             {
                 var ids=_m.Vision.Faces.GetNativeFaceIds(_robot,stamp);
                 if (!Current(version)) return false;
@@ -70,7 +71,10 @@ internal sealed class NativeDriveToFaceBehavior : SteppedBehavior, IDisposable
                     _target.CopyFrom(selected);
                 }
             }
-            return Current(version) && _target.IsValid;
+            if (!Current(version)) return false;
+            return _target.IsValid || ReadinessBlocked(currentRoot
+                ? "no face ID observed at or after the cached face timestamp (0x005DA5D4..606)"
+                : "no cached face pose in the current world origin (0x005DA5BC..D2)");
         }
         catch(InvalidOperationException error)
         {

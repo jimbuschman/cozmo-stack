@@ -74,7 +74,10 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private int _aiCommands;
     private bool _resumeFreeplayAfterAi;
     private float? _lastAiResumeSeconds;
-    private sealed record HostBehaviorRequest(SelectionChooser Chooser, IBehavior Target, IDisposable Lease);
+    private sealed record HostBehaviorRequest(SelectionChooser Chooser, IBehavior Target, IDisposable Lease)
+    {
+        internal string? LastReportedBlock;
+    }
     private HostBehaviorRequest? _hostBehaviorRequest;
     private long _hostBehaviorRequestEpoch;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
@@ -628,6 +631,19 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Context.Map=_facade.LocalizationWorld.Maps.Current;
         if(_observer is not null && ReferenceEquals(_manager.Activity,_observer))RefreshFreeplayInputs(capturedNow);
         _manager.Update(capturedNow*1000.0,capturedNow);
+        // Report an actually evaluated false gate without changing selection, the latch or run count.
+        // A request parked by an active reaction has not been declared not runnable by the chooser.
+        if (_hostBehaviorRequest is { } blocked && IsCurrentAiCommandOwner() && _highLevel == 2 &&
+            _manager.CurrentReactionTrigger is null && ReferenceEquals(blocked.Chooser.Requested, blocked.Target) &&
+            blocked.Chooser.NumRuns != 0)
+        {
+            string? reason = _manager.IsRunning(blocked.Target) ? null : blocked.Chooser.LastRequestedReadinessBlock;
+            if (reason != blocked.LastReportedBlock)
+            {
+                blocked.LastReportedBlock = reason;
+                if (reason is not null) _robot.Engine.ReportBehaviorRequestBlocked(blocked.Target.Id, reason);
+            }
+        }
         // The native chooser spends its requested run after the behavior stops.
         // Reactions retain their native priority and parked resumes; do not switch
         // the parent out while a reaction or the requested behavior still runs.
