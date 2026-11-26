@@ -423,6 +423,16 @@ public sealed partial class AIWhiteboard
 
     // AIWhiteboard::~AIWhiteboard 0x0056A33E..0x0056A376: beacons, possible objects,
     // failure trees +38/+2C/+20/+14, and subscriptions (the host callbacks are detached by its owner).
+    private readonly List<IDisposable> _observationHandles = new();
+    internal void RetainObservationHandle(IDisposable handle) => _observationHandles.Add(handle);
+    internal void ReleaseObservationHandles()
+    {
+        // AIWhiteboard+8 vector destructor, 0x0056A372..0x0056A376.
+        for (int i = _observationHandles.Count - 1; i >= 0; --i)
+            _observationHandles[i].Dispose();
+        _observationHandles.Clear();
+    }
+
     internal void RetireNativeStorage()
     {
         for (int i = _beacons.Count - 1; i >= 0; --i)
@@ -441,6 +451,7 @@ public sealed partial class AIWhiteboard
                 _failureTables[i].Clear();
             }
         }
+        ReleaseObservationHandles();
         ClearQuadWorldOrigin = null;
     }
 

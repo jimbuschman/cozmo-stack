@@ -434,8 +434,8 @@ public sealed class ManipulationSystem : IDisposable
             // RobotObservedPossibleObject wraps one RobotObservedObject in the shipped CLAD definition.
             if (payload is RobotObservedObjectReport item) Observe((ObjectType)item.Type, item.Pose, true);
         });
-        _installedCallbacks.Add(observed.Dispose);
-        _installedCallbacks.Add(possible.Dispose);
+        Whiteboard.RetainObservationHandle(observed);
+        Whiteboard.RetainObservationHandle(possible);
     }
 
     public void Dispose()
@@ -446,7 +446,7 @@ public sealed class ManipulationSystem : IDisposable
         foreach(var detach in _installedCallbacks)detach();
         _installedCallbacks.Clear();
         if(_standalone)Whiteboard.RetireStandaloneStorage();
-        else if(_ownsWhiteboard && !NativeWhiteboardRetirementBound)Whiteboard.ClearAllBeacons(); // the native AI+18 owner retires at 0x00569D1C
+        else if(_ownsWhiteboard && !NativeWhiteboardRetirementBound) { Whiteboard.ReleaseObservationHandles(); Whiteboard.ClearAllBeacons(); } // the native AI+18 owner retires at 0x00569D1C
         NativePlanners?.Stop();NativePlanners?.Dispose();
         if(_ownsSharedServices && World.MapClearQuad==Whiteboard.ProcessClearQuad)World.MapClearQuad=null;
         if(_ownsSharedServices)Follower.Dispose();
