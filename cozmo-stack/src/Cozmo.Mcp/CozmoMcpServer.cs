@@ -22,14 +22,21 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
     {
         using var session = CancellationTokenSource.CreateLinkedTokenSource(token);
         var pending = new List<Task>();
-        if (channel) pending.Add(PumpChannelAsync(output, session.Token));
+        void Track(Task task)
+        {
+            pending.Add(task);
+            _ = task.ContinueWith(t => diagnostic?.Invoke("MCP background task fault: " + t.Exception),
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+        if (channel) Track(PumpChannelAsync(output, session.Token));
         try
         {
             while (await input.ReadLineAsync(session.Token).ConfigureAwait(false) is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 pending.RemoveAll(task => task.IsCompletedSuccessfully);
-                pending.Add(ReceiveAsync(line, output, session.Token));
+                Track(ReceiveAsync(line, output, session.Token));
             }
         }
         catch (OperationCanceledException) when (session.IsCancellationRequested) { }

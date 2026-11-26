@@ -663,11 +663,20 @@ public static class M5HwAnalysis
 
     public static IEnumerable<M5Hw.WireMessage> ReadWire(IEnumerable<CapturedFrame> frames, bool includeRetransmissions = false)
     {
-        var seenOut = new HashSet<ushort>(); var seenIn = new HashSet<ushort>();
-        int outEpoch = 0, inEpoch = 0;
+        var decoder = new WireDecoder(includeRetransmissions);
         foreach (var capture in frames.OrderBy(f => f.AtMs).ThenBy(f => f.Line))
+            foreach (var message in decoder.ReadFrame(capture)) yield return message;
+    }
+
+    /// <summary>Incremental form of ReadWire for already ordered captures, with the same per-direction epochs and retry filter.</summary>
+    public sealed class WireDecoder(bool includeRetransmissions = false)
+    {
+        private readonly HashSet<ushort> seenOut = new(), seenIn = new();
+        private int outEpoch, inEpoch;
+
+        public IEnumerable<M5Hw.WireMessage> ReadFrame(CapturedFrame capture)
         {
-            if (capture.Frame is not { } frame) continue;
+            if (capture.Frame is not { } frame) yield break;
             for (int ordinal = 0; ordinal < frame.Messages.Count; ordinal++)
             {
                 var m = frame.Messages[ordinal]; var seen = capture.Outbound ? seenOut : seenIn;

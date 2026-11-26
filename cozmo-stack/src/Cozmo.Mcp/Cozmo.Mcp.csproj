@@ -5,6 +5,7 @@
     <CETCompat>false</CETCompat>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
     <EmbeddedResource Include="CozmoGuide.md" LogicalName="Cozmo.Mcp.CozmoGuide.md" />
     <ProjectReference Include="..\Cozmo.Bridge\Cozmo.Bridge.csproj" />
     <ProjectReference Include="..\Cozmo.Conformance\Cozmo.Conformance.csproj" />

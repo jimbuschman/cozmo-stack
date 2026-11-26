@@ -69,7 +69,16 @@ public static class Program
             Console.CancelKeyPress += interrupt;
             try
             {
+                if (Environment.GetEnvironmentVariable(SessionProcessSupervisor.WorkerMarker) != "1")
+                    return await SessionProcessSupervisor.RunAsync(directory, args,
+                        SessionProcessSupervisor.WorkerStart(directory, args), Console.OpenStandardInput(),
+                        Console.OpenStandardOutput(), Console.OpenStandardError(), cancel.Token);
+
                 using var evidence = new SessionEvidence(directory, args);
+                AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+                    SessionProcessSupervisor.ReportWorkerFault(evidence.DirectoryPath, "unhandled-thread-exception", e.ExceptionObject);
+                TaskScheduler.UnobservedTaskException += (_, e) =>
+                    SessionProcessSupervisor.ReportWorkerFault(evidence.DirectoryPath, "unobserved-task-exception", e.Exception);
                 using var resolution = new HighResolutionTimer();
                 void Log(string text) { Console.Error.WriteLine(text); evidence.Log(text); }
                 Log($"cozmo-mcp session evidence: {evidence.DirectoryPath}");
@@ -102,11 +111,11 @@ public static class Program
                 try
                 {
                     await new CozmoMcpServer(bridge, Log, evidence.Record, channel).RunAsync(Console.In, protocolOutput, cancel.Token);
-                    evidence.Finish("closed", bridge.GetState());
+                    evidence.Finish("closed", bridge.GetState(), exitCode: 0);
                 }
                 catch (Exception error)
                 {
-                    evidence.Finish("error", error: error.ToString());
+                    evidence.Finish("error", error: error.ToString(), exitCode: 1);
                     throw;
                 }
                 finally
