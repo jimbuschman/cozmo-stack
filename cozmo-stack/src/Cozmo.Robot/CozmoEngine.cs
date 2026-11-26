@@ -61,6 +61,9 @@ public sealed class RobotConnectionException : IOException
 /// <summary>Where the engine finds its inputs, and the app defaults policy M1-042 sends.</summary>
 public sealed class CozmoEngineOptions
 {
+    /// <summary>Explicit host extensions; defaults to original engine behavior.</summary>
+    public CozmoC2Settings C2 { get; init; } = CozmoC2Settings.Baseline;
+
     // fidelity: M1-063
     /// <summary>Operator-approved firmware-2457 guard from the recorded corpus.
     /// 8117 observed bytes minus a 745-byte audio frame and 2-byte start = 7370.

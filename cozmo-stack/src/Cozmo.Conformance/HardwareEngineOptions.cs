@@ -72,7 +72,7 @@ public static class HardwareEngineOptions
         => CreateWithAnimationBudget(resources,filesPath,needsDirectory,deviceIdPath,blockPoolPath,clock,beforeStart,localeName,log,speechSoundBankDirectory,keepNeedsFull);
 
     public static CozmoEngineOptions CreateWithAnimationBudget(string resources,string? filesPath=null,string? needsDirectory=null,string? deviceIdPath=null,
-        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null,bool? keepNeedsFull=null,int? animationStreamBudgetBytes=null)
+        string? blockPoolPath=null,Func<long>? clock=null,Action<CozmoEngine>? beforeStart=null,string? localeName=null,Action<string>? log=null,string? speechSoundBankDirectory=null,bool? keepNeedsFull=null,int? animationStreamBudgetBytes=null,CozmoC2Settings? c2=null)
     {
         var defaults=new CozmoEngineOptions();
         string files=filesPath??defaults.FilesPath;
@@ -80,6 +80,7 @@ public static class HardwareEngineOptions
         var (language,country)=Locale(localeName??HostLocaleName(),log??Console.Error.WriteLine);
         return new CozmoEngineOptions{ResourcesPath=resources,FilesPath=files,BlockPoolPath=blockPoolPath??defaults.BlockPoolPath,NeedsDeviceDirectory=needs,
             KeepNeedsFull=keepNeedsFull??KeepNeedsFullDefault,
+            C2=c2??defaults.C2,
             AnimationStreamBudgetBytes=animationStreamBudgetBytes??ScopedAnimationBudget.Value??defaults.AnimationStreamBudgetBytes,
             NeedsSystemClockMicroseconds=clock,DasDeviceId=DasDeviceIdFile.LoadOrCreate(deviceIdPath??DasDeviceIdFile.DefaultPath),
             LabLocaleLanguage=language,LabLocaleCountry=country,BeforeStart=beforeStart,SpeechSoundBankDirectory=speechSoundBankDirectory};

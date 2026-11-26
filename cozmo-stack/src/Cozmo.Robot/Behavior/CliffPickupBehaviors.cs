@@ -57,6 +57,8 @@ public sealed partial class ReactToCliffBehavior : SteppedBehavior
     private volatile byte _finish;           // +0x125
     private CozmoRobot? _robot;
     private CancellationTokenSource? _driveCancel;
+    private long _c2CliffEpisode;
+    internal void AdoptC2CliffEpisode(long episode) => _c2CliffEpisode = episode;
 
     public ReactToCliffBehavior(CozmoRobot? robot = null, string id = "ReactToCliff") : base(id, "ReactToCliff")
     {
@@ -178,6 +180,7 @@ public sealed partial class ReactToCliffBehavior : SteppedBehavior
     protected override void OnStart()
     {
         long version=CaptureHostExecutionVersion();
+        _c2CliffEpisode = _physical?.Robot.C2CliffReactionStarted() ?? 0;
         // 0x00604D6A..0x00604D84: MoodManager::TriggerEmotionEvent(robot+0x440, "CliffReact", MoodManager::GetCurrentTimeInSeconds())
         Context.Mood?.Trigger(EmotionEventName, Clock() / 1000.0);
         if(!HostExecutionVersionCurrent(version))return;
@@ -301,6 +304,12 @@ public sealed partial class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     private void TransitionToBackingUp()
     {
+        if (_physical is { } native && native.Robot.Engine.Options.C2.CliffHoldStill)
+        {
+            long version = CaptureHostExecutionVersion();
+            native.Robot.C2CliffReactionDecision(native.M.Robot, _c2CliffEpisode, "native retreat decision");
+            if (!HostExecutionVersionCurrent(version) || !native.CanRun || !EngineRunning) return;
+        }
         if (Context.Robot.Sensors.CliffDetectedByEvent)                                          // 0x0060532E ldrb r0,[r0,#5]
         {
             if(_physical is not null){NativeCliffBackUp();return;}
@@ -364,6 +373,8 @@ public sealed partial class ReactToCliffBehavior : SteppedBehavior
         _state = 0;
         _reactNow = 0;
         _cliffDetected = 0;
+        if (_physical is { } native)
+            native.Robot.C2CliffReactionDecision(native.M.Robot, _c2CliffEpisode, "native cliff reaction stopped");
         drive?.Cancel();
     }
 }

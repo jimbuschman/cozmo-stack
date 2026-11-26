@@ -15,6 +15,12 @@
 - Native reactions and activity changes can interrupt an admitted action. Use `during` to see those events before choosing another command. `track-face` returns on admission with `report.actionTag`; tracking continues until the native action ends or is cancelled. Read `activeActions` in `get_state` and call `cancel-action` with that tag to end it. Read the matching `action-completed` event for the native result.
 - Before a multi-step task like stacking or enrolling a face, use `lock-reactions` with a task-specific ID and the reaction triggers you need to suppress. For example, lock `["CubeMoved","ObjectPositionUpdated"]` while stacking. Trigger names are case-sensitive. `"all"` disables every mapped trigger while the lock is held. Use `unlock-reactions` with the same ID when the task ends. Other IDs continue to hold their locks.
 
+## Optional improvements (C2)
+
+The MCP executable enables the named C2 host extensions by default. Start with `--baseline` to disable all of them and retain original engine behavior. In `get_state`, `c2Extensions` lists the enabled names and `cliffHoldActive` indicates whether animation body motion is currently held.
+
+- `C2:cliff-hold-still`: after the native cliff stop or a detected CliffEvent, hold the animation body track; head, lift, face, sound and other tracks continue. Already unsent body and turn-to-recorded-heading messages are discarded; the device's animation body mask is held too. The original engine's retreat decision and direct backup remain available. Release after Undetected and the pending native cliff reaction's retreat/finish decision. This does not establish that the robot is physically safe at an edge; do not direct it to drive until it has safe clearance.
+
 ## Reading results
 
 `isError` is the MCP tool error flag. `structuredContent` contains the same JSON as the text content block.

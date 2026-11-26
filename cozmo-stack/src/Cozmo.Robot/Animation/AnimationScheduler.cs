@@ -33,6 +33,8 @@ public interface IAnimationSink
     /// a failed send and does not count it (C14, 0x0057BFAE). A sink that sends nothing, or cannot fail, reports true.
     /// </summary>
     bool LastSendSucceeded => true;
+    // C2 host-only overlay; baseline sinks and tests never suppress motion.
+    bool SuppressAnimationBodyMotion => false;
     /// <summary>0x93 animHeadAngle {u16 duration, s8 angle} (C2), the variability already drawn.</summary>
     void Head(sbyte angleDeg, uint durationMs);
     /// <summary>0x94 animLiftHeight {u16 duration, u8 height} (C3), the variability already drawn.</summary>
@@ -318,6 +320,26 @@ public sealed class StreamSendBuffer
         _bytesStreamed = unchecked(_bytesStreamed + size);
         if (frame) _framesStreamed = unchecked(_framesStreamed + 1);
     }
+
+    // C2: discard unsent motion on the cliff latch's rising edge. No fake successful send:
+    // 0x0057BF60..0x0057C010 counts only transmitted bytes.
+    internal int DiscardAnimationBodyMotion()
+    {
+        lock (_gate)
+        {
+            int discarded = 0;
+            for (var node = _fifo.First; node is not null;)
+            {
+                var next = node.Next;
+                if (IsAnimationBodyMotion(node.Value.TagName)) { _fifo.Remove(node); discarded++; }
+                node = next;
+            }
+            return discarded;
+        }
+    }
+
+    internal static bool IsAnimationBodyMotion(string? tagName) =>
+        tagName is "animBodyMotion" or "animTurnToRecordedHeading";
 
     /// <summary>Messages still buffered for <paramref name="owner"/>.</summary>
     public int PendingFor(object owner)
@@ -2151,6 +2173,10 @@ public sealed class AnimationScheduler
     /// </summary>
     private long Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null, string? tagName = null)
     {
+        // C2:cliff-hold-still. Native 0x0057CA48..7A always buffers these
+        // two motion tracks; our selectable overlay skips them, not the timeline.
+        if (StreamSendBuffer.IsAnimationBodyMotion(tagName) && _sink.SuppressAnimationBodyMotion)
+            return 0;
         return Stream.Buffer(_owner, size, isAudio, () =>
         {
             if (!SafeSend(send)) return false;

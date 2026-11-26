@@ -24,14 +24,16 @@ public static class Program
             var values = new Dictionary<string, string>(StringComparer.Ordinal);
             bool validate = false;
             bool channel = false;
+            bool baseline = false;
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] is "--help" or "-h")
                 {
-                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--animation-budget-bytes <1..30000>] [--event-stream-port <port>] [--significant-events <type,type,...>] [--channel] [--validate]");
+                    Console.Error.WriteLine("cozmo-mcp --resources <cozmo_resources> [--banks <SoundBanks>] [--robot-ip <172.31.1.1>] [--out <session-directory>] [--needs full|real] [--animation-budget-bytes <1..30000>] [--event-stream-port <port>] [--significant-events <type,type,...>] [--channel] [--baseline] [--validate]");
                     return 0;
                 }
                 if (args[i] == "--channel") { channel = true; continue; }
+                if (args[i] == "--baseline") { baseline = true; continue; }
                 if (args[i] == "--validate") { validate = true; continue; }
                 string flag = args[i];
                 if (!flags.Contains(flag) || i + 1 == args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal))
@@ -58,9 +60,10 @@ public static class Program
             string[]? significantTypes = values.GetValueOrDefault("--significant-events")?.Split(',', StringSplitOptions.TrimEntries);
             if (significantTypes?.Any(string.IsNullOrWhiteSpace) == true)
                 throw new ArgumentException("--significant-events requires nonempty comma-separated event types.");
+            var c2 = baseline ? CozmoC2Settings.Baseline : CozmoC2Settings.McpDefaults;
             if (validate)
             {
-                Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Needs: {needsMode}. Animation budget: {animationBudget} bytes. Evidence: {Path.GetFullPath(directory)}. No connection requested.");
+                Console.Error.WriteLine($"cozmo-mcp configuration valid. Resources: {resources}. Robot: {ip}. Needs: {needsMode}. Animation budget: {animationBudget} bytes. Evidence: {Path.GetFullPath(directory)}. C2: {string.Join(", ", c2.ActiveExtensions.DefaultIfEmpty("baseline"))}. No connection requested.");
                 return 0;
             }
 
@@ -82,12 +85,13 @@ public static class Program
                 using var resolution = new HighResolutionTimer();
                 void Log(string text) { Console.Error.WriteLine(text); evidence.Log(text); }
                 Log($"cozmo-mcp session evidence: {evidence.DirectoryPath}");
+                foreach (var extension in c2.ActiveExtensions) Log($"{extension}: enabled");
                 var narrationClock=System.Diagnostics.Stopwatch.StartNew();
                 using var narration=new LiveNarration(Console.Error.WriteLine,()=>narrationClock.Elapsed.TotalMilliseconds,
                     data=>{data["reportedAtMs"]=data["atMs"]?.DeepClone();evidence.Record("live-narration",JsonSerializer.SerializeToElement(data));});
                 // Same app inputs and native readiness/connect gate as m15-cube-hw.
                 var options = HardwareEngineOptions.CreateWithAnimationBudget(resources, log: Log, speechSoundBankDirectory: banks,
-                    beforeStart:engine=>{evidence.Attach(engine);narration.AttachEngine(engine);}, keepNeedsFull: needsMode=="full", animationStreamBudgetBytes: animationBudget);
+                    beforeStart:engine=>{evidence.Attach(engine);narration.AttachEngine(engine);}, keepNeedsFull: needsMode=="full", animationStreamBudgetBytes: animationBudget, c2: c2);
                 using var robot = CozmoRobot.Create(engineOptions: options);
                 narration.AttachRobot(robot);
                 robot.Transport.FrameTrace += evidence.Frame;
