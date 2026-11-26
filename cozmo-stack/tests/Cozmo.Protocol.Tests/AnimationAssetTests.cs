@@ -55,6 +55,26 @@ public class AnimationAssetTests
     /// keeps the odd canvas row of each pair before compressing it. This reads the same files and checks
     /// the frames are there and are not blank.
     /// </summary>
+    /// <summary>
+    /// M5-052: no shipped face file reaches the stoi (0x00580A0E) or PNG-decoder MISSING paths. The shipped
+    /// faceAnimations hold face_bored_event_02 (151 files, _00000.._00150) and face_bored_event_04 (401 files,
+    /// _00000.._00400), every one a 128x64 1-bit or 8-bit grayscale PNG with a plain decimal frame number.
+    /// </summary>
+    // reach: unit (direct loader over the shipped files).
+    [Fact]
+    public void M5_052_NoShippedFaceFileReachesTheStoiOrPngMissingPaths()
+    {
+        var root = AssetsRoot();
+        var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var errors = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var faces = FaceAnimationLibrary.Open(root, log.Enqueue, (level, _, key, text) =>
+        { if (level >= EngineLogLevel.Warning) errors.Enqueue(key + " " + text); });
+        Assert.DoesNotContain(log, l => l.Contains("M5-052") || l.Contains("M1-034"));
+        Assert.Empty(errors);
+        Assert.Equal(151, faces.Variants("face_bored_event_02")!.Count);
+        Assert.Equal(401, faces.Variants("face_bored_event_04")!.Count);
+    }
+
     // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheShippedFaceAnimationsLoadAsFrames()

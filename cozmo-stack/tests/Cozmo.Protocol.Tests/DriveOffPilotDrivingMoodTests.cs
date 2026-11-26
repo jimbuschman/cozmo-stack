@@ -78,13 +78,18 @@ public sealed class DriveOffPilotDrivingMoodTests
             Assert.Null(handler.AreNeedsMetForTest);Assert.Null(handler.GetSimpleMoodForTest);Assert.Empty(handler.Entries);
             using var m=new ManipulationSystem(rig.Robot,rig.Robot.Vision);
             var action=new DriveStraightAction(m,96);
+            // ANIM-TIMELINE-GAPS-1: the M5-063 owner guards (Mood 0x004F0D3C..42, Needs 0x004F0D50..5A, ActionList
+            // QueueAction/Cancel) find their production owners on this path.
+            var stack=new ConcurrentQueue<string>();rig.Engine.StackLogLine+=stack.Enqueue;
             try
             {
                 Assert.Equal(0,owner.ActionList.QueueAction(QueueActionPosition.Now,action,0));rig.Tick(10);
                 Assert.Equal(new DrivingAnimations((AnimationTrigger)start,(AnimationTrigger)(start-4),(AnimationTrigger)(start-8)),handler.Current);
                 Assert.Equal(lowNeed<0,needs.State.AreNeedsMet());
+                Assert.NotEqual(0u,handler.StartId); // the start animation went through ActionList.QueueAction.
             }
-            finally{owner.ActionList.Cancel(action.Tag);}
+            finally{owner.ActionList.Cancel(action.Tag);rig.Engine.StackLogLine-=stack.Enqueue;}
+            Assert.DoesNotContain(stack,l=>l.Contains("MISSING: M5-063"));
         }
         finally{Directory.Delete(resources,true);}
     }
