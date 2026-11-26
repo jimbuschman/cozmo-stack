@@ -41,8 +41,17 @@ public sealed class NativePetReportTests
             scene.Rig.State();scene.NativeCameraFrame(id,150);
             scene.Rig.Engine.VisionUpdateAllResultsFailed!();scene.Rig.Tick();
         }
-        scene.Rig.State();scene.NativeCameraFrame(100,150);
-        Assert.Empty(local);Assert.Empty(typed);
+        // The final camera-chunk tick may race the vision worker. Hold the existing drain single
+        // test seam until the worker has prepared the result, then run the actual bound drain on
+        // the next Robot::Update. This proves delayed delivery without assuming host scheduling.
+        var drain = Assert.IsType<Func<bool>>(scene.Rig.Engine.VisionUpdateAllResultsFailed);
+        scene.Rig.Engine.VisionUpdateAllResultsFailed = () => false;
+        try
+        {
+            scene.Rig.State();scene.NativeCameraFrame(100,150);
+            Assert.Empty(local);Assert.Empty(typed);
+        }
+        finally { scene.Rig.Engine.VisionUpdateAllResultsFailed = drain; }
         scene.Rig.Tick(); // normal EngineRobot.Update drains the prepared result
         Assert.Equal(new[]{-3,5},local.Select(x=>x.PetId));
         Assert.Equal(new[]{-3,5},typed.Select(x=>x.PetId));
