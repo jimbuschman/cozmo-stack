@@ -393,7 +393,7 @@ public class M12RVisBuildTests : IDisposable
 
     /// <summary>
     /// M12-025, the wire factory (0x0052A72E..0x0052A754), usePreDockPose false: PlaceRelObjectAction(robot, id, true, A = [msg+0x30], B = 0.0, [msg+0x3A], true),
-    /// then 1 at +0xF7 and 0 at +0xB9. usePreDockPose true builds DriveToPlaceRelObjectAction, which this stack does not have: NotSupportedException.
+    /// then 1 at +0xF7 and 0 at +0xB9. usePreDockPose true builds DriveToPlaceRelObjectAction, unreachable in this stack: NotSupportedException "not reachable".
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
@@ -408,7 +408,9 @@ public class M12RVisBuildTests : IDisposable
         Assert.True(act.SkipOffsetTransform);                       // the ctor's last bool is true
         Assert.True(act.Field0xF7);
         Assert.False(act.CheckPreActionPose);                       // +0xB9 = 0
-        Assert.Throws<NotSupportedException>(() => PlaceRelObjectAction.FromWireMessage(rig.M, 7, usePreDockPose: true, placementOffsetXmm: 30.0, useManualSpeed: false));
+        // FLIP-DOCK-COMPOUND-GAPS-1: 0x0052A700 is the DriveToPlaceRelObjectAction ctor's (PLT 0x004A9430) only call; the stack decodes no PlaceRelObject message, so it is unreachable, not unbuilt-on-path.
+        var unreachable = Assert.Throws<NotSupportedException>(() => PlaceRelObjectAction.FromWireMessage(rig.M, 7, usePreDockPose: true, placementOffsetXmm: 30.0, useManualSpeed: false));
+        Assert.StartsWith("not reachable", unreachable.Message);
     }
 
     /// <summary>
@@ -2361,7 +2363,7 @@ public class M12RVisBuildTests : IDisposable
     /// <summary>
     /// M12-035, L1 (0x0055F366) and its helper (0x0055F3F8): the function ends with GetPossiblePoses(closestOnly 0); the helper block runs only when *inPos is 0 and [this+0x100] &gt;= 0, and over the
     /// EMPTY vector the helper returns 0, leaving *inPos 0 and flip+0x140 = 1. [this+0x100] is indeterminate in the engine (never written) and NOT invented here (null): both readings leave
-    /// +0x140 = 1, the FlipBlockAction constructor default. The helper is false for a negative threshold and for an empty vector; a non-empty one needs ComputeDistanceSQBetween (MISSING) and throws.
+    /// +0x140 = 1, the FlipBlockAction constructor default. The helper is false for a negative threshold and for an empty vector; a non-empty one never reaches the helper (its callers L1/L2 pass an empty vector) and throws "not reachable".
     /// L2 (ShouldDriveToClosestPreActionPose(b), 0x0055E3B0) is the same with closestOnly = b.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
@@ -2393,7 +2395,11 @@ public class M12RVisBuildTests : IDisposable
             Assert.Equal(BlockFace.Front, Assert.Single(l2).Marker.Face);            // closestOnly: poses[closestIndex] (planar closest from (0, -10) is Front)
             Assert.False(DriveAndFlipBlockAction.PoseNearerThan(At(0, 0), Array.Empty<Pose3d>(), 5f));
             Assert.False(DriveAndFlipBlockAction.PoseNearerThan(At(0, 0), new[] { At(1, 0) }, -1f));
-            Assert.Throws<NotSupportedException>(() => DriveAndFlipBlockAction.PoseNearerThan(At(0, 0), new[] { At(1, 0) }, 5f));
+            // 0x0055F444 vcmpe.f32 s16,#0 / blt: a NaN threshold is unordered (N != V), so every element is skipped and 0x0055F45E returns 0.
+            Assert.False(DriveAndFlipBlockAction.PoseNearerThan(At(0, 0), new[] { At(1, 0) }, float.NaN));
+            // FLIP-DOCK-COMPOUND-GAPS-1: L1 0x0055F38E / L2 0x0055F4EE are the helper's only callers and pass an empty vector; the non-empty case is a stated unreachable, not a guess.
+            var unreachable = Assert.Throws<NotSupportedException>(() => DriveAndFlipBlockAction.PoseNearerThan(At(0, 0), new[] { At(1, 0) }, 5f));
+            Assert.StartsWith("not reachable", unreachable.Message);
         }
     }
 

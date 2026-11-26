@@ -83,12 +83,13 @@ public sealed class FlipBlockAction
     public static ActionResult LiftFailureResult(MotionOutcome outcome) => outcome.EngineResult is { } code ? (ActionResult)code : ActionResult.Timeout;
 
     /// <summary>
-    /// How many queued carry lifts were still unfinished when the flip ended, so the destructor's <c>ActionList::Cancel(id)</c> (0x0055ED6C..0x0055ED7A) should have cancelled them. MISSING: the stack has
-    /// no handle to cancel a lift move that <c>CozmoMotion.SetLiftHeightAsync</c> is waiting on (the move ends only by its own completion or its engine-clock IAction timeout, which stops a moving lift,
-    /// M4-015/M4-016), so the cancel is NOT done and is counted here. This is a limit of this stack, NOT a source gap: the engine's destructor cancels the queued lift promptly at flip end (it is
-    /// typically still moving, rising 45 -> 92 mm after a trigger only 40 mm out), whereas here it runs on toward 92 mm and, if it is still not in position when its 30 s engine-clock timeout fires
-    /// (Motion.cs StopLift whenever the lift is moving), that late stop could hit a LATER action's lift. An existing Motion stop/cancel API for a pending wait would be the option; none is used because
-    /// no record supports it.
+    /// How many queued carry lifts were still unfinished when this LEGACY async flip ended, so the destructor's <c>ActionList::Cancel(id)</c> (0x0055ED6C..0x0055ED7A) would have cancelled them.
+    /// <para><b>Not on a production path</b> (FLIP-DOCK-COMPOUND-GAPS-1, 2026-11-25): <see cref="RunAsync"/> is constructed only by tests and by <see cref="DriveAndFlipBlockAction"/>, which nothing
+    /// in <c>src/</c> constructs (callers searched: <c>new FlipBlockAction(</c>, <c>new DriveAndFlipBlockAction(</c>). Every production flip (the bridge's <c>flip</c> command through
+    /// <c>QueueAiFlipCubeAsync</c>, KnockOverCubes and the other native behaviours) runs <c>NativeFlipBlockRunner</c>, whose <c>WatcherEnding</c> does the destructor's cancel: 0x0055ED6C
+    /// <c>ldr r1,[r4,#0x13c]</c>; 0x0055ED70 <c>adds r0,r1,#1</c> / <c>beq</c> (skip for -1); 0x0055ED76 <c>ldr r0,[r0,#0x250]</c> (the robot's ActionList); 0x0055ED7A <c>blx</c> ActionList::Cancel
+    /// (PLT 0x004A57A0), then <c>RemoveDisableReactionsLock</c> at 0x0055ED88 (pinned by KnockOverNativeTests.ManagerReplacementRetiresRunningBlindFlipAndItsLiftWithoutCancellingAnotherQueue).
+    /// This legacy class has no handle on the lift wait (<c>SetLiftHeightAsync</c>), so it only counts the skipped cancel here.</para>
     /// </summary>
     public int QueuedLiftCancelsNotModelled { get; private set; }
 
@@ -215,7 +216,7 @@ public sealed class FlipBlockAction
             if (_raise is { IsCompleted: false })
             {
                 QueuedLiftCancelsNotModelled++;
-                _trace.Add("FlipBlockAction destructor: the queued carry lift is unfinished; ActionList::Cancel(id) is not modelled (no cancel handle, MISSING)");
+                _trace.Add("FlipBlockAction destructor: the queued carry lift is unfinished; ActionList::Cancel(id) is not modelled in this legacy async class (no production caller; NativeFlipBlockRunner.WatcherEnding cancels it, 0x0055ED6C..0x0055ED7A)");
             }
             M8CallsNotModelled++;
         }
@@ -303,14 +304,20 @@ public sealed class DriveAndFlipBlockAction
 
     /// <summary>
     /// The helper 0x0055F3F8: true when <paramref name="thresholdSq"/> &gt;= 0 and some pose's <c>ComputeDistanceSQBetween(Robot::GetPose(), pose)</c> is below it (its return is ignored).
-    /// Over an empty vector it is false. The body of <c>ComputeDistanceSQBetween</c> is not in the inventory (MISSING), so a non-empty vector throws <see cref="NotSupportedException"/>.
+    /// Over an empty vector it is false (0x0055F40E <c>cmp r5,r7</c> / <c>beq</c> -> 0x0055F45E <c>movs r0,#0</c>). Per element (stride 0xC, 0x0055F458) the engine copies the element (0x004A418C),
+    /// calls <c>ComputeDistanceSQBetween(Robot::GetPose() 0x004EA398, copy, &amp;d)</c> (PLT 0x004AC0AC, 0x0055F436), skips the element when the threshold is below 0 or NaN (0x0055F444 <c>blt</c>)
+    /// and returns 1 when <c>d &lt; threshold</c> (0x0055F44E <c>bmi</c>).
+    /// <para><b>Not on a production path</b> (FLIP-DOCK-COMPOUND-GAPS-1, 2026-11-25): the engine calls the helper only from L1 (0x0055F38E) and L2 (0x0055F4EE), always over the fresh EMPTY vector
+    /// (see the class remarks). Here its only caller is <c>InstalledPosesFunction</c>, which passes an empty array and belongs to this class, which nothing in <c>src/</c> constructs; the
+    /// production <c>NativeDriveAndFlipRunner.GetPossiblePoses</c> skips the indeterminate +0x100 block (M1-034). So the non-empty case (whose <c>ComputeDistanceSQBetween</c> body is unread)
+    /// cannot occur in this system and throws <see cref="NotSupportedException"/> rather than guess it.</para>
     /// </summary>
     // fidelity: M12-035
     public static bool PoseNearerThan(Pose3d robot, IReadOnlyList<Pose3d> poses, float thresholdSq)
     {
         if (!(thresholdSq >= 0)) return false;
         if (poses.Count == 0) return false;
-        throw new NotSupportedException("MISSING: ComputeDistanceSQBetween's body (planar or 3-D, the frames) is not in the inventory (M12-035 helper 0x0055F3F8).");
+        throw new NotSupportedException("not reachable: a non-empty vector never reaches helper 0x0055F3F8 (L1 0x0055F38E / L2 0x0055F4EE pass an empty one); ComputeDistanceSQBetween (PLT 0x004AC0AC) is unread (M12-035).");
     }
 
     /// <summary>

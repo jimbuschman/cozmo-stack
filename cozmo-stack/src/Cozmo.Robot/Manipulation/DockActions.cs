@@ -128,9 +128,15 @@ public sealed class StandInDockSubActions : IDockSubActionExecutor
 /// <see cref="Cozmo.Robot.Vision.TurnTowardsPoseAction"/>, M13-020).</para>
 /// <para><c>CheckIfDone</c> 0x0054ADD4: the first call runs the pose turn (the compound at +0x78) to its result; a non-zero result is the action's. Then, with the visual-verify byte +0x192 clear, the action ends
 /// with 0 (0x0054ADF2..0x0054ADF8 -> 0x0054AF60): the <c>PlaceObjectOnGroundAction</c> case (+0x180 = 1, +0x192 = 0). With +0x192 SET and an object ID ([+0x188] != -1) the engine instead builds a
-/// <c>TrackObjectAction</c> (0x130 bytes at 0x0054AE08, ctor PLT 0x004A952C) and queues it with <c>QueueAction(3)</c> (0x0054AE2C): not built, MISSING. A <c>VisuallyVerifyObjectAction</c> (0x9C bytes, ctor
-/// PLT 0x004A9688, 0x0054AED8) is built only when +0x180 is set AND +0x193 was 0 on entry to that phase; the ctor sets +0x193 = 1 and the first tick clears it, so the +0x180 / +0x193 branch is not reachable
-/// from this construction and is not built.</para>
+/// <c>TrackObjectAction</c> (0x130 bytes at 0x0054AE08, ctor PLT 0x004A952C at 0x0054AE1E) and queues it with <c>QueueAction(3)</c> (0x0054AE2C). A <c>VisuallyVerifyObjectAction</c> (0x9C bytes, ctor
+/// PLT 0x004A9688, 0x0054AED8..0x0054AF1E) is built when +0x180 is set and +0x193 is 0 (0x0054AE3A..0x0054AE46, 0x0054AECE..0x0054AED4); with +0x193 set (the ctor's 1) the finished turn instead calls the reset at PLT
+/// 0x004A9970, clears +0x193, sets the pan tolerance from +0x194 and returns RUNNING (0x0054AE48..0x0054AEBC). <c>NativeTurnTowardsObjectRunner</c> models that as a second turn pass followed
+/// by the verify step.</para>
+/// <para><b>Not on a production path</b> (FLIP-DOCK-COMPOUND-GAPS-1, 2026-11-25): this executor is constructed only by tests (callers searched: <c>new TurnTowardsObjectExecutor(</c>;
+/// <see cref="DockActionBase"/> defaults to <see cref="StandInDockSubActions"/>), and <see cref="TurnTowardsObject.BoolArgument6"/> is the constant false, so the +0x192 branch below never runs.
+/// The production dock, roll, wheelie, place-relative, pickup and charger runners use <c>NativeTurnTowardsObjectRunner</c>, which builds the VisuallyVerifyObjectAction step
+/// (<c>NativeVerifyObjectRunner</c>) and is constructed with track = false at every production site (the TrackObjectAction ctor's only callers are 0x0052AD20, the app's TrackToObject message,
+/// and 0x0054AE1E; TrackObjectAction is excluded, M13-036).</para>
 /// <para><c>[verify+0x56] = 1</c> set by <c>PlaceObjectOnGroundAction::Init</c> is <c>IActionRunner</c>'s suppress-track-lock byte (<c>UnlockTracks</c> 0x005408EC skips it, M8-009); this stack's actions take no
 /// track locks, so it has no effect here.</para>
 /// </summary>
@@ -192,10 +198,8 @@ public sealed class TurnTowardsObjectExecutor : IDockSubActionExecutor
             return ActionResult.Abort;
         }
         if (r != ActionResult.Success) return r;
-        if (t.BoolArgument6)
-        {
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TurnTowardsObjectAction::CheckIfDone 0x0054AE08..0x0054AE30: with the byte [+0x192] set the engine builds a TrackObjectAction (0x130 bytes, ctor PLT 0x004A952C) and queues it with QueueAction(3); it is not built here and the action ends after the turn");
-        }
+        // TurnTowardsObject.BoolArgument6 ([+0x192]) is the constant false, so TurnTowardsObjectAction::CheckIfDone's TrackObjectAction branch (0x0054ADF2..0x0054AE2C) is not reached here
+        // (the production path is NativeTurnTowardsObjectRunner; see the class remarks).
         return ActionResult.Success;
     }
 }
@@ -491,7 +495,13 @@ public abstract partial class DockActionBase
         try
         {
         _actionStartSec = M.ClockSec();
-        _trace.Add("MISSING: legacy async IDockAction adapter does not model the native tick's reaction locks, interacting light or squint removal; supported robot commands use the native runners (0x00551528..0x00551C5E)");
+        // FLIP-DOCK-COMPOUND-GAPS-1 (2026-11-25), callers of this adapter searched (new PickupObjectAction/PlaceRelObjectAction/RollObjectAction/PopAWheelieAction/AlignWithObjectAction,
+        // .RunAsync method groups): no bridge command and no freeplay-selectable behaviour reaches it. The bridge's pickup/roll/stack/flip/wheelie/mount-charger commands (Motion.cs
+        // QueueAi*Async) and the native freeplay behaviours run the native IDock runners (NativePickupObjectRunner, NativeRollObjectRunner, NativePlaceRelRunner, NativePopAWheelieRunner,
+        // NativeDriveToMountChargerRunner.AlignRunner). The remaining reachers are: MountChargerBehavior ("DockingTestSimple", excluded in SCOPE.md E; the shipped OBB names it only in
+        // devBehaviors/dockingTestSimple.json, no chooser) via MountChargerAction -> AlignWithObjectAction; PlaceRelObjectHelper via ManipulationBehavior.DelegatePlacement, which has no
+        // caller; PlaceRelObjectAction.FromWireMessage (no caller, see there); and the Cozmo.Conformance ManipTool --mount harness. The unbuilt steps therefore stay a visible MISSING here.
+        _trace.Add("MISSING: legacy async IDockAction adapter does not model the native tick's reaction locks, interacting light or squint removal; supported robot commands use the native runners (0x00551528..0x00551C5E); reached only from the excluded DockingTestSimple adapter and test/harness callers");
         // (2)
         var target = M.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("IDockAction.NullDockObject: Dock object is null"); return ActionResult.BadObject; }
@@ -945,13 +955,17 @@ public sealed class PlaceRelObjectAction : DockActionBase
     /// angle, useManualSpeed, Radians(0), false, true)</c> (0x0052A6C2..0x0052A700), a drive-then-dock compound this stack does not have.
     /// NO PRODUCTION CALLER: nothing in this stack decodes the app's <c>PlaceRelObject</c> message (the C# behaviours build the action directly), so this factory is
     /// reached only from tests.
+    /// <para>FLIP-DOCK-COMPOUND-GAPS-1 (2026-11-25): the <c>DriveToPlaceRelObjectAction</c> constructor (PLT 0x004A9430, body 0x0055C7D0) has exactly one call in the engine, 0x0052A700 in this
+    /// message factory (BL/BLX scan of .text for 0x004A9430 and 0x0055C7D0). The stack's place-relative paths (StackBlocks / BuildPyramidBase through <c>NativePlaceRelObjectHelper</c> ->
+    /// <c>NativePlaceRelRunner</c>, the bridge's <c>stack</c> command through <c>QueueAiStackOnCubeAsync</c>) never build it, and the bridge has no place-relative message. So the compound is
+    /// unreachable in this system and is not built; the <c>usePreDockPose</c> branch throws rather than guess it.</para>
     /// </summary>
     // fidelity: M12-025
     public static PlaceRelObjectAction FromWireMessage(ManipulationSystem m, uint objectId, bool usePreDockPose,
                                                        double placementOffsetXmm, bool useManualSpeed)
     {
         if (usePreDockPose)
-            throw new NotSupportedException("MISSING: DriveToPlaceRelObjectAction (0x0055C7D0) composes IDriveToInteractWithObject (ActionType 1) with the PlaceRelObjectAction built at 0x0055C862; the inner constructor's other arguments and the compound's behaviour are not itemised in the inventory.");
+            throw new NotSupportedException("not reachable: DriveToPlaceRelObjectAction (0x0055C7D0; inner PlaceRelObjectAction built at 0x0055C862) is constructed only by the app's PlaceRelObject message (0x0052A700), which this stack does not decode; it is not built.");
         var act = new PlaceRelObjectAction(m, objectId, flagAt0xA8: true, a: placementOffsetXmm, b: 0.0,
                                            dockActionFlagAt0x95: useManualSpeed, skipOffsetTransform: true);
         act.Field0xF7 = true;
