@@ -174,14 +174,6 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                    ((id=="EarnedSparks" && interludeClass.GetString()=="EarnedSparks") ||
                     ((id is "Needs_SevereLowPlayBored" or "Needs_SevereLowPlayRequest" or "Needs_MildLowRepairRequest" or "Needs_MildLowEnergyRequest" or "Needs_MildLowPlayRequest") && interludeClass.GetString()=="ExpressNeeds")))
                 {fields.MarkPristine();if(id=="EarnedSparks")fields.EarnedSparksConfig=entry.Value;}
-                if (id is "EnrollFace" or "RespondToRenameFace" or "MeetCozmo_InteractWithFaces")
-                {
-                    string expected = id == "MeetCozmo_InteractWithFaces" ? "InteractWithFaces" : id;
-                    if (entry.Value.TryGetProperty("behaviorClass", out var meetClass) &&
-                        meetClass.ValueKind == System.Text.Json.JsonValueKind.String && meetClass.GetString() == expected &&
-                        (!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective", out var priorRun) || priorRun.ValueKind == System.Text.Json.JsonValueKind.Null))
-                        fields.MarkPristine();
-                }
                 if(id=="SparksFireTruckAlarm" && entry.Value.TryGetProperty("behaviorClass",out var fireClass) && fireClass.ValueKind==System.Text.Json.JsonValueKind.String && fireClass.GetString()=="FireTruckAlarm" &&
                    entry.Value.TryGetProperty("requiredUnlockId",out var fireUnlock) && fireUnlock.ValueKind==System.Text.Json.JsonValueKind.String && fireUnlock.GetString()=="FireTruckAlarm" &&
                    (!entry.Value.TryGetProperty("considerThisHasRunForBehaviorObjective",out var fireObjective) || fireObjective.ValueKind==System.Text.Json.JsonValueKind.Null))
@@ -648,16 +640,16 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                 return next;
             }
             var decision=activity.Chooser?.GetDesiredActiveBehavior(current,manager.RunningDurationSec(now),context,now);
-            if (activity.Id == "MeetCozmo" && decision?.UnbuiltWinner is { } unavailableWinner)
-            {
-                SetMeetFrontier("MISSING MEET-COZMO-ADMISSION-1: " + unavailableWinner + " won the native score; previous run stopped before the unavailable Init, with no runner-up or automatic reroll", current);
-                return null;
-            }
+            // Every Meet candidate (DriveOffCharger, RespondToRenameFace, EnrollFace, MeetCozmo_InteractWithFaces,
+            // MeetCozmo_FindFaces_Socialize, PutDownBlock) is built by the configured factory with the actual
+            // Robot, vision and manipulation owners, and the engine's EvaluateScore (0x0060A44A) has no unavailable
+            // result. InputUnavailable is only a host owner guard here (a retired/replaced Robot or runtime, or a
+            // runtime built without vision); the chooser has already named the candidate and the missing owner.
             if(decision?.InputUnavailable==true)
             {
                 if (activity.Id == "MeetCozmo")
                 {
-                    SetMeetFrontier("MISSING MEET-COZMO-ADMISSION-1: Meet scorer reached an unproved input; checked run stopped without a guessed winner or automatic reroll", current);
+                    SetMeetFrontier("MISSING MEET-COZMO-ADMISSION-1: Meet candidate owner unavailable (host wiring guard, not an engine input); run stopped without a guessed winner or automatic reroll", current);
                     return null;
                 }
                 SteppedBehavior.ReportMissing("M8-013 configured chooser input unavailable; prior behavior retained");return current;
