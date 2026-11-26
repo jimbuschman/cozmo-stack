@@ -1,7 +1,7 @@
 # Session 7 (2026-11-26 15:47–15:54 UTC): retests and new request tools
 
 - **Bundles (local only):** `re-analysis/acceptance/hardware/20261126-094739-LLM-SESSION/` and
-  `20261126-095137-LLM-SESSION/` (`095040` is the reconnect in between).
+  `20261126-095137-LLM-SESSION/` and `20261126-095506-LLM-SESSION/` (`095040` is a short reconnect stub; 095137 ended in the second drop, 095506 holds the spark, needs, desk fall and sleep-disconnect).
 - **Status:** observations, not yet checked against the binary.
 
 ## Results
@@ -60,7 +60,7 @@ Still failing:
 
 ## R4. He went off the desk edge after a cliff stop (15:58:12–15:58:15 UTC); the operator caught him
 
-Sequence (stack log, 20261126-095137 bundle):
+Sequence (stack log, 20261126-095506 bundle):
 - 15:58:12.38: Freeplay Hiking_PounceOnMotion plays anim_pounce_03 (3.8 s, includes a **body** track).
 - 15:58:14.158: firmware `ProxSensors.UpdateCliff.StoppingDueToCliff`, then RobotStopped. The behaviour is forced to
   end, and CliffDetected starts ReactToCliff.
