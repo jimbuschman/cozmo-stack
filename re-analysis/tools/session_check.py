@@ -689,6 +689,8 @@ def face_operation(session, name, step):
     prompt, citation, expected = step
     tools, tag, seconds, outcome = FACE_TOOLS[name]
     citation += f"; E2G 0x{tag:02X}"
+    if tag == 0x1D:
+        citation += "; G2E rename, save and RobotRenamedEnrolledFace broadcast at 0x00657B24"
     if tag == 0x57:
         citation += "; G2E 0x89, remove and attempt album save at 0x00657A60–0x00657A98 before the empty-name report"
     candidates = []
@@ -700,13 +702,17 @@ def face_operation(session, name, step):
             wanted = operation.get("faceId")
             wanted_name = operation.get("name")
             reports = []
-            requested_id_matches = tag != 0x57 or wanted == call.args.get("faceId")
-            if wanted is not None and requested_id_matches and operation.get("outcome") == outcome and call.reply.get("engineResult") == expected:
+            request_matches = tag == 0x56 or wanted == call.args.get("faceId")
+            if tag == 0x1D:
+                request_matches = request_matches and wanted_name == call.args.get("newName")
+            if wanted is not None and request_matches and operation.get("outcome") == outcome and call.reply.get("engineResult") == expected:
                 for at, body in session.in_window(tag, call.start, end):
                     offset = int(tag == 0x56)
                     if len(body) < offset + 5 or struct.unpack_from("<i", body, offset)[0] != wanted:
                         continue
                     if tag == 0x56 and body[0] != expected:
+                        continue
+                    if tag in (0x1D, 0x57) and len(body) != offset + 5 + body[offset + 4]:
                         continue
                     if text8(body, offset + 4) != ("" if tag == 0x57 else wanted_name):
                         continue

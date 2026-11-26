@@ -280,6 +280,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         var renamed = new ConcurrentQueue<FaceRenamedReport>();
         f.Rig.Engine.FaceRenamed += renamed.Enqueue;
         // The recorded album used ID 4. Replay against this fixture's newly allocated ID.
+        int renameStart = missing.Count;
         int rename = await client.Send("tools/call", new { name = "rename-face",
             arguments = new { faceId = completion.Id, oldName = originalName, newName = updatedName } });
         await PumpUntil(() => !renamed.IsEmpty, 10);
@@ -302,6 +303,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         // (MeetCozmoAdmissionTests); do not invent a 30-second speech deadline.
         var erased = new ConcurrentQueue<FaceErasedReport>();
         f.Rig.Engine.FaceErased += erased.Enqueue;
+        int eraseStart = missing.Count;
         int erase = await client.Send("tools/call", new { name = "erase-face", arguments = new { faceId = completion.Id } });
         // Session 5 F4: read state after the erase report before a fresh observation can replace the cached name.
         await PumpUntil(() => !erased.IsEmpty, 10, sendPictures: false);
@@ -334,6 +336,8 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
                 frameTimestampStart = 230005u, frameTimestampEnd = 231510u,
                 frozenImageSha256 = stablePicture is null ? null : Convert.ToHexString(SHA256.HashData(stablePicture)),
                 seed = 4069123563u, freshAlbum = true }, phases, clips, nvCommands, audioChunks, emissions,
+            renameMissing = missing.Skip(renameStart).Take(eraseStart - renameStart).Distinct().ToArray(),
+            eraseMissing = missing.Skip(eraseStart).Distinct().ToArray(),
             renameSpeech = new { admitted = renameResponseSeen, tag = renameActionTag,
                 completed = renameResponseSeen && !renameBehavior.EngineRunning,
                 actionResults = actionCompletions.Where(c => c.Tag == renameActionTag).Select(c => c.Result).ToArray() } };
@@ -386,7 +390,7 @@ public sealed class McpFaceEnrollmentReplayTests(ITestOutputHelper output)
         { lock (gate) { if (disposed) return; disposed = true; timer.Dispose(); ready.Dispose(); } }
     }
 
-    private static JsonElement[] ReadSessionFiveFaceRequests(string bundle)
+    internal static JsonElement[] ReadSessionFiveFaceRequests(string bundle)
     {
         var requests = new List<JsonElement>();
         // Replay the captured MCP requests with the established Nov 17 camera fixture.

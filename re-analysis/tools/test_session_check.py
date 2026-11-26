@@ -458,6 +458,18 @@ class SessionCheckTests(unittest.TestCase):
         checks, _ = self.check()
         self.assertEqual(PASSED, checks["say-text"].status)
 
+    def test_rename_requires_requested_id_and_name_in_the_exact_rename_report(self):
+        self.request(100, 1, "rename-face", faceId=7, oldName="Drawn", newName="Ada")
+        for tag, face, name, tail in ((0x1D, 8, "Ada", b""), (0x1D, 7, "Other", b""),
+                                      (0x57, 7, "Ada", b""), (0x1D, 7, "Ada", b"x"),
+                                      (0x1D, 7, "Ada", b"")):
+            self.raw(140, tag, struct.pack("<iB", face, len(name)) + name.encode() + tail)
+            self.reply(150, 1, faceOperation={"outcome": "renamed", "faceId": face, "name": name})
+            checks, _ = self.check()
+            expected = PASSED if (tag, face, name, tail) == (0x1D, 7, "Ada", b"") else SEEN
+            self.assertEqual(expected, checks["rename-face"].status)
+            del self.events[-2:]
+
     def test_erase_requires_the_requested_id_and_empty_native_report_name(self):
         self.request(100, 1, "erase-face", faceId=7)
         self.reply(150, 1, faceOperation={"outcome": "erased", "faceId": 7, "lastKnownName": "Ada"})
