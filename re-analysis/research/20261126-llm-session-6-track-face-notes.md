@@ -113,3 +113,9 @@ Lead:
   - which engine path the app's SayText takes (the G2E message, its queue position, and the BehaviorManager
     external-action handling that stops the running Freeplay behaviour);
   - whether speech should pause Freeplay as the turn did.
+
+**S1 confirmed (retry 03:46:56–03:47:16).**
+- say-text was sent while Freeplay ran FindFaces_socialize (started 03:46:54).
+- FindFaces kept running its look-around for about 20 s; no SayTextAnimation started; `pausedForCommand` stayed false.
+- The speech ended CANCELLED_WHILE_RUNNING when Freeplay moved on to Hiking_FirstLookIntro (03:47:16).
+- Turns pre-empt Freeplay; speech never does.
