@@ -246,7 +246,7 @@ public sealed class AiAuthoredAnimationTests
     }
 
     [Fact]
-    public void MissingStartupArchiveLeavesEngineRunningAndReportsMissing()
+    public void MissingStartupArchiveLeavesEngineRunningAndReportsOperationalFailure()
     {
         var log = new List<string>();
         using var rig = new M4ControlTests.Rig(engineOptions: new CozmoEngineOptions { BlockPoolPath = "" },
@@ -257,7 +257,7 @@ public sealed class AiAuthoredAnimationTests
             });
         rig.Tick();
         Assert.Null(rig.Engine.RuntimeWwiseAudio);
-        Assert.Contains(log, line => line.Contains("MISSING M6-024 InitScene"));
+        Assert.Contains(log, line => line.Contains("M6-024 InitScene failed:"));
     }
 
     [Fact]

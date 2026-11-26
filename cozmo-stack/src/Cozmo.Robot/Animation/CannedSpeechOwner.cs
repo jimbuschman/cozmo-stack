@@ -36,11 +36,15 @@ internal sealed class CannedSpeechOwner : IWwiseRobotAudioHost
         return await NativeWwiseVoiceSession.OpenSharedAsync(library, init, english, archive, _buffer,
             () => Environment.TickCount64, sink, music, beforeCozmo, debug).ConfigureAwait(false);
 
-        Task<byte[]> ReadBankAsync(string entry)
+        async Task<byte[]> ReadBankAsync(string entry)
         {
-            string? file = banks is null ? null : Path.Combine(banks, entry);
-            return File.Exists(file) ? File.ReadAllBytesAsync(file!) : Task.Run(() =>
-                ReadArchivedBank(archive, entry) ?? throw new FileNotFoundException($"Wwise bank {entry} is unavailable", archive));
+            try
+            {
+                string? file = banks is null ? null : Path.Combine(banks, entry);
+                return await (File.Exists(file) ? File.ReadAllBytesAsync(file!) : Task.Run(() =>
+                    ReadArchivedBank(archive, entry) ?? throw new FileNotFoundException($"Wwise bank {entry} is unavailable", archive))).ConfigureAwait(false);
+            }
+            catch (Exception error) when (initScene) { error.Data[NativeWwiseVoiceHost.BankFailureName] = Path.GetFileName(entry); throw; }
         }
     }
 
