@@ -1420,6 +1420,14 @@ public sealed partial class BlockWorld
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 stack re-entrancy guard, LocalizeToObject cross-origin branch: the Robot was replaced during UpdateObjectOrigins' broadcast; X11..X13 skipped for the retired owner");
             return;
         }
+        // C2:charger-memory copies the actual joined pose roots before native Flatten
+        // at 0x005159B2. No attempt to join unrelated origins from object IDs alone.
+        if (owner.Engine.Options.C2.ChargerMemory)
+        {
+            using var oldInNew = new Pose3d();
+            if (Pose3d.GetWithRespectTo(owner.GetNativeOrigin(oldOriginId),owner.GetNativeOrigin(newOriginId),oldInNew))
+                owner.Engine.C2ChargerMemory.Reanchor(owner,oldOriginId,newOriginId,oldInNew);
+        }
         // fidelity: M13-032 — X11 0x0051599E MapComponent::UpdateMapOrigins(old, new); its object update is UpdateOriginsOfObjects (X11a, 0x0067DE70).
         Maps.UpdateMapOrigins(oldOriginId, newOriginId, () => Maps.UpdateOriginsOfObjects(oldOriginId, newOriginId, GetLocatedObjectByIdHelper));
         // X12 0x005159A8: FaceWorld::UpdateFaceOrigins(old, new); its count is ignored.
@@ -2200,6 +2208,7 @@ public sealed partial class BlockWorld
     private uint AddAndUpdateObjects(List<ObservableObject> instances, CameraModel camera, uint timestamp, VisionPoseData pd, List<ObjectObservation> observations, Action<ObservableObject,NativeObservedObject>? nativeObjectReport, Func<uint,Pose3d?>? nativeComputedPose, Func<uint,bool>? nativeCameraMovingAt)
     {
         var robotPos = (CurrentRobotPose?.Invoke() ?? pd.RobotPose).Translation;
+        var c2Owner = NativeSnapshotOwner?.Invoke();
         var potentials = new PotentialObjectsForLocalizingTo(this,nativeComputedPose,nativeCameraMovingAt); // 0x00620B0C
         foreach (var instance in instances)
         {
@@ -2235,6 +2244,14 @@ public sealed partial class BlockWorld
 
             located.LastObservedTimestamp = instance.LastObservedTimestamp;        // 0x00621146
             UpdateMarkerObservationTimes(located, instance);                       // 0x0062114A
+            // C2:charger-memory samples this accepted observation, before localization
+            // combines it with another origin. The native object path is left intact.
+            if (instance.Type==ObjectType.Charger_Basic && c2Owner is { } memoryOwner &&
+                memoryOwner.Engine.Options.C2.ChargerMemory && ReferenceEquals(NativeSnapshotOwner?.Invoke(),memoryOwner) &&
+                nativeComputedPose?.Invoke(instance.LastObservedTimestamp) is { } robotAtSighting)
+                // The public VisionPoseData facade is flat; the existing keyed
+                // native history supplier retains the actual observation origin.
+                memoryOwner.Engine.C2ChargerMemory.Observe(memoryOwner,instance,located.ObjectId,robotAtSighting);
             if (potentials.Insert(instance, located, dist, flag, pd.CameraMoving) == 1)   // 0x0062115E
                 foreach (var kv in byOrigin.OrderBy(k => k.Key))
                     if (!ReferenceEquals(kv.Value, located)) potentials.Insert(instance, kv.Value, dist, true, pd.CameraMoving);   // 0x00621182

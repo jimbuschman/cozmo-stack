@@ -65,6 +65,13 @@ Candidates so far:
   cliff/firmware stop, leaving other animation tracks and the native retreat decision intact. Host settings on for
   MCP by default, `--baseline` disables; reported in `get_state`. Offline regression against session 7's stop clip;
   robot validation pending. Does not establish physical clearance or guarantee no fall.
+- **C2:charger-memory** (operator approved 2026-11-26): separate session-memory fused charger pose from accepted
+  marker sightings, weighted by squared front incidence and inverse squared range, flat at ground z=0, circular yaw;
+  retained across native forgetting and pickups, with explicit unanchored status until a verified root relation
+  or fresh observation. `get_map` draws the anchored fused position and reports contributing sightings;
+  `get_state.chargerMemory` remains visible even when `knownChargers` has no native commandable object.
+  Same named switch and baseline policy; cross-session persistence and general re-anchoring are separate C2 jobs.
+  Robot validation pending.
 - World map memory: he forgets the charger once it is out of sight or after he is picked up (2026-11-19 session:
   charger dropped from knownChargers after leaving it; objects deleted from old origins at re-localisation).
   Operator 2026-11-26: mapping is a main improvement area ("we can do a much better job"). Candidates: a persistent

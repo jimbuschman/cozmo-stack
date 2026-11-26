@@ -21,6 +21,8 @@ The MCP executable enables the named C2 host extensions by default. Start with `
 
 - `C2:cliff-hold-still`: after the native cliff stop or a detected CliffEvent, hold the animation body track; head, lift, face, sound and other tracks continue. Already unsent body and turn-to-recorded-heading messages are discarded; the device's animation body mask is held too. The original engine's retreat decision and direct backup remain available. Release after Undetected and the pending native cliff reaction's retreat/finish decision. This does not establish that the robot is physically safe at an edge; do not direct it to drive until it has safe clearance.
 
+- `C2:charger-memory`: `chargerMemory` in `get_state` and `get_map` retains the unique charger's flat ground-plane position and circular heading average across distinct accepted sightings. Near, square-on observations carry more weight than distant/oblique ones. `sightings` counts the observations contributing to that estimate; `unanchoredSightings` counts retained evidence in other coordinate roots. Only `anchored: true` is in the current origin. When unanchored, remember the charger but do not use its old coordinates; a verified native re-localization can rejoin them. In the map, `fusedCharger` replaces the drawn position while `chargerEstimate` remains the latest original sighting's diagnostic tilt. `memoryOnly: true` is remembered, not a commandable native object; use IDs in `knownChargers` for native object commands. Memory for unrelated roots is not averaged by numeric ID alone.
+
 ## Reading results
 
 `isError` is the MCP tool error flag. `structuredContent` contains the same JSON as the text content block.

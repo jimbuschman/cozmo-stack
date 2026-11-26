@@ -159,6 +159,7 @@ public sealed partial class CozmoBridge
         {
             timestampUtc = DateTimeOffset.UtcNow,
             c2Extensions = Robot.Engine.Options.C2.ActiveExtensions,
+            chargerMemory = Robot.Engine.Options.C2.ChargerMemory ? Robot.Engine.C2ChargerMemory.Get(connected ? Robot.Engine.Robot : null) : null,
             cliffHoldActive = connected && Robot.Engine.Robot?.C2CliffHoldActive == true,
             connection = new { connected, ready = connected && Robot.Engine.IsReadyDelivered, link = Robot.Transport.State.ToString() },
             pose = ReadWorldPose(),
