@@ -340,12 +340,12 @@ public sealed class BehaviorFactory
         [BehaviorClass.SearchForFace] = (ctx,json)=>new NativeSearchForFaceBehavior(ctx,json),
         [BehaviorClass.DriveToFace] = (ctx,json)=>new NativeDriveToFaceBehavior(ctx,json),
         [BehaviorClass.ReactToCliff] = (ctx,json)=>new ReactToCliffBehavior(
-            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToCliff actual manipulation owner"),
-            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToCliff actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString())
+            WiringGuard(ctx.Manipulation,"ReactToCliff","Manipulation"),
+            WiringGuard(ctx.NativeRobot,"ReactToCliff","NativeRobot"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString())
             {AlwaysStreamline=json.TryGetProperty("alwaysStreamline",out var streamlined)&&streamlined.GetBoolean()},
         [BehaviorClass.ReactToImpact] = (ctx,json)=>new ReactToImpactBehavior(
-            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToImpact actual manipulation owner"),
-            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToImpact actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+            WiringGuard(ctx.Manipulation,"ReactToImpact","Manipulation"),
+            WiringGuard(ctx.NativeRobot,"ReactToImpact","NativeRobot"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         // Robot and config are the constructor inputs at 0x0059D19E..0x0059D1A2,
         // 0x0059D1FE..0x0059D202, and 0x0059D27E..0x0059D282.
         [BehaviorClass.ReactToMotorCalibration] = (ctx,json) => new ReactToMotorCalibrationBehavior(
@@ -355,15 +355,15 @@ public sealed class BehaviorFactory
         [BehaviorClass.ReactToRobotOnBack] = (ctx,json) => new ReactToRobotOnBackBehavior(
             ctx.Manipulation!, ctx.NativeRobot!, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.ReactToPlacedOnSlope] = (ctx,json)=>new ReactToPlacedOnSlopeBehavior(
-            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual manipulation owner"),
-            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToPlacedOnSlope actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+            WiringGuard(ctx.Manipulation,"ReactToPlacedOnSlope","Manipulation"),
+            WiringGuard(ctx.NativeRobot,"ReactToPlacedOnSlope","NativeRobot"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         [BehaviorClass.ReactToRobotOnFace] = (ctx,_) => new ReactToRobotOnFaceBehavior(ctx.Manipulation!,ctx.NativeRobot!),
         [BehaviorClass.ReactToRobotOnSide] = (ctx,_) => new ReactToRobotOnSideBehavior(ctx.Manipulation!,ctx.NativeRobot!),
         [BehaviorClass.ReactToRobotShaken] = (ctx,_) => new ReactToRobotShakenBehavior(ctx.Manipulation!,ctx.NativeRobot!),
         [BehaviorClass.ReactToFrustration] = ReactToFrustrationBehavior.FromConfig,
         [BehaviorClass.ReactToUnexpectedMovement] = (ctx,json)=>new ReactToUnexpectedMovementBehavior(
-            ctx.Manipulation??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual manipulation owner"),
-            ctx.NativeRobot??throw new InvalidOperationException("MISSING: ReactToUnexpectedMovement actual robot owner"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
+            WiringGuard(ctx.Manipulation,"ReactToUnexpectedMovement","Manipulation"),
+            WiringGuard(ctx.NativeRobot,"ReactToUnexpectedMovement","NativeRobot"),BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
         // 0x0059D132..0x0059D14C constructs the configured recipient later used by the CubeMoved strategy.
         [BehaviorClass.ReactToCubeMoved] = (ctx, json) =>
             new AcknowledgeCubeMovedBehavior(ctx.Vision!.Locator, ctx.Manipulation!, ctx.NativeRobot!),
@@ -387,7 +387,7 @@ public sealed class BehaviorFactory
         [BehaviorClass.AcknowledgeObject] = CreateAcknowledgeObject,
         [BehaviorClass.AcknowledgeFace] = (ctx,json) =>
         {
-            var vision = ctx.Vision ?? throw new InvalidOperationException("MISSING: AcknowledgeFace factory vision owner");
+            var vision = WiringGuard(ctx.Vision, "AcknowledgeFace", "Vision");
             var behavior = new AcknowledgeFaceBehavior(vision, BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()) { NativeRetainedProfile = true };
             behavior.BindActionCompletionOwner(vision.Robot, ctx.NativeRobot ?? vision.Robot.Engine.Robot);
             return behavior;
@@ -398,6 +398,16 @@ public sealed class BehaviorFactory
         [BehaviorClass.VisitInterestingEdge] = (ctx, json) => VisitInterestingEdgeBehavior.FromConfig(json,ctx.NativeRobot,ctx.Manipulation),
         [BehaviorClass.ReactToSparked] = (ctx, json) => new ReactToSparkedBehavior(BehaviorConfigLoader.ExtractIdFromConfig(json).ToString()),
     };
+    /// <summary>
+    /// A stack wiring guard, not an engine step (BEHAVIOR-FACTORY-OWNERS-1, 2026-11-25). Every engine case passes the same <c>(Robot&amp;, config)</c>
+    /// (0x0059C888), so the owners the stack's constructors take are never absent in the engine. They are never absent here either:
+    /// <see cref="CreateBehavior"/> checks the owners of ReactToCliff, ReactToImpact, ReactToPlacedOnSlope, ReactToUnexpectedMovement, AcknowledgeFace,
+    /// AcknowledgeObject and DriveOffCharger before it calls the constructor and reports a missing one there; and the production startup
+    /// (<c>CozmoRobot.BindNativeBehaviorManager</c> -> <c>NativeBehaviorRuntime</c>) always supplies Vision (built unless the internal test-only
+    /// <c>OmitVisionForTest</c> is set), Manipulation (built whenever Vision is) and the native Robot. <c>BehaviorFactoryOwnersTests</c> pins that.
+    /// </summary>
+    private static T WiringGuard<T>(T? owner, string cls, string what) where T : class =>
+        owner ?? throw new InvalidOperationException($"wiring guard: {cls} constructor reached without its {what} owner (CreateBehavior's owner check should have stopped it)");
     private static IBehavior CreatePlayAnim(BehaviorFactoryContext ctx,JsonElement json)
     {
         var behavior=PlayAnimBehavior.FromConfig(json,ctx.Log);
@@ -409,14 +419,14 @@ public sealed class BehaviorFactory
     }
     private static IBehavior CreateDriveOff(BehaviorFactoryContext ctx,JsonElement json)
     {
-        var manipulation=ctx.Manipulation??throw new InvalidOperationException("MISSING: DriveOff factory actual manipulation owner");
+        var manipulation=WiringGuard(ctx.Manipulation,"DriveOffCharger","Manipulation");
         return new DriveOffChargerBehavior(manipulation,BehaviorConfigLoader.ExtractIdFromConfig(json).ToString(),
             json.TryGetProperty("extraDistanceToDrive_mm",out var extra)?extra.GetSingle():0f,ctx.NativeRobot??manipulation.Robot.Engine.Robot);
     }
 
     private static IBehavior CreateAcknowledgeObject(BehaviorFactoryContext ctx, JsonElement json)
     {
-        var vision = ctx.Vision ?? throw new InvalidOperationException("MISSING: AcknowledgeObject factory vision owner");
+        var vision = WiringGuard(ctx.Vision, "AcknowledgeObject", "Vision");
         var manager = ctx.NativeRobot?.BehaviorManagerOwner ?? ctx.ReactionManager;
         var behavior = manager?.AcknowledgeObjectReactionOwner() ?? new AcknowledgeObjectBehavior(vision.World, vision.Locator);
         behavior.BindConfiguredInputs(ctx.Manipulation, json, manager);
