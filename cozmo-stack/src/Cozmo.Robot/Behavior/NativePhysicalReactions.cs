@@ -133,6 +133,8 @@ public sealed partial class ReactToCliffBehavior
 {
     private readonly PhysicalReactionOwner? _physical;
     private Action? _detachPhysicalSignals;
+    /// <summary>True for the configured instance the behaviour factory builds: TransitionToBackingUp takes NativeCliffBackUp, never the unbound DriveStraight seam.</summary>
+    internal bool NativeBound=>_physical is not null;
     internal void RetireNativePhysical(){_physical?.Retire();_detachPhysicalSignals?.Invoke();_detachPhysicalSignals=null;RetireActionCompletionOwner();}
     internal ReactToCliffBehavior(ManipulationSystem m,EngineRobot owner,string id):this(m.Robot,id)
     {_physical=new(m,owner);BindActionCompletionOwner(m.Robot,owner);}
