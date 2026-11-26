@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot;
 
@@ -198,6 +199,11 @@ public sealed class CozmoSensors
         OffTreadsStateChangedInternal?.Invoke(from,to);
     }
 
+    // Host-only provenance for the native first 0x38 report. Capture the source
+    // at admission, not when the app delivery queue drains after a possible cure.
+    internal event Action<HiccupStartSource>? RobotHiccupsStarted;
+    internal void BroadcastHiccupsStarted(HiccupStartSource source) =>
+        _robot.Engine.QueueAppEvent(RobotHiccupsStarted, source);
     /// <summary>Engine RobotHiccupsChanged report (E2G tag 0x38).</summary>
     public event Action<bool>? RobotHiccupsChanged;
     internal void BroadcastHiccupsChanged(bool value)

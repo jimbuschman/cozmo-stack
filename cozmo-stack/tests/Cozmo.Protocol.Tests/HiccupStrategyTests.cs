@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -38,6 +39,67 @@ public sealed class HiccupStrategyTests
         Assert.False(strategy.ShouldTriggerBehavior(new ReactionContext(runtime.Context, 0), registration.Behavior));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConfiguredRobotReportsTheFirstScheduledOrOverfedHiccupSource(bool overfed)
+    {
+        using var rig = new M4ControlTests.Rig(Resources());
+        rig.Robot.Animations.LoadFrom(Path.Combine(Resources(), "assets"));
+        rig.Engine.ContextRandom.WordSourceForTest = () => 0;
+        rig.ToSynced(); rig.State();
+        rig.Robot.SetEnableFreeplayActivity(false);
+        var native = rig.Engine.Robot!;
+        var runtime = native.NativeBehaviorRuntime!;
+        native.Progression!.Unlocked.Add(14); // DroneModeGame, shipped config.
+        var reg = Assert.Single(native.BehaviorManagerOwner!.Reactions.Where(r => r.Strategy.Trigger == ReactionTrigger.Hiccup));
+        var sources = new List<HiccupStartSource>(); var changed = new List<bool>();
+        rig.Robot.Sensors.RobotHiccupsStarted += sources.Add;
+        rig.Robot.Sensors.RobotHiccupsChanged += changed.Add;
+        if (overfed) rig.Engine.AnimationMessages.Deliver(164, false, null);
+        // ResetHiccups draws count and occurrence independently (0x006101B2..DA).
+        // Shipped minimal natural interval is 300 s; G2E 164 only advances it to now.
+        rig.Engine.Timer.UpdateTime(rig.Engine.Timer.Nanoseconds + (overfed ? 1L : 300001L) * 1_000_000);
+        Assert.True(reg.Strategy.ShouldTriggerBehavior(new ReactionContext(runtime.Context, rig.Engine.Timer.Seconds), reg.Behavior));
+        Assert.True(runtime.Manipulation!.Whiteboard.HiccupsActive);
+        Assert.Equal(AnimationTrigger.HiccupGetIn, Assert.Single(Assert.IsType<PlayAnimBehavior>(reg.Behavior).Triggers));
+        Assert.Empty(sources);
+        // An additional notification during an active train must not rewrite the
+        // already-captured start or send a second native start report.
+        rig.Engine.AnimationMessages.Deliver(164, false, null);
+        rig.Engine.DrainAppDelivery();
+        Assert.Equal(new[] { true }, changed);
+        Assert.Equal(overfed ? HiccupStartSource.OverfeedingNotification : HiccupStartSource.Scheduled, Assert.Single(sources));
+    }
+
+    [Fact]
+    public void SessionSixCaptureShowsOneSixHiccupTrainThenSelfCure()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION6_HICCUP_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        var changes = new List<(double At, string Body)>(); var entries = new List<double>();
+        var cures = new List<(double At, string Kind, uint Duration)>();
+        foreach (string line in File.ReadLines(Path.Combine(bundle, "events.jsonl")))
+        {
+            using var d = JsonDocument.Parse(line);
+            var r = d.RootElement; double at = r.GetProperty("atMs").GetDouble();
+            var kind = r.GetProperty("kind").GetString();
+            if (kind == "engine-to-game" && r.GetProperty("tag").GetString() == "0x38")
+                changes.Add((at, r.GetProperty("bodyHex").GetString()!));
+            if (kind == "engine-log" && r.GetProperty("name").GetString() == "robot.reaction_trigger" && r.GetProperty("text").GetString() == "Hiccup")
+                entries.Add(at);
+            if (kind == "engine-log" && r.GetProperty("name").GetString() == "robot.hiccups.ended")
+                cures.Add((at, r.GetProperty("text").GetString()!, uint.Parse(r.GetProperty("data").GetProperty("$data").GetString()!)));
+        }
+        Assert.Equal(new[] { "01", "00" }, changes.Select(c => c.Body));
+        var cure = Assert.Single(cures);
+        Assert.Equal("SELF_CURED", cure.Kind);
+        Assert.Equal(38460u, cure.Duration);
+        Assert.Equal(7, entries.Count);
+        Assert.Equal(6, entries.Count(at => at < cure.At));
+        Assert.True(entries[^1] > cure.At); // cure animation is the seventh reaction, not another fit.
+        Assert.All(entries.Zip(entries.Skip(1)).Take(5), pair => Assert.InRange(pair.Second - pair.First, 4500, 8000));
+    }
     [Fact]
     public void ReportQueuesRawThenTypedAfterSynchronousLocalDelivery()
     {
