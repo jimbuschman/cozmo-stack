@@ -645,8 +645,11 @@ public class ControlTests
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
         rig.Send(new ObjectPowerLevel { ObjectID = 3, MissedPackets = 2, BatteryLevel = 120 });
         Assert.Empty(sent);
-        Assert.Contains(logs, l => l.StartsWith("MISSING: HandleObjectPowerLevel 0x00537360"));
-        Assert.DoesNotContain(logs, l => l.Contains("ObjectPowerLevel.Broadcast"));
+        lock (logs)
+        {
+            Assert.Contains(logs, l => l.StartsWith("MISSING: HandleObjectPowerLevel 0x00537360"));
+            Assert.DoesNotContain(logs, l => l.Contains("ObjectPowerLevel.Broadcast"));
+        }
     }
 
     // reach: production — message dispatch/tick or public command entry, with actual component wiring.
