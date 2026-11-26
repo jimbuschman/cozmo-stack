@@ -168,3 +168,28 @@ Decoded RobotState (scratch decoder as before; pitch = pose pitch, gyro = max ab
   - whether ReturnedToTreads preempts it, or is suppressed, when the robot lands on a slope (trigger priority
     between RobotPlacedOnSlope and ReturnedToTreads);
   - whether the 1.5 s window is measured from the pickup flag clearing, as we do.
+
+## Hiccups (03:51:37–03:52:24 UTC), not yet explained
+
+- Freeplay was off. Seven Hiccup reaction cycles about 5–7 s apart, each about 2–4 s long.
+- In our code a hiccup fit starts only when G2E message 164 arrives (`HiccupReactionStrategy.Receive164`, wired in
+  `BehaviorManager.Hiccup.cs:58`). In the original that is the overfed signal (see the
+  `OverfedButHiccupDisabled` log at 0x00610A7C).
+- Nothing was fed tonight, and no set_needs was sent this session. **Open: who sent 164?** Trace:
+  - the senders of message 164 in our stack;
+  - what the original sends it for (feeding at full energy; anything else);
+  - whether anything in tonight's run (Freeplay, needs, the bridge) produced it.
+- Also check: the cure path (a pickup cures hiccups; the operator did not pick him up), and whether the fit ended
+  through self-cure (the `robot.hiccups.ended` log).
+
+## Still to do (handover, 2026-11-26)
+
+1. **P1 slope race:** trace as above (pitch zero after put-down, ReturnedToTreads against RobotPlacedOnSlope).
+2. **Hiccups:** find what sent message 164.
+3. **S1:** speech doesn't pre-empt Freeplay.
+4. **T1–T4:** track-face (ID churn, stale ID, the blocking call, reaction interrupts).
+5. **C1–C3:** charger pose tilt, ramp UnexpectedMovement, frustration drive-off.
+6. **Bridge/channel:** the operator found the screen unreadable in Freeplay; the channel pushes every action
+   completion. Proposal: push only reactions, cubes, faces and failures. Waiting for the operator's decision.
+7. **Coverage:** five personality behaviours need voice-command or app inputs (operator decision, see above).
+8. **Robot state at the end:** Freeplay off, on the desk off the charger, no locks held.
