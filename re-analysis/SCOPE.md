@@ -63,6 +63,15 @@ baseline, named, switchable back to the engine's behaviour, and recorded here; t
 Candidates so far:
 - World map memory: he forgets the charger once it is out of sight or after he is picked up (2026-11-19 session:
   charger dropped from knownChargers after leaving it; objects deleted from old origins at re-localisation).
+  Operator 2026-11-26: mapping is a main improvement area ("we can do a much better job"). Candidates: a persistent
+  room map that survives pickups (re-anchor the old origin when the charger or a known cube is seen again, instead of
+  discarding it); the charger remembered permanently, its pose averaged over sightings and held flat (feeds docking);
+  longer memory of cliffs, edges and obstacles; the map saved between sessions.
+- Charger docking (operator 2026-11-26): if CHARGER-MOUNT-SESSION6-1 shows the engine fails the same way, dock only from
+  a flat, square-on, multi-sighting charger estimate and keep reactions locked for the whole reverse climb (the by-hand
+  climb in session 6 worked this way).
+- Person tracking (operator 2026-11-26): if TRACK-FACE-LLM-2 shows the engine's one-ID tracking is the limit, follow the
+  face nearest the last tracked position across face-ID changes.
 - Drive on and off the charger by command, including a wake-and-drive-off request during `ReactToOnCharger`
   (operator, 2026-11-19 evening session, F8/F21).
 
