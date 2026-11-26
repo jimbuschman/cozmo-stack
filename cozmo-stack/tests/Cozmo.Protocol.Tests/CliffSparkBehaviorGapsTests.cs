@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Cozmo.Robot;
+using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Xunit;
 using Fixture=Cozmo.Protocol.Tests.PickupPyramidNativeExecutionTests.Fixture;
@@ -27,6 +29,80 @@ public sealed class CliffSparkBehaviorGapsTests
         var pickup=Assert.IsType<ReactToPickupBehavior>(Assert.Single(manager.Reactions,r=>r.Strategy.Trigger==ReactionTrigger.RobotPickedUp).Behavior);
         Assert.True(pickup.NativeBound);
         Assert.Same(f.Runtime.Bound["ReactToPickup"],pickup);
+    }
+
+    [Fact]
+    public void SessionSevenRawFramesIdentifyTheStopReactionMotion()
+    {
+        if (Environment.GetEnvironmentVariable("COZMO_SESSION7_CLIFF_BUNDLE") is not { Length: > 0 } bundle) return;
+        var raw = RecordedRobotInput.ReadInbound(bundle, time => time >= 187900, 188805,
+            [0xD4, 0xC0, 0xF0], discardRetries: true).ToArray();
+        Assert.Single(raw.Where(x => x.Message is RobotStopped));
+        Assert.Equal(new byte[] { 3, 0 }, raw.Select(x => x.Message).OfType<CliffEvent>().Select(e => e.DetectedFlags));
+        Assert.Contains(raw, x => x.At > 188165 && x.At < 188500 && x.Message is RobotState state &&
+            state.LwheelSpeedMmps == 0 && state.RwheelSpeedMmps == 0);
+        var backward = Assert.Single(raw, x => x.Message is RobotState state && state.Timestamp == 188450);
+        var actual = Assert.IsType<RobotState>(backward.Message);
+        Assert.Equal(-102f, actual.LwheelSpeedMmps); Assert.Equal(-102f, actual.RwheelSpeedMmps);
+        Assert.Equal(new ushort[] { 15, 0, 0, 0 }, actual.CliffDataRaw);
+        Assert.True((actual.Status & (uint)RobotStatusFlag.CliffDetected) != 0);
+        var captured = RecordedRobotInput.ReadOutbound(bundle, time => time >= 188500, 188805, [0x99, 0x60]).ToArray();
+        Assert.Equal(new short[] { -117, 0, 7, 0 }, captured.Select(x => x.Message).OfType<BodyMotion>().Select(body => body.Speed));
+        Assert.All(captured.Select(x => x.Message).OfType<BodyMotion>(), body => Assert.Equal(short.MaxValue, body.RadiusMm));
+        Assert.Empty(RecordedRobotInput.ReadOutbound(bundle, _ => true, 188805, [0x60]));
+        Assert.Single(RecordedRobotInput.ReadOutbound(bundle, time => time >= 187941, 188400, [0x8D]));
+        Assert.Empty(RecordedRobotInput.ReadOutbound(bundle, time => time > 187941, 188500, [0x99]));
+    }
+
+    [Fact]
+    public void ConfiguredCliffStopActionStreamsTheShippedBodyTrackWithoutTogglingCliffStop()
+    {
+        // An isolated real configured reaction, not a reconstruction of the earlier 100-sample
+        // cliff variance or Freeplay state. Native Wait lambda 0x006056B8 accepts the unchanged
+        // threshold and stationary body; ctor 0x00604FE4..EA uses no body-lock bit.
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
+        f.Rig.Robot.SetEnableFreeplayActivity(false); f.Rig.Tick(4000);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        manager.Activity = null; manager.Stop(BehaviorStopReason.Interrupted, f.Rig.Engine.Timer.SecondsF);
+        manager.DisableAllReactionsWithLock("cliff-stop-test-isolation");
+        var cliff = Assert.IsType<ReactToCliffBehavior>(manager.Reactions.Single(r => r.Strategy.Trigger == ReactionTrigger.CliffDetected).Behavior);
+        f.Motors(RobotStatusFlag.CliffDetected);
+        Assert.False(f.Rig.Robot.Motion.BodyMoving);
+        var library = f.Rig.Robot.Animations.Library!;
+        var group = library.GetGroup(f.Rig.Robot.Animations.DrivingTriggerMap!.GroupFor(AnimationTrigger.ReactToCliffDetectorStop)!)!;
+        Assert.Equal("anim_reacttocliff_huh_01", Assert.Single(group.Entries).Name);
+        var clip = library.GetClip(group.Entries[0].Name);
+        Assert.Equal(new short[] { -117, 7 }, clip.Keyframes.OfType<BodyKeyframe>().Select(k => k.Speed));
+        f.Rig.Data(new RobotStopped { Field0 = 1 }); f.Rig.Tick();
+        int mark = f.Rig.Mark();
+        cliff.StartAsync(f.Runtime.Context, new BehaviorScope(), default).GetAwaiter().GetResult();
+        try
+        {
+            f.Rig.Data(new CliffEvent { Timestamp = f.Robot.StoredState!.Timestamp, DetectedFlags = 3, DidStopForCliff = true });
+            bool stopAction = false;
+            for (int i = 0; i < 80; i++)
+            {
+                var stream = f.Rig.Robot.Animations.Scheduler.Stream;
+                f.Rig.Data(new AnimationState { NumAnimBytesPlayed = stream.BytesStreamed, NumAudioFramesPlayed = stream.FramesStreamed });
+                f.Motors(RobotStatusFlag.CliffDetected);
+                if (cliff.OwnedRunner is CompoundActionParallel parent && parent.Children[0] is TriggerLiftSafeAnimationAction action)
+                {
+                    Assert.Equal(AnimationTrigger.ReactToCliffDetectorStop, action.Request.Trigger);
+                    Assert.Equal(0u, action.RequiredTrackMask & CozmoMotion.BodyTrack);
+                    stopAction = true;
+                }
+                var body = f.Rig.SentSince(mark).OfType<BodyMotion>().Select(x => x.Speed).ToArray();
+                if (body.Contains((short)-117) && body.Contains((short)7) && body.Last() == 0) break;
+            }
+            Assert.True(stopAction);
+            var sent = f.Rig.SentSince(mark);
+            Assert.Equal(new short[] { -117, 0, 7, 0 }, sent.OfType<BodyMotion>().Select(x => x.Speed));
+            Assert.All(sent.OfType<BodyMotion>(), x => Assert.Equal(short.MaxValue, x.RadiusMm));
+            Assert.DoesNotContain(sent, x => x is EnableStopOnCliff);
+            Assert.DoesNotContain(sent.OfType<DisableAnimTracks>(), x => (x.Field0 & CozmoMotion.BodyTrack) != 0);
+            Assert.True(f.Rig.Robot.Sensors.CliffDetectedByEvent);
+        }
+        finally { cliff.Stop(BehaviorStopReason.Interrupted); }
     }
 
     // Wiring guards: NativeSparkedActivity:62, NativeStackBlocksBehavior:55/:61/:73 and
