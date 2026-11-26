@@ -290,6 +290,38 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task SessionSevenRepeatedComeHereAndArbitraryCompletionKeepServingCommands()
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var pump = new DeviceReplies(f);
+        Assert.Equal("submitted", Data(await client.Tool("freeplay", new { enabled = false })).GetProperty("status").GetString());
+        pump.Until(() => manager.Current?.Id == "Wait");
+        for (int i = 0; i < 2; i++)
+        {
+            Assert.Equal("submitted", Data(await client.Tool("request-behavior", new { behavior = "VC_ComeHere" })).GetProperty("status").GetString());
+            var until = f.Rig.Engine.Timer.Seconds + 2.0;
+            pump.Until(() => f.Rig.Engine.Timer.Seconds >= until);
+            Assert.Equal("Wait", manager.Current?.Id);
+            Assert.False((await client.Tool("get_state", new { })).GetProperty("result").GetProperty("isError").GetBoolean());
+        }
+        Assert.Equal("submitted", Data(await client.Tool("play-arbitrary-anim", new { trigger = "CodeLabHappy" })).GetProperty("status").GetString());
+        var arbitrary = Assert.IsType<NativePlayArbitraryAnimBehavior>(f.Runtime.Bound["PlayArbitraryAnim"]);
+        pump.Until(() => ReferenceEquals(manager.Current, arbitrary));
+        var clip = Assert.IsType<TriggerLiftSafeAnimationAction>(arbitrary.OwnedRunner);
+        Assert.Equal(AnimationTrigger.CodeLabHappy, clip.Request.Trigger);
+        pump.Until(() => pump.Ended(clip));
+        pump.Until(() => manager.Current?.Id == "Wait");
+        var end = f.Rig.Engine.Timer.Seconds + 2.0;
+        pump.Until(() => f.Rig.Engine.Timer.Seconds >= end);
+        Assert.Equal("Wait", manager.Current?.Id);
+        Assert.False((await client.Tool("get_state", new { })).GetProperty("result").GetProperty("isError").GetBoolean());
+    }
+
+    [Fact]
     public async Task ArbitraryBehaviorRequestParksAndReturnsToFreeplay()
     {
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);

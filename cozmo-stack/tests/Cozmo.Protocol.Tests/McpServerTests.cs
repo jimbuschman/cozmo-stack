@@ -219,6 +219,9 @@ public sealed class McpServerTests
                 // Exercise the real incoming-frame hook used by the console instead.
                 f.Rig.Robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(
                     new SubMessage(ReliableMessageType.SingleReliableMessage, new MotorActionAck { ActionId = 37 }.ToBytes(), 900), 1)));
+                using (var live = new StreamReader(new FileStream(Path.Combine(path, "messages.jsonl"),
+                    FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+                    Assert.Contains("payloadHex", live.ReadToEnd());
                 evidence.Finish("closed");
             }
             using var result = JsonDocument.Parse(File.ReadAllText(Path.Combine(path, "result.json")));
@@ -235,6 +238,38 @@ public sealed class McpServerTests
             Assert.Contains(File.ReadLines(Path.Combine(path, "messages.jsonl")), line => line.Contains("payloadHex"));
         }
         finally { if (Directory.Exists(path)) Directory.Delete(path, true); }
+    }
+
+    [Fact]
+    public async Task SupervisorRecordsUnexpectedExitAndReconstructsDecodedJournal()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-mcp-supervisor-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(path);
+        try
+        {
+            var raw = FrameCodec.Encode(Frame.Single(new SubMessage(ReliableMessageType.SingleReliableMessage,
+                new MotorActionAck { ActionId = 37 }.ToBytes(), 900), 1));
+            var child = new System.Diagnostics.ProcessStartInfo("powershell.exe") { WorkingDirectory = path };
+            child.ArgumentList.Add("-NoProfile"); child.ArgumentList.Add("-NonInteractive"); child.ArgumentList.Add("-Command");
+            child.ArgumentList.Add("""[IO.File]::WriteAllText('result.json','{"status":"running"}'); [IO.File]::WriteAllText('frames.jsonl',$env:COZMO_TEST_RAW_FRAME + [Environment]::NewLine + '{'); [Console]::Out.WriteLine('protocol'); [Console]::Error.WriteLine('fatal test diagnostic'); exit 23""");
+            child.Environment["COZMO_TEST_RAW_FRAME"] = JsonSerializer.Serialize(new { atMs = 1.0, outbound = false, rawBase64 = Convert.ToBase64String(raw) });
+            using var input = new MemoryStream();
+            using var output = new MemoryStream();
+            using var errors = new MemoryStream();
+            Assert.Equal(23, await SessionProcessSupervisor.RunAsync(path, [], child, input, output, errors));
+            using var result = JsonDocument.Parse(File.ReadAllText(Path.Combine(path, "result.json")));
+            Assert.Equal("error", result.RootElement.GetProperty("status").GetString());
+            Assert.Equal(23, result.RootElement.GetProperty("exitCode").GetInt32());
+            Assert.Equal(1, result.RootElement.GetProperty("invalidFrameRows").GetInt32());
+            Assert.Contains("fatal test diagnostic", result.RootElement.GetProperty("stderrTail").GetString());
+            Assert.Contains("fatal test diagnostic", File.ReadAllText(Path.Combine(path, SessionProcessSupervisor.StderrName)));
+            Assert.Equal("protocol", Encoding.UTF8.GetString(output.ToArray()).Trim());
+            Assert.DoesNotContain("fatal", Encoding.UTF8.GetString(output.ToArray()));
+            Assert.Contains("fatal test diagnostic", Encoding.UTF8.GetString(errors.ToArray()));
+            Assert.Contains(File.ReadLines(Path.Combine(path, "messages.jsonl")), line => line.Contains("payloadHex"));
+        }
+        finally { Directory.Delete(path, true); }
     }
 
     [Fact]
