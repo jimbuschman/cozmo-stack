@@ -5,11 +5,20 @@ namespace Cozmo.Robot;
 /// <summary>BehaviorTransition engine-to-game report (0x87).</summary>
 public sealed record BehaviorTransitionReport(byte OldId,byte NewId,byte OldClass,byte OldExecutable,byte NewClass,byte NewExecutable,string DisplayKey);
 
+/// <summary>Host-only observation of the selected native behavior readiness gate.</summary>
+public sealed record BehaviorRequestBlockedReport(string Behavior, string Reason)
+{
+    public string Detail => "selected but not runnable: " + Reason;
+}
+
 internal sealed record BehaviorTransitionContext(string? Activity, string Reason);
 
 public sealed partial class CozmoEngine
 {
     public event Action<BehaviorTransitionReport>? BehaviorTransition;
+    public event Action<BehaviorRequestBlockedReport>? BehaviorRequestBlocked;
+    internal void ReportBehaviorRequestBlocked(string behavior, string reason) =>
+        QueueAppEvent(BehaviorRequestBlocked, new BehaviorRequestBlockedReport(behavior, reason));
     private readonly ConditionalWeakTable<BehaviorTransitionReport, BehaviorTransitionContext> behaviorTransitionContexts = new();
 
     // Host presentation captures the reason at the switch. The native 0x87 payload is unchanged.

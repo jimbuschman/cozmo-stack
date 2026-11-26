@@ -54,19 +54,19 @@ internal sealed class NativeBehaviorBaseInputs
             (context.Robot.Engine.Robot is null && _robot.NativeBehaviorRuntimeConstructing && ReferenceEquals(context.Robot.Engine,_robot.Engine));
         if(!actual || _robot.CarryingOwner is null)
         {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior native base admission: actual Robot/Carrying owner unavailable");return false;}
-        if(_requiredSevere!=3 && _requiredSevere!=context.Robot.Engine.Needs.SevereNeeds.Selected)return false;
+        if(_requiredSevere!=3 && _requiredSevere!=context.Robot.Engine.Needs.SevereNeeds.Selected)return SteppedBehavior.ReadinessBlocked("required severe-needs state is not present (0x005BD7E6..F6)");
         if(_requiredUnlock!=0x55)
         {
             if(_robot.Progression is not {} progression||!progression.TryIsUnlocked(_requiredUnlock,out bool unlocked))
             {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior requiredUnlockId005BD810 actual progression override state unavailable; no hardcoded unlock");return false;}
-            if(!unlocked)return false;
+            if(!unlocked)return SteppedBehavior.ReadinessBlocked("required progression unlock is not available (0x005BD806..16)");
         }
         float epsilon=BitConverter.UInt32BitsToSingle(0x3727C5AC);
         float now=context.Robot.Engine.Timer.SecondsF;
         if(!(_recentDriveOff < -epsilon))
         {
             float stamp=_robot.LastDriveOffChargerSeconds;
-            if(stamp < -epsilon || !((_recentDriveOff+stamp)+epsilon>=now))return false;
+            if(stamp < -epsilon || !((_recentDriveOff+stamp)+epsilon>=now))return SteppedBehavior.ReadinessBlocked("required recent drive-off-charger event is outside its native window (0x005BD81A..82E)");
         }
         if(!((double)_recentSwitch < BitConverter.Int64BitsToDouble(unchecked((long)0xBEE4F8B588E368F1))))
         {
@@ -74,7 +74,7 @@ internal sealed class NativeBehaviorBaseInputs
             {SteppedBehavior.MarkReadinessUnavailable();SteppedBehavior.ReportMissing("IBehavior requiredRecentSwitchToParent_sec: original manager+0x50 owner unavailable");return false;}
             float limit=_recentSwitch+epsilon;
             float elapsed=now-manager.ParentSwitchTime;
-            if(limit<elapsed)return false;
+            if(limit<elapsed)return SteppedBehavior.ReadinessBlocked("required recent switch-to-parent event is outside its native window (0x005BD832..62)");
         }
         return true;
     }

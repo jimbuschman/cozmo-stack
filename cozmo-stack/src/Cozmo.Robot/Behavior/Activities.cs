@@ -642,6 +642,8 @@ public sealed class SelectionChooser : IBehaviorChooser, IDisposable
     /// <summary>+0x3c: the remaining runs; -1 is unlimited.</summary>
     public int NumRuns => _numRuns;
     internal bool RunningLatch=>_latch;
+    // Host-only observation of the real 0x0060AD92..9A evaluation (not a second readiness call).
+    internal string? LastRequestedReadinessBlock { get; private set; }
     internal void OnSelected(){if(!_retired)SetProcessEnabled(_requested,true);}
     internal void OnDeselected(){if(!_retired)SetProcessEnabled(_requested,false);}
     public void Dispose(){if(_retired)return;_retired=true;++_selectionEpoch;_requested=null;foreach(var subscription in _subscriptions)subscription.Dispose();_subscriptions.Clear();_nativeOwner=null;}
@@ -710,6 +712,7 @@ public sealed class SelectionChooser : IBehaviorChooser, IDisposable
             if(_retired || epoch!=_selectionEpoch)return;
         }
         _requested = selected;
+        LastRequestedReadinessBlock = null;
     }
 
     /// <summary>
@@ -826,11 +829,19 @@ public sealed class SelectionChooser : IBehaviorChooser, IDisposable
         { _inputUnavailable=true;SteppedBehavior.ReportMissing("M8-013 Selection actual running/readiness owner unavailable for "+candidate.Id);return false; }
         bool running = candidate is SteppedBehavior stepped ? stepped.EngineRunning : candidate is not null && ReferenceEquals(current,candidate);
         bool runnable=running;
+        if (updateCountdown) LastRequestedReadinessBlock = null;
         if(!running && candidate is SteppedBehavior nativeCandidate && _nativeOwner is not null)
         {
-            var readiness=nativeCandidate.EvaluateHostReadiness(ctx);
-            if(!readiness.Available){_inputUnavailable=true;return false;}
+            var readiness=nativeCandidate.EvaluateHostReadiness(ctx, out var reason);
+            if (!readiness.Available)
+            {
+                if (updateCountdown && _numRuns != 0 && ReferenceEquals(candidate, _requested))
+                    LastRequestedReadinessBlock = reason ?? "required native readiness input unavailable";
+                _inputUnavailable=true;return false;
+            }
             runnable=readiness.Runnable;
+            if (updateCountdown && !runnable && _numRuns != 0 && ReferenceEquals(candidate, _requested))
+                LastRequestedReadinessBlock = reason ?? "native behavior readiness predicate declined";
         }
         else if(!running && candidate is not null)runnable=candidate.IsRunnable(ctx);
         if (updateCountdown)

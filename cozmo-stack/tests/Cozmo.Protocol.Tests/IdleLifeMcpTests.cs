@@ -233,6 +233,63 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task VoiceFaceRequestsReportActualNativeBlockedGateAndKeepTheRequestSelected()
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true, keepNeedsFull: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var pump = new DeviceReplies(f);
+        await RequestAndCheck("VC_ComeHere", "no cached face pose in the current world origin");
+
+        // Session 7 had an older named face and a later temporary face (ID -1 -> 4).
+        // A current-origin older face satisfies HasAnyFaces(0,false) at 0x004F5A84..DE;
+        // removing the newer face leaves its last-observed cache (0x004F3D50, 0x004F4956..4A38).
+        // The older face cannot satisfy GetFaceIDsObservedSince(newer stamp) at 0x005DA5D4..606.
+        Observe(1);
+        f.Motors();
+        Observe(4);
+        f.M.Vision.Faces.RemoveFaceByID(4);
+        Assert.True(f.M.Vision.Faces.HasAnyFaces(0, false));
+        await RequestAndCheck("VC_SearchForFace", "a face already exists in the current origin");
+        await RequestAndCheck("VC_ComeHere", "no face ID observed at or after the cached face timestamp");
+
+        // A new actual observation changes the same predicate; no re-request or host bypass.
+        f.Motors(); Observe(1);
+        pump.Until(() => manager.Current?.Id == "VC_ComeHere");
+        Assert.IsType<NativeDriveToFaceBehavior>(manager.Current);
+
+        async Task RequestAndCheck(string id, string reason)
+        {
+            long before = bridge.ReadEvents().GetProperty("cursor").GetInt64();
+            var submitted = Data(await client.Tool("request-behavior", new { behavior = id }));
+            Assert.Equal("submitted", submitted.GetProperty("status").GetString());
+            pump.Until(() => bridge.ReadEvents(before).GetProperty("events").EnumerateArray().Any(e =>
+                e.GetProperty("type").GetString() == "behavior-request-not-runnable"));
+            for (int i = 0; i < 5; i++) f.Motors();
+            var events = Data(await client.Tool("read_events", new { since = before, types = new[] { "behavior-request-not-runnable" } }))
+                .GetProperty("events").EnumerateArray().ToArray();
+            var report = Assert.Single(events);
+            Assert.True(report.GetProperty("significant").GetBoolean());
+            var payload = report.GetProperty("payload");
+            Assert.Equal(id, payload.GetProperty("behavior").GetString());
+            Assert.Contains(reason, payload.GetProperty("reason").GetString());
+            Assert.StartsWith("selected but not runnable:", payload.GetProperty("detail").GetString());
+            Assert.Equal("Wait", manager.Current?.Id);
+        }
+        void Observe(int id)
+        {
+            var point = new Vec3(200, 0, 60);
+            var face = new TrackedFace(new DetectedFace(id, new FaceRect(100, 60, 70, 80)), f.Robot.StoredState!.Timestamp)
+            { HeadPose = new Pose3d(Rotation3d.Identity, point), NativeTrackingTranslation = point, NativeTrackingRotation = Rotation3d.Identity };
+            for (int i = 0; i < 4; i++)
+                Assert.NotNull(f.M.Vision.Faces.AddOrUpdateNativeFace(face, f.Robot.GetCheckedMainPose(), false,
+                    f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId).Node!, requireNativePose: true, expectedOwner: f.Robot));
+        }
+    }
+
+    [Fact]
     public async Task ArbitraryBehaviorRequestParksAndReturnsToFreeplay()
     {
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
