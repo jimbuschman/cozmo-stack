@@ -74,6 +74,15 @@ public sealed class BridgeEventPushTests
         Assert.False(unrelated.GetProperty("significant").GetBoolean());
         Assert.False(match.GetProperty("payload").GetProperty("completion").TryGetProperty("hostCaller", out _));
 
+        // A second genuine MCP action is cancelled rather than successfully
+        // completed; its own failure must be pushed even though the reply also has it.
+        int failedCall = await client.Send("tools/call", new { name = "head", arguments = new { radians = 0.32 } });
+        uint failedTag = f.Robot.ActionList.GetCurrentAction()!.Tag;
+        f.Rig.Tick();
+        Assert.True(f.Robot.ActionList.Cancel(failedTag));
+        f.Rig.Tick();
+        Assert.NotEqual(0u, Data(await client.Receive(failedCall)).GetProperty("engineResult").GetUInt32());
+        f.Rig.Engine.DrainAppDelivery();
         const uint externalTag = 3000567;
         f.Rig.Engine.BroadcastActionCompletion(new(externalTag, 8, 0, [], 0, CompletionVariant: 6));
         f.Rig.Engine.DrainAppDelivery();
@@ -82,6 +91,10 @@ public sealed class BridgeEventPushTests
             e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag);
         Assert.Contains(callerPush.Events, e => e.Type == "action-completed" &&
             e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == externalTag);
+        Assert.Contains(callerPush.Events, e => e.Type == "action-completed" &&
+            e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == failedTag &&
+            e.Payload.GetProperty("completion").GetProperty("result").GetUInt32() != 0);
+        Assert.Contains(Events(Data(await client.Tool("read_events", new { detail = "full", significantOnly = false }))), IsOurReport);
         var otherPush = await FirstPush(other);
         Assert.Contains(otherPush.Events, e => e.Type == "action-completed" &&
             e.Payload.GetProperty("completion").GetProperty("tag").GetUInt32() == tag);
@@ -202,6 +215,8 @@ public sealed class BridgeEventPushTests
         Face(f.Rig.Engine, 4, 1000);
         Assert.True((await client.NextAfterRequest("ping", new { })).TryGetProperty("id", out _));
         await client.Notify("notifications/initialized", new { });
+        f.Rig.Engine.BroadcastActionCompletion(new(3001234, 8, 0x02000000, [], 0, CompletionVariant: 6));
+        f.Rig.Engine.DrainAppDelivery(); // Explicit significant-event override excludes even foreign failures.
         Face(f.Rig.Engine, 4, 1001);
         Face(f.Rig.Engine, 5, 1002);
         var response = await client.Next();

@@ -417,19 +417,21 @@ public sealed partial class CozmoBridge
     private void OnActionCompleted(ActionCompletionReport report)
     {
         var resultName = Enum.GetName((NativeActionResultName)report.Result);
+        bool own = ReferenceEquals(report.HostCaller, eventCaller);
+        // Operator-approved MCP presentation rule, not an engine result change.
+        // Keep failed own completions, and all foreign completions, in channel push.
+        // Full and compact read views retain their existing significance and payloads.
+        bool push = !own || report.Result != EngineActionResult.Success;
         if (report.ActionType == 0x23 && report.CompletionVariant == 3)
         {
-            // TrackFace returns admission, not completion. Publish its actual signed variant-3
-            // face ID and keep the caller's terminal event eligible for push.
+            // TrackFace returns admission. Its signed terminal cache remains in read_events.
             Add("action-completed", new { completion = report, resultName, faceId = unchecked((int)report.NativeCompletionCache) },
-                eligible: ReferenceEquals(report.HostCaller, eventCaller), compactEligible: true, pushEligible: true);
+                eligible: own, compactEligible: true, pushEligible: push);
             return;
         }
         Add("action-completed", new { completion = report, resultName },
-            eligible: ReferenceEquals(report.HostCaller, eventCaller),
-            compactEligible: true, pushEligible: !ReferenceEquals(report.HostCaller, eventCaller) || report.ActionType == 0x23);
+            eligible: own, compactEligible: true, pushEligible: push);
     }
-
     private void Add<T>(string type, T payload, uint? robotTimestamp = null, bool eligible = true,
         bool? compactEligible = null, bool? pushEligible = null)
     {

@@ -39,8 +39,10 @@ and send one newline-terminated JSON subscription to `127.0.0.1:8765`, such as
 the MCP server arguments and enable the configured server as a development
 channel. It pushes significant event pages after initialization. Reactions carry
 trigger names and the names of the behaviors that started or ended. Falling and
-landing after a fall are significant. Completions from other callers still push,
-and your own completions are available in tool results and `read_events`.
+landing after a fall are significant. Failed completions and completions from
+other callers are pushed. Your own successful completions are not pushed; they
+remain in ordinary tool results and `read_events`. For admission-only
+`track-face`, read the matching terminal event to see success.
 
 The channel reports a face once per approach and again on recognition or an
 identity change. It can fold a new temporary ID into one nearby approach if the
