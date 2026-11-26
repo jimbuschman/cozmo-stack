@@ -97,6 +97,20 @@ Robot acceptance now comes from ordinary MCP sessions, scored by `re-analysis/to
 engine-sourced round expectations (operator 2026-11-20; combined table
 `re-analysis/jobs/trial-m13/session-check-1/combined.md`, four sessions 2026-11-19/20).
 
+**2026-11-26 (sessions 6 and 7, notes `re-analysis/research/20261126-llm-session-6-track-face-notes.md` and
+`20261126-llm-session-7-notes.md`; stop rule adopted by the operator 2026-11-26):**
+- **A 16 of 16, B 40 of 40, counting items that match the engine.** Under the stop rule, an item whose robot failure
+  the original engine shares counts as done; the improvement goes to C2.
+  - Passed on the robot in session 7: say-text pre-empts Freeplay, track-face cancel, InteractWithFaces, ExpressNeeds,
+    ExploreLookAroundInPlace, PlayArbitraryAnim, EarnedSparks (spark request), DriveOffCharger by request.
+  - Done as matching the engine: mount the charger (CHARGER-MOUNT-SESSION6-1), track-face following across face-ID
+    changes (TRACK-FACE-LLM-2), PlacedOnSlope (SLOPE-PUTDOWN-RACE-1), SearchForFace and DriveToFace readiness
+    (VC-REQUEST-NOT-RUNNABLE-1), PlayAnimWithFace turn without a face pose (PLAYANIMWITHFACE-STALE-FACE-1).
+  - Their C2 improvements are queued (C2-* rows), with C2-CLIFF-HOLD-STILL-1 first (session 7 fall off the desk,
+    CLIFF-REACTION-OFF-EDGE-1 matches the engine).
+  - Open robot issues outside the count: silent bridge drops (now recorded by the supervisor, cause unknown) and the
+    disconnect after sleeping on the charger (SLEEP-CHARGER-DISCONNECT-1).
+
 **2026-11-23 (session 5: bundles 20261123-084806 and -091241, notes `Downloads\runs\20261123-llm-session-5-notes.md`,
 scored with session_check.py):**
 - **Passed on the robot: A 14 of 16, B 31 of 40.**
