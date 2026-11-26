@@ -551,8 +551,15 @@ public sealed class CozmoCubes
     }
 
     /// <summary>The connected object for an activeID (GetConnectedActiveObjectByActiveIdHelper).</summary>
+    // fidelity: M4-009, M4-023
+    // The engine's only lookup is the BlockWorld's at Robot+0x34: Moved 0x00533E8A..0x00533EA4 (none: 0x00533EEE UnknownActiveID),
+    // Stopped 0x00534662..0x00534686, UpAxisChanged 0x00534D78..0x00534D8C (none: 0x00534E20), BTF Tapped 0x00630B74..0x00630B80
+    // (none: 0x00630C92), BTF Moved 0x00630DAE..0x00630DC2 and BTF Stopped 0x00630EE2..0x00630EF6 (none: their ObjectIDNull warnings).
+    // This host registry also marks a slot connected when the world refused it (HandleActiveObjectConnectionState returned -1:
+    // activeID > 4, or no object for the type), so with the world attached its answer decides: none there is the engine's not-found branch.
     private Cube? Connected(uint activeId) =>
-        _byObjectId.TryGetValue(activeId, out var c) && c.Connected ? c : null;
+        _byObjectId.TryGetValue(activeId, out var c) && c.Connected
+        && (ConnectedObjectIdForActiveId is not { } inWorld || inWorld(activeId) is not null) ? c : null;
 
     /// <summary>
     /// The exclusion the Moved and Stopped broadcasts apply (CD10a, CD10b): the carried object
@@ -574,6 +581,8 @@ public sealed class CozmoCubes
     private int? WorldId(Cube c, Action<string>? log = null)
     {
         var id = ConnectedObjectIdForActiveId?.Invoke(c.ObjectId ?? uint.MaxValue);
+        // Wiring guard: CozmoRobot's constructor always builds the VisionSystem (only the internal OmitVisionForTest composition skips it), and its
+        // constructor installs this lookup (VisionSystem.cs, M4-008 A12); Connected() above already took the world's answer.
         if (id is null) (log ?? Log)("MISSING: M4-009 / M11-004 | connected BlockWorld ObjectID lookup unavailable; id-dependent work skipped");
         return id is { } value ? unchecked((int)value) : null;
     }

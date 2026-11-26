@@ -1641,6 +1641,10 @@ public sealed partial class BlockWorld
         }
         else if (parent is null || parent.Parent is not null || RobotPoseTreeIsUnbuilt?.Invoke() == true)
         {
+            // Off the production path: this non-native branch runs only with no snapshot owner (NativeSnapshotOwner is () => Engine.Robot,
+            // CozmoRobot.cs). Both production callers hold that robot: the cliff insert (Sensors' cliff handler breaks unless its source owner is
+            // Engine.Robot) and the unexpected-movement obstacle (ApplyNativeResponse checks Current() before AddCollisionObstacle, 0x0063E916).
+            // QuadFor's throw below is unreachable there too: cubes, the charger and markerless objects always produce a quad.
             const string gap = "M11-062 / M12 pose records: IsSameAs_WithAmbiguity GetWithRespectTo 0x00846F7A..0x00846FDE; no-parent/deep-tree conversion has no checked pose-tree owner";
             Missing(gap);
             throw new NotSupportedException("MISSING: " + gap);
@@ -3701,6 +3705,10 @@ public sealed partial class BlockWorld
         {
             // 0x00628F9E vt+0x30 GetSameDistanceTolerance; 0x00628FA8 FindLocatedObjectClosestToHelper(obj.GetPose(), the OLD-origin pose read at
             // 0x00628F90, tolerance, filter), body 0x0061F8EC with the predicate 0x00627F9A.
+            // Not reachable for a cube or the charger: their ObservableObject sub-vtables (ActiveCube _ZTV 0x0101CD24 + 0xC8, VTT entry 0x0101CE6C;
+            // Charger _ZTV 0x0101E0F0 + 0xD4, VTT entry 0x0101E244) hold vt+0x5C = 0x004E3883 (at 0x0101CE48 and 0x0101E220), `movs r0,#1`, so both
+            // take the unique branch above. The world holds only cubes, the charger (CubeGeometry.LookupMarker, CreateActiveObjectByType) and
+            // markerless objects (handled here); the remaining non-unique class is the SDK CustomObject, and SDK mode is not supported (AGENTS.md).
             if (o.Family != ObjectFamily.MarkerlessObject || MarkerlessObject.SameDistanceTolerance(o.Type) is not { } tolerance)
                 throw new NotSupportedException("MISSING: M11-043 UpdateObjectOrigins vt+0x30 GetSameDistanceTolerance for a non-unique object that is not a MarkerlessObject: the inventory reads only MarkerlessObject's slot (0x00502B06)");
             counterpart = NativeClosestSpatialQuery.Find(this, o.NativePose, tolerance, f);
