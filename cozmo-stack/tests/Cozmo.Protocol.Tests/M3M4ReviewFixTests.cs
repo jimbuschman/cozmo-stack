@@ -142,7 +142,7 @@ public sealed class M3M4ReviewFixTests
         Assert.Equal(69, Assert.Single(raw).Length);
         Assert.Equal(report.PackBody(), Assert.Single(raw));
         var delivery = Assert.Single(locals);
-        Assert.Equal(new NativeObservedObject(report.Timestamp, report.Family, report.Type, report.ObjectId), delivery.Prefix);
+        Assert.Equal(new NativeObservedObject(report.Timestamp, report.Family, report.Type, report.ObjectId) { Pose = report.Pose }, delivery.Prefix);
         Assert.True(delivery.AppCount > before);
     }
 

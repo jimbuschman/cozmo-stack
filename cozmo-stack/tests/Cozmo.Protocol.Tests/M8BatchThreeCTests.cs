@@ -517,25 +517,50 @@ public class M8BatchThreeCTests
         Assert.All(viz.Circles, c => Assert.Equal(BeaconColor.DarkGreen, c.Color));
     }
 
-    /// <summary>M8-014: the beacon pose helper (0x004DF628) is not supplied and AIBeacon has no +0x10 time yet: an unset seam reports MISSING once, and an empty render only erases.</summary>
     [Fact]
-    public void TheBeaconRenderThrowsRatherThanGuessTheUnknownPoseBase()
+    public void BeaconRenderResolvesItsPoseAndUsesTheFailureTimestamp()
     {
         var viz = new FakeViz();
         var renderer = new AIWhiteboardBeaconRenderer(viz);
-        renderer.Render(Array.Empty<AIBeacon>());
-        Assert.Equal(new[] { "erase AIWhiteboard.UpdateBeaconRender" }, viz.Calls);
-        var log = new List<string>();
-        renderer.Log += log.Add;
-        viz.Calls.Clear();
-        renderer.Render(new[] { new AIBeacon(Pose3d.Identity, 10) });          // unset: MISSING once, no circles, no throw
-        renderer.Render(new[] { new AIBeacon(Pose3d.Identity, 10) });
-        Assert.Single(log, l => l.StartsWith("MISSING"));
-        Assert.DoesNotContain("circle", viz.Calls);
-        renderer.ResolveBeaconPose = b => b.Pose;
-        renderer.Render(new[] { new AIBeacon(Pose3d.Identity, 10) });
-        Assert.Single(log);                                                   // the +0x10 time defaults to AIBeacon.FailedToFindLocationTimeSec (M15-023): nothing else is missing
-        Assert.Contains("circle", viz.Calls);
+        using var root = new Pose3d("root");
+        using var parent = new Pose3d(Rotation3d.Identity, new Vec3(20, 30, 0), parent: root);
+        using var child = new Pose3d(Rotation3d.Identity, new Vec3(1, 2, 3), parent: parent);
+        var beacon = new AIBeacon(child, 10);
+        renderer.Render(new[] { beacon });
+        Assert.Equal(3, viz.Circles.Count);
+        Assert.All(viz.Circles, c =>
+        {
+            Assert.Equal((21f, 32f, 38f), (c.X, c.Y, c.Z));
+            Assert.Equal(BeaconColor.DarkGreen, c.Color);
+        });
+        viz.Circles.Clear();
+        beacon.FailedToFindLocation(1f);
+        renderer.Render(new[] { beacon });
+        Assert.All(viz.Circles, c => Assert.Equal(BeaconColor.Orange, c.Color));
+    }
+
+    [Fact]
+    public void WhiteboardObservationSubscriptionsReadTheLiveRobotAndWorld()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture();
+        var board = f.M.Whiteboard;
+        var origin = f.Robot.CurrentOriginId;
+        var type = ObjectType.Block_LIGHTCUBE1;
+        RobotObservedObjectReport Report(float x, float z) => new(1, 2, (uint)type, 7,
+            0, 0, 0, 0, new EngineGamePose(x, 0, z, 1, 0, 0, 0, origin), 0, true);
+        void Possible(float x, float z) => f.Rig.Engine.AnimationMessages.Deliver(0x45, true, Report(x, z));
+        f.Add(7, 150, 22);
+        Possible(150, 22);
+        Assert.Empty(board.PossibleObjects);
+        Possible(500, 80);
+        Assert.Empty(board.PossibleObjects);
+        Possible(500, 22);
+        Assert.Equal(type, Assert.Single(board.PossibleObjects).Type);
+        Possible(525, 22);
+        Assert.Equal(525, Assert.Single(board.PossibleObjects).Pose.Translation.X);
+        f.Rig.Engine.AnimationMessages.Deliver(0x44, true,
+            new NativeObservedObject(2, 2, (uint)type, 7) { Pose = Report(525, 22).Pose });
+        Assert.Empty(board.PossibleObjects);
     }
 
     // ------------------------------------------------------------------ M8-004

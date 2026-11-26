@@ -175,7 +175,7 @@ public sealed partial class AIWhiteboard
         var p = relative.Translation;
         return quad.Contains(new Vec2((float)p.X, (float)p.Y)); // center only; ignores Z/type/extent/age
     }
-    private void UpdatePossibleObjectRender()
+    internal void UpdatePossibleObjectRender()
     {
         // This origin is only used to draw PossibleObjects (0x0056A6E4..0x0056A70A).
         // The owning clear predicate uses its own required origin above.

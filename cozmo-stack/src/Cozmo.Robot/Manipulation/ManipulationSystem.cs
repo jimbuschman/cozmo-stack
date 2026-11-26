@@ -54,10 +54,10 @@ public sealed class ManipulationSystem : IDisposable
             _installedCallbacks.Add(() => robot.Sensors.WhiteboardOffTreadsStateChanged -= onTreads);
         }
         if(_ownsSharedServices)vision.World.MapClearQuad=Whiteboard.ProcessClearQuad;
-        // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
-        // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This
-        // stack has no external interface registered, so the warning path is the live one.
-        if(_ownsSharedServices)Whiteboard.Init();
+        if (_ownsSharedServices && nativeOwner is { HasExternalInterface: true })
+            BindWhiteboardObservations(nativeOwner);
+        else if (_ownsSharedServices)
+            Whiteboard.Init();
         // fidelity: M15-020
         // The FindCubesInBeacon predicate's first test, CarryingComponent::IsCarryingObject(id) (0x0056D142).
         if(_ownsWhiteboard)
@@ -400,6 +400,42 @@ public sealed class ManipulationSystem : IDisposable
             return done == tcs.Task ? tcs.Task.Result : null;
         }
         finally { World.ObjectObserved -= OnObserved; }
+    }
+
+    private void BindWhiteboardObservations(EngineRobot owner)
+    {
+        var handlers = new Behavior.AIWhiteboardHandlers(Whiteboard, owner, World);
+        handlers.PossibleObjectsRedrawn += Whiteboard.UpdatePossibleObjectRender;
+        // 0x0056A44C and 0x0056A50C subscribe the two observations. The on-treads
+        // subscription is bound to the same whiteboard in the constructor.
+        void Observe(ObjectType type, EngineGamePose fields, bool possible)
+        {
+            if (_disposed || owner.Lifetime.Destroying || !ReferenceEquals(Robot.Engine.Robot, owner)) return;
+            using var mutation = World.EnterPoseMutation();
+            // 0x0056C448 and 0x0056C48A reconstruct the message pose in its recorded origin.
+            var origin = owner.GetNativeOrigin(fields.OriginId);
+            using var pose = new Pose3d(new Rotation3d(fields.Q0, fields.Q1, fields.Q2, fields.Q3),
+                new Vec3(fields.X, fields.Y, fields.Z), parent: origin);
+            if (possible) handlers.HandleRobotObservedPossibleObject(pose, type);
+            else handlers.HandleRobotObservedObject(pose, type);
+        }
+        var observed = Robot.Engine.AnimationMessages.SubscribeMessage(0x44, true, payload =>
+        {
+            if (_disposed || owner.Lifetime.Destroying || !ReferenceEquals(Robot.Engine.Robot, owner)) return;
+            if (Whiteboard.PossibleObjects.Count != 0 && payload is NativeObservedObject { Pose: { } pose } item)
+                Observe((ObjectType)item.Type, pose, false);
+            else if (Whiteboard.PossibleObjects.Count == 0)
+                Whiteboard.UpdatePossibleObjectRender(); // 0x0056C464 also redraws the empty list
+            else if (payload is NativeObservedObject prefix && Whiteboard.PossibleObjects.Any(p => (uint)p.Type == prefix.Type))
+                Behavior.SteppedBehavior.ReportMissing("M11-038 whiteboard 0x0056C448 requires the observed pose for same-type removal; incomplete local report");
+        });
+        var possible = Robot.Engine.AnimationMessages.SubscribeMessage(0x45, true, payload =>
+        {
+            // RobotObservedPossibleObject wraps one RobotObservedObject in the shipped CLAD definition.
+            if (payload is RobotObservedObjectReport item) Observe((ObjectType)item.Type, item.Pose, true);
+        });
+        _installedCallbacks.Add(observed.Dispose);
+        _installedCallbacks.Add(possible.Dispose);
     }
 
     public void Dispose()

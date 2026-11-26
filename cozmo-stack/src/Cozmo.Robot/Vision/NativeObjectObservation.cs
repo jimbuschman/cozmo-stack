@@ -116,7 +116,7 @@ public sealed partial class VisionSystem
         // Robot.cs HandleSeeObservedObject updates KnownObjects even without an active cube.
         if (CozmoCubes.IsLightCube(obj.Type)) _robot.Cubes.ReportObservedCube(report.ObjectId);
         _robot.Engine.DeliverObservedObjectToApp(report);
-        _robot.Engine.AnimationMessages.Deliver(0x44,true,prefix);
+        _robot.Engine.AnimationMessages.Deliver(0x44,true,prefix with { Pose = report.Pose });
         return report;
     }
 }
