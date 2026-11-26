@@ -46,6 +46,33 @@ public sealed class AiTrackFaceControlTests
         Assert.False(f.Robot.ActionList.ContainsRunner(runner));
     }
 
+    [Fact]
+    public async Task AFaceRemappedBeforeInitIsNotSilentlyRetargeted()
+    {
+        using var f = new PickupPyramidNativeExecutionTests.Fixture(preloadAnimations: true, sourceNvEmpty: true);
+        f.M.Vision.FaceDetector = new Camera();
+        f.Head = .1f; f.Motors(); f.Image(500, modes: 1 << 2);
+        Assert.NotNull(f.M.Vision.Faces.GetNativeFace(f.Robot, -7));
+        using var cancel = new CancellationTokenSource();
+        var task = f.Rig.Robot.Motion.QueueAiTrackFaceAsync(-7, false, cancel.Token);
+        var runner = Assert.IsType<NativeTrackFaceRunner>(f.Robot.ActionList.GetCurrentAction());
+        // Init 0x00565C24..0x00565C64 subscribes to future ID changes; no
+        // lookup/remap occurs at Init. Update 0x00565DD6 exact-looks up the old key.
+        Assert.False(runner.Initialized);
+        Assert.True(f.M.Vision.Faces.ChangeFaceID(-7, 1));
+        int mark = f.Rig.Mark();
+        f.Rig.Tick(5);
+        Assert.Null(f.M.Vision.Faces.GetNativeFace(f.Robot, -7));
+        Assert.NotNull(f.M.Vision.Faces.GetNativeFace(f.Robot, 1));
+        Assert.False(task.IsCompleted);
+        Assert.DoesNotContain(f.Rig.SentSince(mark), m => m is SetHeadAngle or SetBodyAngle);
+        cancel.Cancel();
+        f.Rig.Tick();
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(-7, result.FaceId);
+        Assert.Equal(0x02000000u, result.EngineResult);
+    }
+
     private sealed class EmptyCamera : IFaceDetector
     {
         public bool IsAvailable => true;

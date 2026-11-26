@@ -5,6 +5,24 @@ namespace Cozmo.Bridge;
 
 public sealed partial class CozmoBridge
 {
+    // Host-only nonblocking admission. The native TrackFace action remains owned by the
+    // ActionList (0x0052ACC0..0x0052ACE6, 0x00527A74..0x00527A8C) until its real terminal event.
+    private async Task<CommandResult> TrackFace(int faceId, bool headOnly, CancellationToken token)
+    {
+        uint? admittedTag = null;
+        var completion = Robot.Motion.QueueAiTrackFaceAsync(faceId, headOnly, token, tag => admittedTag = tag);
+        if (admittedTag is not { } tag) return await FromAction(completion).ConfigureAwait(false);
+        _ = ObserveTrackFaceCompletion(completion);
+        return new CommandResult("submitted", true, null, null, "Native face tracking admitted; completion will be reported in events",
+            Report: new { actionTag = tag, requestedFaceId = faceId });
+    }
+
+    private async Task ObserveTrackFaceCompletion(Task<AiTrackFaceActionResult> completion)
+    {
+        try { await completion.ConfigureAwait(false); }
+        catch (Exception error) { Robot.Engine.EmitStackLog("Track-face completion observation failed: " + error.Message); }
+    }
+
     private Task<CommandResult> CancelAction(uint tag, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();

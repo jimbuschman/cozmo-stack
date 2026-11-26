@@ -613,10 +613,40 @@ def matches_interaction_completion(body, object_id):
         0, object_id, 0, 0, 0, 0, 1, 0)
 
 
+def submitted_track_check(session, call, prompt, citation, expected, seconds):
+    """Host admission is not completion: correlate the exact native action tag."""
+    end = min(session.end, call.start + 1000 * seconds)
+    window = (call.start, end)
+    tag = (call.reply.get("report") or {}).get("actionTag")
+    passed = False
+    reason = "The tracking admission has no valid action tag."
+    if type(tag) is int and 0 < tag <= 1_000_000 and call.reply.get("admitted") is True:
+        cancels = [cancel for cancel in session.calls["cancel-action"]
+                   if cancel.args.get("actionTag") == tag and cancel.reply.get("status") == "submitted"
+                   and call.start + 1000 * TRACK_SECONDS <= cancel.start <= end]
+        reports = [(at, body) for at, body in session.in_window(0x5A, *window)
+                   if len(body) >= 14 and struct.unpack_from("<IiI", body)[:2] == (tag, 0x23)]
+        if not cancels:
+            reason = "The round requires cancel-action on the admitted tag after 10 s of tracking."
+        elif len(reports) == 1:
+            at, body = reports[0]
+            offset = 13 + 4 * body[12]
+            passed = (at >= cancels[0].start and struct.unpack_from("<I", body, 8)[0] == expected
+                      and action_completion_variant(body) == 3 and len(body) == offset + 5)
+            reason = (f"Matching TrackFace variant-3 0x5A action tag {tag} at {at:.0f} ms after cancel-action."
+                      if passed else "The native completion did not match cancellation and TrackFace variant 3.")
+        else:
+            reason = f"Tracking tag {tag} had {len(reports)} attributable 0x5A reports in the round window."
+    return session.apply_missing(Verdict(PASSED if passed else SEEN, reason, citation, prompt,
+                                         window, ("track-face", *ACTION_ALIASES["track-face"])))
+
 def action_check(session, name, prompt, citation, expected, seconds, calls=None):
     citation += "; " + COMPLETION
     candidates = []
     for call in session.calls[name] if calls is None else calls:
+        if name == "track-face" and call.reply.get("status") == "submitted":
+            candidates.append(submitted_track_check(session, call, prompt, citation, expected, seconds))
+            continue
         end = min(call.end if call.end is not None else session.end, call.start + 1000 * seconds)
         window = (call.start, end)
         result = call.reply.get("engineResult")

@@ -414,10 +414,21 @@ public sealed partial class CozmoBridge
             Add("robot-disconnected", new { report.TimeSinceLastMsgSec, reason = report.Reason.ToString(), reasonCode = (byte)report.Reason });
         }
     }
-    private void OnActionCompleted(ActionCompletionReport report) =>
-        Add("action-completed", new { completion = report, resultName = Enum.GetName((NativeActionResultName)report.Result) },
+    private void OnActionCompleted(ActionCompletionReport report)
+    {
+        var resultName = Enum.GetName((NativeActionResultName)report.Result);
+        if (report.ActionType == 0x23 && report.CompletionVariant == 3)
+        {
+            // TrackFace returns admission, not completion. Publish its actual signed variant-3
+            // face ID and keep the caller's terminal event eligible for push.
+            Add("action-completed", new { completion = report, resultName, faceId = unchecked((int)report.NativeCompletionCache) },
+                eligible: ReferenceEquals(report.HostCaller, eventCaller), compactEligible: true, pushEligible: true);
+            return;
+        }
+        Add("action-completed", new { completion = report, resultName },
             eligible: ReferenceEquals(report.HostCaller, eventCaller),
-            compactEligible: true, pushEligible: !ReferenceEquals(report.HostCaller, eventCaller));
+            compactEligible: true, pushEligible: !ReferenceEquals(report.HostCaller, eventCaller) || report.ActionType == 0x23);
+    }
 
     private void Add<T>(string type, T payload, uint? robotTimestamp = null, bool eligible = true,
         bool? compactEligible = null, bool? pushEligible = null)
