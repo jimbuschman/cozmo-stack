@@ -298,6 +298,12 @@ public class NativeOverheadEdgesOracleTests
         using var sub = engine.AnimationMessages.SubscribeMessage(0x43, true, p => reports.Add(Assert.IsType<ProcessedImageReport>(p)));
         void OnFrame(VisionFrameResult r) { lock (results) results.Add(r); }
         vision.FrameProcessed += OnFrame;
+        // FACE-ENROLL-VISION-GAPS-1: the production worker always has the frame's carrier (MotionPose.Current, admitted at 0x006B4D88
+        // before Detect), so the entry-without-carrier MISSING of the host entries is never printed on this path.
+        var missing = new List<string>();
+        void Record(string m) { lock (missing) missing.Add(m); }
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += Record;
         try
         {
             var state = f.Rig.MakeState(RobotStatusFlag.HeadInPos, origin: f.Robot.CurrentOriginId, head: -.15f);
@@ -314,7 +320,8 @@ public class NativeOverheadEdgesOracleTests
             var report = Assert.Single(reports);
             Assert.Contains(4u, report.Modes);
             lock (results) Assert.All(results, r => Assert.Null(r.OverheadEdges));
+            lock (missing) Assert.DoesNotContain(missing, m => m.Contains("M11-017 overhead-edge Detect: this entry has no", StringComparison.Ordinal));
         }
-        finally { vision.FrameProcessed -= OnFrame; }
+        finally { vision.FrameProcessed -= OnFrame; Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= Record; }
     }
 }

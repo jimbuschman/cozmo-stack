@@ -290,14 +290,29 @@ public sealed partial class OkaoFaceDetection : IDisposable
                     ? ReadAttributes(attributeMask, width, height) : NativeFaceAttributes.Default;
                 var face = new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
                     ExpressionValues: (attributeMask & (1 << 10)) != 0 ? attributes.Scores : null, Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features, NativeAttributes = attributes, NativeFacingCamera = facing, NativeNameBytes = Array.Empty<byte>() };
-                bool enrollable = raw[3] > 500 && raw[9] == 0 && facing && leftEye is { } le && rightEye is { } re && roll is { } angle &&
-                    TrackedFace.GetIntraEyeDistance(le, re, angle) >= 16;
+                bool enrollable = IsEnrollableDefaultPose(raw[3], raw[9], facing,
+                    leftEye is { } le && rightEye is { } re && roll is { } angle ? TrackedFace.GetIntraEyeDistance(le, re, angle) : null);
                 faces.Add(recognize?.Invoke(raw, face, enrollable, excluded.Contains(raw[2])) ?? face);
             }
             return faces;
         }
         catch { _faulted = true; throw; }
     }
+
+    // fidelity: M14-011
+    /// <summary>
+    /// <c>FaceTracker::Impl::IsEnrollable(DETECTION_INFO, TrackedFace)</c> 0x0086E074 for enrollment pose 0, the only pose production
+    /// sets. The pose byte is <c>Impl+0x134</c>: the ctor zeroes it (0x0086B2A8) and only <c>Impl::SetFaceEnrollmentMode</c> 0x0086E372
+    /// (<c>strb.w r1,[r0,#0x134]</c>) writes it, reached only from <c>VisionComponent::SetFaceEnrollmentMode</c> 0x00657A58, whose only
+    /// callers are the two <c>FaceWorld::Enroll</c> overloads, which pass pose 0 (<c>movs r1,#0</c> at 0x004F5CAC and 0x004F5CCE). The
+    /// pose 1..6 cases of the switch (0x0086E0CE..0x0086E1D2) are therefore unreachable and not built.
+    /// Pose 0: the confidence <c>DETECTION_INFO+0xC</c> must be over 500 (<c>cmp.w r0,#0x1f4; ble</c> 0x0086E080), then (0x0086E0A8..0x0086E0CC)
+    /// <c>DETECTION_INFO+0x24</c> must be 0, the intra-eye distance (<c>GetIntraEyeDistance</c> 0x004CF974) at least 16.0 (<c>vcmpe; movge</c>)
+    /// and the TrackedFace byte <c>+0x11</c> (facing) set. <paramref name="eyeDistance"/> null (no eye points) can only occur with facing
+    /// clear, which already fails the gate.
+    /// </summary>
+    internal static bool IsEnrollableDefaultPose(int confidence, int detectionWord24, bool facing, double? eyeDistance) =>
+        confidence > 500 && detectionWord24 == 0 && eyeDistance is { } distance && distance >= 16 && facing;
 
     private int[]? ReadRaw(uint index)
     {

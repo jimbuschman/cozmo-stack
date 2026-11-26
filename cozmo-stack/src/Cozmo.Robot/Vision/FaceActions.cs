@@ -23,10 +23,14 @@ public enum FaceActionResult : uint { Success = 0, Cancelled = 0x02000000, Abort
 /// MoveHeadToAngleAction under a CompoundActionParallel) is not connected (M13-020/M13-022): this stack sends the body and head
 /// through <see cref="FaceTurns"/> and <see cref="TurnTowardsPose"/> (M11-014/M11-015), and waits for the pose to settle.
 ///
-/// The head angle is <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;rad, 0.01f)</c> (0x00518344, <see cref="TurnTowardsPose.ComputeHeadAngleToSeePose"/>: the engine's 25-iteration loop in binary32 over this
-/// stack's double pose algebra, MISSING for the last bits). When it returns non-zero (no calibration, a projected z at or behind the camera, a loop that ends on its 25th pass) Init logs
-/// "TurnTowardsPoseAction.Init.FailedToComputedHeadAngle" (0x0054AB66) and falls back to <c>GetAbsoluteHeadAngleToLookAtPose</c> (0x0054B428, <see cref="TurnTowardsPoseCompound.AbsoluteHeadAngleToLookAtPose"/>)
-/// with the robot-frame translation. With no robot pose yet the result is BAD_POSE (the engine always has one).
+/// The head angle is <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;rad, 0.01f)</c> (0x00518344, <see cref="TurnTowardsPose.ComputeHeadAngleToSeePose"/>: the engine's 25-iteration loop in binary32; this
+/// host class uses the labelled M11-066 flat-input adapter, while the production face turn is <see cref="NativeTurnTowardsPoseRunner"/>, which calls the native overload on the live MAIN pose).
+/// The failure branch (0x0054AB1A <c>cmp r0,#0; beq</c>, else 0x0054AB1E..0x0054ABA2) is shared through <see cref="TurnTowardsPoseCompound.InitPose"/>: on any non-zero result Init warns
+/// "TurnTowardsPoseAction.Init.FailedToComputedHeadAngle" / "PoseWrtRobot translation=(%f,%f,%f)" (0x0054AB66) and falls back to <c>GetAbsoluteHeadAngleToLookAtPose</c> (0x0054AB9A -> 0x0054B428,
+/// <see cref="TurnTowardsPoseCompound.AbsoluteHeadAngleToLookAtPose"/>) with the robot-frame translation, then clamps as on success (0x0054ABA6..0x0054ACBC). Of the non-zero results our system
+/// can hit BadProjectedZ (a goal nearly straight above the neck, 0x00518494) and MaxIterations (convergence on exactly the 25th pass, 0x005185C6..0x00518600); NullCamera (0x0051851E) needs a face
+/// turn with no installed calibration, which cannot follow a face observation (vision withholds frames without calibration) and robot removal cancels the action; OriginMismatch 0x06000000
+/// cannot occur because Init has already converted the goal into the robot frame (0x0054A94C). With no robot pose yet this host class returns BAD_POSE (the engine always has one).
 /// </summary>
 // fidelity: M13-020
 public sealed class TurnTowardsPoseAction
