@@ -212,10 +212,10 @@ public sealed class ManipulationSystem : IDisposable
     }
 
     /// <summary>
-    /// The engine's lattice planner (M13), when the motion-primitive set is available: <see cref="DriveToPoseAction"/>
-    /// plans with it around the world's located objects and falls back to <see cref="StraightLinePlanner"/> when
-    /// it is null or finds no plan (the engine's <c>PathComponent::SelectPlanner</c> also keeps a simpler planner
-    /// for short, clear goals; LOCAL_POLICY fallback).
+    /// The engine's lattice planner backend (M13), when the motion-primitive set is available. Production drives never call
+    /// its <c>PlanTo</c>/<c>ToPath</c> (tool/test only): <c>NativePlannerSet</c> wraps it in <c>NativeLatticePlannerRuntime</c>, selected by
+    /// <c>PathComponent::SelectPlanner</c> for d^2 &gt;= 1600 (short goals take the native face/min-angle planners), and the path sent to the
+    /// robot comes from that runtime's <c>GetCompletePath</c> (0x004FFB64). With no backend, no long planner is selected (visible MISSING M13-033).
     /// </summary>
     public LatticePlanner? Planner { get; set; }
     internal NativePlannerSet? NativePlanners;

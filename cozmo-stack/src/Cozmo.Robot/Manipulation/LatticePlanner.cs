@@ -1607,7 +1607,12 @@ public class LatticePlanner
     public static StateC ToStateC(Pose3d pose) => new((float)pose.Translation.X, (float)pose.Translation.Y, (float)pose.AngleAroundZ);
 
     /// <summary>
-    /// STAND-IN for <c>LatticePlannerImpl::GetCompletePath</c> (MISSING, not built): the plan as robot path segments. Straight primitives in a row merge into one line; an in-place turn is a
+    /// TOOL/TEST-ONLY stand-in, NOT the engine's path builder and never on a production drive. Production paths come from
+    /// <c>NativeLatticePlannerRuntime.GetCompletePath</c> (the engine's <c>LatticePlannerImpl::GetCompletePath</c> 0x004FFB64: status gate on +0xF8,
+    /// goal byte +0x100 at 0x004FFB8C, FindClosest, AppendToPath, trailing point-turn pop and final angle correction, ApplyMotionProfile), reached through
+    /// NativePathComponent → <c>NativePlannerSet.Read</c>; ManipulationSystem.LoadPlanner/LoadNativePlanner always wrap the backend in that runtime.
+    /// The only callers of this method are <see cref="PlanTo"/>, the conformance ManipTool and unit tests (PLANNER-GEOMETRY-GAPS-1, 2026-11-25).
+    /// What it does: the plan as robot path segments. Straight primitives in a row merge into one line; an in-place turn is a
     /// point turn to the new lattice heading; a turning primitive is its own <c>straight_length_mm</c> followed by its own <c>arc</c>, both of which <c>cozmo_mprim.json</c> states outright. A final
     /// point turn to the goal's exact heading is appended when the lattice heading differs from it. The segment values are binary32 (the engine's <c>PathSegment</c> words); how the engine
     /// builds them (the primitive's own <c>Path</c> with its speeds, <c>AppendToPath</c>) is not transliterated here.
@@ -1670,7 +1675,7 @@ public class LatticePlanner
     }
 
     /// <summary>
-    /// Plans from a pose to one of several goal poses; null when no plan is found or the goals are all in
+    /// Tool/test entry (not a production drive; see <see cref="ToPath"/>): plans from a pose to one of several goal poses; null when no plan is found or the goals are all in
     /// collision. <c>virtual</c> so a caller can substitute the planner; the no-path branch is
     /// <c>DoPlanning</c>'s: Replan == 0 returns 0 (0x00500202) and no path is sent.
     /// </summary>

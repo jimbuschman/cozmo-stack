@@ -231,6 +231,9 @@ public sealed class M13OriginImportTests
                 {
                     Assert.Equal(0,drive.Init());
                     Assert.Same(m.NativePlanners!.Lattice,m.NativePlanners.Current);
+                    // PLANNER-GEOMETRY-GAPS-1: the engine Robot owns CarryingOwner from its constructor (InitDockingCarryingOwners) to teardown,
+                    // so the production import never takes the M13-003 unavailable-owner guard.
+                    Assert.DoesNotContain(logs,l=>l.Contains("MISSING: M13-003"));
                     Assert.Equal(1,env.ObstacleCount);
                     Assert.InRange(MathF.Abs(MinX(env)-unshifted+20),0,0.0001f);
                 }
