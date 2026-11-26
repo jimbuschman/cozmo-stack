@@ -422,6 +422,9 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-045
         // R45-2..R45-3: loader -> container+0x28 -> group+0 uses context+0x14.
         Library.ContextRandom = _scheduler.ContextRandom;
+        // Wiring guards: AnimationStreamer::GetAnimationNameFromGroup reads its caller's Robot+0x440 (MoodManager) with no
+        // null check (0x0057AEE4..0x0057AEEA); the streamer lives in that Robot (robot+0x60). The stack's MoodOwner is bound
+        // with every Robot (CozmoRobot BindNativeMood) and cleared only at Robot destruction (slot 0x440).
         Library.CurrentMood=()=>_robot.Engine.Robot?.MoodOwner?.GetSimpleMood()
             ??throw new InvalidOperationException("MISSING: animation group actual Mood owner unavailable");
         Library.CooldownTimeSec=()=>_robot.Engine.Robot?.MoodOwner?.LastUpdateSeconds
@@ -699,8 +702,10 @@ public sealed class CozmoAnimations : IDisposable
                 // fidelity: M1-041
                 // CD12: Robot::Update runs AnimationStreamer::Update only after the first full state and only while
                 // time synced and ready to stream. While that gate is shut nothing is streamed.
-                // MISSING (M5): what the animation timeline does while the streamer is not updated is not in the M1
-                // inventory; here the scheduler is simply not advanced, and it catches up to the clock once open.
+                // Offline seams only: production is EngineDriven and StartTicker returns before this loop. Robot::Update's
+                // gate (robot+0x29 and +0x2A, 0x0051410C..0x00514116) is the only caller of AnimationStreamer::Update
+                // (0x0051411E -> PLT 0x004A7E7C); while it is shut nothing updates the streamer, so its frame-counted
+                // timeline (M5-007) does not advance. Not advancing the scheduler here is the same.
                 if (_robot.AnimationStreamingOpen) _scheduler.Advance(ClockMs?.Invoke() ?? origin + sw.Elapsed.TotalMilliseconds);
                 TickObserved?.Invoke();
             }

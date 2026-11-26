@@ -32,6 +32,9 @@ internal static class GoToSleepAnimation
             var args = new SleepAnimationArguments((AnimationTrigger)trigger, 1, true, AnimationTrack.None,
                 BitConverter.Int32BitsToSingle(0x42700000), false);
             var child = triggerFactory?.Invoke(args);
+            // Production (CreateOwned) always builds the child: the engine's operator new(0xCC) at 0x0052CEBC/0x0052CEFA/
+            // 0x0052CF30 cannot return null, and the ctor at 0x0052CEDE/0x0052CF14/0x0052CF4A is unconditional. Only a test
+            // factory override that returns null reaches this branch.
             if (child is null)
             {
                 host.Engine.EmitStackLog("MISSING: M5-038 -> M8 TriggerAnimationAction concrete ActionRunner lifecycle (factory call 0x0052CEDE); no checked reusable recipient");

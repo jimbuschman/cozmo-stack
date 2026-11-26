@@ -233,6 +233,35 @@ public class M5FixRowsTests
     }
     private sealed class Child() : ActionRunner(26, 0) { public override uint CheckIfDone() => EngineActionResult.Success; public override bool CanInterrupt() => true; }
 
+    /// <summary>
+    /// ANIM-TIMELINE-GAPS-1 wiring guards: GetAnimationNameFromGroup reads the caller Robot's +0x440 MoodManager unchecked
+    /// (0x0057AEE4..0x0057AEEA). On a connected production robot the loaded library's mood and cooldown-time inputs are that
+    /// Robot's bound MoodOwner, so the "actual Mood owner unavailable" guards are not reached.
+    /// </summary>
+    // reach: production robot bind (M4 rig) and shipped animation load; group choice called directly.
+    [Fact]
+    public void AnimationGroupMoodInputsAreTheBoundRobotMoodOwner()
+    {
+        string? resources = null;
+        for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null && resources is null; d = d.Parent)
+        {
+            var root = Path.Combine(d.FullName, "re-analysis", "obb", "assets", "cozmo_resources");
+            if (Directory.Exists(Path.Combine(root, "assets", "animations"))) resources = root;
+        }
+        Assert.NotNull(resources);
+        using var rig = new M4ControlTests.Rig(resources); rig.ToSynced();
+        rig.Robot.Animations.LoadFrom(Path.Combine(resources!, "assets"));
+        var library = Assert.IsType<AnimationLibrary>(rig.Robot.Animations.Library);
+        var mood = rig.Engine.Robot!.MoodOwner;
+        Assert.NotNull(mood);
+        Assert.Equal(mood!.GetSimpleMood(), library.CurrentMood!());
+        Assert.Equal((double)mood.LastUpdateSeconds, library.CooldownTimeSec!());
+        var stack = new ConcurrentQueue<string>(); rig.Engine.StackLogLine += stack.Enqueue;
+        try { Assert.NotEqual("", library.GetAnimationNameFromGroup(library.GetAnimationForTrigger((AnimationTrigger)0xD2), strict: false)); }
+        finally { rig.Engine.StackLogLine -= stack.Enqueue; }
+        Assert.DoesNotContain(stack, l => l.Contains("MISSING"));
+    }
+
     [Fact]
     public void FK1ToFK4_FaceOverrideControlsIsDoneThroughTheStreamer()
     {
