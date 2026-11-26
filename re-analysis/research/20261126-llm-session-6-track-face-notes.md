@@ -78,3 +78,38 @@ F6). CHARGER-MOUNT-REVERSE-1 bound the dock reaction-lock table (0x00C55A21, one
 
 **C3. Frustration drove him away mid-retry.** After repeated mount failures ReactToFrustrationMajor ran a
 drive-off. Engine-normal per its mood input, but it fights an LLM retry loop.
+
+## Command during Freeplay, then return to Freeplay (03:43–03:45 UTC)
+
+Setup:
+- freeplay(true), then `wake` at 03:43:55.
+- sleep-cancelled, then PlacedOnCharger → None.
+- DriveOffCharger was chosen ("highest score 1000.01"); off-charger at 03:43:55.6.
+- **The wake tool works.**
+
+**Turn command: PASS.**
+- turn-in-place 90° at about 03:44:46.
+- At 03:44:46.86 Freeplay's PounceOnMotion_Socialize was cancelled (action 3000355 CANCELLED) and the behaviour went
+  to Wait.
+- The turn returned SUCCESS at 03:44:48.84.
+- Freeplay resumed by itself: `lastResumedAtEngineSeconds` = 1642.68, new activity Singing →
+  Singing_PopGoesTheWeasel.
+- Not observed: `pausedForCommand` true during the turn (not polled while it ran).
+
+**Speech command: FAIL (S1).**
+- say-text was submitted at about 03:44:10.5, just after Freeplay started InteractWithFaces (03:44:10.44).
+- It did **not** pre-empt Freeplay. InteractWithFaces' [TrackFace + ag_pause_idle] kept running for 13 s,
+  `pausedForCommand` stayed false, and no SayTextAnimation started.
+- When InteractWithFaces completed (objective InteractedWithFace, 03:44:23.94), SayText[1] got its preconditions
+  (stack-log 11914). In the same tick the FistBump reaction (triggered by `trigger_fist_bump_response:
+  InteractedWithFace`) cancelled it (11919).
+- Result CANCELLED_WHILE_RUNNING. Nothing was said.
+
+Lead:
+- The bridge's speech path (`SpeechOwner.QueueEnglishSpeech`, `QueueActionGuardedAtEnd`, direct SayTextAction)
+  queues at the end of the action list and does not appear to trigger the Freeplay pause for an external command.
+- The turn path did trigger it.
+- Trace:
+  - which engine path the app's SayText takes (the G2E message, its queue position, and the BehaviorManager
+    external-action handling that stops the running Freeplay behaviour);
+  - whether speech should pause Freeplay as the turn did.
