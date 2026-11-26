@@ -41,26 +41,40 @@ Consider making track-face return once admitted, with completion in events, or a
 **T4. The commanded track was interrupted by reactions** (AcknowledgeObject, AcknowledgeFace, Pickup) unless those
 triggers were locked. Probably engine behaviour; to confirm against the action's reaction locks.
 
-## Charger mount (03:32–03:37 UTC): the charger marker is never detected
+## Charger mount (03:32–03:42 UTC)
 
-He was picked up at 03:30:36, so a new origin; knownChargers was empty. Claude drove him around to the charger's
-open end, then placed him square to the marker, about 15–25 cm away and centred in frame. Frames
-`imageId` 18546, 18697, 19833 and 20870 are visionProcessed=true.
+**Correction:** an earlier version of this section blamed a charger-detection regression. That was wrong. The
+charger was not detected because Claude viewed it about 30–40° off its axis, with the ramp lip in front of the
+marker. Once straight in front (03:38:42), it was detected about 4–7 times per second, before and after the lamp.
+Lesson: get square on before concluding the detector is at fault.
 
-- **No `charger-seen` events in the whole session**, from 03:33:50 to 03:37 across many views.
-- The only charger in BlockWorld was the on-charger placement at connect (stack-log 2439, lastObserved 0).
-- Lighting is ruled out:
-  - first, dark room: exposure 63–67 ms, gain 3.98 (maximum);
-  - then the operator's lamp behind the charger: glare;
-  - then the lamp from behind the robot (03:36:30): marker crisp, square, about 40×35 px.
+| UTC | Result | Cause (`why`) |
+| --- | --- | --- |
+| 03:38:53 | DID_NOT_REACH_PREACTION_POSE | Position in range, relative yaw −8.0° against the 7.5° limit. |
+| 03:39:01, 03:39:13 | VISUAL_OBSERVATION_FAILED | VisuallyVerifyObject saw no charger in its frame window. Afterwards the detection rate at the verify head angle was normal (50 in 9 s), so likely transient. |
+| 03:39:55 | FAILED_TRAVERSING_PATH | Arrival rotation 11.0° against 10.0°. |
+| 03:40:07, 03:40:25 | DID_NOT_REACH_PREACTION_POSE | Y offset 29 and 37 mm (limit 21). |
+| 03:40:40 | FAILED_TRAVERSING_PATH | Path goal z = 58 mm, arrival rotation 13.4° against 10°. |
+| 03:41:03 | CANCELLED_WHILE_RUNNING | Docking SUCCESS (dockingResult 2); the reverse up the ramp hit UnexpectedMovement (L −37 / R −20), the reaction cancelled the mount, then ReactToFrustrationMajor drove him away. |
+| 03:41:36 | LAST_PICK_AND_PLACE_FAILED | Firmware docking `success:false dockingResult:6`; UnexpectedMovement and Frustration were locked. |
 
-  It was not detected in any of the three.
-- Marker detection is enabled (stack-log 2350 DetectingMarkers) and found the cube marker this session (03:24:34
-  and 03:25:20).
-- In session 5 (2026-11-23, daylight) the same charger was detected at similar sizes and angles (many charger-seen).
-- **Lead:** a regression since 2026-11-23 in charger-marker detection or charger object creation. Commits since then
-  touch `Vision/VisionSystem.cs`, `Vision/BlockWorld.cs`, `NativeVisionRunners.cs`, `VisionImageQuality.cs` and
-  `DockActions.cs` (cd8792af "Restore native dock constructor marker defaults"), and others.
-- **Next step:** replay this bundle's frames around 03:36:30 through the stack's marker detector offline, and bisect
-  if the session-5 frames still detect the charger.
-- The mount itself was not attempted: it needs a located charger.
+**Success by hand (03:41:53–03:42:08):** turned to face away from the charger (absolute heading −0.248, from the
+charger bearing) and reversed 180 mm, then 70 mm, with UnexpectedMovement locked. Two unexpected-movement reports
+fired on the climb (03:42:06 L −68/R −42; 03:42:07 L −83/R −51); `on-charger` at 03:42:08, then ReactToOnCharger.
+
+**C1. The charger pose estimate is unstable and often tilted.**
+- Between sightings: y ±10 mm, yaw 3–11°, z −15…+12 mm.
+- q1 swings between about 0 (flat) and −0.05…−0.106 (6–12° pitch).
+- A plan built from a tilted sighting gets an elevated, rotated goal (z 46–58 mm), and the 10° arrival-rotation
+  check (DriveToPose) or the 7.5° yaw / 21 mm Y pre-dock check then fails.
+- Trace: does the original force the charger to rest flat (ObservableObject rest-flat / BlockWorld pose
+  update) before computing pre-dock poses? Same family as DOCK-CHARGER-POSE-1.
+
+**C2. The reverse up the ramp trips UnexpectedMovement.** This is the second session where it happened (session 5
+F6). CHARGER-MOUNT-REVERSE-1 bound the dock reaction-lock table (0x00C55A21, one flagged trigger, index 8).
+- Check: is UnexpectedMovement the trigger the engine locks during the mount's reverse, and is the lock held for
+  the whole backup phase?
+- The by-hand climb produced the same reports, so the detector fires on the ramp itself.
+
+**C3. Frustration drove him away mid-retry.** After repeated mount failures ReactToFrustrationMajor ran a
+drive-off. Engine-normal per its mood input, but it fights an LLM retry loop.
