@@ -1,4 +1,5 @@
 using Cozmo.Robot;
+using Cozmo.Bridge;
 using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 using Xunit;
@@ -9,6 +10,22 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class NativeEarnedSparksTests
 {
+    [Fact]
+    public async Task RequestedEarnedSparksUsesTheActualPendingRewardAndSelection()
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var needs = f.Rig.Engine.Needs;
+        needs.SupplyNativeRewardForTest(true, 4, "A"); // explicit native pending input, not fabricated by the request
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        var result = await BridgeCommandTests.Invoke(bridge, "request-behavior", """{"behavior":"EarnedSparks"}""");
+        Assert.Equal("submitted", result.GetProperty("status").GetString());
+        f.Rig.Tick();
+        var earned = Assert.IsType<NativeEarnedSparksBehavior>(f.Runtime.Bound["EarnedSparks"]);
+        Assert.Same(earned, f.Robot.BehaviorManagerOwner!.Current);
+        Assert.Equal((AnimationTrigger)0xA4, Assert.IsType<TriggerLiftSafeAnimationAction>(earned.OwnedRunner).Request.Trigger);
+        Assert.True(needs.SparksRewardPending);
+    }
+
     [Fact]
     public void ActualConfiguredOwnerRejectsUnknownHostPendingHistory()
     {

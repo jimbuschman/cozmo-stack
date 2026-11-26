@@ -1,5 +1,6 @@
 using System.Net;
 using Cozmo.Conformance;
+using Cozmo.Bridge;
 using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
@@ -44,6 +45,26 @@ public sealed class NativeDriveToFaceTests
         {f.Rig.Data(new AnimationStarted{AnimId=start.AnimId});f.Rig.Data(new AnimationEnded{AnimId=start.AnimId});}
         mark=f.Rig.Mark();
         f.Motors();
+    }
+
+    [Theory]
+    [InlineData("VC_SearchForFace")]
+    [InlineData("VC_ComeHere")]
+    public async Task RequestedVoiceFaceBehaviorStartsItsConfiguredNativeRunner(string behaviorId)
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        var manager = f.Robot.BehaviorManagerOwner!;
+        if (behaviorId == "VC_ComeHere") See(f, 500);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        var result = await BridgeCommandTests.Invoke(bridge, "request-behavior", $"{{\"behavior\":\"{behaviorId}\"}}");
+        Assert.Equal("submitted", result.GetProperty("status").GetString());
+        f.Rig.Tick();
+        var target = Assert.IsAssignableFrom<SteppedBehavior>(f.Runtime.Bound[behaviorId]);
+        Assert.Same(target, manager.Current);
+        if (target is NativeDriveToFaceBehavior)
+            Assert.IsType<NativeLastFaceRunner>(target.OwnedRunner);
+        else
+            Assert.Equal(AnimationTrigger.ComeHere_SearchForFace, Assert.IsAssignableFrom<TriggerAnimationAction>(target.OwnedRunner).Request.Trigger);
     }
 
     [Fact]

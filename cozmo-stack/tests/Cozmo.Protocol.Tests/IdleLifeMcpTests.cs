@@ -87,15 +87,20 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
             p.GetProperty("activity").GetString() == "Hiking");
     }
 
-    [Fact]
-    public async Task ConfiguredVoiceResponseRunsNativeLastFaceTurnAndThenAuthoredAnimation()
+    [Theory]
+    [InlineData("VC_AlrightyResponse", AnimationTrigger.VC_Alrighty)]
+    [InlineData("VC_HowAreYouDoing_AllGood", AnimationTrigger.VC_HowAreYouDoing_AllGood)]
+    [InlineData("VC_HowAreYouDoing_Energy", AnimationTrigger.NeutralFace)]
+    [InlineData("VC_HowAreYouDoing_Play", AnimationTrigger.NeutralFace)]
+    [InlineData("VC_HowAreYouDoing_Repair", AnimationTrigger.NeutralFace)]
+    public async Task ConfiguredVoiceResponseRunsNativeLastFaceTurnAndThenAuthoredAnimation(string id, AnimationTrigger expectedTrigger)
     {
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
         using var bridge = new CozmoBridge(f.Rig.Robot);
         await using var client = new McpServerTests.Client(bridge);
         await client.Initialize();
         var manager = f.Robot.BehaviorManagerOwner!;
-        var response = Assert.IsType<PlayAnimBehavior>(f.Runtime.Bound["VC_AlrightyResponse"]);
+        var response = Assert.IsType<PlayAnimBehavior>(f.Runtime.Bound[id]);
         var pump = new DeviceReplies(f);
 
         // These voice rows have no Freeplay config slot. Exercise the shipped Selection
@@ -109,8 +114,12 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
             if (ReferenceEquals(next, response)) initial = response.OwnedRunner;
             reportTransition?.Invoke(next);
         };
-        f.Rig.Robot.SetEnableFreeplayActivity(false);
-        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.VC_AlrightyResponse, 1);
+        Assert.Equal("submitted", Data(await client.Tool("freeplay", new { enabled = false })).GetProperty("status").GetString());
+        f.Rig.Tick(); // Apply the already-submitted Wait request before the next host command.
+        var admission = Data(await client.Tool("request-behavior", new { behavior = id }));
+        Assert.Equal("submitted", admission.GetProperty("status").GetString());
+        Assert.Equal(1, admission.GetProperty("report").GetProperty("numRuns").GetInt32());
+        Assert.Equal(2, admission.GetProperty("report").GetProperty("nativeRunCount").GetInt32()); // Wait's retained +0x40 latch is spent first.
         pump.Until(() => ReferenceEquals(manager.Current, response));
         var turn = Assert.IsType<NativeLastFaceRunner>(initial);
         Assert.Equal(0, turn.RequestedId);
@@ -118,12 +127,12 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
         Assert.False(turn.SayName);
         pump.Until(() => response.OwnedRunner is TriggerLiftSafeAnimationAction);
         var clip = Assert.IsType<TriggerLiftSafeAnimationAction>(response.OwnedRunner);
-        Assert.Equal(AnimationTrigger.VC_Alrighty, clip.Request.Trigger);
+        Assert.Equal(expectedTrigger, clip.Request.Trigger);
         pump.Until(() => pump.Ended(clip));
         pump.Until(() => manager.Current?.Id == "Wait");
-        AssertNamedClip(f, clip, AnimationTrigger.VC_Alrighty);
+        AssertNamedClip(f, clip, expectedTrigger);
         var reports = await BehaviorEvents(client, 0);
-        Assert.Contains(reports, p => p.GetProperty("newBehavior").GetString() == "VC_AlrightyResponse");
+        Assert.Contains(reports, p => p.GetProperty("newBehavior").GetString() == id);
     }
 
     [Fact]
@@ -200,10 +209,10 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
 
         // ActivitySparked supplies the trigger vector at runtime. Stage that input
         // and use the configured Selection request for this fixture.
-        f.Rig.Robot.SetEnableFreeplayActivity(false);
+        Assert.Equal("submitted", Data(await client.Tool("freeplay", new { enabled = false })).GetProperty("status").GetString());
+        f.Rig.Tick(); // Apply the already-submitted Wait request before the next host command.
         var arbitrary = Assert.IsType<NativePlayArbitraryAnimBehavior>(f.Runtime.Bound["PlayArbitraryAnim"]);
-        arbitrary.SetAnimationTrigger(AnimationTrigger.HikingIntro, 1);
-        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.PlayArbitraryAnim, 1);
+        Assert.Equal("submitted", Data(await client.Tool("play-arbitrary-anim", new { trigger = "HikingIntro" })).GetProperty("status").GetString());
         pump.Until(() => ReferenceEquals(manager.Current, arbitrary));
         var clip = Assert.IsType<TriggerLiftSafeAnimationAction>(arbitrary.OwnedRunner);
         pump.Until(() => pump.Ended(clip));
@@ -212,7 +221,7 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
 
         var scan = Assert.IsType<NativeSparksLookInPlace>(f.Runtime.Bound["SparksLookInPlace"]);
         int mark = f.Rig.Mark();
-        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.SparksLookInPlace, 1);
+        Assert.Equal("submitted", Data(await client.Tool("request-behavior", new { behavior = "SparksLookInPlace" })).GetProperty("status").GetString());
         pump.Until(() => ReferenceEquals(manager.Current, scan));
         pump.Until(() => f.Rig.SentSince(mark).Any(m => m is SetBodyAngle));
         var reports = await BehaviorEvents(client, 0);
@@ -224,7 +233,32 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void ConfiguredScanUsesSelectionAndRemembersOnlyTheCompletedScanLocation()
+    public async Task ArbitraryBehaviorRequestParksAndReturnsToFreeplay()
+    {
+        using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        f.Rig.Robot.SetEnableFreeplayActivity(true);
+        f.Rig.Tick();
+        var manager = f.Robot.BehaviorManagerOwner!;
+        var arbitrary = Assert.IsType<NativePlayArbitraryAnimBehavior>(f.Runtime.Bound["PlayArbitraryAnim"]);
+        var pump = new DeviceReplies(f);
+        var result = Data(await client.Tool("play-arbitrary-anim", new { trigger = "HikingIntro" }));
+        Assert.Equal("submitted", result.GetProperty("status").GetString());
+        Assert.True(f.Runtime.ObserveHostFreeplay().PausedForCommand);
+        pump.Until(() => ReferenceEquals(manager.Current, arbitrary));
+        var clip = Assert.IsType<TriggerLiftSafeAnimationAction>(arbitrary.OwnedRunner);
+        Assert.Equal(AnimationTrigger.HikingIntro, clip.Request.Trigger);
+        pump.Until(() => pump.Ended(clip));
+        pump.Until(() => f.Runtime.ObserveHostFreeplay().Active);
+        Assert.False(f.Runtime.ObserveHostFreeplay().PausedForCommand);
+        Assert.Same(f.Runtime.FreeplayObserver, manager.Activity);
+        AssertNamedClip(f, clip, AnimationTrigger.HikingIntro);
+    }
+
+    [Fact]
+    public async Task ConfiguredScanUsesSelectionAndRemembersOnlyTheCompletedScanLocation()
     {
         using var f = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true);
         var manager = f.Robot.BehaviorManagerOwner!;
@@ -239,7 +273,8 @@ public sealed class IdleLifeMcpTests(ITestOutputHelper output)
 
         // Keep the shipped random draws but make their timeline reproducible.
         f.Rig.Engine.ContextRandom.SetSeed(11);
-        f.Rig.Robot.ExecuteBehaviorById((byte)BehaviorID.Hiking_LookInPlace360, 1);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        Assert.Equal("submitted", (await BridgeCommandTests.Invoke(bridge, "request-behavior", """{"behavior":"Hiking_LookInPlace360"}""")).GetProperty("status").GetString());
         pump.Until(() => ReferenceEquals(manager.Current, scan));
         pump.Until(() => scan.NativeState == 2);
         var bodyPause = Assert.IsType<TriggerLiftSafeAnimationAction>(scan.OwnedRunner);

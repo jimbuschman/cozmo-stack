@@ -74,6 +74,9 @@ internal sealed class NativeBehaviorRuntime : IDisposable
     private int _aiCommands;
     private bool _resumeFreeplayAfterAi;
     private float? _lastAiResumeSeconds;
+    private sealed record HostBehaviorRequest(SelectionChooser Chooser, IBehavior Target, IDisposable Lease);
+    private HostBehaviorRequest? _hostBehaviorRequest;
+    private long _hostBehaviorRequestEpoch;
     private readonly Action<bool> _offTreadsPause,_chargerPause;
     private readonly VisionSystem? _ownedVision;
     private readonly VisionSystem? _vision;
@@ -324,6 +327,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             return;
         }
         _resumeFreeplayAfterAi = false;
+        RetireHostBehaviorRequest();
         if (requested is "Feeding" or "Freeplay" or "Selection" or "MeetCozmoFindFaces")
             AdmitNativeHighLevel(requested);
         else
@@ -372,6 +376,75 @@ internal sealed class NativeBehaviorRuntime : IDisposable
             _lastAiResumeSeconds = _manager.ParentSwitchTime;
     }
 
+    // The app's Robot.cs:1755..1765 sends ExecuteBehaviorByID (0x94).
+    // Selection receives it at 0x0060AA58..0x0060AA88, with the retained owner
+    // and run count. The AI host brackets that input with the same activity
+    // lease used by external commands; chooser countdown 0x0060ADA0..0x0060ADC8
+    // supplies the terminal condition, not a host animation or behavior runner.
+    internal bool RequestHostBehavior(string id, AnimationTrigger? arbitraryTrigger, out int nativeRunCount)
+    {
+        nativeRunCount = 0;
+        if (!IsCurrentAiCommandOwner() || !_robot.HasExternalInterface ||
+            !Enum.TryParse<BehaviorID>(id, false, out var behaviorId) || behaviorId.ToString() != id) return false;
+        if (!Bound.TryGetValue(id, out var target))
+        {
+            if (_robot.Engine.HostBehaviorMap?.ContainsKey(behaviorId) == true)
+                SteppedBehavior.ReportMissing("M8-013 configured behavior owner " + id + " is unbuilt");
+            return false;
+        }
+        if (arbitraryTrigger.HasValue && (target is not NativePlayArbitraryAnimBehavior || _manager.IsRunning(target))) return false;
+        long epoch = ++_hostBehaviorRequestEpoch;
+        bool CurrentRequest() => IsCurrentAiCommandOwner() && epoch == _hostBehaviorRequestEpoch;
+        IDisposable? lease = BeginAiCommand();
+        try
+        {
+            if (!CurrentRequest()) return false;
+            if (_highLevel != 2) AdmitNativeHighLevel("Selection");
+            if (!CurrentRequest() || _highLevel != 2 || _selected?.Chooser is not SelectionChooser chooser) return false;
+            // No app G2E setter exists: supply the host-selected trigger to the
+            // native setter used by ActivitySparked (0x005C07CE..0x005C081A).
+            if (arbitraryTrigger is { } trigger) ((NativePlayArbitraryAnimBehavior)target).SetAnimationTrigger(trigger, 1);
+            // The native handler does NOT clear its +0x40 running latch when
+            // replacing the requested pointer (0x0060AC2C..0x0060AC44). An
+            // already-latched, now-nonrunning candidate consumes one count at
+            // 0x0060ADA8..0x0060ADC8 before it can start. Supply the additional
+            // count only for that existing latch, so the host requests one
+            // actual run without changing the engine's countdown rules.
+            nativeRunCount = chooser.RunningLatch && target is not SteppedBehavior { EngineRunning: true } ? 2 : 1;
+            _facade.Engine.AnimationMessages.Deliver(0x94, false,
+                new Cozmo.Protocol.ExecuteBehaviorByIDMessage((byte)behaviorId, nativeRunCount).PackBody());
+            if (!CurrentRequest() || _highLevel != 2 || !ReferenceEquals(chooser.Requested, target)) return false;
+            var previous = _hostBehaviorRequest;
+            _hostBehaviorRequest = new(chooser, target, lease);
+            lease = null;
+            previous?.Lease.Dispose();
+            return true;
+        }
+        finally { lease?.Dispose(); }
+    }
+
+    private void RetireHostBehaviorRequest()
+    {
+        ++_hostBehaviorRequestEpoch;
+        var request = _hostBehaviorRequest;
+        _hostBehaviorRequest = null;
+        request?.Lease.Dispose();
+    }
+
+    // Robot.cs:1686..1700 invokes ActivateSpark/Count; handler 0x005A3C82..0x005A3C9A
+    // stores the raw hard request, and Freeplay reads it at 0x005AE410.
+    internal bool RequestHostSpark(string name)
+    {
+        if (!IsCurrentAiCommandOwner() || !_robot.HasExternalInterface || _aiCommands != 0) return false;
+        var root = Tree.FirstOrDefault(a => a.Id == "Freeplay");
+        var spark = root?.SubActivities.FirstOrDefault(a => a.Type == "Sparked" && a.RequireSpark == name);
+        if (name != "Count" && spark is null) return false;
+        if (_highLevel != 1) AdmitNativeHighLevel("Freeplay");
+        if (!IsCurrentAiCommandOwner() || _highLevel != 1) return false;
+        _facade.Engine.AnimationMessages.Deliver(SparkManagerMessage.UnionTag, false,
+            new SparkManagerMessage(0, name == "Count" ? 0x55 : spark!.RequiredSparkId));
+        return IsCurrentAiCommandOwner();
+    }
     internal RobotFreeplayObservation ObserveHostFreeplay()
     {
         bool active = _highLevel == 1;
@@ -555,11 +628,20 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         Context.Map=_facade.LocalizationWorld.Maps.Current;
         if(_observer is not null && ReferenceEquals(_manager.Activity,_observer))RefreshFreeplayInputs(capturedNow);
         _manager.Update(capturedNow*1000.0,capturedNow);
+        // The native chooser spends its requested run after the behavior stops.
+        // Reactions retain their native priority and parked resumes; do not switch
+        // the parent out while a reaction or the requested behavior still runs.
+        if (_hostBehaviorRequest is { } request && IsCurrentAiCommandOwner() &&
+            _highLevel == 2 && _manager.CurrentReactionTrigger is null &&
+            (request.Chooser.NumRuns == 0 || !ReferenceEquals(request.Chooser.Requested, request.Target)) &&
+            !_manager.IsRunning(request.Target))
+            RetireHostBehaviorRequest();
     }
 
     public void Dispose()
     {
         if(_retired)return;_retired=true;++_admissionEpoch;
+        RetireHostBehaviorRequest();
         if(ReferenceEquals(_robot.NativeConfiguredScoreFields,_configuredScoreFields))_robot.NativeConfiguredScoreFields=null;
         _facade.Sensors.FreeplayOffTreadsStateChanged -= OnFreeplayTreads;
         if(ReferenceEquals(_facade.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads,_offTreadsPause))

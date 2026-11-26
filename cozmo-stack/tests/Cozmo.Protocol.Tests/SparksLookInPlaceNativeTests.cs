@@ -1,4 +1,5 @@
 using Cozmo.Robot;
+using Cozmo.Bridge;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
@@ -15,13 +16,14 @@ namespace Cozmo.Protocol.Tests;
 public sealed class SparksLookInPlaceNativeTests
 {
     [Fact]
-    public void RequestedWorkoutNaturallyChoosesRetainedFallbackInEmptyWorld()
+    public async Task RequestedWorkoutNaturallyChoosesRetainedFallbackInEmptyWorld()
     {
         // Public Freeplay/Spark input and supplied animation acknowledgments, with the actual chooser.
         using var f=new Fixture();f.Rig.Robot.Animations.LoadFrom(f.Rig.Engine.Options.ResourcesPath!);f.Robot.Progression!.Unlocked.Add(29);var manager=f.Robot.BehaviorManagerOwner!;
         var scan=Assert.IsType<NativeSparksLookInPlace>(f.Runtime.Bound["SparksLookInPlace"]);
-        using var observer=FreeplayStack.CreateNative(f.Rig.Robot);
-        f.Rig.Robot.ActivateHighLevelActivity("Freeplay");f.Rig.Tick(10);observer.ActivateSpark(29);
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        Assert.Equal("submitted", (await BridgeCommandTests.Invoke(bridge, "request-spark", """{"spark":"Workout"}""")).GetProperty("status").GetString());
+        Assert.Equal(29, manager.RequestedSparkId);
         var seen=new HashSet<byte>();
         for(int i=0;i<200&&!ReferenceEquals(manager.Current,scan);i++)
         {
@@ -31,6 +33,8 @@ public sealed class SparksLookInPlaceNativeTests
         }
         Assert.Equal("SparksWorkout",f.Runtime.FreeplayObserver.Current?.Id);
         Assert.Same(scan,manager.Current);Assert.NotNull(scan.OwnedRunner);
+        Assert.Equal("submitted", (await BridgeCommandTests.Invoke(bridge, "request-spark", """{"spark":"Count"}""")).GetProperty("status").GetString());
+        Assert.Equal(0x55, manager.RequestedSparkId); Assert.Equal((byte)1, manager.SparkCancelLatch);
     }
 
     // Supplied terminal failures exercise the source's result-independent transitions.
