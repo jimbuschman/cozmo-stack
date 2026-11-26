@@ -2150,6 +2150,25 @@ public class EngineAppLayerTests
         Assert.Throws<JsonLogicError>(() => FirmwareHeader.Parse(file));
     }
 
+    [Fact]
+    public void M1_029_11o_MalformedHeaderLoaderIsolatesTheThrowWithoutPublishingFields()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"cozmo-header-{Guid.NewGuid():N}.safe");
+        try
+        {
+            var bytes = new byte[FirmwareHeader.HeaderBytes];
+            Encoding.UTF8.GetBytes("{\"version\":\"invalid\",\"time\":2}").CopyTo(bytes, 0);
+            File.WriteAllBytes(path, bytes);
+            var logs = new List<string>(); int callbacks = 0;
+            var thread = FirmwareHeader.LoadAsync(path, (_, _) => callbacks++, logs.Add);
+            Assert.True(thread.Join(TimeSpan.FromSeconds(5)));
+            Assert.Equal(0, callbacks);
+            Assert.Contains(logs, line => line.Contains("M1-034/M1-029: skipped malformed firmware header"));
+            Assert.DoesNotContain(logs, line => line.Contains("RECOVERABLE_GAP"));
+        }
+        finally { File.Delete(path); }
+    }
+
     // Checked Item 6 corrections: these expectations come from the cited native branches.
     [Theory]
     [InlineData("truex", true)]
@@ -2560,6 +2579,42 @@ public class EngineAppLayerTests
         Assert.Equal(new[] { 0xD2, 0xD5, 0xD4 }, sleepTriggers);
         Assert.Equal(0, sleepEvents);
         Assert.DoesNotContain(entries, e => e.Name == "ActionList.QueueAction.NullAction");
+    }
+
+    // 0x0052CE54..6A: the deadline's own robot queues the real compound NOW, retries0.
+    [Fact]
+    public void M1_045_ActualSleepFactoryQueuesThreeTriggersAndLiftWithoutFallback()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
+        rig.Tick();
+        var owner = rig.Engine.Robot!;
+        int fallback = 0;
+        rig.Engine.GoToSleepRequested += () => fallback++;
+        rig.Engine.Timer.UpdateTime(2_000_000_000);
+        owner.Idle.Start(.1f, -1f);
+        rig.Engine.Timer.UpdateTime(3_000_000_000);
+        owner.Idle.Update();
+        var parallel = Assert.IsType<CompoundActionParallel>(owner.ActionList.GetCurrentAction());
+        Assert.Equal(2, parallel.Children.Count);
+        var sequence = Assert.IsType<CompoundActionSequential>(parallel.Children[0]);
+        Assert.Equal(new ushort[] { 0xD2, 0xD5, 0xD4 }, sequence.Children.Select(child =>
+        {
+            var trigger = Assert.IsType<Cozmo.Robot.Animation.TriggerAnimationAction>(child);
+            Assert.Equal(1, trigger.Request.Argument2);
+            Assert.True(trigger.Request.Argument3);
+            Assert.Equal(0, trigger.Request.Argument4);
+            Assert.Equal(60f, trigger.Request.Argument5);
+            Assert.False(trigger.Request.Argument6);
+            return (ushort)trigger.Request.Trigger;
+        }));
+        Assert.Equal(0f, owner.Idle.FaceOffDeadline);
+        owner.Idle.Update();
+        Assert.Same(parallel, owner.ActionList.GetCurrentAction());
+        rig.Engine.DrainAppDelivery();
+        Assert.Equal(0, fallback);
     }
 
     /// <summary>

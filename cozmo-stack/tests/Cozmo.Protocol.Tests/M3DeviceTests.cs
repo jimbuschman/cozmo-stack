@@ -2666,7 +2666,7 @@ public class M3DeviceTests
             var tags = new List<uint>();
             var nv = rig.Robot.Engine.NvStorage!;
             for (int i = 0; !nv.IsIdle && i < 100; i++) { tags.Add(NvCommands(rig)[^1].Tag); AnswerInFlight(rig); }
-            Assert.Equal(new uint[] { 0x182000, 0x195000, 0x184000, 0x183000, 0x180000 }, tags.Take(5));
+            Assert.Equal(ConnectionReadOrder, tags.Take(ConnectionReadOrder.Length));
             lock (missing)
             {
                 var init=Assert.IsType<NativeVisionInitialization>(rig.Robot.Vision.NativeInitializationForTest);
