@@ -304,6 +304,8 @@ public sealed partial class ReactToCliffBehavior : SteppedBehavior
         if (Context.Robot.Sensors.CliffDetectedByEvent)                                          // 0x0060532E ldrb r0,[r0,#5]
         {
             if(_physical is not null){NativeCliffBackUp();return;}
+            // Unbound instances only: the factory's configured instance always has _physical and takes
+            // NativeCliffBackUp above (CliffSparkBehaviorGapsTests.ProductionCliffAndPickupReactionsAreNativeBound).
             if (DriveStraight is not { } drive)
             {
                 ReportMissing("ReactToCliff::TransitionToBackingUp DriveStraightAction(robot, -60.0f, 100.0f, true) (0x0060534E): M13's DriveStraightAction is not attached (DriveStraight seam); the drive and the RobotCliffEventFinished that follows it are not sent");
@@ -670,7 +672,8 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
                 if (_vision!.Faces.GetFace(id) is { HasName: true } face) { name = face.Name; break; }
             if (!string.IsNullOrEmpty(name))
             {
-                // SayTextAction(robot, name, SayTextIntent 3 Name_Normal) + SetAnimationTrigger(AcknowledgeFaceNamed, tracksToLock 4), StartActing, empty callback
+                // SayTextAction(robot, name, SayTextIntent 3 Name_Normal) + SetAnimationTrigger(AcknowledgeFaceNamed, tracksToLock 4), StartActing, empty callback.
+                // Standalone instances only: the configured instance runs StartNativeAnim, which builds the native SayTextAction.
                 ReportMissing("ReactToPickup::StartAnim SayTextAction(name, Name_Normal) with SetAnimationTrigger(AcknowledgeFaceNamed, 4) (0x00607A00..0x00607A2C): standalone behavior has no original Robot speech owner");
                 Log($"MISSING: SayTextAction(\"{name}\", Name_Normal) requires the original Robot speech owner");
             }
