@@ -57,3 +57,26 @@ Still failing:
 - SearchForFace and DriveToFace: the VC_ requests never run (R1).
 - PlayAnimWithFace: does not turn to the face (R3).
 - PlacedOnSlope: P1 from session 6.
+
+## R4. He went off the desk edge after a cliff stop (15:58:12–15:58:15 UTC); the operator caught him
+
+Sequence (stack log, 20261126-095137 bundle):
+- 15:58:12.38: Freeplay Hiking_PounceOnMotion plays anim_pounce_03 (3.8 s, includes a **body** track).
+- 15:58:14.158: firmware `ProxSensors.UpdateCliff.StoppingDueToCliff`, then RobotStopped. The behaviour is forced to
+  end, and CliffDetected starts ReactToCliff.
+- 15:58:14.655: CliffEvent detected (flags 0x03, both front sensors). ReactToCliff enters PlayingStopReaction.
+- 15:58:14.699: it plays `anim_reacttocliff_huh_01` (0.46 s, tracks sound+face+head+lift+**body**).
+- 15:58:14.997: `HandleCliffEvent.Undetected`.
+- 15:58:15.148: OffTreads InAir (pickedUp). The operator caught him falling off the desk. Then RobotOnFace and the
+  face-plant roll in the hand.
+
+Open (trace against the binary before any change):
+- Does the original ReactToCliff stop reaction lock the body track, or use a huh animation without body motion, at
+  a detected cliff?
+- Did the huh animation's body keyframes, or leftover pounce motion, carry him over the edge?
+- Is the firmware cliff-stop latch (EnableCliffDetector) released or overridden by the streamed animation's wheel
+  commands? The original sends the cliff reaction's animation with the body possibly suppressed while a cliff is
+  latched.
+- Decode the frames.jsonl wheel speeds and cliff values for 15:58:14.1–15.2 to see which motion took him over.
+
+This is a safety issue: high priority for the next code session.
