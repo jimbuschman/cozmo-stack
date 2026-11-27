@@ -81,6 +81,7 @@ Candidates so far:
 - **C2:charger-dock** (operator approved 2026-11-26): current-origin fused flat pose, three distinct sightings, heading confidence >= 0.95, freshness within 2 s, square-on within 7.5 degrees; native pre-dock viewing approach and fresh observation wait (5 s), at most two retries. Only UnexpectedMovement is held; cliff protection unchanged. Baseline unchanged; offline regression passed, robot validation pending.
 - Person tracking (operator 2026-11-26): if TRACK-FACE-LLM-2 shows the engine's one-ID tracking is the limit, follow the
   face nearest the last tracked position across face-ID changes.
+- **C2:slope-putdown** waits for stable pitch and gyro after a pickup before one extra native-threshold slope check. Robot validation pending.
 - **C2:charger-drive-off** (robot validation pending). Drive on and off the charger by command, including a wake-and-drive-off request during `ReactToOnCharger`
   (operator, 2026-11-19 evening session, F8/F21).
 

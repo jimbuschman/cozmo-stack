@@ -122,8 +122,10 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         }
     }
 
-    [Fact]
-    public void SessionSixSlopePutDownRaceUsesNativePitchGyroAndPickupWindow()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SessionSixSlopePutDownRaceUsesNativePitchGyroAndPickupWindow(bool stabilized)
     {
         string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION6_SLOPE_BUNDLE");
         if (string.IsNullOrEmpty(bundle)) return;
@@ -144,7 +146,9 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
         Assert.True(restoredTilt.At - lastPicked.At > 1500);
         Assert.True(MathF.Abs(restoredTilt.State.Gyro.X) > .01f || MathF.Abs(restoredTilt.State.Gyro.Y) > .01f || MathF.Abs(restoredTilt.State.Gyro.Z) > .01f);
 
-        using var f = new Fixture(sourceNvEmpty: true, keepNeedsFull: true, bodyHwVersion: 4);
+        using var f = new Fixture(sourceNvEmpty: true, keepNeedsFull: true, bodyHwVersion: 4,
+            engineOptions: new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+                BlockPoolPath = "", C2 = new CozmoC2Settings { SlopePutdown = stabilized } });
         var manager = f.Robot.BehaviorManagerOwner!;
         f.Rig.Robot.SetEnableFreeplayActivity(false);
         f.Rig.Tick(4000);
@@ -177,6 +181,20 @@ public sealed class PhysicalReactionRecordedReplayTests(ITestOutputHelper output
                 f.Rig.Robot.Sensors.OffTreads.RawGyro);
             Assert.False(slope.WantsToRun(f.Rig.Robot, f.Rig.Engine.Timer.SecondsF));
         }
+        // Controlled continuation of the recorded failure: hold the last slope
+        // pose still. The actual capture did not supply 0.4 s of quiet here.
+        var stable = packets.Last().State;
+        stable.Gyro = default;
+        var answers = new List<bool>();
+        for (int i = 0; i < 25; ++i)
+        {
+            stable.Timestamp += 30;
+            f.Rig.Data(stable);
+            f.Rig.Tick(30);
+            answers.Add(slope.WantsToRun(f.Rig.Robot, f.Rig.Engine.Timer.SecondsF));
+        }
+        Assert.All(answers.Take(12), answer => Assert.False(answer));
+        Assert.Equal(stabilized ? 1 : 0, answers.Count(answer => answer));
     }
     [Theory]
     [InlineData("slope",554800,569500)]

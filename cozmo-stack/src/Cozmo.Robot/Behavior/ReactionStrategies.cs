@@ -286,6 +286,7 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
     public const double QuietForSec = 0.4, PutDownWithinSec = 1.5;
 
     private double _lastGyroActiveSec;      // C16: starts at 0.0
+    private bool _c2AwaitingStablePutdown;
     private double _lastPickedUpSec;        // C16: starts at 0.0
 
     internal sealed record Evaluation(double AtSec, double? PitchDeg, double? MaxAbsGyroRadps,
@@ -328,6 +329,29 @@ public sealed class PlacedOnSlopeStrategy : ReactionTriggerStrategy
         var treads = sensors.OffTreadsState;
         bool treadsOk = treads < OffTreadsState.OnBack;
         bool wants = pitchOk && quietOk && pickupOk && treadsOk;
+        // Our C2 policy adds one post-placement check to the native 0x0061455C
+        // evaluation. A pickup arms it. A settled flat placement, another safety
+        // reaction or expiry retires it so unrelated later tilt cannot trigger it.
+        if (robot.Engine.Options.C2.SlopePutdown)
+        {
+            if (pickedUp) _c2AwaitingStablePutdown = true;
+            else if (_c2AwaitingStablePutdown)
+            {
+                var active = Manager?.CurrentReactionTrigger;
+                if (wants || sincePickup > 10 || treads > OffTreadsState.InAir ||
+                    sensors.CliffDetectedNow || sensors.CliffDetectedByEvent ||
+                    (active is not (null or ReactionTrigger.ReturnedToTreads or ReactionTrigger.RobotPickedUp)))
+                    _c2AwaitingStablePutdown = false;
+                else if (!pickupOk && quietOk && treads == OffTreadsState.OnTreads &&
+                    active is not ReactionTrigger.RobotPickedUp && float.IsFinite(pitchDeg) &&
+                    pitchDeg != 0 && float.IsFinite(maxGyro) && maxGyro <= GyroQuietRadps)
+                {
+                    _c2AwaitingStablePutdown = false;
+                    wants = pitchOk;
+                    robot.Engine.EmitStackLog($"{CozmoC2Settings.SlopePutdownName}: settled put-down after {sincePickup:F2}s, pitch {pitchDeg:F1} degrees, slope check {wants}");
+                }
+            }
+        }
         LastEvaluation = new(nowSec, float.IsFinite(pitchDeg) ? pitchDeg : null, float.IsFinite(maxGyro) ? maxGyro : null,
             quiet, sincePickup, pickedUp, treads.ToString(), pitchOk, quietOk, pickupOk, treadsOk, wants);
         return wants;
