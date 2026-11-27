@@ -227,6 +227,9 @@ public sealed partial class EngineRobot
         // C2:charger-memory retains the old origin estimate across 0x00510D5A..62.
         if(Engine.Options.C2.ChargerMemory && ReferenceEquals(Engine.Robot,this))
             Engine.C2ChargerMemory.OriginChanged(this);
+        if (Engine.Options.C2.MapReanchor && ReferenceEquals(Engine.Robot,this) &&
+            Engine.RoomMap.Snapshot(this).Any(layer => !layer.Anchored))
+            Engine.EmitStackLog($"{CozmoC2Settings.MapReanchorName}: retaining unanchored maps after move to origin {CurrentOriginId}");
         if(!Current())return;
         foreach(var stage in new[]{"FaceWorld","AIComponent","BehaviorManager","MovementComponent"})
         {

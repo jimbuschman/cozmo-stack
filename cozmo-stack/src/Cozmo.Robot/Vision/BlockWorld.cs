@@ -1432,11 +1432,16 @@ public sealed partial class BlockWorld
         }
         // C2:charger-memory copies the actual joined pose roots before native Flatten
         // at 0x005159B2. No attempt to join unrelated origins from object IDs alone.
-        if (owner.Engine.Options.C2.ChargerMemory)
+        if (owner.Engine.Options.C2.ChargerMemory || owner.Engine.Options.C2.MapReanchor)
         {
             using var oldInNew = new Pose3d();
             if (Pose3d.GetWithRespectTo(owner.GetNativeOrigin(oldOriginId),owner.GetNativeOrigin(newOriginId),oldInNew))
-                owner.Engine.C2ChargerMemory.Reanchor(owner,oldOriginId,newOriginId,oldInNew);
+            {
+                if (owner.Engine.Options.C2.ChargerMemory)
+                    owner.Engine.C2ChargerMemory.Reanchor(owner,oldOriginId,newOriginId,oldInNew);
+                if (owner.Engine.Options.C2.MapReanchor)
+                    owner.Engine.RoomMap.NativeJoin(owner,oldOriginId,newOriginId,oldInNew);
+            }
         }
         // fidelity: M13-032 — X11 0x0051599E MapComponent::UpdateMapOrigins(old, new); its object update is UpdateOriginsOfObjects (X11a, 0x0067DE70).
         Maps.UpdateMapOrigins(oldOriginId, newOriginId, () => Maps.UpdateOriginsOfObjects(oldOriginId, newOriginId, GetLocatedObjectByIdHelper));
@@ -2262,6 +2267,8 @@ public sealed partial class BlockWorld
                 // The public VisionPoseData facade is flat; the existing keyed
                 // native history supplier retains the actual observation origin.
                 memoryOwner.Engine.C2ChargerMemory.Observe(memoryOwner,instance,located.ObjectId,robotAtSighting);
+            if (c2Owner is { } roomOwner && roomOwner.Engine.Options.C2.MapReanchor)
+                roomOwner.Engine.RoomMap.Observe(roomOwner, instance, located);
             if (potentials.Insert(instance, located, dist, flag, pd.CameraMoving) == 1)   // 0x0062115E
                 foreach (var kv in byOrigin.OrderBy(k => k.Key))
                     if (!ReferenceEquals(kv.Value, located)) potentials.Insert(instance, kv.Value, dist, true, pd.CameraMoving);   // 0x00621182

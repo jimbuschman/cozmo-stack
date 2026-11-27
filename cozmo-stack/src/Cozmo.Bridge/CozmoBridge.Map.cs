@@ -44,6 +44,7 @@ public sealed partial class CozmoBridge
         WorldPose? pose;
         SourceQuadBounds root;
         MemoryMapCell[] cells;
+        RoomLayer[]? roomMaps;
         C2ChargerEstimate? chargerMemory;
         var objects = new List<MapObject>();
         using (Robot.Engine.EnterSynchronousOwner())
@@ -51,10 +52,11 @@ public sealed partial class CozmoBridge
             var world = Robot.LocalizationWorld;
             using var poseRead = world.EnterPoseMutation();
             pose = ReadWorldPose();
+            roomMaps = Robot.Engine.Options.C2.MapReanchor ? Robot.Engine.RoomMap.Snapshot(pose is null ? null : Robot.Engine.Robot) : null;
             chargerMemory = Robot.Engine.Options.C2.ChargerMemory ? Robot.Engine.C2ChargerMemory.Get(pose is null ? null : Robot.Engine.Robot) : null;
             // MapComponent::GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88.
             if (pose is null || world.Maps.CurrentOrigin != pose.OriginId || world.Maps.Current is not { } map)
-                return new(JsonSerializer.SerializeToElement(new { available = false, pose, chargerMemory, regions = Array.Empty<object>() }, Json), null);
+                return new(JsonSerializer.SerializeToElement(new { available = false, pose, chargerMemory, roomMaps, regions = Array.Empty<object>() }, Json), null);
 
             (root, cells) = map.Tree.CaptureCells(pose.XMm, pose.YMm, radiusMm);
             if (Robot.Engine.Robot!.TryGetNativeOriginOwner(pose.OriginId, out var origin) && origin is not null)
@@ -78,6 +80,18 @@ public sealed partial class CozmoBridge
                 Math.Abs(remembered.XMm-pose.XMm)<=radiusMm && Math.Abs(remembered.YMm-pose.YMm)<=radiusMm)
                 objects.Add(new(remembered.WorldObjectId,ObjectType.Charger_Basic.ToString(),remembered.XMm,remembered.YMm,
                     true,null,remembered,MemoryOnly:true));
+            if (roomMaps is not null)
+            {
+                foreach (var layer in roomMaps.Where(layer => layer.Anchored).OrderByDescending(layer => layer.Origin.Id == pose.OriginId))
+                foreach (var item in layer.Landmarks)
+                {
+                    bool charger = item.Type == ObjectType.Charger_Basic;
+                    if (objects.Any(o => charger ? o.Charger : o.WorldObjectId == item.WorldObjectId && o.Type == item.Type.ToString())) continue;
+                    var point = layer.ToCurrent!.Value.Apply(item.Pose);
+                    if (Math.Abs(point.XMm - pose.XMm) <= radiusMm && Math.Abs(point.YMm - pose.YMm) <= radiusMm)
+                        objects.Add(new(item.WorldObjectId, item.Type.ToString(), point.XMm, point.YMm, charger, null, MemoryOnly:true));
+                }
+            }
         }
 
         var selected = cells.OrderBy(cell => DistanceSquared(cell.Bounds, pose)).Take(limit).Select(cell => new
@@ -98,6 +112,7 @@ public sealed partial class CozmoBridge
             truncated = cells.Length > selected.Length,
             regions = selected,
             chargerMemory,
+            roomMaps,
             objects,
         }, Json);
         return new(metadata, render ? RenderMap(pose, radiusMm, cells, objects) : null);
