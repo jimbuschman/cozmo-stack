@@ -26,7 +26,9 @@ public sealed class BehaviorTeardownBoundaryTests
     }
     [Fact] public void ConnectedRobotConstructsStateRecipients()
     {
-        using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0);
+        using var rig=new M4ControlTests.Rig();
+        rig.ToSynced();
+        var robot=rig.Robot;
         var owner=Assert.IsType<EngineRobot>(robot.Engine.Robot);
         Assert.NotNull(owner.GyroDetector);
         Assert.NotNull(owner.DockingOwner);
