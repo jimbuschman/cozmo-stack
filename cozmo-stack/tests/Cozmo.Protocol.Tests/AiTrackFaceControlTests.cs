@@ -73,6 +73,85 @@ public sealed class AiTrackFaceControlTests
         Assert.Equal(0x02000000u, result.EngineResult);
     }
 
+    [Fact]
+    public async Task C2CarriesAnIdChangeFromBeforeTheFirstActionTick()
+    {
+        using var f = FollowFixture();
+        ObserveFollowFace(f, -7, f.Robot.StoredState!.Timestamp, new Vec3(300, 25, 100));
+        using var cancel = new CancellationTokenSource();
+        var task = f.Rig.Robot.Motion.QueueAiTrackFaceAsync(-7, false, cancel.Token);
+        Assert.True(f.M.Vision.Faces.ChangeFaceID(-7, 1));
+        f.Rig.Tick();
+        Assert.Equal(1, f.Robot.NativeTrackingFaceId);
+        cancel.Cancel(); f.Rig.Tick();
+        Assert.Equal(1, (await task).FaceId);
+    }
+
+    private static PickupPyramidNativeExecutionTests.Fixture FollowFixture() => new(sourceNvEmpty: true,
+        engineOptions: new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+            BlockPoolPath = "", C2 = new CozmoC2Settings { PersonFollow = true } });
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SessionSixTrackSevenUsesOnlyAnUnambiguousNearbyObservation(bool competitor)
+    {
+        // The same private session 6 bundle supplies both charger and face captures.
+        var bundle = Environment.GetEnvironmentVariable("COZMO_SESSION6_CHARGER_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        var path = Path.Combine(bundle, "events.jsonl");
+        var points = new Dictionary<int,(uint Time, Vec3 Point)>();
+        foreach (var line in File.ReadLines(path))
+        {
+            if (!line.Contains("\"faceId\":-10") && !line.Contains("\"requestedFaceId\":-10")) continue;
+            using var doc = System.Text.Json.JsonDocument.Parse(line);
+            if (!doc.RootElement.TryGetProperty("result", out var result) ||
+                !result.TryGetProperty("structuredContent", out var content)) continue;
+            if (content.TryGetProperty("during", out var during)) content = during;
+            if (!content.TryGetProperty("events", out var events)) continue;
+            foreach (var e in events.EnumerateArray())
+            {
+                if (e.GetProperty("type").GetString() is not ("face-seen" or "face-recognised")) continue;
+                var payload = e.GetProperty("payload");
+                int id = payload.GetProperty("faceId").GetInt32();
+                uint stamp = e.GetProperty("robotTimestamp").GetUInt32();
+                if (!((stamp == 695470 && id == -10) || (stamp == 697995 && id == 1))) continue;
+                double range = payload.GetProperty("distanceMm").GetDouble();
+                double bearing = payload.GetProperty("bearingDeg").GetDouble() * Math.PI / 180;
+                points[id] = (stamp, new(range * Math.Cos(bearing), range * Math.Sin(bearing), 0));
+            }
+            if (points.Count == 2) break;
+        }
+        Assert.Equal(2, points.Count);
+        using var f = FollowFixture();
+        ObserveFollowFace(f, -10, points[-10].Time, points[-10].Point);
+        using var cancel = new CancellationTokenSource();
+        var task = f.Rig.Robot.Motion.QueueAiTrackFaceAsync(-10, true, cancel.Token);
+        f.Rig.Tick();
+        Assert.Equal(-10, f.Robot.NativeTrackingFaceId);
+        ObserveFollowFace(f, 1, points[1].Time, points[1].Point);
+        if (competitor) ObserveFollowFace(f, 2, points[1].Time, points[1].Point + new Vec3(5,0,0));
+        f.Rig.Tick();
+        int expected = competitor ? -10 : 1;
+        Assert.Equal(expected, f.Robot.NativeTrackingFaceId);
+        cancel.Cancel(); f.Rig.Tick();
+        Assert.Equal(expected, (await task).FaceId);
+    }
+
+    private static void ObserveFollowFace(PickupPyramidNativeExecutionTests.Fixture f, int id, uint stamp, Vec3 point)
+    {
+        var world = f.M.Vision.Faces;
+        var origin = f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId);
+        var entry = new TrackedFace(new DetectedFace(id, new FaceRect(100,70,90,90),
+            new Vec2(75,140), new Vec2(115,140)), stamp)
+        {
+            HeadPose = new Pose3d(Rotation3d.Identity, point),
+            NativeTrackingTranslation = point, NativeTrackingRotation = Rotation3d.Identity,
+        };
+        Assert.NotNull(world.AddOrUpdateNativeFace(entry, Pose3d.Identity, false, origin.Node!,
+            requireNativePose: true, expectedOwner: f.Robot));
+    }
+
     private sealed class EmptyCamera : IFaceDetector
     {
         public bool IsAvailable => true;
