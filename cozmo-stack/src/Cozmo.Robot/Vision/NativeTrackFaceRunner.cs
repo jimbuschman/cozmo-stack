@@ -20,6 +20,10 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
     private long _endingGeneration;
     private float _nextClamp = -1f;
     private int _faceId;
+    internal bool FollowPerson { get; init; }
+    private Vec3? _lastFollowPosition;
+    private PoseTreeNode? _lastFollowOrigin;
+    private int _recognizedFollowId;
     private uint _timestamp;
     private float _savedIdle = -1;
     private RetainedSubscription? _changed;
@@ -79,7 +83,11 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
         }
         var next = _owner.Engine.AnimationMessages.SubscribeMessage(0x47, true, p =>
         {
-            if (Current && p is NativeChangedFace change && change.OldId == _faceId) _faceId = change.NewId;
+            if (Current && p is NativeChangedFace change && change.OldId == _faceId)
+            {
+                if (FollowPerson) AdoptFollowId(change.NewId, "reported ID change");
+                else _faceId = change.NewId;
+            }
         });
         if (!Current) { next.Dispose(); return unchecked((int)EngineActionResult.Cancelled); }
         RetainedSubscription.Replace(ref _changed,next);
@@ -89,10 +97,54 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
             return unchecked((int)EngineActionResult.Cancelled);
         }
         Interlocked.Increment(ref _owner.NativeTrackingFaceGeneration);
+        if (FollowPerson)
+        {
+            if (_faceId > 0) _recognizedFollowId = _faceId;
+            int resolved = M.Vision.Faces.ResolveRecentC2Remaps(_owner, _faceId);
+            if (resolved != _faceId && M.Vision.Faces.GetNativeFace(_owner, _faceId) is null)
+                AdoptFollowId(resolved, "ID changed before tracker initialization");
+        }
         _owner.NativeTrackingFaceId = _faceId;
         _installedTracking = true;
         _timestamp = 0;
         return 0;
+    }
+
+    private void AdoptFollowId(int id, string reason)
+    {
+        int previous = _faceId;
+        _faceId = id;
+        if (id > 0) _recognizedFollowId = id;
+        if (_installedTracking) _owner.NativeTrackingFaceId = id;
+        _owner.Engine.EmitStackLog($"{CozmoC2Settings.PersonFollowName}: {previous} -> {id}, {reason}");
+    }
+
+    // Our policy runs only for the commanded tracker. Keep native motion,
+    // track masks, reaction arbitration and the exact-ID baseline intact.
+    private FaceEntry? FollowNearbyFace()
+    {
+        if (_lastFollowPosition is not { } point || _lastFollowOrigin is null) return null;
+        var world = M.Vision.Faces;
+        uint latest = M.Robot.CameraSettings.LastProcessedImageTimestamp;
+        FaceEntry? best = null;
+        double nearest = double.PositiveInfinity, second = double.PositiveInfinity;
+        foreach (var entry in world.Faces)
+        {
+            if (entry.Id == _faceId || entry.LastObservedTimestamp <= _timestamp ||
+                entry.LastObservedTimestamp - _timestamp is < 250 or > 3000 ||
+                (latest > entry.LastObservedTimestamp && latest - entry.LastObservedTimestamp > 250) ||
+                !ReferenceEquals(entry.NativeObservationOrigin, _lastFollowOrigin) ||
+                entry.NativeTrackingTranslation is not { } candidate ||
+                (entry.Id > 0 && _recognizedFollowId > 0 && entry.Id != _recognizedFollowId) ||
+                (entry.Id <= 0 && entry.TimesObserved < 2) ||
+                world.GetNativeFace(_owner, entry.Id) is null) continue;
+            double distance = (candidate - point).Length;
+            if (distance < nearest) { second = nearest; nearest = distance; best = entry; }
+            else if (distance < second) second = distance;
+        }
+        if (best is null || nearest > 80 || second - nearest < 40) return null;
+        AdoptFollowId(best.Id, $"unique nearby observation, distance {nearest:F0} mm");
+        return best;
     }
 
     public override uint CheckIfDone()
@@ -104,12 +156,20 @@ internal sealed class NativeTrackFaceRunner : NativeVisionRunner
         using (LogCallbackDeferral.EnterGated(_owner.PoseTreeGate))
         {
             var face = M.Vision.Faces.GetNativeFace(_owner, _faceId);
+            if (FollowPerson && (face is null || face.LastObservedTimestamp <= _timestamp))
+                face = FollowNearbyFace();
+            if (!Current) return EngineActionResult.Cancelled;
             if (face is null || face.LastObservedTimestamp <= _timestamp) return EngineActionResult.Running;
             _timestamp = face.LastObservedTimestamp; // 0x565DC4 before pose conversion.
             if (face.NativeTrackingTranslation is not { } translation)
             {
                 Behavior.SteppedBehavior.ReportMissing("M14-001 native camera-frame face position unavailable; tracking command withheld");
                 return EngineActionResult.Running;
+            }
+            if (FollowPerson)
+            {
+                _lastFollowOrigin = face.NativeObservationOrigin;
+                _lastFollowPosition = translation;
             }
             using var origin = Pose3d.WrapExisting(face.NativeObservationOrigin!);
             using var pose = new Pose3d(Rotation3d.Identity, translation);

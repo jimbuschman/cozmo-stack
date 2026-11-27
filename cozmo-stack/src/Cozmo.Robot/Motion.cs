@@ -181,7 +181,7 @@ public sealed partial class CozmoMotion
             uint tag=AllocateAiTag();
             if(tag==0)return Reject("No external action tag is available");
             action=new Vision.NativeTrackFaceRunner(manipulation,owner,faceId,headOnly,
-                BitConverter.UInt32BitsToSingle(0x3D0EFA35),false,-1,-1,0);
+                BitConverter.UInt32BitsToSingle(0x3D0EFA35),false,-1,-1,0) { FollowPerson = engine.Options.C2.PersonFollow };
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native face tracking ended",true,
                 ()=>AiOwnerReady(engine,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime), admitted: admitted);
         }

@@ -14,11 +14,13 @@ public sealed record CozmoC2Settings
     public bool ChargerMemory { get; init; }
     public const string ChargerDriveOffName = "C2:charger-drive-off";
     public const string SlopePutdownName = "C2:slope-putdown";
+    public const string PersonFollowName = "C2:person-follow";
+    public bool PersonFollow { get; init; }
     public bool SlopePutdown { get; init; }
     public bool ChargerDriveOff { get; init; }
     public bool ChargerDock { get; init; }
     public static CozmoC2Settings Baseline { get; } = new();
-    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true, ChargerDriveOff = true, SlopePutdown = true };
+    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true, ChargerDriveOff = true, SlopePutdown = true, PersonFollow = true };
     public IReadOnlyList<string> ActiveExtensions
     {
         get
@@ -29,6 +31,7 @@ public sealed record CozmoC2Settings
             if (ChargerDock) active.Add(ChargerDockName);
             if (ChargerDriveOff) active.Add(ChargerDriveOffName);
             if (SlopePutdown) active.Add(SlopePutdownName);
+            if (PersonFollow) active.Add(PersonFollowName);
             return active;
         }
     }

@@ -781,6 +781,11 @@ public sealed partial class FaceWorld
         lock(_gate)
         {
             if(!NativeOwnerCurrent(owner,generation))return false;
+            if (owner?.Engine.Options.C2.PersonFollow == true && oldId != newId)
+            {
+                if (_c2Remaps.Count == 32) _c2Remaps.RemoveAt(0);
+                _c2Remaps.Add((owner, owner.CurrentOriginId, owner.Engine.Timer.SecondsF, oldId, newId));
+            }
             found=_faces.TryGetValue(oldId,out var old);
             if(old is not null)
             {
@@ -807,6 +812,24 @@ public sealed partial class FaceWorld
         var changed=FaceIdChanged;
         if(changed is not null)LogCallbackDeferral.Run(()=>{if(NativeOwnerCurrent(owner,generation))changed(oldId,newId);});
         return true;
+    }
+
+    // Our bounded history of native E2G 0x47 reports bridges the interval before
+    // the commanded TrackFaceAction subscribes at 0x00565C24. An old owner or
+    // origin cannot supply an identity to a new robot frame.
+    private readonly List<(EngineRobot Owner, uint Origin, double Time, int OldId, int NewId)> _c2Remaps = new();
+
+    internal int ResolveRecentC2Remaps(EngineRobot owner, int id)
+    {
+        lock (_gate)
+        {
+            double now = owner.Engine.Timer.SecondsF;
+            foreach (var change in _c2Remaps)
+                if (ReferenceEquals(owner, change.Owner) && owner.CurrentOriginId == change.Origin &&
+                    now >= change.Time && now - change.Time <= 3 && id == change.OldId)
+                    id = change.NewId;
+            return id;
+        }
     }
 
     public FaceEntry? GetFace(int id) { lock (_gate) return _faces.GetValueOrDefault(id); }
