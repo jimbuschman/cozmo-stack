@@ -30,6 +30,7 @@ internal sealed partial class C2RoomMap
     private sealed record Join(RoomOrigin To, RoomPose Transform, DateTimeOffset At);
     private sealed class Layer
     {
+        internal List<RememberedHazard> Hazards { get; } = new();
         internal Dictionary<uint, RoomLandmark> Objects { get; } = new();
         internal Dictionary<RoomOrigin, Join> Joins { get; } = new();
     }

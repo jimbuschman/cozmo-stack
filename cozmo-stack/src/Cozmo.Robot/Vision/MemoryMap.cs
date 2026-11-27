@@ -122,9 +122,12 @@ public sealed partial class MemoryMap
     // 0x0067DCF4 -> whole-map TransformContent 0x0068140C -> 0x0068A414, with callback 0x006808F4 (SourceMapAging.Apply).
     internal void TransformAging(SourceMapAging aging)=>Tree.TransformContent(aging.Apply);
     // fidelity: M13-030 — native insertion; legacy region queries remain M11-046.
+    internal Action<Vec2[],SourceMapData>? RememberC2Hazard;
+    internal Func<MappedHazard[]>? ReadC2Hazards;
+    internal Action<string>? C2HazardDecision;
     internal Action<Vec2[],CliffMapData>? CliffInsertForTest;
     internal void InsertCliff(Vec2[] polygon, CliffMapData data)
-    { CliffInsertForTest?.Invoke(polygon,data); Tree.Insert(polygon,data,1); }
+    { CliffInsertForTest?.Invoke(polygon,data); Tree.Insert(polygon,data,1); RememberC2Hazard?.Invoke(polygon,data); }
     // fidelity: M11-074, M13-017 — concrete vt+8, 0x006817C6..0x006817E0.
     internal Action<Vec2[],SourceMapData>? ObjectInsertForTest; // observation only
     internal Action<MemoryMapContentType,uint,SourceMapData>? ObjectBorderForTest; // observation only
@@ -133,6 +136,7 @@ public sealed partial class MemoryMap
     {
         ObjectInsertForTest?.Invoke(polygon,data);
         Tree.Insert(polygon,data,1);
+        RememberC2Hazard?.Invoke(polygon,data);
     }
     internal void FillObjectBorder(uint timestamp)
     {
@@ -216,7 +220,16 @@ public sealed partial class MemoryMap
         uint mask = 0;
         for (int i = 0; i < 11; i++)
             if (blocks((MemoryMapContentType)i)) mask |= 1u << i;
-        return Tree.HasCollisionRayWithTypes(from,to,mask);
+        if (Tree.HasCollisionRayWithTypes(from,to,mask)) return true;
+        if (ReadC2Hazards is null) return false;
+        foreach (var hazard in ReadC2Hazards())
+        {
+            if ((mask & (1u << (int)hazard.Type)) == 0 || hazard.CurrentPolygon is not { } polygon ||
+                !SegmentTouchesPolygon(from,to,polygon)) continue;
+            C2HazardDecision?.Invoke($"blocked ray crossing remembered {hazard.Type}, age {hazard.AgeMs} ms");
+            return true;
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ the overhead edges

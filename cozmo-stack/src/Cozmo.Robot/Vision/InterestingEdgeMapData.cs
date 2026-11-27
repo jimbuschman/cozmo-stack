@@ -14,6 +14,7 @@ public sealed partial class MemoryMap
             Vec2[] polygon=[new(segment.A.X,segment.A.Y),new(segment.B.X,segment.B.Y)];
             InterestingEdgeInsertObserved?.Invoke(polygon,data);
             Tree.Insert(polygon,data,1);
+            RememberC2Hazard?.Invoke(polygon,data);
         }
     }
 }

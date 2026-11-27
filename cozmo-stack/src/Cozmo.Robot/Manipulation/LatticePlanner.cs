@@ -918,7 +918,7 @@ public sealed class LatticeEnvironment
         return true;
     }
 
-    private bool BuildObstacleBuckets(IReadOnlyList<P2f[]> obstacles, bool tightPadding, Func<LatticeCarryingState>? carrying, float penalty, bool append)
+    private bool BuildObstacleBuckets(IReadOnlyList<P2f[]> obstacles, bool tightPadding, Func<LatticeCarryingState>? carrying, float penalty, bool append, IReadOnlyList<P2f[]>? hard = null)
     {
         // Missing context is not no-carry. Stage all buckets so a missing owner even mid-loop retains the whole prior snapshot.
         var staged = new List<(FastPolygonF Poly, float Penalty)>[_buckets.Length];
@@ -929,10 +929,12 @@ public sealed class LatticeEnvironment
             staged[t] = append ? new(_buckets[t]) : new();
             var robot = PolygonF.ConvexPolygon(PolygonF.ImportQuad2d(quad));
             foreach (var obstacle in obstacles) staged[t].Add((new FastPolygonF(ExpandCSpace(obstacle, robot)), penalty));
+            if (hard is not null)
+                foreach (var obstacle in hard) staged[t].Add((new FastPolygonF(ExpandCSpace(obstacle, robot)), HardPenalty));
         }
         for (int t = 0; t < _buckets.Length; t++) _buckets[t] = staged[t];
         TightPadding = tightPadding;
-        _obstacleCount = (append ? _obstacleCount : 0) + obstacles.Count;
+        _obstacleCount = (append ? _obstacleCount : 0) + obstacles.Count + (hard?.Count ?? 0);
         _boundsMatchBuckets = false;
         return true;
     }
@@ -993,7 +995,35 @@ public sealed class LatticeEnvironment
             if(data is ObservableMapData observable)polygons.Add(observable.Polygon.ToArray());
             else StackDiagnostics.Write("M1-034 M13-003/M11-074 skip forged type-3 polygon layout read at 0x004FDF64; other obstacles retained");
         }
-        return ImportObstaclePolygons(polygons,tightPadding,carrying);
+        if (map.ReadC2Hazards is null) return ImportObstaclePolygons(polygons,tightPadding,carrying);
+        // C2 adds remembered geometry to the native 0x004FDF18..0x004FDF8C
+        // import. The planner expands each footprint by the same robot profile.
+        float padding = tightPadding ? TightObstaclePaddingMm : ObstaclePaddingMm;
+        var hard = new List<P2f[]>();
+        var soft = polygons.Select(p => PolygonF.RadialExpand(PolygonF.ConvexPolygon(p), padding)).ToList();
+        var liveIds = matches.OfType<ObservableMapData>().Select(item => item.ObjectId).ToHashSet();
+        foreach (var hazard in map.ReadC2Hazards())
+        {
+            if (hazard.CurrentPolygon is not { Length: >= 2 } points ||
+                (hazard.ObjectId is { } id && (liveIds.Contains(id) || ignore?.Contains(id) == true))) continue;
+            var outline = points.Select(p => new P2f((float)p.X, (float)p.Y)).ToArray();
+            if (outline.Length == 2)
+            {
+                // Give a line segment a one-mm half-width for polygon expansion.
+                var delta = points[1] - points[0];
+                if (delta.Length < 0.001) continue;
+                float nx = (float)(-delta.Y / delta.Length), ny = (float)(delta.X / delta.Length);
+                var a = outline[0]; var b = outline[1];
+                outline = [new(a.X+nx,a.Y+ny),new(b.X+nx,b.Y+ny),new(b.X-nx,b.Y-ny),new(a.X-nx,a.Y-ny)];
+            }
+            var obstacles = hazard.Type is MemoryMapContentType.Cliff or MemoryMapContentType.InterestingEdge
+                or MemoryMapContentType.NotInterestingEdge ? hard : soft;
+            obstacles.Add(PolygonF.RadialExpand(PolygonF.ConvexPolygon(outline), padding));
+        }
+        if (!BuildObstacleBuckets(soft,tightPadding,carrying,ObstaclePenalty,append:false,hard:hard)) return false;
+        if (hard.Count + soft.Count > polygons.Count)
+            map.C2HazardDecision?.Invoke($"planner imported {hard.Count} cliff/edge and {soft.Count-polygons.Count} remembered obstacle footprints");
+        return true;
     }
 
     /// <summary>
@@ -1192,7 +1222,7 @@ public class LatticePlanner
                 return false;
             }
             uint sampled = map.LastObservedTime;
-            if (tightPadding && _lastImportedMapTimestamp >= sampled) return false; // unsigned, including backward clocks
+            if (tightPadding && map.ReadC2Hazards is null && _lastImportedMapTimestamp >= sampled) return false; // unsigned, including backward clocks
             _lastImportedMapTimestamp = sampled; // 0x004FD5CE: before any obstacle rebuild
             return Env.ImportBlockWorldObstaclesWithCarrying(world, carrying, tightPadding, ignore);
         }

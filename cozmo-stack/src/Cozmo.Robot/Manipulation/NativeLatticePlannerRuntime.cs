@@ -165,6 +165,9 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     {
         lock (ContextMutex)
         {
+            // Short planners can ask for safety before any lattice search imported this map.
+            if (_world.Maps.Current?.ReadC2Hazards is not null &&
+                !_backend.ImportBlockWorldObstaclesWithCarrying(_world, _carried, true)) return false;
             var environment = _backend.Env;
             var primitives = environment.Primitives;
             return NativePlanDependencies.PathIsSafe(path, new List<PathSegment>(), heading, NativePlanDependencies.Describe,
