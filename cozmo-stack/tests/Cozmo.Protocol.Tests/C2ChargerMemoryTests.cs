@@ -21,6 +21,54 @@ public sealed class C2ChargerMemoryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task MapPickupKeepsLandmarksInTheirFrameUntilChargerIsSeenAgain(bool enabled)
+    {
+        using var f = new Fixture(sourceNvEmpty:true,engineOptions:new CozmoEngineOptions {
+            ResourcesPath=PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath="",
+            C2=new CozmoC2Settings { MapReanchor=enabled } });
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        uint original = f.Robot.CurrentOriginId, frame = 500;
+        void See(ObjectType type, float x)
+        {
+            for (int i=0;i<4;i++)
+            {
+                f.Motors(); f.Image(++frame,cube:true,cubeX:x,markerObjectType:type);
+            }
+        }
+        See(ObjectType.Block_LIGHTCUBE1, 130);
+        See(ObjectType.Charger_Basic, 160);
+        f.Robot.Delocalize(false); f.Motors();
+        var before = Data(await client.Tool("get_map", new { })).GetProperty("roomMaps");
+        if (!enabled) { Assert.Equal(JsonValueKind.Null, before.ValueKind); return; }
+        var archived = Assert.Single(before.EnumerateArray(), l => l.GetProperty("origin").GetProperty("id").GetUInt32()==original);
+        Assert.False(archived.GetProperty("anchored").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, archived.GetProperty("toCurrent").ValueKind);
+        Assert.True(archived.GetProperty("landmarks").GetArrayLength() >= 2);
+        See(ObjectType.Charger_Basic, 195);
+        var map = Data(await client.Tool("get_map", new { }));
+        var rejoined = Assert.Single(map.GetProperty("roomMaps").EnumerateArray(), l => l.GetProperty("origin").GetProperty("id").GetUInt32()==original);
+        Assert.True(rejoined.GetProperty("anchored").GetBoolean());
+        Assert.Equal(JsonValueKind.String, rejoined.GetProperty("rejoinedAt").ValueKind);
+        var transform = rejoined.GetProperty("toCurrent");
+        var cube = Assert.Single(map.GetProperty("objects").EnumerateArray(),
+            item => item.GetProperty("type").GetString()==ObjectType.Block_LIGHTCUBE1.ToString());
+        Assert.True(cube.GetProperty("memoryOnly").GetBoolean());
+        var heading = transform.GetProperty("headingRad").GetDouble();
+        var cubeId = cube.GetProperty("worldObjectId").GetUInt32();
+        var local = Assert.Single(archived.GetProperty("landmarks").EnumerateArray(),
+            item => item.GetProperty("worldObjectId").GetUInt32() == cubeId).GetProperty("pose");
+        double x = local.GetProperty("xMm").GetDouble(), y = local.GetProperty("yMm").GetDouble();
+        Assert.Equal(transform.GetProperty("xMm").GetDouble() + Math.Cos(heading)*x - Math.Sin(heading)*y,
+            cube.GetProperty("xMm").GetDouble(), 5);
+        Assert.Equal(transform.GetProperty("yMm").GetDouble() + Math.Sin(heading)*x + Math.Cos(heading)*y,
+            cube.GetProperty("yMm").GetDouble(), 5);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task NativeMarkerCommitRemembersChargerAfterNativeDeletionAndPickup(bool enabled)
     {
         using var f=new Fixture(sourceNvEmpty:true,engineOptions:Settings(enabled));
