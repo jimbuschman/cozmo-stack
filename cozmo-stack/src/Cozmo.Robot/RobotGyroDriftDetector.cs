@@ -4,7 +4,7 @@ using Cozmo.Robot.Behavior;
 namespace Cozmo.Robot;
 
 // fidelity: M10-015, M10-014
-// Checked detector bodies. The live UFRS history/pose admission recipient is still MISSING in Sensors.
+// Checked detector bodies. Sensors invokes both after history and pose admission (0x00512FB4..0x00512FC4).
 internal sealed class RobotGyroDriftDetector
 {
     private readonly EngineRobot _robot;
