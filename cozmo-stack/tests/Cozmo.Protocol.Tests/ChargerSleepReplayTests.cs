@@ -14,6 +14,38 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class ChargerSleepReplayTests(ITestOutputHelper output)
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DriveOffCommandCanReleaseTheChargerReactionOnlyWhenEnabled(bool enabled)
+    {
+        using var fixture = new Fixture(preloadAnimations: true, pumpAnimations: true, sourceNvEmpty: true,
+            engineOptions: new CozmoEngineOptions { ResourcesPath = PickupPyramidNativeExecutionTests.Resources(),
+                BlockPoolPath = "", C2 = enabled ? CozmoC2Settings.McpDefaults : CozmoC2Settings.Baseline });
+        var rig = fixture.Rig;
+        using var bridge = new CozmoBridge(rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        var manager = fixture.Robot.BehaviorManagerOwner!;
+        var reaction = fixture.Runtime.Bound["ReactToOnCharger"];
+        rig.Robot.Sensors.SetOnChargerPlatform(true);
+        Assert.True(await manager.SwitchToBehaviorBase(reaction, rig.Engine.Timer.SecondsF));
+        var drive = Assert.IsType<DriveOffChargerBehavior>(fixture.Runtime.Bound["DriveOffCharger"]);
+        Assert.Equal(DriveOffChargerBehavior.Phase.Idle, drive.CurrentPhase);
+        var reply = (await client.Tool("drive-off-charger", new { })).GetProperty("result").GetProperty("structuredContent");
+        Assert.Equal(enabled ? "submitted" : "not-admitted", reply.GetProperty("status").GetString());
+        if (!enabled)
+        {
+            Assert.Same(reaction, manager.Current);
+            Assert.NotNull(fixture.Robot.ChargerSleepAppRecipient);
+            return;
+        }
+        Assert.Null(fixture.Robot.ChargerSleepAppRecipient);
+        Assert.NotSame(reaction, manager.Current);
+        for (int i = 0; i < 15 && drive.CurrentPhase == DriveOffChargerBehavior.Phase.Idle; i++) rig.Tick();
+        Assert.Equal(DriveOffChargerBehavior.Phase.Driving, drive.CurrentPhase);
+    }
+
     [Fact]
     public async Task UncancelledDeadlinePublishesTheCapturedDisconnectReason()
     {

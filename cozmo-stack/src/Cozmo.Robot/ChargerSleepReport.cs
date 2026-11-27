@@ -67,21 +67,23 @@ public sealed partial class CozmoEngine
 
     private void PostAppSleepCancel(EngineRobot owner, CozmoRobot facade, byte? trigger)
     {
+        PostGameMessage(() => ApplyAppSleepCancel(owner, facade, trigger));
+    }
+
+    internal void ApplyAppSleepCancel(EngineRobot owner, CozmoRobot facade, byte? trigger)
+    {
         bool Current() => ReferenceEquals(Robot, owner) && !owner.Lifetime.Destroying;
-        PostGameMessage(() =>
-        {
-            if (!Current()) return;
-            facade.Lights.Cubes.EnableCubeSleep(false);
-            if (!Current()) return;
-            // G2E 0x54 sets both deadlines to -1 at 0x0052D06C..76. The reaction
-            // receives it at 0x00606E70 and releases at its 0x00606E5C update.
-            owner.DeliverCancelIdleTimeout();
-            if (!Current()) return;
-            owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("pause_manager");
-            if (!Current()) return;
-            // Robot.cs:667-670 forwards RobotResumeFromIdle to SetEnableFreeplayActivity.
-            facade.DeliverHostFreeplayInput(owner, owner.AllowFreeplayOnWake);
-            QueueAppEvent(ChargerSleepCancelled, new ChargerSleepCancelledReport(trigger));
-        });
+        if (!Current()) return;
+        facade.Lights.Cubes.EnableCubeSleep(false);
+        if (!Current()) return;
+        // G2E 0x54 sets both deadlines to -1 at 0x0052D06C..76. The reaction
+        // receives it at 0x00606E70 and releases at its 0x00606E5C update.
+        owner.DeliverCancelIdleTimeout();
+        if (!Current()) return;
+        owner.BehaviorManagerOwner?.RemoveDisableReactionsLock("pause_manager");
+        if (!Current()) return;
+        // Robot.cs:667-670 forwards RobotResumeFromIdle to SetEnableFreeplayActivity.
+        facade.DeliverHostFreeplayInput(owner, owner.AllowFreeplayOnWake);
+        QueueAppEvent(ChargerSleepCancelled, new ChargerSleepCancelledReport(trigger));
     }
 }

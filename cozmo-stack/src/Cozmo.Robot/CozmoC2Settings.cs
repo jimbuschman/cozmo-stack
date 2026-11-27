@@ -12,9 +12,11 @@ public sealed record CozmoC2Settings
     public const string ChargerDockName = "C2:charger-dock";
     public bool CliffHoldStill { get; init; }
     public bool ChargerMemory { get; init; }
+    public const string ChargerDriveOffName = "C2:charger-drive-off";
+    public bool ChargerDriveOff { get; init; }
     public bool ChargerDock { get; init; }
     public static CozmoC2Settings Baseline { get; } = new();
-    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true };
+    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true, ChargerDriveOff = true };
     public IReadOnlyList<string> ActiveExtensions
     {
         get
@@ -23,6 +25,7 @@ public sealed record CozmoC2Settings
             if (CliffHoldStill) active.Add(CliffHoldStillName);
             if (ChargerMemory) active.Add(ChargerMemoryName);
             if (ChargerDock) active.Add(ChargerDockName);
+            if (ChargerDriveOff) active.Add(ChargerDriveOffName);
             return active;
         }
     }
