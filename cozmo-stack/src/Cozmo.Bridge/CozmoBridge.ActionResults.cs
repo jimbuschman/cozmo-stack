@@ -47,6 +47,41 @@ public sealed partial class CozmoBridge
         }));
     }
 
+    // Our switchable command releases only the charger reaction. Native drive-off checks
+    // the platform flag at 0x005C0B10 and owns all movement from 0x005C0B18 onward.
+    private Task<CommandResult> DriveOffCharger(CancellationToken token)
+    {
+        var engine = Robot.Engine;
+        var owner = engine.Robot;
+        return Task.FromResult(engine.InvokeEngineRequest(() =>
+        {
+            token.ThrowIfCancellationRequested();
+            CommandResult Refuse(string why) => new("not-admitted", false, null, null, why);
+            if (!engine.Options.C2.ChargerDriveOff) return Refuse("C2 charger drive-off is disabled.");
+            if (owner is null || !ReferenceEquals(engine.Robot, owner) || owner.Lifetime.Destroying ||
+                !engine.IsReadyDelivered || owner.NativeBehaviorRuntime is not { IsRetired: false } runtime ||
+                owner.BehaviorManagerOwner is not { } manager) return CommandResult.NotReady();
+            if (!Robot.Sensors.OnChargerPlatform) return Refuse("Robot is off the charger platform.");
+            if (manager.CurrentReactionTrigger is { } reaction && reaction != ReactionTrigger.PlacedOnCharger)
+                return Refuse("Another reaction is active.");
+            if (owner.ChargerSleepAppRecipient is { } facade)
+            {
+                owner.ChargerSleepAppRecipient = null;
+                engine.EmitStackLog(CozmoC2Settings.ChargerDriveOffName + ": cancelling pending charger sleep");
+                engine.ApplyAppSleepCancel(owner, facade, null);
+            }
+            if (!ReferenceEquals(engine.Robot, owner) || owner.Lifetime.Destroying) return CommandResult.NotReady();
+            if (manager.Current is ReactToOnChargerBehavior)
+            {
+                engine.EmitStackLog(CozmoC2Settings.ChargerDriveOffName + ": releasing ReactToOnCharger for requested drive-off");
+                manager.Stop(BehaviorStopReason.Interrupted, engine.Timer.SecondsF);
+            }
+            engine.EmitStackLog(CozmoC2Settings.ChargerDriveOffName + ": requesting one native DriveOffCharger run");
+            return runtime.RequestHostBehavior("DriveOffCharger", null, out _)
+                ? CommandResult.Posted() : Refuse("Native DriveOffCharger request unavailable.");
+        }));
+    }
+
     private Task<CommandResult> RequestSpark(string name, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();

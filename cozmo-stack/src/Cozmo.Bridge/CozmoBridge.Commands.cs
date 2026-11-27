@@ -90,6 +90,8 @@ public sealed partial class CozmoBridge : IDisposable
         new("go-to-pose", "Drive to x/y millimetres and a heading in radians in the current world origin. Success: native engineResult=0. Failure: nonzero engineResult, not-admitted or owner-retired; inspect why and during. Supply an established world-origin target.",
             [Number("xMm", "World x in millimetres."), Number("yMm", "World y in millimetres."), Angle],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiGotoPoseAsync(a.Number("xMm"), a.Number("yMm"), a.Number("angleRadians"), ct))),
+        new("drive-off-charger", "Wake Cozmo on the charger and request one native DriveOffCharger run. Requires C2:charger-drive-off. Success: submitted confirms the request. Watch behavior and charger state for completion. Failure: not-admitted when disabled, off platform or blocked by another reaction.", [],
+            (b, a, ct) => b.DriveOffCharger(ct)),
         new("mount-charger", "Drive to a located charger world ID and mount it. Line up square: the recorded final check used about 7.5 degrees yaw-error tolerance and 21 mm Y-offset tolerance; geometry-dependent live bounds appear in why when captured. Success: native engineResult=0; check fresh isOnCharger/isCharging. Failure: native failure, not-admitted or owner-retired; read why and during. See cozmo-guide for sources and axes.",
             [Integer("chargerId", "Engine world ID of the located charger.", 0, int.MaxValue)],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiMountChargerAsync(a.UInt("chargerId"), ct))),
