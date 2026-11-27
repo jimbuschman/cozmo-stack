@@ -743,12 +743,15 @@ internal sealed partial class SourceMapComponent
     internal Func<uint,Pose3d?>? OriginPose;
     internal MemoryMap? Current => Maps.GetValueOrDefault(CurrentOrigin); // null only while the host defers reconstruction/teardown.
     internal Func<uint>? ConstructionRobotTimestamp;
-    private MemoryMap ConstructMemoryMap()
+    internal Action<uint,MemoryMap>? ConfigureHazardMemory;
+    private MemoryMap ConstructMemoryMap(uint origin)
     {
         uint timestamp = 0;
         if (ConstructionRobotTimestamp is {} clock) timestamp = clock();
         else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-030 MemoryMap constructor 0x00681384 Robot+0x2C RobotState timestamp owner is unbound on this standalone map component; zero is a fixture fallback, not the native clock");
-        return new MemoryMap(timestamp) { SourceLog = SourceLog, Missing = Missing };
+        var map = new MemoryMap(timestamp) { SourceLog = SourceLog, Missing = Missing };
+        ConfigureHazardMemory?.Invoke(origin, map);
+        return map;
     }
     internal void CreateLocalizedMemoryMap(uint origin, Func<uint,bool> zombie)
     {
@@ -759,7 +762,7 @@ internal sealed partial class SourceMapComponent
             if (dead) Maps.Remove(id);
         }
         if (origin == 0) return;
-        var map = ConstructMemoryMap();
+        var map = ConstructMemoryMap(origin);
         Maps.TryAdd(origin,map); CurrentOrigin = origin;
     }
     internal void UpdateMapOrigins(uint old, uint next, Action updateObjects)
@@ -772,7 +775,7 @@ internal sealed partial class SourceMapComponent
         {
             SourceLog?.Invoke(EngineLogLevel.Error,null,"MapComponent.UpdateObjectOrigins.NullMapFound",$"Origin '{PoseOriginNames.NameOf(next)}' did not have a memory map. Creating empty");
             EngineErrorState.StoreAndMaybeBreak();
-            newMap = ConstructMemoryMap();Maps[next]=newMap;
+            newMap = ConstructMemoryMap(next);Maps[next]=newMap;
         }
         using var transform=new Pose3d();
         if(oldMap is null)newMap.Merge(null,transform); // policy skip never consumes the transform

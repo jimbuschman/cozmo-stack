@@ -383,6 +383,22 @@ public sealed partial class CozmoRobot : IDisposable
             // fidelity: M13-030 — seed each map from Robot+0x2C, the stored RobotState timestamp (zero before the first state).
             // Separate construction input: existing producer-clock gaps are not changed by this job.
             LocalizationWorld.Maps.ConstructionRobotTimestamp = () => Engine.Robot?.StoredState?.Timestamp ?? 0u;
+            if (Engine.Options.C2.ObstacleMemory)
+            {
+                var component = LocalizationWorld.Maps;
+                component.ConfigureHazardMemory = (origin, map) =>
+                {
+                    bool Current() => ReferenceEquals(component, LocalizationWorld.Maps) &&
+                        ReferenceEquals(component.Current, map) && Engine.Robot?.CurrentOriginId == origin;
+                    map.RememberC2Hazard = (polygon, data) =>
+                    {
+                        if (Current() && Engine.Robot is { } owner)
+                            Engine.RoomMap.RememberHazard(owner, origin, polygon, data);
+                    };
+                    map.ReadC2Hazards = () => Current() ? Engine.RoomMap.Hazards(Engine.Robot) : [];
+                    map.C2HazardDecision = message => Engine.EmitStackLog(CozmoC2Settings.ObstacleMemoryName + ": " + message);
+                };
+            }
         };
         LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
         LocalizationWorld.CurrentRobotPose = () => Engine.Robot?.MainPose; // borrowed native Robot::GetPose; admission updates it

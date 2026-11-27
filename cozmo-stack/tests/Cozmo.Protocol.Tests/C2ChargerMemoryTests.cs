@@ -143,6 +143,47 @@ public sealed class C2ChargerMemoryTests
         Assert.True(PoseTreeNode.HasSameRoot(target.Node,f.Robot.GetNativeOrigin(f.Robot.CurrentOriginId).Node));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RememberedCliffBlocksPlannerAfterNativeExpiryAndRejoinsWithTheCharger(bool enabled)
+    {
+        using var f = new Fixture(sourceNvEmpty:true,engineOptions:new CozmoEngineOptions {
+            ResourcesPath=PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath="",
+            C2=new CozmoC2Settings { MapReanchor=true, ObstacleMemory=enabled } });
+        using var bridge=new CozmoBridge(f.Rig.Robot);
+        await using var client=new McpServerTests.Client(bridge);
+        await client.Initialize();
+        uint frame=800;
+        void SeeCharger(float x)
+        {
+            for(int i=0;i<4;i++) { f.Motors(); f.Image(++frame,cube:true,cubeX:x,markerObjectType:ObjectType.Charger_Basic); }
+        }
+        SeeCharger(150);
+        var world=f.M.World;
+        var map=world.Maps.Current!;
+        Vec2[] footprint=[new(300,0),new(320,0),new(320,20),new(300,20)];
+        map.InsertCliff(footprint,new CliffMapData(new(1,0),100));
+        map.TransformAging(SourceMapAging.At(31000));
+        Assert.False(map.HasContentType(MemoryMapContentType.Cliff));
+        Assert.Equal(enabled,map.HasCollisionRayWithTypes(new(280,10),new(340,10),t=>t==MemoryMapContentType.Cliff));
+        var obb=Path.GetFullPath(Path.Combine(PickupPyramidNativeExecutionTests.Resources(),"..",".."));
+        var env=new Cozmo.Robot.Manipulation.LatticeEnvironment(Cozmo.Robot.Manipulation.MotionPrimitiveSet.FromObb(obb)!);
+        Assert.True(env.ImportBlockWorldObstaclesWithCarrying(world, () => Cozmo.Robot.Manipulation.LatticeCarryingState.FromRaw(null), false));
+        Assert.Equal(enabled,env.IsInCollision(310,10,0));
+        if (!enabled) return;
+        f.Robot.Delocalize(false); f.Motors();
+        async Task<JsonElement> Cliff() => Assert.Single(Data(await client.Tool("get_map",new { }))
+            .GetProperty("rememberedHazards").EnumerateArray(), h=>h.GetProperty("localPolygon")[0].GetProperty("x").GetDouble()==300);
+        Assert.Equal(JsonValueKind.Null,(await Cliff()).GetProperty("currentPolygon").ValueKind);
+        SeeCharger(190);
+        var entry=await Cliff();
+        Assert.True(entry.GetProperty("ageMs").GetInt64()>=0);
+        var pt=entry.GetProperty("currentPolygon")[0];
+        Assert.True(env.ImportBlockWorldObstaclesWithCarrying(world, () => Cozmo.Robot.Manipulation.LatticeCarryingState.FromRaw(null), false));
+        Assert.True(env.IsInCollision(pt.GetProperty("x").GetSingle(),pt.GetProperty("y").GetSingle(),0));
+    }
+
     [Fact]
     public void NativeCrossOriginLocalizationMergesChargerSightingsBeforeFlatten()
     {

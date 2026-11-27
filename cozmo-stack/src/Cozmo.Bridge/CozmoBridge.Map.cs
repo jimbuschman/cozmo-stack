@@ -44,6 +44,7 @@ public sealed partial class CozmoBridge
         WorldPose? pose;
         SourceQuadBounds root;
         MemoryMapCell[] cells;
+        MappedHazard[]? rememberedHazards;
         RoomLayer[]? roomMaps;
         C2ChargerEstimate? chargerMemory;
         var objects = new List<MapObject>();
@@ -52,11 +53,12 @@ public sealed partial class CozmoBridge
             var world = Robot.LocalizationWorld;
             using var poseRead = world.EnterPoseMutation();
             pose = ReadWorldPose();
+            rememberedHazards = Robot.Engine.Options.C2.ObstacleMemory ? Robot.Engine.RoomMap.Hazards(Robot.Engine.Robot) : null;
             roomMaps = Robot.Engine.Options.C2.MapReanchor ? Robot.Engine.RoomMap.Snapshot(pose is null ? null : Robot.Engine.Robot) : null;
             chargerMemory = Robot.Engine.Options.C2.ChargerMemory ? Robot.Engine.C2ChargerMemory.Get(pose is null ? null : Robot.Engine.Robot) : null;
             // MapComponent::GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88.
             if (pose is null || world.Maps.CurrentOrigin != pose.OriginId || world.Maps.Current is not { } map)
-                return new(JsonSerializer.SerializeToElement(new { available = false, pose, chargerMemory, roomMaps, regions = Array.Empty<object>() }, Json), null);
+                return new(JsonSerializer.SerializeToElement(new { available = false, pose, chargerMemory, roomMaps, rememberedHazards, regions = Array.Empty<object>() }, Json), null);
 
             (root, cells) = map.Tree.CaptureCells(pose.XMm, pose.YMm, radiusMm);
             if (Robot.Engine.Robot!.TryGetNativeOriginOwner(pose.OriginId, out var origin) && origin is not null)
@@ -113,6 +115,7 @@ public sealed partial class CozmoBridge
             regions = selected,
             chargerMemory,
             roomMaps,
+            rememberedHazards,
             objects,
         }, Json);
         return new(metadata, render ? RenderMap(pose, radiusMm, cells, objects) : null);
