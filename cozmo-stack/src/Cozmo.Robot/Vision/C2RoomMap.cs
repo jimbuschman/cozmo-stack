@@ -2,7 +2,7 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot.Vision;
 
-internal readonly record struct RoomOrigin(long Epoch, uint Id);
+internal readonly record struct RoomOrigin(long Epoch, uint Id, Guid ArchiveId = default);
 internal readonly record struct RoomPose(double XMm, double YMm, double HeadingRad)
 {
     internal RoomPose Apply(RoomPose local)
@@ -30,6 +30,7 @@ internal sealed partial class C2RoomMap
     private sealed record Join(RoomOrigin To, RoomPose Transform, DateTimeOffset At);
     private sealed class Layer
     {
+        internal Guid PersistentId { get; set; } = Guid.NewGuid();
         internal List<RememberedHazard> Hazards { get; } = new();
         internal Dictionary<uint, RoomLandmark> Objects { get; } = new();
         internal Dictionary<RoomOrigin, Join> Joins { get; } = new();
@@ -71,7 +72,7 @@ internal sealed partial class C2RoomMap
             foreach (var (origin, other) in _layers)
             {
                 if (origin.Epoch != current.Epoch || connected.ContainsKey(origin)) continue;
-                var match = other.Objects.Values.FirstOrDefault(item => SameAnchor(item, sighting, origin.Epoch == current.Epoch));
+                var match = other.Objects.Values.FirstOrDefault(item => SameAnchor(item, sighting, origin.ArchiveId == Guid.Empty && origin.Epoch == current.Epoch));
                 if (match is null) continue;
                 Link(origin, current, sighting.Pose.Apply(match.Pose.Inverse()));
                 joined.Add(origin);
@@ -105,9 +106,9 @@ internal sealed partial class C2RoomMap
         owner.Engine.EmitStackLog($"{CozmoC2Settings.MapReanchorName}: native origin join {a} to {b}");
     }
 
-    private void Link(RoomOrigin from, RoomOrigin to, RoomPose transform)
+    private void Link(RoomOrigin from, RoomOrigin to, RoomPose transform, DateTimeOffset? joinedAt = null)
     {
-        var at = DateTimeOffset.UtcNow;
+        var at = joinedAt ?? DateTimeOffset.UtcNow;
         GetLayer(from).Joins[to] = new(to, transform, at);
         GetLayer(to).Joins[from] = new(from, transform.Inverse(), at);
     }

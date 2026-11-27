@@ -93,6 +93,7 @@ public static class Program
                 var options = HardwareEngineOptions.CreateWithAnimationBudget(resources, log: Log, speechSoundBankDirectory: banks,
                     beforeStart:engine=>{evidence.Attach(engine);narration.AttachEngine(engine);}, keepNeedsFull: needsMode=="full", animationStreamBudgetBytes: animationBudget, c2: c2);
                 using var robot = CozmoRobot.Create(engineOptions: options);
+                using var mapSession = robot.OpenRoomMapSession();
                 narration.AttachRobot(robot);
                 robot.Transport.FrameTrace += evidence.Frame;
                 robot.HandlerFaulted += error => { Log(error.ToString()); evidence.Record("handler-fault", JsonSerializer.SerializeToElement(new { exception = error.ToString() })); };

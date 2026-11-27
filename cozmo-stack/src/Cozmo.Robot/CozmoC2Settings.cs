@@ -17,6 +17,8 @@ public sealed record CozmoC2Settings
     public const string PersonFollowName = "C2:person-follow";
     public const string MapReanchorName = "C2:map-reanchor";
     public const string ObstacleMemoryName = "C2:map-obstacle-memory";
+    public const string MapSaveName = "C2:map-save";
+    public bool MapSave { get; init; }
     public bool ObstacleMemory { get; init; }
     public bool MapReanchor { get; init; }
     public bool PersonFollow { get; init; }
@@ -24,7 +26,7 @@ public sealed record CozmoC2Settings
     public bool ChargerDriveOff { get; init; }
     public bool ChargerDock { get; init; }
     public static CozmoC2Settings Baseline { get; } = new();
-    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true, ChargerDriveOff = true, SlopePutdown = true, PersonFollow = true, MapReanchor = true, ObstacleMemory = true };
+    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true, ChargerDriveOff = true, SlopePutdown = true, PersonFollow = true, MapReanchor = true, ObstacleMemory = true, MapSave = true };
     public IReadOnlyList<string> ActiveExtensions
     {
         get
@@ -38,6 +40,7 @@ public sealed record CozmoC2Settings
             if (PersonFollow) active.Add(PersonFollowName);
             if (MapReanchor) active.Add(MapReanchorName);
             if (ObstacleMemory) active.Add(ObstacleMemoryName);
+            if (MapSave) active.Add(MapSaveName);
             return active;
         }
     }
