@@ -343,6 +343,55 @@ public sealed class ChargerMountCliffReplayTests
         Assert.Equal(1, events[1].GetProperty("payload").GetProperty("reasonCode").GetByte());
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    public async Task C2DockRequiresFusedSightingsAndKeepsOnlyRampReactionLocked(int sightings)
+    {
+        using var f=new Fixture(preloadAnimations:true,pumpAnimations:true,sourceNvEmpty:true,keepNeedsFull:true,
+            engineOptions:new CozmoEngineOptions { ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),
+                BlockPoolPath="",C2=new CozmoC2Settings { ChargerMemory=true,ChargerDock=true } });
+        Setup(f,true);
+        f.Motors();
+        var owner=f.Robot;
+        var origin=owner.GetNativeOrigin(owner.CurrentOriginId);
+        var charger=f.M.World.GetLocatedObjectById(4)!;
+        uint stamp=owner.StoredState!.Timestamp;
+        using(var at=new Pose3d(Rotation3d.Identity,new Vec3(16,0,0),parent:origin))
+        {
+            for(int i=0;i<sightings;i++)
+            {
+                charger.LastObservedTimestamp=stamp-(uint)(sightings-1-i);
+                owner.Engine.C2ChargerMemory.Observe(owner,charger,4,at);
+            }
+        }
+        var manager=owner.BehaviorManagerOwner!;
+        using var cancel=new CancellationTokenSource();
+        var resultTask=f.Rig.Robot.Motion.QueueAiMountChargerAsync(4,cancel.Token);
+        try
+        {
+            Assert.False(manager.IsReactionTriggerEnabled(ReactionTrigger.UnexpectedMovement));
+            Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.CliffDetected));
+            if(sightings==3)
+            {
+                var mount=Assert.IsType<NativeDriveToMountChargerRunner>(owner.ActionList.GetCurrentAction());
+                Assert.NotNull(mount.C2Geometry);
+                Assert.NotSame(charger,mount.C2Geometry);
+                Assert.Equal(0,mount.C2Geometry!.NativePose.Translation.Z);
+            }
+            else
+                Assert.IsType<DriveToPoseAction>(owner.ActionList.GetCurrentAction());
+        }
+        finally
+        {
+            cancel.Cancel();
+            f.Rig.Tick();
+            owner.ActionList.Clear();
+        }
+        await resultTask.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.UnexpectedMovement));
+        Assert.True(manager.IsReactionTriggerEnabled(ReactionTrigger.CliffDetected));
+    }
     private static JsonElement Data(JsonElement reply) => reply.GetProperty("result").GetProperty("structuredContent");
 
     private static void Setup(Fixture f, bool atPreDock)

@@ -11,7 +11,8 @@ public sealed partial class CozmoBridge
     private sealed record WorldPose(float XMm, float YMm, float ZMm, float HeadingRad, uint OriginId,
         uint? LocalizedToObjectId, uint PoseFrameId, uint? RobotTimestamp, double? AgeMs);
     internal sealed record MapReply(JsonElement Metadata, byte[]? Png);
-    private sealed record MapObject(uint WorldObjectId, string Type, double XMm, double YMm, bool Charger, ChargerEstimate? ChargerEstimate);
+    private sealed record MapObject(uint WorldObjectId, string Type, double XMm, double YMm, bool Charger, ChargerEstimate? ChargerEstimate,
+        C2ChargerEstimate? FusedCharger = null, bool MemoryOnly = false);
 
     // Caller holds the engine owner and world pose gates. Use the same current pose
     // supplier as Robot::GetRobotState 0x005180E2..0x00518160, including world yaw.
@@ -43,15 +44,17 @@ public sealed partial class CozmoBridge
         WorldPose? pose;
         SourceQuadBounds root;
         MemoryMapCell[] cells;
+        C2ChargerEstimate? chargerMemory;
         var objects = new List<MapObject>();
         using (Robot.Engine.EnterSynchronousOwner())
         {
             var world = Robot.LocalizationWorld;
             using var poseRead = world.EnterPoseMutation();
             pose = ReadWorldPose();
+            chargerMemory = Robot.Engine.Options.C2.ChargerMemory ? Robot.Engine.C2ChargerMemory.Get(pose is null ? null : Robot.Engine.Robot) : null;
             // MapComponent::GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88.
             if (pose is null || world.Maps.CurrentOrigin != pose.OriginId || world.Maps.Current is not { } map)
-                return new(JsonSerializer.SerializeToElement(new { available = false, pose, regions = Array.Empty<object>() }, Json), null);
+                return new(JsonSerializer.SerializeToElement(new { available = false, pose, chargerMemory, regions = Array.Empty<object>() }, Json), null);
 
             (root, cells) = map.Tree.CaptureCells(pose.XMm, pose.YMm, radiusMm);
             if (Robot.Engine.Robot!.TryGetNativeOriginOwner(pose.OriginId, out var origin) && origin is not null)
@@ -61,12 +64,20 @@ public sealed partial class CozmoBridge
                 {
                     if (item.OriginId != pose.OriginId || item.Family == ObjectFamily.MarkerlessObject ||
                         !Pose3d.GetWithRespectTo(item.NativePose, origin, relative)) continue;
-                    var point = relative.Translation;
+                    bool isCharger = item.Type == ObjectType.Charger_Basic;
+                    var fused = isCharger && chargerMemory is { Anchored:true } ? chargerMemory : null;
+                    var point = fused is not null ? new Vec3(fused.XMm,fused.YMm,0) : relative.Translation;
                     if (Math.Abs(point.X - pose.XMm) <= radiusMm && Math.Abs(point.Y - pose.YMm) <= radiusMm)
-                        objects.Add(new(item.ObjectId, item.Type.ToString(), point.X, point.Y, item.Type == ObjectType.Charger_Basic,
-                            item.Type == ObjectType.Charger_Basic ? ReadChargerEstimate(item, relative, Robot.Engine.Robot!) : null));
+                        objects.Add(new(item.ObjectId, item.Type.ToString(), point.X, point.Y, isCharger,
+                            isCharger ? ReadChargerEstimate(item, relative, Robot.Engine.Robot!) : null,fused));
                 }
             }
+            // An anchored, forgotten charger still belongs on the map. Mark it
+            // as memory only; its historical ID is not a native command target.
+            if (chargerMemory is { Anchored:true } remembered && !objects.Any(o=>o.Charger) &&
+                Math.Abs(remembered.XMm-pose.XMm)<=radiusMm && Math.Abs(remembered.YMm-pose.YMm)<=radiusMm)
+                objects.Add(new(remembered.WorldObjectId,ObjectType.Charger_Basic.ToString(),remembered.XMm,remembered.YMm,
+                    true,null,remembered,MemoryOnly:true));
         }
 
         var selected = cells.OrderBy(cell => DistanceSquared(cell.Bounds, pose)).Take(limit).Select(cell => new
@@ -86,6 +97,7 @@ public sealed partial class CozmoBridge
             regionCount = cells.Length,
             truncated = cells.Length > selected.Length,
             regions = selected,
+            chargerMemory,
             objects,
         }, Json);
         return new(metadata, render ? RenderMap(pose, radiusMm, cells, objects) : null);

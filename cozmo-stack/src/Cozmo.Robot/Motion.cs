@@ -124,7 +124,7 @@ public sealed record AiBodyObservation(Guid? OwnerToken, bool CanRequestHeadActi
 /// There is no calibration gate on direct motion (M4-004): the engine has none. One policy of this stack sits on top:
 /// a wheel command is confirmed against the reported wheel speeds (M4-006).
 /// </summary>
-public sealed class CozmoMotion
+public sealed partial class CozmoMotion
 {
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
@@ -425,27 +425,36 @@ public sealed class CozmoMotion
     public Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId, CancellationToken cancellationToken = default) =>
         QueueAiMountChargerAsync(chargerId, null, cancellationToken);
 
-    public async Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId,
-        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken)
+    public Task<AiPickupActionResult> QueueAiMountChargerAsync(uint chargerId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken) =>
+        _robot.Engine.Options.C2.ChargerDock ? QueueC2MountChargerAsync(chargerId,motionProfile,cancellationToken)
+            : QueueAiMountChargerNativeAsync(chargerId,motionProfile,cancellationToken);
+
+    private async Task<AiPickupActionResult> QueueAiMountChargerNativeAsync(uint chargerId,
+        Manipulation.PathMotionProfile? motionProfile, CancellationToken cancellationToken,
+        EngineRobot? expectedOwner = null, Vision.ObservableObject? c2Geometry = null)
     {
-        if(chargerId>int.MaxValue)return new(false,null,"Object ID must be a nonnegative signed world ID");
-        if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
+        AiPickupActionResult Reject(string detail,bool retired=false)
+        { c2Geometry?.DisposeC2ChargerGeometry(); return new(false,null,detail,retired); }
+        if(chargerId>int.MaxValue)return Reject("Object ID must be a nonnegative signed world ID");
+        if(cancellationToken.IsCancellationRequested)return Reject("Request cancelled before admission");
         var engine=_robot.Engine;
         var owner=engine.Robot;
         Task<AiHeadActionResult> task;
         Manipulation.NativeDriveToMountChargerRunner action;
         using(engine.EnterSynchronousOwner())
         {
-            if(cancellationToken.IsCancellationRequested)return new(false,null,"Request cancelled before admission");
-            if(owner is null || !AiOwnerReady(engine,owner))return new(false,null,"Robot is not ready for an action");
+            if(cancellationToken.IsCancellationRequested)return Reject("Request cancelled before admission");
+            if(expectedOwner is not null && !ReferenceEquals(expectedOwner,owner))return Reject("Robot owner retired before mount",true);
+            if(owner is null || !AiOwnerReady(engine,owner))return Reject("Robot is not ready for an action");
             var runtime=owner.NativeBehaviorRuntime;
             if(runtime is null || runtime.IsRetired || runtime.Manipulation is not {} manipulation ||
                 owner.CarryingOwner is null || owner.DockingOwner is null || owner.BehaviorManagerOwner is null || !owner.HasExternalInterface)
-                return new(false,null,"MISSING: original charger, carrying, docking or vision owner unavailable");
+                return Reject("MISSING: original charger, carrying, docking or vision owner unavailable");
             uint tag=AllocateAiTag();
-            if(tag==0)return new(false,null,"No external action tag is available");
+            if(tag==0)return Reject("No external action tag is available");
             bool Current()=>!owner.Lifetime.Destroying && ReferenceEquals(engine.Robot,owner) && !runtime.IsRetired && ReferenceEquals(owner.NativeBehaviorRuntime,runtime);
-            action=new Manipulation.NativeDriveToMountChargerRunner(manipulation,owner,chargerId,Current);
+            action=new Manipulation.NativeDriveToMountChargerRunner(manipulation,owner,chargerId,Current,c2Geometry);
             task=AdmitAiAction(action,owner,tag,cancellationToken,"Native charger mount ended",true,()=>Current() && AiOwnerReady(engine,owner), motionProfile);
         }
         var result=await task.ConfigureAwait(false);

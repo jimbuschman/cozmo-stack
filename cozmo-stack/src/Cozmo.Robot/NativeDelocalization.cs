@@ -224,6 +224,10 @@ public sealed partial class EngineRobot
         bool Current()=>!Lifetime.Destroying && (Engine.Robot is null || ReferenceEquals(Engine.Robot,this));
         world?.FinishDelocalization(CurrentOriginId,newId,this,Current);
         if(!Current())return;
+        // C2:charger-memory retains the old origin estimate across 0x00510D5A..62.
+        if(Engine.Options.C2.ChargerMemory && ReferenceEquals(Engine.Robot,this))
+            Engine.C2ChargerMemory.OriginChanged(this);
+        if(!Current())return;
         foreach(var stage in new[]{"FaceWorld","AIComponent","BehaviorManager","MovementComponent"})
         {
             Engine.DelocalizationComponentHook?.Invoke(this,stage); // 0x00510D6E uses this Robot before insertion as well.

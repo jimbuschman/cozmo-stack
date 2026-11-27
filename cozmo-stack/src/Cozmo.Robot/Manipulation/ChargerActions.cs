@@ -441,6 +441,8 @@ public sealed class MountChargerAction
     /// "MountChargerAction.ConfigureTurnAndMountAction.InvalidCharger", 0x0054E638..0x0054E672); the turn angle is <c>atan2f(v.y, v.x)</c> of the robot's
     /// position less the dock point's; and the lift test reads <c>Robot::GetLiftHeight</c> now.
     /// </summary>
+    internal ObservableObject? C2Geometry { get; set; }
+
     internal (uint Result, float TurnAngle, bool LiftBelow) ConfigureTurnAndMount(EngineRobot? owner = null)
     {
         var charger = _m.World.GetLocatedObjectById(ChargerId);
@@ -454,7 +456,10 @@ public sealed class MountChargerAction
         // The stack's poses are double; the engine's are float, so each is rounded where the engine holds it: the dock point (the charger's pose composed with the
         // (30, 0, 0) pose) and the robot's position become floats, the difference and atan2f are float.
         using var offset = new Pose3d(Mat3.Identity, new Vec3(DockPointXMm, 0, 0));
-        using var dockPose = (owner is null ? charger.Pose : charger.NativePose).Compose(offset);
+        // C2 host geometry replaces only the charger pose operand at 0x0054E458..0x0054E536.
+        if(C2Geometry is { } fused && (owner is null || !PoseTreeNode.HasSameRoot(fused.NativePose.Node,owner.GetNativeOrigin(owner.CurrentOriginId).Node)))
+            return ((uint)ActionResult.BadPose,0f,false);
+        using var dockPose = (C2Geometry?.NativePose ?? (owner is null ? charger.Pose : charger.NativePose)).Compose(offset);
         var dock = dockPose.Translation;
         float vx = (float)robot.Value.Translation.X - (float)dock.X;
         float vy = (float)robot.Value.Translation.Y - (float)dock.Y;
@@ -552,7 +557,7 @@ public sealed class MountChargerAction
         using var nativeRobot = owner is null ? null : _m.NativeMainSnapshot(owner);
         var robot = owner is null ? _m.RobotPose() : nativeRobot?.Value;
         if (obj is null || robot is null) return false;
-        float chargerYaw = (float)(owner is null ? obj.Pose : obj.NativePose).AngleAroundZ;
+        float chargerYaw = (float)(C2Geometry?.NativePose ?? (owner is null ? obj.Pose : obj.NativePose)).AngleAroundZ;
         float robotYaw = (float)robot.Value.AngleAroundZ;
         float diff = (float)EngineRadians.Rescale(chargerYaw - robotYaw);
         return !(MathF.Abs(diff) > RetryHeadingWindowRad);

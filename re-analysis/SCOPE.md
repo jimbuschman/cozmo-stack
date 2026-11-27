@@ -65,15 +65,20 @@ Candidates so far:
   cliff/firmware stop, leaving other animation tracks and the native retreat decision intact. Host settings on for
   MCP by default, `--baseline` disables; reported in `get_state`. Offline regression against session 7's stop clip;
   robot validation pending. Does not establish physical clearance or guarantee no fall.
+- **C2:charger-memory** (operator approved 2026-11-26): separate session-memory fused charger pose from accepted
+  marker sightings, weighted by squared front incidence and inverse squared range, flat at ground z=0, circular yaw;
+  retained across native forgetting and pickups, with explicit unanchored status until a verified root relation
+  or fresh observation. `get_map` draws the anchored fused position and reports contributing sightings;
+  `get_state.chargerMemory` remains visible even when `knownChargers` has no native commandable object.
+  Same named switch and baseline policy; cross-session persistence and general re-anchoring are separate C2 jobs.
+  Robot validation pending.
 - World map memory: he forgets the charger once it is out of sight or after he is picked up (2026-11-19 session:
   charger dropped from knownChargers after leaving it; objects deleted from old origins at re-localisation).
   Operator 2026-11-26: mapping is a main improvement area ("we can do a much better job"). Candidates: a persistent
   room map that survives pickups (re-anchor the old origin when the charger or a known cube is seen again, instead of
   discarding it); the charger remembered permanently, its pose averaged over sightings and held flat (feeds docking);
   longer memory of cliffs, edges and obstacles; the map saved between sessions.
-- Charger docking (operator 2026-11-26): if CHARGER-MOUNT-SESSION6-1 shows the engine fails the same way, dock only from
-  a flat, square-on, multi-sighting charger estimate and keep reactions locked for the whole reverse climb (the by-hand
-  climb in session 6 worked this way).
+- **C2:charger-dock** (operator approved 2026-11-26): current-origin fused flat pose, three distinct sightings, heading confidence >= 0.95, freshness within 2 s, square-on within 7.5 degrees; native pre-dock viewing approach and fresh observation wait (5 s), at most two retries. Only UnexpectedMovement is held; cliff protection unchanged. Baseline unchanged; offline regression passed, robot validation pending.
 - Person tracking (operator 2026-11-26): if TRACK-FACE-LLM-2 shows the engine's one-ID tracking is the limit, follow the
   face nearest the last tracked position across face-ID changes.
 - Drive on and off the charger by command, including a wake-and-drive-off request during `ReactToOnCharger`

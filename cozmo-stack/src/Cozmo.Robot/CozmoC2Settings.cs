@@ -8,14 +8,40 @@ namespace Cozmo.Robot;
 public sealed record CozmoC2Settings
 {
     public const string CliffHoldStillName = "C2:cliff-hold-still";
+    public const string ChargerMemoryName = "C2:charger-memory";
+    public const string ChargerDockName = "C2:charger-dock";
     public bool CliffHoldStill { get; init; }
+    public bool ChargerMemory { get; init; }
+    public bool ChargerDock { get; init; }
     public static CozmoC2Settings Baseline { get; } = new();
-    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true };
-    public IReadOnlyList<string> ActiveExtensions => CliffHoldStill ? [CliffHoldStillName] : [];
+    public static CozmoC2Settings McpDefaults { get; } = new() { CliffHoldStill = true, ChargerMemory = true, ChargerDock = true };
+    public IReadOnlyList<string> ActiveExtensions
+    {
+        get
+        {
+            var active = new List<string>();
+            if (CliffHoldStill) active.Add(CliffHoldStillName);
+            if (ChargerMemory) active.Add(ChargerMemoryName);
+            if (ChargerDock) active.Add(ChargerDockName);
+            return active;
+        }
+    }
+}
+
+public sealed partial class CozmoEngine
+{
+    internal Vision.C2ChargerMemory C2ChargerMemory { get; } = new();
 }
 
 public sealed partial class EngineRobot
 {
+    // Native origin IDs may be reused after disconnection. A distinct owner epoch
+    // prevents presenting a stale remembered pose as current just because its ID matches.
+    private static long s_nextC2MapOwnerEpoch;
+    internal long C2MapOwnerEpoch { get; } = Interlocked.Increment(ref s_nextC2MapOwnerEpoch);
+    // A multi-stage docking command owns the original robot until all its attempts retire.
+    internal bool C2DockInFlight;
+
     // C2:cliff-hold-still is a host safety extension, not native behavior.
     // Keep the latch on the Robot lifetime so a replacement does not inherit it.
     private volatile bool _c2CliffHoldActive;

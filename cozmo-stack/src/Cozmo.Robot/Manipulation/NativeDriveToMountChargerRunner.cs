@@ -11,8 +11,10 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
     internal TaskCompletionSource<(uint Result, bool OwnerRetired)>? AiNativeEnded;
     internal EngineRobot? AiOwner;
     internal string? HostUnavailable { get; private set; }
+    internal ObservableObject? C2Geometry { get; private set; }
 
-    internal NativeDriveToMountChargerRunner(ManipulationSystem m, EngineRobot owner, uint id, Func<bool> current)
+    internal NativeDriveToMountChargerRunner(ManipulationSystem m, EngineRobot owner, uint id, Func<bool> current,
+        ObservableObject? c2Geometry = null)
         : base(() => m.Robot.Engine.Timer.SecondsF)
     {
         SourceLog = (level, channel, key, text) => m.Robot.Engine.EmitSourceLog(level, channel, key, text);
@@ -23,9 +25,11 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
         // distance 0, useApproachAngle false, angle 0, useManualSpeed false (caller stack bool).
         Drive = new(m, owner, id, PreActionType.Docking, Live);
         Drive.Unavailable = Unavailable;
+        C2Geometry = c2Geometry;
+        Drive.C2ChargerGeometry = c2Geometry;
         // 0x0054E856..0x0054E87A: same robot, copied ID, +0x80=false (handler
         // useManualSpeed), +0x81=false (handler literal zero).
-        Mount = new(m, id, flag80: false, flag81: false);
+        Mount = new(m, id, flag80: false, flag81: false) { C2Geometry = c2Geometry };
         // 0x0054E848 / 0x0054E88A: append both in order, both bools zero; no proxy.
         AddAction(Drive, false, false);
         AddAction(new MountRunner(m, owner, Mount, Live), false, false);
@@ -51,10 +55,25 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
         }
     }
 
+    private void ReleaseC2Geometry()
+    {
+        var snapshot=C2Geometry;
+        C2Geometry=null; Drive.C2ChargerGeometry=null; Mount.C2Geometry=null;
+        snapshot?.DisposeC2ChargerGeometry();
+    }
+
+    internal override bool RetireNeverAdmittedTree()
+    {
+        if(!base.RetireNeverAdmittedTree())return false;
+        ReleaseC2Geometry();
+        return true;
+    }
+
     public override void WatcherEnding()
     {
         if (DestructionObserved) return;
         base.WatcherEnding();
+        ReleaseC2Geometry();
         if (AiOwner is { } owner)
             AiNativeEnded?.TrySetResult((State, owner.Lifetime.Destroying || !ReferenceEquals(owner.Engine.Robot, owner)));
     }
@@ -88,7 +107,7 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
             if (result != ActionResult.Success) return unchecked((int)result);
 
             SetStage(Stage.Align,
-                new AlignRunner(M, _owner, _mount.CreateAlignAction(), Live),
+                new AlignRunner(M, _owner, _mount.CreateAlignAction(), Live, _mount.C2Geometry),
                 M.Robot.Motion.CreateNativeHeadChild(0, MountChargerAction.HeadToleranceRad,
                     CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, _owner, Live));
             return 0;
@@ -121,6 +140,9 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
 
             if (_phase == Stage.Mount && result != 0)
             {
+                // C2 retries return to the viewing/re-observation owner instead of
+                // starting the original 0x0054E3D4..0x0054E3E8 blind forward retry.
+                if(_mount.C2Geometry is not null)return result;
                 using var mutation = M.World.EnterPoseMutation();
                 if (!_mount.InsideRetryWindow(_owner))
                 {
@@ -174,7 +196,8 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
     }
 
     // fidelity: M13-016, M12-017, M12-037
-    private sealed class AlignRunner(ManipulationSystem m, EngineRobot owner, AlignWithObjectAction align, Func<bool> current)
+    private sealed class AlignRunner(ManipulationSystem m, EngineRobot owner, AlignWithObjectAction align, Func<bool> current,
+        ObservableObject? c2Geometry)
         : NativeVisionRunner(m, 0, 7)
     {
         private CompoundActionSequential? _prepared;
@@ -203,7 +226,12 @@ internal sealed class NativeDriveToMountChargerRunner : CompoundActionSequential
             if (target is null || !target.IsActive) return 0x03000004;
             // IDockAction ctor 0x005503A0..0x005503AA sets +0xB9=1. Mount leaves it set.
             var main = owner.GetCheckedMainPose();
-            var pre = DockPreActionPoses.GetNative(new(target, (PreActionType)align.AlignmentPreActionType,
+            // Use the C2 flat geometry for the pre-action check; marker turn,
+            // firmware visual servo and verification still use the live target.
+            var geometry = c2Geometry ?? target;
+            if(c2Geometry is not null && !PoseTreeNode.HasSameRoot(c2Geometry.NativePose.Node,owner.GetNativeOrigin(owner.CurrentOriginId).Node))
+                return 0x03000005;
+            var pre = DockPreActionPoses.GetNative(new(geometry, (PreActionType)align.AlignmentPreActionType,
                 true, DockActionBase.PreActionAngleToleranceRad, 0, false, 0), main,
                 owner.CarryingOwner!.CarriedObjectId, () => M.NativeObstacles(main, owner), M.World);
             if (!Live()) return unchecked((int)EngineActionResult.Cancelled);
