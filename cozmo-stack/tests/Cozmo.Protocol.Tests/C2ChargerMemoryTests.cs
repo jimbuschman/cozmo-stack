@@ -185,6 +185,59 @@ public sealed class C2ChargerMemoryTests
     }
 
     [Fact]
+    public async Task RestartLoadsOnlyTheIdentifiedRobotsMapAndRequiresFreshLandmark()
+    {
+        var directory = Directory.CreateTempSubdirectory("cozmo-map-");
+        try
+        {
+            Fixture NewRobot(bool enabled=true) => new(sourceNvEmpty:true,engineOptions:new CozmoEngineOptions
+            {
+                ResourcesPath=PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath="", FilesPath=directory.FullName,
+                C2=new CozmoC2Settings { MapReanchor=true, ObstacleMemory=true, MapSave=enabled }
+            });
+            void See(Fixture f, ObjectType type, uint firstFrame, float x)
+            {
+                for(uint i=0;i<4;i++) { f.Motors(); f.Image(firstFrame+i,cube:true,cubeX:x,markerObjectType:type); }
+            }
+            using (var first=NewRobot())
+            using (first.Rig.Robot.OpenRoomMapSession())
+            {
+                See(first,ObjectType.Charger_Basic,700,150);
+                See(first,ObjectType.Block_LIGHTCUBE1,704,130);
+                first.M.World.Maps.Current!.InsertCliff([new(300,0),new(320,0),new(320,20),new(300,20)],
+                    new CliffMapData(new(1,0),100));
+            }
+            Assert.Single(Directory.GetFiles(directory.FullName,"*.json",SearchOption.AllDirectories),
+                file=>Path.GetFileName(file)=="00000002.json");
+            using (var different=NewRobot())
+            {
+                different.Rig.Engine.RaiseSerialNumberAcquired(3);
+                using var otherSession=different.Rig.Robot.OpenRoomMapSession();
+                Assert.Empty(different.Rig.Engine.RoomMap.Snapshot(different.Robot));
+            }
+            using (var baseline=NewRobot(false)) Assert.Null(baseline.Rig.Robot.OpenRoomMapSession());
+            using var second=NewRobot();
+            using var session=second.Rig.Robot.OpenRoomMapSession();
+            using var bridge=new CozmoBridge(second.Rig.Robot);
+            await using var client=new McpServerTests.Client(bridge);
+            await client.Initialize();
+            async Task<JsonElement> ReadMap() => Data(await client.Tool("get_map",new { }));
+            var before=await ReadMap();
+            var old=Assert.Single(before.GetProperty("roomMaps").EnumerateArray());
+            Assert.False(old.GetProperty("anchored").GetBoolean());
+            Assert.Equal(2,old.GetProperty("landmarks").GetArrayLength());
+            Assert.Equal(JsonValueKind.Null,before.GetProperty("rememberedHazards")[0].GetProperty("currentPolygon").ValueKind);
+            See(second,ObjectType.Charger_Basic,800,195);
+            var after=await ReadMap();
+            Assert.All(after.GetProperty("roomMaps").EnumerateArray(), l=>Assert.True(l.GetProperty("anchored").GetBoolean()));
+            Assert.Contains(after.GetProperty("objects").EnumerateArray(),o=>o.GetProperty("memoryOnly").GetBoolean() &&
+                o.GetProperty("type").GetString()==ObjectType.Block_LIGHTCUBE1.ToString());
+            Assert.Equal(JsonValueKind.Array,after.GetProperty("rememberedHazards")[0].GetProperty("currentPolygon").ValueKind);
+        }
+        finally { directory.Delete(true); }
+    }
+
+    [Fact]
     public void NativeCrossOriginLocalizationMergesChargerSightingsBeforeFlatten()
     {
         using var f=new Fixture(sourceNvEmpty:true,engineOptions:Settings(true));
