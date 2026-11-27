@@ -49,6 +49,13 @@ internal sealed class C2ChargerMemory
     private readonly Dictionary<Origin, Aggregate> _estimates = new();
     private readonly object _gate = new();
     private long _order;
+    private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private void NotifyChangedLocked()
+    {
+        var previous = _changed;
+        _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        previous.TrySetResult();
+    }
 
     internal void Observe(EngineRobot owner, ObservableObject observed, uint locatedId, Pose3d robotAtSighting)
     {
@@ -82,6 +89,7 @@ internal sealed class C2ChargerMemory
             if (estimate.Count!=0 && unchecked((int)(observed.LastObservedTimestamp-estimate.Stamp))<=0) return;
             estimate.Add(locatedId,observed.LastObservedTimestamp,pos.X,pos.Y,yaw,range,view,++_order);
             snapshot=SnapshotLocked(key,estimate,true);
+            NotifyChangedLocked();
         }
         owner.Engine.EmitStackLog(FormattableString.Invariant(
             $"{CozmoC2Settings.ChargerMemoryName}: accepted sighting {snapshot.LastObservedTimestamp} at {range:F1}mm, view {view*180/Math.PI:F1}deg; origin {snapshot.OriginId}, fused {snapshot.Sightings} sightings"));
@@ -102,14 +110,23 @@ internal sealed class C2ChargerMemory
             previous.Transform(oldInNew);
             if (_estimates.TryGetValue(to,out var existing)) { existing.Merge(previous); count=existing.Count; }
             else { _estimates[to]=previous; count=previous.Count; }
+            NotifyChangedLocked();
         }
         owner.Engine.EmitStackLog($"{CozmoC2Settings.ChargerMemoryName}: rejoined native origin {oldOriginId} -> {newOriginId}; {count} fused sightings");
     }
 
     internal void OriginChanged(EngineRobot owner)
     {
+        lock (_gate) NotifyChangedLocked();
         if (Get(owner) is { Anchored:false } remembered)
             owner.Engine.EmitStackLog($"{CozmoC2Settings.ChargerMemoryName}: origin {owner.CurrentOriginId} lacks a verified relation to charger origin {remembered.OriginId}; retaining unanchored estimate");
+    }
+
+    // Subscribe and then read the estimate under the same lock to avoid losing
+    // a sighting between a check and its asynchronous wait.
+    internal (C2ChargerEstimate? Estimate,Task Changed) Watch(EngineRobot owner)
+    {
+        lock (_gate) return (Get(owner),_changed.Task);
     }
 
     internal C2ChargerEstimate? Get(EngineRobot? owner)

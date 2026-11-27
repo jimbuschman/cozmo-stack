@@ -433,6 +433,16 @@ public sealed partial class ObservableObject
     internal void InitPose(Pose3d pose, PoseState state)
     { SetPose(pose,-1,state); PoseInitialized = 1; }
 
+    internal void DisposeC2ChargerGeometry()
+    {
+        // Only the C2 mount's detached geometry snapshot reaches this method.
+        // Retire cached marker-relative poses before their owning marker nodes.
+        Manipulation.CubePreActionPoses.ClearForSetPose(this);
+        _publicPose?.Dispose(); _publicPose=null;
+        foreach(var marker in Markers) marker.PoseOnObject.Dispose();
+        _pose.Dispose();
+    }
+
     /// <summary>
     /// OV10 F2 fresh clone contracts: no ID, pose, observation timestamps or active/factory IDs are copied.
     /// Existing type/marker definitions remain the constructor input; full per-type geometry remains separately owned.

@@ -13,6 +13,13 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
     private Func<bool>? _parentCurrent;
     internal Action<NativeActionUnavailable>? Unavailable;
     internal DriveToPoseAction? Drive {get;private set;}
+    internal ObservableObject? C2ChargerGeometry { get; set; }
+    private ObservableObject? Geometry(ObservableObject actual)
+    {
+        if (C2ChargerGeometry is not { } fused) return actual;
+        return ScopedOwner is { } owner && actual.ObjectId==fused.ObjectId &&
+            PoseTreeNode.HasSameRoot(fused.NativePose.Node,owner.GetNativeOrigin(owner.CurrentOriginId).Node) ? fused : null;
+    }
     internal Action<IReadOnlyList<ActionRunner>>? BeforeInitialUpdateForTest;
     protected override string ActionName=>"DriveToObject";
     public override string? NativeName=>ActionName;
@@ -53,7 +60,11 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
         var obj=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);
         // 0x00559670..0x00559696: cast to ActionableObject, which includes the charger.
         if(obj is null||!obj.IsActive)return 0x03000004;
-        int result=InitHelper(obj);
+        // C2 dock supplies an owned flat charger snapshot only to the
+        // InitHelper pre-action reader (0x005592E8) and final admission check.
+        var geometry=Geometry(obj);
+        if(geometry is null)return 0x03000005;
+        int result=InitHelper(geometry);
         if(!ExecutionCurrent())return unchecked((int)EngineActionResult.Cancelled);
         if(CozmoCubes.IsLightCube(obj.Type)&&!_light)
         {
@@ -119,7 +130,9 @@ internal class NativeDriveToObjectRunner:NativeVisionRunner
         var obj=M.World.GetLocatedObjectByIdHelper(Action.ObjectId);
         if(obj is null)return 0x03000004;
         Action.LastPreActionCheckForDiagnostics=null;
-        bool inPosition=false;var checkedResult=Action.PosesFunction(obj,out _,ref inPosition);
+        var geometry=Geometry(obj);
+        if(geometry is null)return 0x03000005;
+        bool inPosition=false;var checkedResult=Action.PosesFunction(geometry,out _,ref inPosition);
         if(!ExecutionCurrent())return EngineActionResult.Cancelled;
         if(!inPosition)
         {
