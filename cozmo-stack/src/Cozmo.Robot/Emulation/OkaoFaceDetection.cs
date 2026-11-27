@@ -18,9 +18,10 @@ public sealed record OkaoRawFace(int Return, int[] Words)
 /// <summary>The result of one <c>OKAO_DT_Detect_GRAY</c> call and the reads after it.</summary>
 public sealed record OkaoDetectResult(int Return, int CountReturn, IReadOnlyList<OkaoRawFace> Faces);
 
-internal sealed class FaceGuestFailure(string key,uint result) : Exception(key)
+internal sealed class FaceGuestFailure(string key,uint result,string detail = "") : Exception(key)
 {
     internal string Key { get; }=key;
+    internal string Detail { get; }=detail;
     internal uint Result { get; }=result;
 }
 
@@ -34,16 +35,16 @@ internal sealed class FaceGuestFailure(string key,uint result) : Exception(key)
 public sealed partial class OkaoFaceDetection : IDisposable
 {
     public const int RawWords = 16;
-    private static readonly (string Name, uint[] Args)[] Setup =
+    private static readonly (string Name, string FailureSuffix, uint[] Args)[] Setup =
     {
-        ("OKAO_DT_MV_SetDelayCount", new uint[] { 1 }),            // 0x0086B984
-        ("OKAO_DT_MV_SetSearchCycle", new uint[] { 2, 2, 5 }),     // 0x0086BC40..48
-        ("OKAO_DT_MV_SetDirectionMask", new uint[] { 0 }),         // 0x0086BD0A..0E
-        ("OKAO_DT_MV_SetPoseExtension", new uint[] { 1, 1 }),      // 0x0086BEA2..A8
-        ("OKAO_DT_MV_SetAccuracy", new uint[] { 0 }),              // 0x0086BF6A..6E
-        ("OKAO_DT_SetAngle", new uint[] { 1, 0x803803 }),          // 0x0086B77E..88
-        ("OKAO_DT_SetSizeRange", new uint[] { 48, 640 }),          // 0x0086B7F0 / 0x0086B7F4
-        ("OKAO_DT_SetThreshold", new uint[] { 500 }),              // 0x0086B9F2
+        ("OKAO_DT_MV_SetDelayCount", "DelayCount", new uint[] { 1 }),            // 0x0086B984
+        ("OKAO_DT_MV_SetSearchCycle", "SearchCycle", new uint[] { 2, 2, 5 }),     // 0x0086BC40..48
+        ("OKAO_DT_MV_SetDirectionMask", "DirectionMask", new uint[] { 0 }),         // 0x0086BD0A..0E
+        ("OKAO_DT_MV_SetPoseExtension", "PoseExtension", new uint[] { 1, 1 }),      // 0x0086BEA2..A8
+        ("OKAO_DT_MV_SetAccuracy", "Accuracy", new uint[] { 0 }),              // 0x0086BF6A..6E
+        ("OKAO_DT_SetAngle", "Angle", new uint[] { 1, 0x803803 }),          // 0x0086B77E..88
+        ("OKAO_DT_SetSizeRange", "Size\u0012Range", new uint[] { 48, 640 }),          // 0x0086B7F0 / 0x0086B7F4
+        ("OKAO_DT_SetThreshold", "Threshold", new uint[] { 500 }),              // 0x0086B9F2
     };
 
     private readonly ArmMachine _m;
@@ -58,6 +59,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
     private uint _pt, _ptResult, _scratch;
     private readonly EngineRandom _faceOrder = new(1);
     internal Action<string>? Diagnostic { get; set; }
+    internal Action<string,string>? SourceWarning { get; set; }
 
     public OkaoFaceDetection(string libDir, byte poison = 0x00)
         : this(libDir,poison,false)
@@ -77,7 +79,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
             _co = _m.Call(_m.Symbol("OKAO_CO_CreateHandle"));                         // 0x0086B598
             _dt = _m.Call(_m.Symbol("OKAO_DT_CreateHandle"), new uint[] { _co, 5, 10 }); // video mode, 0x0086B96E
             if (_co == 0 || _dt == 0) throw new EmulationAbort("OKAO handle creation returned null");
-            foreach (var (name, args) in Setup)
+            foreach (var (name, _, args) in Setup)
             {
                 var a = new uint[args.Length + 1];
                 a[0] = _dt;
@@ -117,11 +119,12 @@ public sealed partial class OkaoFaceDetection : IDisposable
     {
         _co=StockCreate("OKAO_CO_CreateHandle","FaceTrackerImpl.Init.FaceLibCommonHandleNull");
         _dt=StockCreate("OKAO_DT_CreateHandle","FaceTrackerImpl.Init.FaceLibDetectionHandleAllocFail.VideoMode",_co,5,10);
-        foreach(var (name,args) in Setup)
+        foreach(var (name,failureSuffix,args) in Setup)
         {
             var input=new uint[args.Length+1];input[0]=_dt;args.CopyTo(input,1);
             int rc=unchecked((int)_m.Call(_m.Symbol(name),input));
-            if(rc!=0)throw new FaceGuestFailure($"MISSING M11-016 native diagnostic for {name}",0x03000000);
+            if(rc!=0)throw new FaceGuestFailure($"FaceTrackerImpl.Init.FaceLibSet{failureSuffix}Failed",0x03000000,
+                name == "OKAO_DT_SetThreshold" ? $"FaceLib Result Code={rc}" : "");
         }
         _res=StockCreate("OKAO_DT_CreateResultHandle","FacetrackerImpl.Init.FaceLibDetectionResultHandleAllocFail",_co);
         _pt=StockCreate("OKAO_PT_CreateHandle","FacetrackerImpl.Init.FaceLibPartDetectorHandleAllocFail",_co);
@@ -193,10 +196,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 if (mode != 0) throw new EmulationAbort($"OKAO_PT_SetConfMode returned {mode}");
                 _ptResult = _m.Call(_m.Symbol("OKAO_PT_CreateResultHandle"), new[] { _co });
                 if (_ptResult == 0) throw new EmulationAbort("OKAO_PT_CreateResultHandle returned null");
-                _scratch = _m.Malloc(256);
-                if (_scratch == 0) throw new EmulationAbort("OKAO part output allocation failed");
             }
-            if (_scratch==0) { _scratch=_m.Malloc(256); if(_scratch==0)throw new EmulationAbort("OKAO part output allocation failed"); }
             if ((attributeMask & 0x3C00) != 0) EnsureAttributeHandles();
             if (recognize is not null && _frPtResult == 0)
             {
@@ -235,17 +235,12 @@ public sealed partial class OkaoFaceDetection : IDisposable
             {
                 int[]? raw = ReadRaw((uint)index);
                 if (raw is null) break;
-                _m.Fill(_scratch, 256, 0);
-                result = unchecked((int)_m.Call(_m.Symbol("OKAO_CO_ConvertCenterToSquare"),
-                    new[] { unchecked((uint)raw[4]), unchecked((uint)raw[5]), unchecked((uint)raw[7]), 0u },
-                    new[] { _scratch, _scratch + 8, _scratch + 16, _scratch + 24 }));
-                if (result != 0)
+                var partialFace = ReadFaceRectangle(raw, index, count, out var rect);
+                if (partialFace is not null)
                 {
-                    Diagnostic?.Invoke($"MISSING M14-010 CO_ConvertCenterToSquare returned {result}; native retains the partially constructed face");
+                    faces.Add(partialFace);
                     break;
                 }
-                int x = unchecked((int)_m.R32(_scratch)), y = unchecked((int)_m.R32(_scratch + 4));
-                int right = unchecked((int)_m.R32(_scratch + 24)), bottom = unchecked((int)_m.R32(_scratch + 28));
                 Vec2? leftEye = null, rightEye = null;
                 double? roll = null;
                 int? third = null;
@@ -288,7 +283,7 @@ public sealed partial class OkaoFaceDetection : IDisposable
                 if (result != 0 && result != -8) Diagnostic?.Invoke($"M14-010 OKAO parts returned {result}");
                 var attributes = partsReady && (attributeMask & 0x3C00) != 0
                     ? ReadAttributes(attributeMask, width, height) : NativeFaceAttributes.Default;
-                var face = new DetectedFace(unchecked(-raw[2]), new FaceRect(x, y, right - x, bottom - y), leftEye, rightEye,
+                var face = new DetectedFace(unchecked(-raw[2]), rect, leftEye, rightEye,
                     ExpressionValues: (attributeMask & (1 << 10)) != 0 ? attributes.Scores : null, Score: raw[3], RollRad: roll) { NativeFaceDirectionThirdDegrees = third, NativeTrackerFlagChanged = raw[11] != 0x100, NativeFeatures = features, NativeAttributes = attributes, NativeFacingCamera = facing, NativeNameBytes = Array.Empty<byte>() };
                 bool enrollable = IsEnrollableDefaultPose(raw[3], raw[9], facing,
                     leftEye is { } le && rightEye is { } re && roll is { } angle ? TrackedFace.GetIntraEyeDistance(le, re, angle) : null);
@@ -313,6 +308,33 @@ public sealed partial class OkaoFaceDetection : IDisposable
     /// </summary>
     internal static bool IsEnrollableDefaultPose(int confidence, int detectionWord24, bool facing, double? eyeDistance) =>
         confidence > 500 && detectionWord24 == 0 && eyeDistance is { } distance && distance >= 16 && facing;
+
+    internal DetectedFace? ReadFaceRectangle(int[] raw, int index, uint count, out FaceRect rect)
+    {
+        if (_scratch == 0) _scratch = _m.Malloc(256);
+        if (_scratch == 0) throw new EmulationAbort("OKAO part output allocation failed");
+        _m.Fill(_scratch, 256, 0);
+        int rc = unchecked((int)_m.Call(_m.Symbol("OKAO_CO_ConvertCenterToSquare"),
+            new[] { unchecked((uint)raw[4]), unchecked((uint)raw[5]), unchecked((uint)raw[7]), 0u },
+            new[] { _scratch, _scratch + 8, _scratch + 16, _scratch + 24 }));
+        if (rc == 0)
+        {
+            int x = unchecked((int)_m.R32(_scratch)), y = unchecked((int)_m.R32(_scratch + 4));
+            int right = unchecked((int)_m.R32(_scratch + 24)), bottom = unchecked((int)_m.R32(_scratch + 28));
+            rect = new(x, y, right - x, bottom - y);
+            return null;
+        }
+        // 0x86D964..0x86D99E appended the default face and wrote its tracking flag.
+        // 0x86DDEA skips the rectangle and timestamp writes and ends this update.
+        rect = default;
+        SourceWarning?.Invoke("FaceTrackerImpl.Update.FaceLibCenterToSquareFail",
+            $"Detection index {index} of {count}. FaceLib Result Code={rc}");
+        return new DetectedFace(0, rect) {
+            NativeSquareConversionFailed = true, NativeTrackerFlagChanged = raw[11] != 0x100,
+            NativeFeatures = NativeFaceFeatures.Empty, NativeAttributes = NativeFaceAttributes.Default,
+            NativeNameBytes = Array.Empty<byte>()
+        };
+    }
 
     private int[]? ReadRaw(uint index)
     {

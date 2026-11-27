@@ -210,8 +210,7 @@ public sealed partial class VisionSystem
                 catch(Emulation.FaceGuestFailure failure)
                 {
                     detector.SetStockStatus(2);
-                    if(failure.Key.StartsWith("MISSING ",StringComparison.Ordinal))SteppedBehavior.ReportMissing(failure.Key);
-                    else _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,failure.Key,"");
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,failure.Key,failure.Detail);
                     if(!current())return;
                     EngineErrorState.StoreAndMaybeBreak();
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"FaceTrackerImpl.Constructor.InitFailed","");

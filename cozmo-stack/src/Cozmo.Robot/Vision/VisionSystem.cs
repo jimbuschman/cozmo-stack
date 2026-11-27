@@ -941,7 +941,8 @@ public sealed partial class VisionSystem : IDisposable
     public FaceWorld Faces { get; } = new();
     public PetWorld Pets { get; } = new();
     private OkaoFaceDetector _stockFaceDetector;
-    private OkaoFaceDetector CreateStockFaceDetector() => new() { Diagnostic = message => SteppedBehavior.ReportMissing(message) };
+    private OkaoFaceDetector CreateStockFaceDetector() => new() { Diagnostic = message => SteppedBehavior.ReportMissing(message),
+        SourceWarning = (key,text) => _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,key,text) };
     /// <summary>The stock detector uses the shipped OKAO library when present; callers may supply another detector.</summary>
     public IFaceDetector FaceDetector { get; set; }
     // fidelity: M14-011
