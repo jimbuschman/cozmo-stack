@@ -83,6 +83,7 @@ Candidates so far:
   face nearest the last tracked position across face-ID changes.
 - **C2:link-reconnect** repeats the startup gate on Wi-Fi timeout and reports the new connection and lost state through the same MCP session. Robot validation pending.
 - **C2:face-requests** searches for a fresh face before a native approach or face-directed response. Robot validation pending.
+- **C2:map-explore** runs bounded look-around and planned legs with remembered-hazard avoidance, observations and cliff, pickup or cancellation stops. Robot validation pending.
 - **C2:go-home** returns to the remembered charger using a native look-around, planned approach and charger dock. Robot validation pending.
 - **C2:map-save** persists room maps per robot body serial and restores them unanchored on connection. Robot validation pending.
 - **C2:map-obstacle-memory** retains hazard footprints for 24 hours and carries them into collision checks after a map rejoin. Robot validation pending.
