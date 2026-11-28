@@ -17,7 +17,7 @@ public sealed partial class CozmoBridge
         "face-recognised", "face-seen", "cube-seen", "charger-seen", "object-seen", "object-pose-lost",
         "cube-tapped", "cube-moved", "off-treads-changed", "cliff-detected", "unexpected-movement",
         "reaction-changed", "behavior-request-not-runnable", "hiccups-started", "action-completed", "going-to-sleep", "sleep-cancelled", "robot-disconnected",
-        "low-battery", "on-charger", "off-charger", "link-lost", "reconnected",
+        "low-battery", "on-charger", "off-charger", "link-lost", "link-still-lost", "reconnected",
     };
 
     private readonly object eventCaller = new();
