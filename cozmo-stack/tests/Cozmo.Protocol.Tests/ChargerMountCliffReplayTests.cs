@@ -19,8 +19,10 @@ public sealed class ChargerMountCliffReplayTests
     private static string? SessionFive => Environment.GetEnvironmentVariable("COZMO_SESSION5_CHARGER_BUNDLE");
     private static string? SessionSix => Environment.GetEnvironmentVariable("COZMO_SESSION6_CHARGER_BUNDLE");
 
-    [Fact]
-    public async Task WifiTimeoutReconnectsThroughReadinessAndPublishesOnlyAfterTheNewHandshake()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task WifiTimeoutReconnectsThroughReadinessAndPublishesOnlyAfterTheNewHandshake(int failedGates)
     {
         using var f = new Fixture(sourceNvEmpty: true, engineOptions: new CozmoEngineOptions {
             ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath = "",
@@ -32,18 +34,28 @@ public sealed class ChargerMountCliffReplayTests
         await client.Initialize();
         var attempt = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var restored = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int attempts = 0, failed = 0;
+        using var cancellation = new CancellationTokenSource();
         await using var recovery = new Cozmo.Mcp.C2LinkRecovery(rig.Robot, bridge, M4ControlTests.Rig.RobotIp,
             _ => { }, (kind, data) => {
+                if (kind == "reconnect-attempt") Interlocked.Increment(ref attempts);
+                if (kind == "reconnect-gate" && !data.GetProperty("ready").GetBoolean()) Interlocked.Increment(ref failed);
                 if (kind == "reconnect-gate" && data.GetProperty("ready").GetBoolean()) attempt.TrySetResult();
                 if (kind == "reconnected") restored.TrySetResult();
-            }, CancellationToken.None);
+            }, cancellation.Token, ct => Volatile.Read(ref failed) < failedGates
+                ? new Cozmo.Conformance.HarnessStartup.Gate(Cozmo.Conformance.HarnessStartup.Outcome.TimedOut, 1, null, 1)
+                : Cozmo.Conformance.HarnessStartup.ConnectAfterReadiness(rig.Robot, () => rig.Robot.ConnectToRobot(M4ControlTests.Rig.RobotIp), () => ct.IsCancellationRequested),
+            retryInterval: TimeSpan.FromMilliseconds(40), lostInterval: TimeSpan.FromMilliseconds(20));
         rig.Port.TimedOut = true;
         rig.Port.Raise(ReceiverMarker.OnDisconnected, M4ControlTests.Rig.RobotEp);
         rig.Tick();
         await attempt.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Equal(failedGates, Volatile.Read(ref failed));
+        Assert.Equal(failedGates + 1, Volatile.Read(ref attempts));
         var before = bridge.ReadEvents().GetProperty("events").EnumerateArray().ToArray();
         Assert.Single(before, e => e.GetProperty("type").GetString() == "link-lost");
         Assert.DoesNotContain(before, e => e.GetProperty("type").GetString() == "reconnected");
+        if (failedGates > 0) Assert.Contains(before, e => e.GetProperty("type").GetString() == "link-still-lost");
         rig.Port.TimedOut = false;
         rig.Tick();
         rig.Port.Raise(ReceiverMarker.OnConnected, M4ControlTests.Rig.RobotEp);
@@ -62,6 +74,30 @@ public sealed class ChargerMountCliffReplayTests
         Assert.Equal(new[] { "actions", "map origin", "face IDs" }, events[1].GetProperty("payload")
             .GetProperty("lostState").EnumerateArray().Select(e => e.GetString()));
         Assert.True(Data(await client.Tool("get_state", new { })).GetProperty("connection").GetProperty("connected").GetBoolean());
+    }
+
+    [Fact]
+    public async Task WifiRetryCancellationStopsBeforeAnotherGate()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        using var cancel = new CancellationTokenSource();
+        int attempts = 0;
+        var failed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using (var recovery = new Cozmo.Mcp.C2LinkRecovery(f.Rig.Robot, bridge, M4ControlTests.Rig.RobotIp,
+            _ => { }, (kind, data) => {
+                if (kind == "reconnect-attempt") Interlocked.Increment(ref attempts);
+                if (kind == "reconnect-gate") { cancel.Cancel(); failed.TrySetResult(); }
+            }, cancel.Token, _ => new Cozmo.Conformance.HarnessStartup.Gate(
+                Cozmo.Conformance.HarnessStartup.Outcome.TimedOut, 1, null, 1),
+            retryInterval: TimeSpan.FromMilliseconds(10)))
+        {
+            f.Rig.Port.TimedOut = true;
+            f.Rig.Port.Raise(ReceiverMarker.OnDisconnected, M4ControlTests.Rig.RobotEp);
+            f.Rig.Tick();
+            await failed.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        }
+        Assert.Equal(1, Volatile.Read(ref attempts));
     }
 
     [Theory]
