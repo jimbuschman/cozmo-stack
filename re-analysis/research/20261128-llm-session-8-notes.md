@@ -20,7 +20,7 @@ Pass/fail follows engine signals. Everything else is an observation.
 | go home | PARTIAL | Run 1: cliff during the 360° scan, so it stopped. Run 2: scan timed out on the slope. Run 3 (Claude found the charger visually first): **docked**, but the tool reported NOT_ON_CHARGER; see G1. Later runs: every route refused; see G2. |
 | cliff hold-still | **PASS** | C2:cliff-hold-still held the body through anim_reacttocliff_huh_01 and anim_reacttocliff_edge_01, released on Undetected, then the engine's own retreat DriveStraight ran. The operator confirmed it looked right. **Addresses R4 (session 7 desk fall).** |
 | IR headlight (set-headlight) | PASS (observation) | Room light off: exposure climbed to 67 ms (the maximum). Headlight on: it dropped to 15–20 ms. The robot does not report the headlight's state. |
-| sleep on charger, link drop | PASS (drop no longer occurs) | Asleep and on the charger 16:25:21 to 16:29:24+ UTC, with no WifiTimeout and the link Connected throughout. Previously it dropped within 11–25 s (R5). **link-reconnect was not exercised**, because no drop occurred. |
+| sleep on charger, link drop | PASS (R5 WifiTimeout gone) | Asleep and on the charger from 16:25:21 UTC, with no WifiTimeout. Previously it dropped within 11–25 s (R5). At 16:30:51 (about 5.5 min) came `robot-disconnected reason=SleepPlacedOnCharger`: the engine's scheduled sleep disconnect (`ChargerBehaviors.cs:276-277`, StartIdleTimeout with TimeTilDisconnectionSec), as the original does. The bridge tore down cleanly. **link-reconnect was not exercised**: it covers WifiTimeout only, and none occurred. |
 
 ## Findings for the code side
 
