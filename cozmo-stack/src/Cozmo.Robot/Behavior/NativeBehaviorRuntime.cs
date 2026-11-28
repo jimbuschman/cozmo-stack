@@ -452,7 +452,7 @@ internal sealed class NativeBehaviorRuntime : IDisposable
                         _facade.Sensors.CliffDetectedByEvent || _facade.Sensors.CliffDetectedNow)
                         return "scan interrupted by pickup or cliff";
                     if (found()) return null;
-                    if (!ReferenceEquals(_hostBehaviorRequest, request)) return "scan ended without finding the requested landmark";
+                    if (!ReferenceEquals(_hostBehaviorRequest, request)) return "scan ended without finding the requested target";
                     if (request.LastReportedBlock is { } reason) return "scan blocked: " + reason;
                 }
                 await Task.Delay(50, timeout.Token).ConfigureAwait(false);

@@ -48,6 +48,45 @@ public sealed class NativeDriveToFaceTests
     }
 
     [Theory]
+    [InlineData("search-for-face")]
+    [InlineData("come-here")]
+    [InlineData("face-directed-response")]
+    public async Task C2RequestsFindANewObservationWhenTheKnownFaceIsStale(string command)
+    {
+        using var f = new Fixture(preloadAnimations:true, pumpAnimations:true, sourceNvEmpty:true, engineOptions:new CozmoEngineOptions {
+            ResourcesPath=PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath="",
+            C2=CozmoC2Settings.McpDefaults });
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        See(f, 350);
+        f.Rig.ContinueRobotTimestampAfterReplay(f.Robot.StoredState!.Timestamp + 3000);
+        f.Motors();
+        var pending = BridgeCommandTests.Invoke(bridge, command, "{}");
+        Assert.Contains(f.Rig.Log, line => line.Contains("requesting native FindFaces scan"));
+        Assert.False(pending.IsCompleted);
+        f.Rig.Tick();
+        See(f, 350);
+        int animationMark = f.Rig.Mark();
+        for (int i = 0; i < 200 && !pending.IsCompleted; i++)
+        {
+            f.Motors();
+            See(f, 350);
+            AcknowledgeAnimation(f, ref animationMark);
+            await Task.Delay(5);
+        }
+        var result = await pending.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Equal(-7, result.GetProperty("report").GetProperty("faceId").GetInt32());
+        if (command == "come-here")
+        {
+            Assert.Equal("submitted", result.GetProperty("status").GetString());
+            f.Rig.Tick();
+            Assert.Same(Behavior(f), f.Robot.BehaviorManagerOwner!.Current);
+            Assert.Equal(-7, Behavior(f).TargetId);
+        }
+        if (command == "face-directed-response")
+            Assert.Contains(f.Rig.Log, line => line.Contains("playing response to face -7"));
+    }
+
+    [Theory]
     [InlineData("VC_SearchForFace")]
     [InlineData("VC_ComeHere")]
     public async Task RequestedVoiceFaceBehaviorStartsItsConfiguredNativeRunner(string behaviorId)
