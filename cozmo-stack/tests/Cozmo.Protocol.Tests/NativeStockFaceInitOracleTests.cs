@@ -21,6 +21,26 @@ public sealed class NativeStockFaceInitOracleTests
         Assert.Equal("OKAO_CO_DeleteHandle",order[^1]);
         Assert.Equal(2,order.Count(name=>name=="OKAO_FR_DeleteFeatureHandle"));
     }
+    [Fact]
+    public void RejectedSquareRetainsTheFreshFaceAndEmitsTheGuestWarning()
+    {
+        string? libraries=ShippedLibraries.FindLibDir();if(libraries is null)return;
+        using var guest=new OkaoFaceDetection(libraries,0,true);
+        var warnings=new List<(string Key,string Text)>();
+        guest.SourceWarning=(key,text)=>warnings.Add((key,text));
+        var raw=new int[12];
+        raw[4]=100; raw[5]=100; raw[7]=19; // The native helper rejects sizes below 20.
+        var face=Assert.IsType<Cozmo.Robot.Vision.DetectedFace>(guest.ReadFaceRectangle(raw,2,3,out var rect));
+        Assert.Equal(default,rect);
+        Assert.Equal(0,face.Id);
+        Assert.True(face.NativeTrackerFlagChanged);
+        Assert.Equal(0u,new Cozmo.Robot.Vision.TrackedFace(face,123).Timestamp);
+        Assert.Equal(("FaceTrackerImpl.Update.FaceLibCenterToSquareFail","Detection index 2 of 3. FaceLib Result Code=-3"),Assert.Single(warnings));
+        raw[7]=48;
+        Assert.Null(guest.ReadFaceRectangle(raw,2,3,out rect));
+        Assert.True(rect.Width>0);
+        Assert.Single(warnings);
+    }
     [Theory]
     [InlineData((byte)0)]
     [InlineData((byte)0xA5)]

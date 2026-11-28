@@ -31,6 +31,7 @@ public readonly record struct FaceRect(double X, double Y, double Width, double 
 public sealed record DetectedFace(int Id, FaceRect Rect, Vec2? LeftEye = null, Vec2? RightEye = null, IReadOnlyList<byte>? ExpressionValues = null, string? Name = null, int Score = 0, double? RollRad = null)
 {
     public int? NativeFaceDirectionThirdDegrees { get; init; }
+    internal bool NativeSquareConversionFailed { get; init; }
     internal bool? NativeTrackerFlagChanged { get; init; }
     internal int NativeEnrollmentCount { get; init; }
     internal NativeFaceFeatures? NativeFeatures { get; init; }
@@ -94,6 +95,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
     private bool _pendingRegistrationAllowed;
     internal bool RecognitionWorkCompleted { get { lock (_gate) return _recognitionWorker is { IsCompleted: true }; } }
     internal Action<string>? Diagnostic { get; set; }
+    internal Action<string,string>? SourceWarning { get; set; }
     public OkaoFaceDetector()
     {
         _libDir = Emulation.ShippedLibraries.FindLibDir();
@@ -138,6 +140,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
         FaceRecognizer? recognizer, List<(int OldId, int NewId, string? Name)>? changes, int attributeMask)
     {
         var diagnostics = new List<string>();
+        (string Key,string Text)? warning = null;
         IReadOnlyList<DetectedFace> faces;
         lock (_gate)
         {
@@ -154,6 +157,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
                     catch { _faulted = true; throw; }
                 }
                 _detector.Diagnostic = diagnostics.Add;
+                _detector.SourceWarning = (key,text) => warning = (key,text);
                 if (resetTracking)
                 {
                     _detector.ResetTracking();
@@ -216,6 +220,7 @@ public sealed class OkaoFaceDetector : IFaceDetector, IDisposable
             catch { _faulted = true; throw; }
         }
         foreach (string message in diagnostics) Diagnostic?.Invoke(message);
+        if (warning is { } native) SourceWarning?.Invoke(native.Key,native.Text);
         return faces;
     }
     internal static void AppendStockFaceIdChanges(List<(int OldId, int NewId, string? Name)> changes,
@@ -280,7 +285,7 @@ public sealed class TrackedFace
     /// <summary>The binary32 literal 0x42780000 = 62.0 at 0x0087E084, loaded by the vldr at 0x0087E014 (<see cref="InterPupilDistanceMm"/>).</summary>
     public const uint InterPupilBits = 0x42780000;
 
-    public TrackedFace(DetectedFace d, uint timestamp) { Detection = d; Timestamp = timestamp; }
+    public TrackedFace(DetectedFace d, uint timestamp) { Detection = d; Timestamp = d.NativeSquareConversionFailed ? 0 : timestamp; }
 
     public DetectedFace Detection { get; }
     // OKAO successful third direction output, native TrackedFace+0xDC (not +0xEC RollRad).

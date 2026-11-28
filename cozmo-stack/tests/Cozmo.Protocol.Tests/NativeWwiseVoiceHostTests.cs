@@ -310,7 +310,7 @@ public sealed class NativeWwiseVoiceHostTests
         abrupt.Post(samples, 22050);
         abrupt.Dispose();
         Assert.False(abrupt.TerminatedCleanly);
-        Assert.Contains("MISSING", abrupt.ShutdownDiagnostic);
+        Assert.Contains("Wwise output stopped before native event and effect completion", abrupt.ShutdownDiagnostic);
         Assert.Throws<ObjectDisposedException>(() => abrupt.Step(1, false));
     }
 

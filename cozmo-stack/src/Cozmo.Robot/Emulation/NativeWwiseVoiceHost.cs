@@ -59,16 +59,22 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     }
 
     /// <summary>Runs native termination after completion, then releases the guest machine.</summary>
-    public void Dispose()
+    public void Dispose() => Release(null);
+
+    internal void ReleaseAfterFailure(Exception cause) => Release(cause);
+
+    private void Release(Exception? cause)
     {
         if (Environment.CurrentManagedThreadId != _thread) throw new InvalidOperationException("native voice host must remain on its owner thread");
         if (_disposed) return;
         _disposed = true;
         try
         {
-            if (_archiveIo is not null ? (_sharedEvents.Count != 0 || _activeHijack != 0) : (_posted && (EndOfEvent is null || !_hijackEnded)))
+            if (!IsQuiescent)
             {
-                ShutdownDiagnostic = "MISSING VOICE-LIVE-SINK-1: native session released before EndOfEvent and Hijack Term; graceful teardown was not run";
+                ShutdownDiagnostic = cause is null
+                    ? "Wwise output stopped before native event and effect completion. The active guest was released."
+                    : $"Wwise output failed before native event and effect completion. The active guest was released. {cause.Message}";
                 return;
             }
             if (_offered && !_posted) Run(0x8DC229, new[] { _interface });
@@ -402,7 +408,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     internal void RequestMusicState(uint state, bool interrupt, uint minimumMilliseconds)
     {
         RequireOwner();
-        if (_musicConductor == 0) throw new InvalidOperationException("MISSING: shared music bank is unavailable");
+        if (_musicConductor == 0) throw new InvalidOperationException("Music.bnk is unavailable");
         Run(0x8D74E1, new[] { _musicConductor, state, interrupt ? 1u : 0u, minimumMilliseconds });
     }
 
@@ -434,7 +440,7 @@ internal sealed class NativeWwiseVoiceHost : IDisposable
     internal void StopMusic()
     {
         RequireOwner();
-        if (_musicConductor == 0) throw new InvalidOperationException("MISSING: shared music bank is unavailable");
+        if (_musicConductor == 0) throw new InvalidOperationException("Music.bnk is unavailable");
         Run(0x8D7759, new[] { _musicConductor });
     }
 

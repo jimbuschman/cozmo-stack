@@ -82,7 +82,7 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
         lock (_gate)
         {
             if (_closing || _failure is not null) return Task.FromException(new InvalidOperationException("shared audio owner retired"));
-            if (_musicBank is null) return Task.FromException(new InvalidOperationException("MISSING: shared music bank is unavailable"));
+            if (_musicBank is null) return Task.FromException(new InvalidOperationException("Music.bnk is unavailable"));
             _musicPending = true;
             long version = ++_musicRequestVersion;
             return Enqueue(host =>
@@ -434,7 +434,8 @@ internal sealed class NativeWwiseVoiceSession : IWwiseRobotAudioEngine
             catch (Exception ex) { lock (_gate) _failure ??= ex; }
             try
             {
-                host?.Dispose();
+                if (Failure is { } cause) host?.ReleaseAfterFailure(cause);
+                else host?.Dispose();
                 if (host?.ShutdownDiagnostic is not null)
                     lock (_gate) _failure ??= new InvalidOperationException(host.ShutdownDiagnostic);
             }
