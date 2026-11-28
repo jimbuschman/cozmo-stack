@@ -34,7 +34,7 @@ public sealed partial class CozmoRobot
         var owner = Engine.Robot;
         var manipulation = owner?.NativeBehaviorRuntime?.Manipulation;
         if (manipulation is null)
-            throw new InvalidOperationException("MISSING: M15-022 original ground-placement owners unavailable");
+            throw new InvalidOperationException("Ground placement requires a connected robot with an active manipulation system.");
         return manipulation.PlaceObjectOnGroundAsync(owner, cancellationToken);
     }
 }

@@ -263,7 +263,7 @@ public class M4AbortSleepTests
         Assert.Equal(1, rig.LogLines().Count(l => l == "MISSING: TEST-RECORD | a handoff"));
         int before = rig.LogLines().Count;
         rig.Robot.Dispose();
-        Assert.Contains(rig.LogLines().Skip(before),line=>line.Contains("M8-023/M8-027")); // visible shutdown gap, not a post-disposal delivery.
+        Assert.DoesNotContain(rig.LogLines().Skip(before),line=>line.Contains("M8-023/M8-027"));
         int afterShutdown = rig.LogLines().Count;
         Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TEST-RECORD | after dispose");
         Assert.Equal(afterShutdown, rig.LogLines().Count);
