@@ -326,7 +326,7 @@ public sealed class CozmoMcpServer(CozmoBridge bridge, Action<string>? diagnosti
             bool failed = result.TryGetProperty("truncatedByRobot", out var truncated) && truncated.ValueKind == JsonValueKind.True ||
                 result.TryGetProperty("error", out _) ||
                 result.TryGetProperty("admitted", out var admitted) && admitted.ValueKind == JsonValueKind.False ||
-                result.TryGetProperty("status", out var status) && status.GetString() is "no-report" or "owner-retired" ||
+                result.TryGetProperty("status", out var status) && status.GetString() is "no-report" or "owner-retired" or "unknown" ||
                 result.TryGetProperty("engineResult", out var code) && code.ValueKind == JsonValueKind.Number && code.GetUInt32() != 0;
             return ToolResult(result, failed);
         }

@@ -11,7 +11,13 @@ public sealed partial class CozmoBridge
     private async Task<CommandResult> TrackFace(int faceId, bool headOnly, CancellationToken token)
     {
         uint? admittedTag = null;
-        var completion = Robot.Motion.QueueAiTrackFaceAsync(faceId, headOnly, token, tag => admittedTag = tag);
+        var intent = activeIntent.Value;
+        var completion = Robot.Motion.QueueAiTrackFaceAsync(faceId, headOnly, token, tag =>
+        {
+            admittedTag = tag;
+            lock (eventGate)
+                if (intent is not null && intent.Session == outcomeSession) trackingIntents[tag] = intent;
+        });
         if (admittedTag is not { } tag) return await FromAction(completion).ConfigureAwait(false);
         _ = ObserveTrackFaceCompletion(completion);
         return new CommandResult("submitted", true, null, null, "Native face tracking admitted; completion will be reported in events",

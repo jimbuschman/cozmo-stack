@@ -36,7 +36,31 @@ public sealed class BridgeCommandTests
         using var bridge = new CozmoBridge(f.Rig.Robot);
         var result = await Invoke(bridge, "turn-toward-image-point", """{"imageId":9,"x":90}""");
         Assert.False(result.GetProperty("admitted").GetBoolean());
+        Assert.Equal("not verified", result.GetProperty("outcome").GetProperty("physical").GetProperty("status").GetString());
         Assert.Contains("imageId", result.GetProperty("detail").GetString());
+    }
+
+    [Theory]
+    [InlineData("event cursor gap")]
+    [InlineData("bridge session ended")]
+    [InlineData("robot disconnected")]
+    public async Task EvidenceLossClosesPendingReceipts(string reason)
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot, eventCapacity: 2);
+        var call = Invoke(bridge, "turn-in-place", """{"angleRadians":1,"speedRadPerSec":1,"accelRadPerSec2":2}""");
+        var runner = Assert.IsType<NativeTurnInPlaceRunner>(f.Robot.ActionList.GetCurrentAction());
+        if (reason == "bridge session ended") bridge.Dispose();
+        else if (reason == "robot disconnected") bridge.ReportLinkRecovery("link-lost", reason);
+        else
+            for (int i = 0; i < 3; i++) bridge.ReportLinkRecovery("diagnostic", "fixture");
+        var result = await call.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal("unknown", result.GetProperty("status").GetString());
+        var receipt = result.GetProperty("outcome");
+        Assert.Equal(JsonValueKind.Null, receipt.GetProperty("terminalEngineResult").ValueKind);
+        Assert.Equal("unknown", receipt.GetProperty("physical").GetProperty("status").GetString());
+        Assert.Equal(reason, receipt.GetProperty("physical").GetProperty("reason").GetString());
+        Assert.Same(runner, f.Robot.ActionList.GetCurrentAction());
     }
 
     [Fact]
@@ -177,8 +201,51 @@ public sealed class BridgeCommandTests
         var result = await task.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(0u, result.GetProperty("engineResult").GetUInt32());
         Assert.False(result.GetProperty("report").GetProperty("facePoseAvailable").GetBoolean());
+        var outcome = result.GetProperty("outcome");
+        Assert.True(outcome.GetProperty("submitted").GetBoolean());
+        Assert.True(outcome.GetProperty("admitted").GetBoolean());
+        Assert.Equal(0u, outcome.GetProperty("terminalEngineResult").GetUInt32());
+        Assert.Equal("not verified", outcome.GetProperty("physical").GetProperty("status").GetString());
+        Assert.Contains("no target face pose", outcome.GetProperty("physical").GetProperty("reason").GetString());
         Assert.Contains("no turn target was available", result.GetProperty("detail").GetString());
         Assert.DoesNotContain(f.Rig.SentSince(mark), message => message is Cozmo.Protocol.SetHeadAngle or Cozmo.Protocol.SetBodyAngle);
+    }
+
+    [Fact]
+    public async Task SessionSevenFaceTurnWithNoObservationKeepsTheNativeResult()
+    {
+        string? bundle = Environment.GetEnvironmentVariable("COZMO_SESSION7_CLIFF_BUNDLE");
+        if (string.IsNullOrEmpty(bundle)) return;
+        var log = Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(bundle))!,
+            "20261126-095137-LLM-SESSION", "events.jsonl");
+        int? missingFace = null;
+        uint? recordedResult = null;
+        foreach (string line in File.ReadLines(log))
+        {
+            using var document = JsonDocument.Parse(line);
+            if (document.RootElement.ValueKind != JsonValueKind.Object || !document.RootElement.TryGetProperty("result", out var result) ||
+                result.ValueKind != JsonValueKind.Object ||
+                !result.TryGetProperty("structuredContent", out var data) || data.ValueKind != JsonValueKind.Object) continue;
+            if (data.TryGetProperty("knownFaces", out var faces))
+                foreach (var face in faces.EnumerateArray())
+                    if (face.GetProperty("lastObservedTimestamp").ValueKind == JsonValueKind.Null)
+                        missingFace = face.GetProperty("faceId").GetInt32();
+            if (data.TryGetProperty("events", out var events))
+                foreach (var entry in events.EnumerateArray())
+                    if (entry.GetProperty("type").GetString() == "action-completed" &&
+                        entry.GetProperty("payload").GetProperty("completion") is var completion &&
+                        completion.GetProperty("actionType").GetInt32() == 41)
+                        recordedResult = completion.GetProperty("result").GetUInt32();
+        }
+        Assert.Equal(1, missingFace);
+        Assert.Equal(0u, recordedResult);
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        var turn = bridge.ExecuteAsync("turn-to-face", JsonSerializer.SerializeToElement(new { faceId = missingFace, maximumTurnRadians = MathF.PI }));
+        f.Rig.Tick();
+        var reply = await turn.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(recordedResult, reply.GetProperty("engineResult").GetUInt32());
+        Assert.Equal("not verified", reply.GetProperty("outcome").GetProperty("physical").GetProperty("status").GetString());
     }
 
     [Theory]

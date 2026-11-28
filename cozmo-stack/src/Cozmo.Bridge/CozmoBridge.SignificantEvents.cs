@@ -20,7 +20,7 @@ public sealed partial class CozmoBridge
         "low-battery", "on-charger", "off-charger", "link-lost", "link-still-lost", "reconnected",
     };
 
-    private readonly object eventCaller = new();
+    private volatile object eventCaller = new();
     private readonly TimeProvider timeProvider;
     private readonly HashSet<string> significantTypes;
     private readonly HashSet<int> locatedFaces = [];
@@ -57,6 +57,8 @@ public sealed partial class CozmoBridge
         bool low = !contacts && float.IsFinite(state.BatteryVoltage) && state.BatteryVoltage < 3.5f;
         lock (eventGate)
         {
+            outcomeState = state;
+            outcomeStateTime = timeProvider.GetUtcNow();
             if (contacts != onCharger)
                 Add(contacts ? "on-charger" : "off-charger", new { isOnCharger = contacts }, state.Timestamp);
             onCharger = contacts;

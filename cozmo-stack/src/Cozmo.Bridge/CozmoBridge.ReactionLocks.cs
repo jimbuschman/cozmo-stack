@@ -76,6 +76,8 @@ public sealed partial class CozmoBridge
             using (Robot.Engine.EnterSynchronousOwner())
             {
                 owner = Robot.Engine.Robot;
+                if (activeIntent.Value?.Closed.Task.IsCompleted == true)
+                    return (new CommandResult("unknown", null, null, null, "intent closed before admission"), null);
                 if (waitingOwner is not null && (!ReferenceEquals(owner, waitingOwner) || waitingOwner.Lifetime.Destroying))
                     return (CommandResult.Action(false, null, "Robot owner retired while waiting for admission", true),
                         new(clock.Elapsed.TotalMilliseconds, reactions.ToArray(), false));

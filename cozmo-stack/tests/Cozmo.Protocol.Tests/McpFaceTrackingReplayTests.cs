@@ -140,6 +140,7 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
         Assert.Equal("submitted", cancel.GetProperty("status").GetString());
         for (int i = 0; i < 4; i++) Step(false);
         var trackReply = TrackCompletion(actionTag);
+        Assert.Equal("not verified", trackReply.GetProperty("outcome").GetProperty("physical").GetProperty("status").GetString());
         Assert.Equal("CANCELLED_WHILE_RUNNING", trackReply.GetProperty("resultName").GetString());
         // An unmatched fresh face is not a native ID remap. Ask get_state for the newest ID
         // and make a new request, rather than silently retargeting the first tracker.
@@ -177,6 +178,10 @@ public sealed class McpFaceTrackingReplayTests(ITestOutputHelper output)
         Assert.True(followBodyCommands > 0, "The retained face must produce a body correction on a later observation.");
         Assert.Contains(reports, report => report.FaceId == turnFaceId);
         Assert.True(Data(turnReply).GetProperty("report").GetProperty("facePoseAvailable").GetBoolean());
+        var observedTurn = Data(turnReply).GetProperty("outcome").GetProperty("physical");
+        Assert.Equal("verified", observedTurn.GetProperty("status").GetString());
+        Assert.Equal("face-seen", observedTurn.GetProperty("evidence").GetString());
+        Assert.True(observedTurn.GetProperty("ageMs").GetDouble() >= 0);
         Assert.Equal(turnFaceId, Data(turnReply).GetProperty("report").GetProperty("requestedFaceId").GetInt32());
         Assert.Equal(turnFaceId, Data(turnReply).GetProperty("report").GetProperty("faceId").GetInt32());
         Assert.Equal("completed", Data(turnReply).GetProperty("report").GetProperty("endReason").GetString());

@@ -194,13 +194,32 @@ public sealed partial class CozmoBridge : IDisposable
         }
 
         long callStartedAt = System.Diagnostics.Stopwatch.GetTimestamp();
-        long startCursor = CurrentEventCursor();
+        var intent = BeginIntent(command, parsed);
+        long startCursor = intent.Cursor;
         object? previousCaller = ActionRunner.CallerContext.Value;
         ActionRunner.CallerContext.Value = eventCaller;
         try
         {
             using var capture = new ActionWhyCapture(this);
-            var (result, admissionWait) = await ExecuteWithAdmissionWait(entry, parsed, capture, cancellationToken).ConfigureAwait(false);
+            var operation = ExecuteWithAdmissionWait(entry, parsed, capture, cancellationToken);
+            await Task.WhenAny(operation, intent.Closed.Task).ConfigureAwait(false);
+            if (!operation.IsCompleted)
+            {
+                // Loss of evidence closes the receipt. The native owner retains its action.
+                // Observe a possible late fault without replaying or cancelling physical work.
+                _ = operation.ContinueWith(t => _ = t.Exception, CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                string reason = await intent.Closed.Task.ConfigureAwait(false);
+                var unknown = new CommandResult("unknown", null, null, null, reason);
+                lock (eventGate)
+                {
+                    var closed = JsonSerializer.SerializeToNode(unknown, Json)!.AsObject();
+                    closed["outcome"] = DescribeOutcome(intent, unknown, closed);
+                    if (!disposed) AttachDuring(closed, startCursor, parsed.Text("duringDetail") == "full", null);
+                    return JsonSerializer.SerializeToElement(closed, Json);
+                }
+            }
+            var (result, admissionWait) = await operation.ConfigureAwait(false);
             if (command is "roll" or "turn-to-cube" && result.OwnedCompletionTag is { } interactionTag)
                 await WaitForOwnedCompletion(startCursor, interactionTag).ConfigureAwait(false);
             var response = System.Text.Json.JsonSerializer.SerializeToNode(result, Json)!.AsObject();
@@ -223,14 +242,24 @@ public sealed partial class CozmoBridge : IDisposable
                 response["why"] = capture.Describe(result, response["truncatedByRobot"]?.GetValue<bool>() == true);
             if (response.ContainsKey("why") && command is ("go-home" or "mount-charger" or "come-here" or "search-for-face" or "explore"))
                 response["help"] = JsonSerializer.SerializeToNode(FailureHelp(command, parsed), Json);
-            AttachDuring(response, startCursor, parsed.Text("duringDetail") == "full", result.OwnedCompletionTag);
+            var poseAfter = OutcomePose(command);
+            lock (eventGate)
+            {
+                response["outcome"] = DescribeOutcome(intent, result, response, poseAfter: poseAfter);
+                if (!disposed) AttachDuring(response, startCursor, parsed.Text("duringDetail") == "full", result.OwnedCompletionTag);
+            }
             return JsonSerializer.SerializeToElement(response, Json);
         }
         catch (InvalidOperationException error) when (error.Message.StartsWith("MISSING:", StringComparison.Ordinal))
         {
             return Error("unavailable", error.Message);
         }
-        finally { ActionRunner.CallerContext.Value = previousCaller; }
+        finally
+        {
+            lock (eventGate) pendingIntents.Remove(intent);
+            activeIntent.Value = null;
+            ActionRunner.CallerContext.Value = previousCaller;
+        }
     }
 
     private static JsonElement Error(string code, string message) =>

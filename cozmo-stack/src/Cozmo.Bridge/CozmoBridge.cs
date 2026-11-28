@@ -408,13 +408,20 @@ public sealed partial class CozmoBridge
     private void OnFreeplaySparksAwarded(FreeplaySparksAwardedReport report) => Add("freeplay-sparks-awarded", report);
     private void OnGoingToSleep(GoingToSleepReport report) => Add("going-to-sleep", report);
     private void OnChargerSleepCancelled(ChargerSleepCancelledReport report) => Add("sleep-cancelled", report);
-    internal void ReportLinkRecovery(string stage, string reason) =>
-        Add(stage, new { reason, lostState = new[] { "actions", "map origin", "face IDs" } });
+    internal void ReportLinkRecovery(string stage, string reason)
+    {
+        lock (eventGate)
+        {
+            if (stage == "link-lost") EndOutcomeSession(reason);
+            Add(stage, new { reason, lostState = new[] { "actions", "map origin", "face IDs" } });
+        }
+    }
 
     private void OnRobotDisconnected(RobotDisconnectedMessage report)
     {
         lock (eventGate)
         {
+            EndOutcomeSession("robot disconnected");
             locatedFaces.Clear();
             locatedObjects.Clear();
             recognisedAt.Clear();
@@ -435,8 +442,19 @@ public sealed partial class CozmoBridge
         if (report.ActionType == 0x23 && report.CompletionVariant == 3)
         {
             // TrackFace returns admission. Its signed terminal cache remains in read_events.
-            Add("action-completed", new { completion = report, resultName, faceId = unchecked((int)report.NativeCompletionCache) },
-                eligible: own, compactEligible: true, pushEligible: push);
+            lock (eventGate)
+            {
+                int faceId = unchecked((int)report.NativeCompletionCache);
+                if (own && trackingIntents.Remove(report.Tag, out var intent))
+                {
+                    var ended = CommandResult.Action(true, report.Result, "Tracking ended", false);
+                    Add("action-completed", new { completion = report, resultName, faceId,
+                        outcome = DescribeOutcome(intent, ended, null, faceId) },
+                        eligible: own, compactEligible: true, pushEligible: push);
+                }
+                else Add("action-completed", new { completion = report, resultName, faceId },
+                    eligible: own, compactEligible: true, pushEligible: push);
+            }
             return;
         }
         Add("action-completed", new { completion = report, resultName },
@@ -453,7 +471,14 @@ public sealed partial class CozmoBridge
         JsonElement? compactPayload = null, bool? compactEligible = null, bool? pushEligible = null)
     {
         if (disposed) return;
-        if (events.Count == eventCapacity) events.Dequeue();
+        if (events.Count == eventCapacity)
+        {
+            long evicted = events.Dequeue().Full.Cursor;
+            foreach (var intent in pendingIntents)
+                if (intent.Cursor < evicted) intent.Closed.TrySetResult("event cursor gap");
+            foreach (var intent in trackingIntents.Values)
+                if (intent.Cursor < evicted) intent.Closed.TrySetResult("event cursor gap");
+        }
         var now = timeProvider.GetUtcNow();
         bool significantType = significantTypes.Contains(type);
         var full = new BridgeEvent(++lastCursor, type, now, robotTimestamp, payload, eligible && significantType);
@@ -472,6 +497,7 @@ public sealed partial class CozmoBridge
         lock (eventGate)
         {
             if (disposed) return;
+            EndOutcomeSession("bridge session ended");
             Volatile.Write(ref disposed, true);
             events.Clear();
             faceMutations.Clear();
