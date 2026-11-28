@@ -66,6 +66,9 @@ public sealed class BridgeCommandTests
         var filter = new BlockWorldFilter();
         filter.AllowedIds.Add(charger.ObjectId);
         f.M.World.DeleteLocatedObjects(filter);
+        // The ramp geometry alone does not establish electrical contact.
+        f.Rig.Robot.Sensors.SetOnChargerPlatform(true);
+        Assert.False(f.Rig.Robot.Sensors.OnChargerContacts);
         var result = Invoke(bridge, "go-home", "{}");
         if (!enabled)
         {

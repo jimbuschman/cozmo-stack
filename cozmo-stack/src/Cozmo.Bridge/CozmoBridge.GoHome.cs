@@ -49,7 +49,7 @@ public sealed partial class CozmoBridge
         }
         Stage("locating charger");
         if (!engine.Options.C2.ChargerDock || !engine.Options.C2.ChargerMemory) return Fail("charger dock and memory must be enabled");
-        if (Robot.Sensors.OnChargerPlatform) { Stage("already on charger"); return CommandResult.Confirmed(new { stages }); }
+        if (Robot.Sensors.OnChargerContacts) { Stage("already on charger"); return CommandResult.Confirmed(new { stages }); }
         if (GoHomeGoal(owner) is null && await Scan(() => GoHomeGoal(owner) is not null).ConfigureAwait(false) is { } failure)
             return Fail(failure);
         Task<CommandResult>? drive = null;
