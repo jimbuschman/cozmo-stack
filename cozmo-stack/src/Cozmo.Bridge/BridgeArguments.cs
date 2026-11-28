@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Cozmo.Bridge;
 
 internal sealed record Argument(string Name, string Type, string Description, double? Minimum = null,
-    double? Maximum = null, JsonElement? Default = null, string[]? Choices = null, int? MaxUtf8Bytes = null, bool AllowEmpty = false)
+    double? Maximum = null, JsonElement? Default = null, string[]? Choices = null, int? MaxUtf8Bytes = null, bool AllowEmpty = false, bool Optional = false)
 {
     internal static Argument Number(string name, string description, float? defaultValue = null) =>
         new(name, "number", description, -float.MaxValue, float.MaxValue, DefaultOf(defaultValue));
@@ -94,7 +94,7 @@ internal sealed record BridgeCommand(string Name, string Description, Argument[]
                 ["$schema"] = "https://json-schema.org/draft/2020-12/schema",
                 ["type"] = "object",
                 ["properties"] = properties,
-                ["required"] = JsonSerializer.SerializeToNode(Parameters.Where(p => p.Default is null).Select(p => p.Name)),
+                ["required"] = JsonSerializer.SerializeToNode(Parameters.Where(p => p.Default is null && !p.Optional).Select(p => p.Name)),
                 ["additionalProperties"] = false,
             },
         };
@@ -108,13 +108,14 @@ internal sealed record BridgeCommand(string Name, string Description, Argument[]
         {
             var parameter = Array.Find(Parameters, p => p.Name == property.Name);
             if (parameter is null) throw new ArgumentException($"Unknown argument '{property.Name}'.");
-            if (!values.TryAdd(property.Name, property.Value)) throw new ArgumentException($"Duplicate argument '{property.Name}'.");
+            if (!values.TryAdd(property.Name, property.Value.Clone())) throw new ArgumentException($"Duplicate argument '{property.Name}'.");
             if (!parameter.Accepts(property.Value))
                 throw new ArgumentException($"Invalid argument '{property.Name}'. {parameter.Description}");
         }
         foreach (var parameter in Parameters)
         {
             if (values.ContainsKey(parameter.Name)) continue;
+            if (parameter.Optional) continue;
             if (parameter.Default is not { } fallback) throw new ArgumentException($"Missing argument '{parameter.Name}'.");
             values.Add(parameter.Name, fallback);
         }
@@ -127,6 +128,7 @@ internal sealed class BridgeArguments(Dictionary<string, JsonElement> values)
     internal JsonElement Value(string name) => values[name];
     internal float Number(string name) => values[name].GetSingle();
     internal int Int(string name) => (int)values[name].GetDecimal();
+    internal int? OptionalInt(string name) => values.ContainsKey(name) ? Int(name) : null;
     internal uint UInt(string name) => (uint)values[name].GetDecimal();
     internal string Text(string name) => values[name].GetString()!;
     internal bool Flag(string name) => values[name].GetBoolean();

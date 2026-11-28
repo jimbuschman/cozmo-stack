@@ -12,6 +12,59 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class BridgeCommandTests
 {
+    [Theory]
+    [InlineData("go-home", "{}")]
+    [InlineData("explore", "{}")]
+    [InlineData("come-here", "{}")]
+    [InlineData("search-for-face", "{}")]
+    [InlineData("mount-charger", """{"chargerId":31}""")]
+    public async Task FailedNavigationWithoutAnObservationOffersACameraStep(string command, string json)
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        using var bridge = new CozmoBridge(robot);
+        var result = await Invoke(bridge, command, json);
+        var help = result.GetProperty("help");
+        foreach (string field in new[] { "anchored", "distanceMm", "bearingDeg", "ageMs" })
+            Assert.Equal(JsonValueKind.Null, help.GetProperty(field).ValueKind);
+        Assert.Contains("get_camera_image", help.GetProperty("next").GetString());
+    }
+
+    [Fact]
+    public async Task UnreturnedImageCannotQueueATurn()
+    {
+        using var f = new Fixture();
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        var result = await Invoke(bridge, "turn-toward-image-point", """{"imageId":9,"x":90}""");
+        Assert.False(result.GetProperty("admitted").GetBoolean());
+        Assert.Contains("imageId", result.GetProperty("detail").GetString());
+    }
+
+    [Fact]
+    public async Task PixelTurnUsesTheDeliveredImagesCalibrationAndRejectsSupersededImage()
+    {
+        using var f = new Fixture(sourceNvEmpty: true);
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        f.Motors();
+        f.Image(101, cube: true);
+        Assert.Equal(101u, bridge.GetCameraImage().Metadata.GetProperty("imageId").GetUInt32());
+        f.Motors();
+        f.Image(102, cube: true);
+        Assert.Equal(102u, bridge.GetCameraImage().Metadata.GetProperty("imageId").GetUInt32());
+        var stale = await Invoke(bridge, "turn-toward-image-point", """{"imageId":101,"x":200}""");
+        Assert.False(stale.GetProperty("admitted").GetBoolean());
+        var turn = Invoke(bridge, "turn-toward-image-point", """{"imageId":102,"x":200,"y":90}""");
+        var runner = Assert.IsType<NativeTurnInPlaceRunner>(f.Robot.ActionList.GetCurrentAction());
+        Assert.True(runner.Parameters.IsAbsolute);
+        Assert.Equal(-Math.Atan2(40, 290), runner.Parameters.Angle0x88, 4);
+        f.Robot.ActionList.Cancel(runner.Tag);
+        f.Rig.Tick();
+        var result = await turn.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.True(result.GetProperty("admitted").GetBoolean(), result.ToString());
+        var angles = result.GetProperty("report");
+        Assert.Equal(-Math.Atan2(40, 290), angles.GetProperty("bodyRadians").GetDouble(), 4);
+        Assert.Equal(-0.15 + Math.Atan2(30, 291), angles.GetProperty("headRadians").GetDouble(), 4);
+    }
+
     // 0x005404F2/0x00540506 -> 0x006415C4..0x0064169A: requested tracks in
     // bit order, nonempty trees only, debug[key] in key order, and three trailing spaces.
     [Theory]
@@ -72,7 +125,13 @@ public sealed class BridgeCommandTests
         var result = Invoke(bridge, "go-home", "{}");
         if (!enabled)
         {
-            Assert.Contains("disabled", (await result).GetProperty("detail").GetString());
+            var declined = await result;
+            Assert.Contains("disabled", declined.GetProperty("detail").GetString());
+            var help = declined.GetProperty("help");
+            Assert.True(help.GetProperty("anchored").GetBoolean());
+            Assert.InRange(help.GetProperty("distanceMm").GetDouble(), 140, 220);
+            Assert.InRange(help.GetProperty("bearingDeg").GetDouble(), -10, 10);
+            Assert.True(help.GetProperty("ageMs").TryGetUInt32(out _));
             return;
         }
         Assert.Contains(f.Rig.Log, line => line.Contains("C2:go-home: driving to remembered charger viewing pose"));
@@ -350,7 +409,7 @@ public sealed class BridgeCommandTests
         var entries = bridge.GetCommandCatalogue().EnumerateArray().ToArray();
         Assert.Equal(new[]
         {
-            "head", "lift", "drive-straight", "turn-in-place", "turn-to-face", "turn-to-cube", "track-face",
+            "turn-toward-image-point", "head", "lift", "drive-straight", "turn-in-place", "turn-to-face", "turn-to-cube", "track-face",
             "animation", "say-text", "pickup", "put-down", "roll", "stack", "flip", "wheelie", "go-to-pose",
             "drive-off-charger", "explore", "go-home", "mount-charger", "search-for-face", "come-here", "face-directed-response", "teach-face", "enroll-face", "rename-face", "erase-face", "set_camera_color", "set-headlight",
             "set-backpack-lights", "set-cube-lights", "lock-reactions", "unlock-reactions", "cancel-action", "request-behavior", "request-spark", "play-arbitrary-anim", "freeplay", "wake", "set_needs_mode", "set_needs",
@@ -363,7 +422,7 @@ public sealed class BridgeCommandTests
             foreach (var name in schema.GetProperty("required").EnumerateArray())
                 Assert.True(schema.GetProperty("properties").TryGetProperty(name.GetString()!, out _));
         });
-        var animation = entries[7].GetProperty("argumentsSchema").GetProperty("properties");
+        var animation = entries.Single(e => e.GetProperty("name").GetString() == "animation").GetProperty("argumentsSchema").GetProperty("properties");
         Assert.Contains(animation.GetProperty("trigger").GetProperty("enum").EnumerateArray(), name => name.GetString() == "CodeLabHappy");
         Assert.Equal(1, animation.GetProperty("loops").GetProperty("default").GetInt32());
     }

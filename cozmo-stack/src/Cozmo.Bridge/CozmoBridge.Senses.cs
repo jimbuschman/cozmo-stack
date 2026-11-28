@@ -14,6 +14,7 @@ public sealed partial class CozmoBridge
     private readonly object cameraGate = new();
     private sealed record ReceivedCameraFrame(EngineRobot? Owner, CameraFrame Frame, double? Head);
     private ReceivedCameraFrame? receivedCamera;
+    private (EngineRobot Owner, CameraFrame Frame, uint Origin)? returnedImage;
     private ProcessedCameraCapture? processedCamera;
     private double? processedCameraHead;
     private readonly Dictionary<byte, string> clipNames = new();
@@ -62,7 +63,7 @@ public sealed partial class CozmoBridge
         Robot.Sensors.UnexpectedMovementDetected -= UnexpectedMovement;
         Robot.Sensors.RobotHiccupsStarted -= OnHiccupsStarted;
         Robot.State.StateUpdated -= PowerState;
-        lock (cameraGate) { receivedCamera = null; processedCamera = null; }
+        lock (cameraGate) { receivedCamera = null; processedCamera = null; returnedImage = null; }
     }
     private void CameraReceived(CameraFrame frame)
     {
@@ -179,6 +180,11 @@ public sealed partial class CozmoBridge
             observationReportsAvailable = faces.Count != 0 || objects.Length != 0,
             liftInView, liftRegion,
         }, Json);
+        lock (cameraGate)
+        {
+            if (owner is not null && ReferenceEquals(owner, Robot.Engine.Robot) && !owner.Lifetime.Destroying)
+                returnedImage = (owner, frame, owner.CurrentOriginId);
+        }
         return new(output.ToArray(), metadata);
 
         void Box(FaceRect rect, byte r, byte g, byte b)

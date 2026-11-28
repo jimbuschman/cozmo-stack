@@ -1,5 +1,17 @@
 # Cozmo operating guide
 
+## Working together
+
+Look with `get_camera_image` first. You can often recognize a charger, cube or person before Cozmo reports one.
+In the November 20 run he first registered the charger at about 15 cm and saw cubes farther away [dock-arrival].
+His map records detected markers and cliffs. Remember landmarks and check each new view for desk edges and clutter [map-content].
+
+If you see the target, use `turn-toward-image-point` with the returned imageId and pixel x (optionally y).
+Take a short drive along a clear path and look again after each step. Once a charger-seen, cube-seen or face-seen
+event identifies the target, hand over to `mount-charger`, `pickup` or `turn-to-face`.
+His marker-based docking, pickup, face turns and reactions handle the close-range work.
+Use `go-home` or `explore` to search when neither of you can see the target.
+
 ## Working with him
 
 - Read `get_state` and check `connection.connected` and `connection.ready` before an action. `pose` gives x, y and z in millimeters, heading in radians, the current `originId` and `poseFrameId`, and the object Cozmo is localized to when one is known. `robotTimestamp` and `ageMs` describe the last odometry estimate applied in that frame. They can be null after a frame change until fresh odometry arrives.

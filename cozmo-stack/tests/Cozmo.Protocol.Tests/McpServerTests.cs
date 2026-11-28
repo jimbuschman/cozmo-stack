@@ -37,6 +37,8 @@ public sealed class McpServerTests
         Assert.Equal("cozmo://guide", content.GetProperty("uri").GetString());
         Assert.Equal("text/markdown", content.GetProperty("mimeType").GetString());
         string text = content.GetProperty("text").GetString()!;
+        Assert.Contains("## Working together", text);
+        Assert.Contains("turn-toward-image-point", text);
         var state = Data(await client.Tool("get_state", new { }));
         foreach (var field in state.EnumerateObject()) Assert.Contains("`" + field.Name + "`", text);
         foreach (string term in new[] { "get_camera_image", "waitMs", "truncatedByRobot", "during", "why",
@@ -89,7 +91,7 @@ public sealed class McpServerTests
         await using var client = new Client(bridge);
         await client.Initialize();
         var tools = (await client.Request("tools/list", new { })).GetProperty("result").GetProperty("tools");
-        Assert.Equal(46, tools.GetArrayLength());
+        Assert.Equal(47, tools.GetArrayLength());
         var map = Assert.Single(tools.EnumerateArray(), tool => tool.GetProperty("name").GetString() == "get_map");
         Assert.Equal(500, map.GetProperty("inputSchema").GetProperty("properties")
             .GetProperty("radiusMm").GetProperty("default").GetInt32());

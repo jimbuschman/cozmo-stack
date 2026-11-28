@@ -41,6 +41,10 @@ public sealed partial class CozmoBridge : IDisposable
 
     private static readonly BridgeCommand[] Commands =
     [
+        new("turn-toward-image-point", "Centre a pixel from the last returned camera image. Supply its imageId and x, and optionally y for head tilt. Success: engineResult=0 and absolute target angles in radians. Failure: read detail and get a fresh image before retrying.",
+            [Integer("imageId", "ID returned by get_camera_image.", 0, uint.MaxValue), Integer("x", "Horizontal pixel.", 0, 319),
+             Integer("y", "Vertical pixel. Omit to leave the head alone.", 0, 239) with { Optional = true }],
+            (b, a, ct) => b.TurnToPixel(a.UInt("imageId"), a.Int("x"), a.OptionalInt("y"), ct)),
         new("head", "Set the head angle in radians. Success: completed with engineResult=0. Failure: isError, a nonzero engineResult, not-admitted or owner-retired; read detail, why and during.", [Number("radians", "Head angle in radians.")],
             (b, a, ct) => FromAction(b.Robot.Motion.QueueAiHeadAngleAsync(a.Number("radians"), ct))),
         new("lift", "Set lift height in millimetres. Success: completed with engineResult=0. Failure: isError, a nonzero engineResult, not-admitted or owner-retired; read detail, why and during.", [Number("heightMm", "Lift height in millimetres.")],
@@ -217,6 +221,8 @@ public sealed partial class CozmoBridge : IDisposable
             if (result.Admitted == false || result.EngineResult is > 0 || result.Status is "owner-retired" or "no-report" ||
                 response["truncatedByRobot"]?.GetValue<bool>() == true)
                 response["why"] = capture.Describe(result, response["truncatedByRobot"]?.GetValue<bool>() == true);
+            if (response.ContainsKey("why") && command is ("go-home" or "mount-charger" or "come-here" or "search-for-face" or "explore"))
+                response["help"] = JsonSerializer.SerializeToNode(FailureHelp(command, parsed), Json);
             AttachDuring(response, startCursor, parsed.Text("duringDetail") == "full", result.OwnedCompletionTag);
             return JsonSerializer.SerializeToElement(response, Json);
         }
