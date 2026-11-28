@@ -81,6 +81,7 @@ Candidates so far:
 - **C2:charger-dock** (operator approved 2026-11-26): current-origin fused flat pose, three distinct sightings, heading confidence >= 0.95, freshness within 2 s, square-on within 7.5 degrees; native pre-dock viewing approach and fresh observation wait (5 s), at most two retries. Only UnexpectedMovement is held; cliff protection unchanged. Baseline unchanged; offline regression passed, robot validation pending.
 - **C2:person-follow** (robot validation pending). Person tracking (operator 2026-11-26): if TRACK-FACE-LLM-2 shows the engine's one-ID tracking is the limit, follow the
   face nearest the last tracked position across face-ID changes.
+- **C2:link-reconnect** repeats the startup gate on Wi-Fi timeout and reports the new connection and lost state through the same MCP session. Robot validation pending.
 - **C2:go-home** returns to the remembered charger using a native look-around, planned approach and charger dock. Robot validation pending.
 - **C2:map-save** persists room maps per robot body serial and restores them unanchored on connection. Robot validation pending.
 - **C2:map-obstacle-memory** retains hazard footprints for 24 hours and carries them into collision checks after a map rejoin. Robot validation pending.
