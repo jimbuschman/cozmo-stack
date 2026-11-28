@@ -35,6 +35,38 @@ Pass/fail follows engine signals. Everything else is an observation.
 - **F3 (again).** False PetInitialDetection, three times this session.
 - **Manual back-in.** Claude reversed toward the charger using the charger pose. He snagged on the lip: UnexpectedMovement, side 2. The operator finished the dock by hand.
 
+## Handoff: proposed work, in priority order
+
+Each item names its source. All are C2 extensions or bridge fixes. None changes the engine baseline.
+
+1. **Go home is unreliable (G1, G2, G3).** It is the most-used extension and failed most today.
+   - G1: before any retry, check `isOnCharger`, or wait briefly for the on-charger event after a mount result.
+   - G2: dump what the planner sees when the viewing approach fails (`Ready -> Failed`). Check whether map-obstacle-memory's retained InterestingEdge and Cliff entries block the viewing or pre-dock poses. If so, decide what obstacle memory should keep near the charger.
+   - G3: the charger search should sweep with the head *down* (the charger is low), not reuse the face-search look-around (`anim_lookinplaceforfaces_*` at +20/+40°).
+2. **Keep the MCP session open across a sleep disconnect.** Operator request (2026-11-28): Claude cannot run `/mcp`.
+   - Today the engine's scheduled `SleepPlacedOnCharger` disconnect (about 5.5 min) tore the bridge down, and only the operator could reconnect.
+   - Proposal: extend C2:link-reconnect so the session stays open after a sleep disconnect, as it does after WifiTimeout, and add a `connect`/`wake` tool that reconnects to the robot on request.
+   - Expire actions, origin and face IDs as link-reconnect already does.
+3. **Silent bridge process deaths (R2) cannot be recovered by Claude.**
+   - Option: run the bridge as a long-lived process over HTTP MCP with a restart watchdog, so a crash doesn't need `/mcp`.
+   - Needs a quick test of whether Claude Code re-attaches to an HTTP server after a restart.
+   - Root cause of R2 is still unknown. No drops occurred this session.
+4. **Explore (E1, E1b, E2).**
+   - On a failed leg: record the obstacle, back off, choose another leg.
+   - Run until maxSeconds, not three legs.
+   - Choose legs with the same obstacle set the native planner uses.
+5. **Person-follow (P2).** Keep the target *person*: when following an enrolled identity, a new track recognised as that identity should win over a different new identity (ID 5 today).
+6. **Slope-putdown (S1).** Read the pitch the engine itself logged at put-down (ReactToReturnedToTreads `CalibratingHead: <pitch>`), or wait for fresh IMU data; don't read during the NoIMUData gap.
+7. **F3, false PetInitialDetection.** Three times again; it interrupts face work. It needs the pet detector's input checked against the binary.
+
+## Notes on driving (for whoever runs the next session)
+
+- The operator wants Claude and Cozmo to work *together*. Use the camera and remembered positions to set Cozmo up (turn toward a known charger, head down, back out of clutter), then let his behaviour finish. Don't fire a high-level tool repeatedly and report failure, and don't hand the job back to the operator.
+- Face IDs are stable at about 50 cm with the person facing him, and churn badly at 25–35 cm side-on.
+- Freeplay re-enables after drive-off-charger/wake if it was on. Turn it off before scripted tests.
+- Charger geometry in state: `knownChargers.relative` is +30 mm ahead when docked, and the charger heading is roughly the docked heading + π. Back on along the charger's axis.
+- Reaction locks are lost on any bridge reconnect.
+
 ## Still open from earlier sessions
 
 - R2 silent bridge drops: none this session.
