@@ -48,6 +48,65 @@ public sealed class BridgeCommandTests
         Assert.DoesNotContain(f.Rig.Log, line => line.Contains("MISSING") && line.Contains("TracksLockedBecause"));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GoHomeChoosesNativePlannerAfterLiveChargerWasDeleted(bool enabled)
+    {
+        using var f = new Fixture(sourceNvEmpty: true, engineOptions: new CozmoEngineOptions {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath = "",
+            C2 = CozmoC2Settings.McpDefaults with { GoHome = enabled } });
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        for (uint frame = 501; frame < 506; frame++)
+        {
+            f.Motors();
+            f.Image(frame, cube:true, cubeX:180, markerObjectType:Cozmo.Protocol.ObjectType.Charger_Basic);
+        }
+        var charger = Assert.Single(f.M.World.LocatedObjects.Where(o => o.Type == Cozmo.Protocol.ObjectType.Charger_Basic));
+        var filter = new BlockWorldFilter();
+        filter.AllowedIds.Add(charger.ObjectId);
+        f.M.World.DeleteLocatedObjects(filter);
+        // The ramp geometry alone does not establish electrical contact.
+        f.Rig.Robot.Sensors.SetOnChargerPlatform(true);
+        Assert.False(f.Rig.Robot.Sensors.OnChargerContacts);
+        var result = Invoke(bridge, "go-home", "{}");
+        if (!enabled)
+        {
+            Assert.Contains("disabled", (await result).GetProperty("detail").GetString());
+            return;
+        }
+        Assert.Contains(f.Rig.Log, line => line.Contains("C2:go-home: driving to remembered charger viewing pose"));
+        var runner = Assert.IsAssignableFrom<ActionRunner>(f.Robot.ActionList.GetCurrentAction());
+        f.Robot.ActionList.Cancel(runner.Tag);
+        f.Rig.Tick();
+        var ended = await result.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Contains("approach failed", ended.GetProperty("report").GetProperty("stages").ToString());
+    }
+
+    [Fact]
+    public async Task GoHomeWithAnUnanchoredChargerRequestsLookAroundBeforeAnyDrive()
+    {
+        using var f = new Fixture(sourceNvEmpty: true, engineOptions: new CozmoEngineOptions {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath = "",
+            C2 = CozmoC2Settings.McpDefaults });
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        for (uint frame = 501; frame < 506; frame++)
+        {
+            f.Motors();
+            f.Image(frame, cube:true, cubeX:180, markerObjectType:Cozmo.Protocol.ObjectType.Charger_Basic);
+        }
+        f.Robot.Delocalize(false);
+        f.Motors();
+        Assert.Null(CozmoBridge.GoHomeGoal(f.Robot));
+        using var cancel = new CancellationTokenSource();
+        var pending = Invoke(bridge, "go-home", "{}", cancel.Token);
+        Assert.Contains(f.Rig.Log, line => line.Contains("C2:go-home: looking around in place"));
+        Assert.DoesNotContain(f.Rig.Log, line => line.Contains("C2:go-home: driving to remembered"));
+        cancel.Cancel();
+        try { await pending.WaitAsync(TimeSpan.FromSeconds(3)); }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested) { }
+    }
+
     [Fact]
     public async Task MissingFaceSuccessExplainsThatNoTurnTargetWasAvailable()
     {
@@ -293,7 +352,7 @@ public sealed class BridgeCommandTests
         {
             "head", "lift", "drive-straight", "turn-in-place", "turn-to-face", "turn-to-cube", "track-face",
             "animation", "say-text", "pickup", "put-down", "roll", "stack", "flip", "wheelie", "go-to-pose",
-            "drive-off-charger", "mount-charger", "teach-face", "enroll-face", "rename-face", "erase-face", "set_camera_color", "set-headlight",
+            "drive-off-charger", "explore", "go-home", "mount-charger", "search-for-face", "come-here", "face-directed-response", "teach-face", "enroll-face", "rename-face", "erase-face", "set_camera_color", "set-headlight",
             "set-backpack-lights", "set-cube-lights", "lock-reactions", "unlock-reactions", "cancel-action", "request-behavior", "request-spark", "play-arbitrary-anim", "freeplay", "wake", "set_needs_mode", "set_needs",
         }, entries.Select(entry => entry.GetProperty("name").GetString()));
         Assert.All(entries, entry =>

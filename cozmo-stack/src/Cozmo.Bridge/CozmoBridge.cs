@@ -408,6 +408,9 @@ public sealed partial class CozmoBridge
     private void OnFreeplaySparksAwarded(FreeplaySparksAwardedReport report) => Add("freeplay-sparks-awarded", report);
     private void OnGoingToSleep(GoingToSleepReport report) => Add("going-to-sleep", report);
     private void OnChargerSleepCancelled(ChargerSleepCancelledReport report) => Add("sleep-cancelled", report);
+    internal void ReportLinkRecovery(string stage, string reason) =>
+        Add(stage, new { reason, lostState = new[] { "actions", "map origin", "face IDs" } });
+
     private void OnRobotDisconnected(RobotDisconnectedMessage report)
     {
         lock (eventGate)

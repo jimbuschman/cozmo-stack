@@ -15,6 +15,100 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public sealed class SparksLookInPlaceNativeTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExploreHonorsBaselineAndTheCommandTimeLimit(bool enabled)
+    {
+        using var f = new Fixture(sourceNvEmpty:true, engineOptions:new CozmoEngineOptions {
+            ResourcesPath=PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath="",
+            C2=CozmoC2Settings.McpDefaults with { MapExplore=enabled } });
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        var result = await BridgeCommandTests.Invoke(bridge, "explore", """{"maxSeconds":1}""")
+            .WaitAsync(TimeSpan.FromSeconds(4));
+        if (enabled)
+            Assert.Equal("time limit reached", result.GetProperty("report").GetProperty("reason").GetString());
+        else
+            Assert.Contains("disabled", result.GetProperty("detail").GetString());
+    }
+
+    [Fact]
+    public void ExploreLegRejectsARememberedCliffAcrossTheForwardCorridor()
+    {
+        var map = new MemoryMap();
+        var first = CozmoBridge.ChooseExploreLeg(map, new(0, 0), 0, []);
+        Assert.NotNull(first);
+        Assert.Equal(90, first.Value.XMm, 4);
+        Vec2[] footprint = [new(60, -5), new(75, -5), new(75, 5), new(60, 5)];
+        map.ReadC2Hazards = () => [new(new RoomOrigin(1, 1), MemoryMapContentType.Cliff, null, footprint, footprint, 0)];
+        var avoided = CozmoBridge.ChooseExploreLeg(map, new(0, 0), 0, []);
+        Assert.NotNull(avoided);
+        Assert.NotEqual(0, avoided.Value.HeadingRad);
+        Assert.False(map.HasCollisionRayWithTypes(new(0, 0), new(avoided.Value.XMm, avoided.Value.YMm)));
+    }
+
+    [Theory]
+    [InlineData("cliff")]
+    [InlineData("pickup")]
+    [InlineData("cancel")]
+    public async Task ExploreUsesTheNativeScanAndPlannerAndRetiresWhenInterrupted(string interrupt)
+    {
+        using var f = new Fixture(preloadAnimations:true, pumpAnimations:true, sourceNvEmpty:true,
+            engineOptions:new CozmoEngineOptions { ResourcesPath=PickupPyramidNativeExecutionTests.Resources(),
+                BlockPoolPath="", C2=CozmoC2Settings.McpDefaults });
+        using var bridge = new CozmoBridge(f.Rig.Robot);
+        using var cancel = new CancellationTokenSource();
+        var task = BridgeCommandTests.Invoke(bridge, "explore", """{"maxSeconds":30}""", cancel.Token);
+        var scan = Assert.IsType<NativeSparksLookInPlace>(f.Runtime.Bound["Hiking_LookInPlace360"]);
+        for (int i=0; i<500 && !task.IsCompleted; i++)
+        {
+            f.Motors();
+            if (scan.SearchIterations != 0) break;
+            // Supply terminal child completions to exercise the real scan state transitions.
+            if (scan.OwnedRunner is { } child)
+            {
+                child.State = 0x03000018;
+                f.Robot.ActionList.Update();
+            }
+        }
+        Assert.True(scan.SearchIterations > 0);
+        bool Driving()
+        {
+            lock (f.Rig.Log) return f.Rig.Log.Any(line => line.Contains("C2:map-explore: driving leg 1"));
+        }
+        for (int i=0; i<100 && !Driving() && !task.IsCompleted; i++) await Task.Delay(10);
+        Assert.True(Driving());
+        uint stamp = f.Robot.StoredState!.Timestamp;
+        var pose = new EngineGamePose(100, 0, 0, 1, 0, 0, 0, f.Robot.CurrentOriginId);
+        f.Rig.Engine.DeliverObservedObjectToApp(new(stamp, (uint)ObjectFamily.LightCube, (uint)ObjectType.Block_LIGHTCUBE1,
+            21, 0, 0, 20, 20, pose, 0, true));
+        f.Rig.Engine.DeliverObservedObjectToApp(new(stamp, (uint)ObjectFamily.Charger, (uint)ObjectType.Charger_Basic,
+            32, 0, 0, 20, 20, pose, 0, false));
+        f.Rig.Engine.PublishRobotObservedFace(new(-7, stamp, pose, new FaceRect(0, 0, 10, 10), "", [], [], [], []));
+        f.Rig.Engine.DrainAppDelivery();
+        Vec2[] footprint = [new(300,0), new(320,0), new(320,20), new(300,20)];
+        f.M.World.Maps.Current!.InsertCliff(footprint, new CliffMapData(new(1,0), stamp));
+        if (interrupt == "cliff")
+        {
+            f.Rig.Data(new CliffEvent { Timestamp=f.Robot.StoredState!.Timestamp, DetectedFlags=3, DidStopForCliff=true });
+            f.Rig.Tick();
+        }
+        else if (interrupt == "pickup")
+            f.Rig.Robot.Sensors.DispatchOffTreadsStateChanged(OffTreadsState.OnTreads, OffTreadsState.InAir);
+        else cancel.Cancel();
+        for (int i=0; i<10 && !task.IsCompleted; i++) { f.Rig.Tick(); await Task.Delay(10); }
+        var result = await task.WaitAsync(TimeSpan.FromSeconds(3));
+        var report = result.GetProperty("report");
+        Assert.Equal(0, report.GetProperty("completedLegs").GetInt32());
+        Assert.Contains(interrupt == "pickup" ? "picked up" : interrupt, report.GetProperty("reason").GetString());
+        Assert.Equal(21u, Assert.Single(report.GetProperty("cubeIds").EnumerateArray()).GetUInt32());
+        Assert.Equal(32u, Assert.Single(report.GetProperty("chargerIds").EnumerateArray()).GetUInt32());
+        Assert.Equal(-7, Assert.Single(report.GetProperty("faceIds").EnumerateArray()).GetInt32());
+        Assert.Contains(report.GetProperty("newHazards").EnumerateArray(), h => h.GetProperty("type").GetString() == "Cliff" &&
+            h.GetProperty("localPolygon")[0].GetProperty("x").GetDouble() == 300);
+        Assert.True(f.Robot.BehaviorManagerOwner!.IsReactionTriggerEnabled(ReactionTrigger.CliffDetected));
+    }
+
     [Fact]
     public async Task RequestedWorkoutNaturallyChoosesRetainedFallbackInEmptyWorld()
     {

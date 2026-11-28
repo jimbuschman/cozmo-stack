@@ -98,6 +98,8 @@ public static class Program
                 robot.Transport.FrameTrace += evidence.Frame;
                 robot.HandlerFaulted += error => { Log(error.ToString()); evidence.Record("handler-fault", JsonSerializer.SerializeToElement(new { exception = error.ToString() })); };
                 using var bridge = new CozmoBridge(robot, significantEventTypes: significantTypes);
+                await using var recovery = c2.LinkReconnect
+                    ? new C2LinkRecovery(robot, bridge, ip, Log, evidence.Record, cancel.Token) : null;
                 await using var localEvents = streamPort is { } listenPort
                     ? new BridgeEventStream(bridge, listenPort, cancel.Token) : null;
                 if (localEvents is not null) Log($"Local events at 127.0.0.1:{localEvents.Port}");

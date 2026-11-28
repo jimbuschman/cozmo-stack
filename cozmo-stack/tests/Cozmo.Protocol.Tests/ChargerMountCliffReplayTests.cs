@@ -19,6 +19,51 @@ public sealed class ChargerMountCliffReplayTests
     private static string? SessionFive => Environment.GetEnvironmentVariable("COZMO_SESSION5_CHARGER_BUNDLE");
     private static string? SessionSix => Environment.GetEnvironmentVariable("COZMO_SESSION6_CHARGER_BUNDLE");
 
+    [Fact]
+    public async Task WifiTimeoutReconnectsThroughReadinessAndPublishesOnlyAfterTheNewHandshake()
+    {
+        using var f = new Fixture(sourceNvEmpty: true, engineOptions: new CozmoEngineOptions {
+            ResourcesPath = PickupPyramidNativeExecutionTests.Resources(), BlockPoolPath = "",
+            C2 = CozmoC2Settings.McpDefaults });
+        var rig = f.Rig;
+        var original = rig.Engine.Robot;
+        using var bridge = new CozmoBridge(rig.Robot);
+        await using var client = new McpServerTests.Client(bridge);
+        await client.Initialize();
+        var attempt = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var restored = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var recovery = new Cozmo.Mcp.C2LinkRecovery(rig.Robot, bridge, M4ControlTests.Rig.RobotIp,
+            _ => { }, (kind, data) => {
+                if (kind == "reconnect-gate" && data.GetProperty("ready").GetBoolean()) attempt.TrySetResult();
+                if (kind == "reconnected") restored.TrySetResult();
+            }, CancellationToken.None);
+        rig.Port.TimedOut = true;
+        rig.Port.Raise(ReceiverMarker.OnDisconnected, M4ControlTests.Rig.RobotEp);
+        rig.Tick();
+        await attempt.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        var before = bridge.ReadEvents().GetProperty("events").EnumerateArray().ToArray();
+        Assert.Single(before, e => e.GetProperty("type").GetString() == "link-lost");
+        Assert.DoesNotContain(before, e => e.GetProperty("type").GetString() == "reconnected");
+        rig.Port.TimedOut = false;
+        rig.Tick();
+        rig.Port.Raise(ReceiverMarker.OnConnected, M4ControlTests.Rig.RobotEp);
+        rig.Tick();
+        rig.Data(new RobotAvailable { SerialNumberHead = 1, HwVersion = 5 });
+        rig.Data(new FirmwareVersion { RobotId = 1, Signature = System.Text.Encoding.UTF8.GetBytes(
+            """{"version":2381,"time":1546972025,"build":"DEVELOPMENT"}""") });
+        rig.Tick();
+        rig.Data(new ManufacturingID { SerialNumber = 2, BodyHwVersion = 7, BodyColor = 2 });
+        rig.Tick();
+        await restored.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.NotSame(original, rig.Engine.Robot);
+        var events = Data(await client.Tool("read_events", new { since = 0, types = new[] { "link-lost", "reconnected" } }))
+            .GetProperty("events").EnumerateArray().ToArray();
+        Assert.Equal(new[] { "link-lost", "reconnected" }, events.Select(e => e.GetProperty("type").GetString()));
+        Assert.Equal(new[] { "actions", "map origin", "face IDs" }, events[1].GetProperty("payload")
+            .GetProperty("lostState").EnumerateArray().Select(e => e.GetString()));
+        Assert.True(Data(await client.Tool("get_state", new { })).GetProperty("connection").GetProperty("connected").GetBoolean());
+    }
+
     [Theory]
     [InlineData(false, 677360, 677875, 14)]
     [InlineData(true, 668850, 669390, 13)]

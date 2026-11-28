@@ -426,6 +426,53 @@ internal sealed class NativeBehaviorRuntime : IDisposable
         finally { lease?.Dispose(); }
     }
 
+    // Our C2 scan uses the shipped behavior and the Selection chooser (0x0060AA58).
+    // Scope cleanup to the exact request so cancellation cannot stop a newer command.
+    internal async Task<string?> ScanForC2Goal(string behavior, Func<bool> found, CancellationToken token)
+    {
+        HostBehaviorRequest request;
+        var engine = _robot.Engine;
+        using (engine.EnterSynchronousOwner())
+        {
+            token.ThrowIfCancellationRequested();
+            if (!RequestHostBehavior(behavior, null, out _) || _hostBehaviorRequest is not { } admitted)
+                return "native " + behavior + " unavailable";
+            request = admitted;
+        }
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        try
+        {
+            while (true)
+            {
+                using (engine.EnterSynchronousOwner())
+                {
+                    if (!IsCurrentAiCommandOwner()) return "scan owner retired";
+                    if (_facade.Sensors.OffTreadsState != OffTreadsState.OnTreads ||
+                        _facade.Sensors.CliffDetectedByEvent || _facade.Sensors.CliffDetectedNow)
+                        return "scan interrupted by pickup or cliff";
+                    if (found()) return null;
+                    if (!ReferenceEquals(_hostBehaviorRequest, request)) return "scan ended without finding the requested target";
+                    if (request.LastReportedBlock is { } reason) return "scan blocked: " + reason;
+                }
+                await Task.Delay(50, timeout.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (!token.IsCancellationRequested) { return "scan timed out"; }
+        finally
+        {
+            using (engine.EnterSynchronousOwner())
+            {
+                if (ReferenceEquals(_hostBehaviorRequest, request) && IsCurrentAiCommandOwner())
+                {
+                    request.Chooser.HandleExecuteBehavior(new Cozmo.Protocol.ExecuteBehaviorByIDMessage((byte)BehaviorID.Wait, 0));
+                    if (_manager.IsRunning(request.Target)) _manager.Stop(BehaviorStopReason.Interrupted, engine.Timer.SecondsF);
+                    if (ReferenceEquals(_hostBehaviorRequest, request)) RetireHostBehaviorRequest();
+                }
+            }
+        }
+    }
+
     private void RetireHostBehaviorRequest()
     {
         ++_hostBehaviorRequestEpoch;
